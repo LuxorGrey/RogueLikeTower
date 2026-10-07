@@ -1,9 +1,14 @@
-# CellTile
+# Inventario de assets CellTile
 
-Sprites isométricos recibidos del usuario para su uso en RogueLikeTower.
+Inventario del estado del directorio `assets/CellTile` revisado el 2026-10-07. Este catálogo describe archivos reales; la lógica se asigna mediante definiciones/datos de terreno y no se infiere del PNG durante el juego.
 
-Incluye diez variantes de césped (`grass1`–`grass10`), dos de tierra (`dirt2`, `dirt3`), dos caminos, una escalera, cuatro piedras y una hoja de bloques de naturaleza. Mantener estos originales sin sobrescribir; la escala, el punto de apoyo y el mapeo de cada sprite se definirán al crear el importador del juego.
+| Prefijo | Archivos presentes | Función visual prevista |
+|---|---|---|
+| `grass` | `grass1.png`–`grass10.png` | Variantes de césped. `grass1`–`grass7` incluyen laterales de bloque; `grass8`–`grass10` son superficies/detalles sin el mismo volumen lateral. Hay flores y hierba alta entre las variaciones. |
+| `path` | `path_1.png`, `path_2.png` | Variantes gráficas para celdas lógicas `PATH`. |
+| `stone` | `stone1.png`–`stone4.png` | Variantes de bloque de piedra para celdas `STONE`. |
+| Hoja de referencia | `spritesheet_nature-blocks.png` | Hoja de sprites sin mapa de regiones aprobado; no usar posiciones de atlas implícitas. |
 
-## Mapeo pendiente
+En este inventario actual no existen `dirt2.png`, `dirt3.png`, `path_variant_1.png` ni `stair_stone1.png`; documentos y escenas no deben referenciarlos. Las texturas tienen tamaños fuente distintos, por lo que la región, el anclaje y el orden visual se validan según su huella real, sin escalar indiscriminadamente a un lienzo común.
 
-La hoja `spritesheet_nature-blocks.png` reúne variantes visuales. Antes de generar el tablero se debe fijar una tabla de sprite/atlas-rect → tipo de celda, orientación y altura. El arte representa; el modelo lógico determina caminos, bloqueos y reglas.
+Los PNG proceden del usuario y se mantienen como material del proyecto. La licencia para redistribuirlos en una build todavía debe confirmarse antes de publicar el juego.

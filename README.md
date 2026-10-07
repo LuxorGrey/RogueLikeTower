@@ -1,32 +1,26 @@
-# RogueLikeTower
+# Rogue Tower
 
-Roguelite de defensa de torres centrado en diseñar rutas con losetas, combinar defensas y superar veinte oleadas. La presentación será 2D isométrica y usará los sprites CellTile del proyecto.
+Roguelite de defensa de torres en desarrollo con Godot 4.7 y tablero 2D isométrico. El terreno se organiza en chunks lógicos de 3×3. La fuente de verdad para crear terreno es la [especificación de losetas](docs/diseno/rogue-tower/sistemas/sistema-losetas-isometricas.md).
 
-> **Estado del repositorio:** documentación y assets iniciales. Aún no contiene un proyecto Godot ejecutable.
+## Abrir el proyecto
 
-## Cómo se juega
+Abre la carpeta del repositorio en Godot 4.7 y ejecuta la escena principal con **Play**. La escena de inicio está prevista para mostrar un chunk isométrico ya formado; consulta el plan para conocer el estado exacto de implementación.
 
-- En preparación, se elige una loseta entre tres, se rota en pasos de 90° y se coloca respetando la conexión de caminos.
-- Se construyen y mejoran defensas, se elige cuándo comenzar y se resuelven oleadas automáticas.
-- El mapa y las elecciones de mejora cambian las opciones defensivas durante una partida de veinte rondas.
-- Las decisiones explícitas de este proyecto prevalecen sobre las reglas de los juegos de referencia.
+## Modelo de terreno
 
-## Dirección técnica y visual
-
-- Motor previsto: Godot 4.7.
-- Proyección 2D isométrica fija 2:1; paneo y zoom sin giro.
-- Sprites de terreno: [`assets/CellTile`](assets/CellTile/).
-- El tablero inicial es una cuadrícula fija de 9×9 casillas.
-- Cada casilla/loseta grande se representa con hasta 3×3×3 CellTiles; dentro conserva nueve posiciones lógicas de construcción.
+- Cada chunk tiene nueve celdas lógicas exactas y cuatro puertos cardinales.
+- PATH forma rutas, es transitable y no permite construcción.
+- GRASS y STONE permiten construcción cuando la celda está libre. STONE comienza a altura 1 y aplica un multiplicador de alcance configurable (1.15 inicial).
+- `ChunkDefinition` y `CellData` mantienen reglas; `TileMapLayer` presenta sus datos.
+- Los PNG de [assets/CellTile](assets/CellTile/README.md) son fuentes visuales; el inventario documenta qué archivos existen y sus funciones. La licencia para distribución en builds aún debe confirmarse.
 
 ## Documentación
 
-- [Resumen detallado del juego (GDD)](docs/GDD.md)
+- [GDD](docs/GDD.md)
+- [Sistema de losetas isométricas](docs/diseno/rogue-tower/sistemas/sistema-losetas-isometricas.md)
+- [ADR-0013: chunks lógicos y terreno isométrico](docs/diseno/rogue-tower/decisiones/ADR-0013-sistema-de-losetas-isometricas.md)
 - [Plan de implementación](docs/IMPLEMENTATION_PLAN.md)
-- [Formato editable de oleadas y cartas](docs/DATA_FORMATS.md)
 - [Preguntas abiertas](docs/OPEN_QUESTIONS.md)
-- [Inventario de CellTile](assets/CellTile/README.md)
+- [Formato de datos para oleadas y cartas](docs/DATA_FORMATS.md)
 
-## Inicio de implementación
-
-La primera entrega jugable será el tablero isométrico, la generación de sus celdas, la selección con feedback claro y las reglas visuales de altura. Los enemigos, sus oleadas y las cartas vendrán después como datos editables, para que ampliar contenido no requiera reprogramar el sistema.
+Proyección fija 2:1, sin giro de cámara.
