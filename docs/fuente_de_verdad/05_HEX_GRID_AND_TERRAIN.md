@@ -26,11 +26,20 @@ Una colocación es legal si:
 1. Ninguna de sus 7 celdas solapa una celda existente.
 2. La pieza toca el mapa existente por al menos un borde.
 3. Si el diseño requiere conexión de camino, al menos una entrada de Path de la pieza conecta con un Path existente.
-4. No existe una conexión Path->no Path a través de un borde marcado como salida de camino.
+4. Ninguna salida PATH explícita apunta a terreno que no sea PATH; las ofertas flexibles solo conectan con otra celda PATH.
 5. Tras colocarla, el/los spawns que deban conservar ruta hacia la base siguen teniendo una ruta válida.
 6. No se crea una celda construible inaccesible visualmente por error de renderer (solo validación de desarrollo).
 
 Regla de diseño: las conexiones de camino se definen explícitamente por borde; no asumir que dos celdas PATH adyacentes conectan si la plantilla visual dice lo contrario.
+
+Contrato ejecutado por M3, registrado en [ADR-0004](../decisiones/ADR-0004-contrato-colocacion-terreno.md):
+- `path_edges` es una máscara de seis bits. Dirección 0 = este `(1,0)`, 1 = sureste `(0,1)`, 2 = suroeste `(-1,1)`, 3 = oeste `(-1,0)`, 4 = noroeste `(0,-1)`, 5 = noreste `(1,-1)`; el borde opuesto es `(dirección + 3) mod 6`.
+- Las conexiones internas de una pieza requieren `path_edges` recíprocos entre dos PATH. Si una conexión interna apunta a otra clase de terreno o no es recíproca, el Resource es inválido.
+- Cuando un `path_edges` externo sale de la huella, se derivan dos sockets laterales flexibles en las caras contiguas que también queden fuera de la huella. Se rotan con la pieza y se ven como brazos laterales más tenues. Permiten conectar una pieza por el borde central o por cualquiera de esos laterales, siempre que los hexágonos vecinos sean PATH y la otra cara ofrezca el borde exacto o flexible complementario.
+- Las salidas explícitas sin pareja siguen siendo errores si enfrentan una celda existente; una salida flexible es opcional y puede quedar abierta o mirar a terreno que no sea PATH. `requires_path_connection` exige al menos una salida externa explícita y que durante la colocación una conexión compatible llegue a un PATH existente.
+- El `HexGrid` confirma las siete celdas de forma atómica después de validar. El Resource original no se modifica; las celdas rotadas son copias y reciben un `piece_instance_id`.
+- M3 muestra un fantasma verde cuando la colocación es legal y rojo cuando no lo es. El cursor se ajusta a coordenadas axiales; clic izquierdo o el botón del HUD confirma, `Esc`, clic derecho o Cancelar abandona el preview. Q/E y los botones giran 60°.
+- La verificación de ruta completa spawn-base (regla 5) se pospone hasta M4; aún no existe `PathGraph`. El control visual de celdas construibles inaccesibles sigue siendo revisión de desarrollo.
 
 ## 4. Bifurcaciones y convergencias
 El grafo permite grado > 2.
@@ -64,9 +73,11 @@ Los cliffs rellenan visualmente la diferencia con vecinos más bajos.
 
 La selección/click debe mapear correctamente al HexCoord aunque el sprite esté desplazado.
 
-En el preview M2, cada nivel desplaza temporalmente la cara superior 18 px hacia arriba. Los desniveles se dibujan como caras laterales sombreadas; en la pieza aislada, una celda vecina ausente se trata como altura 0. Las caras superiores se ordenan por profundidad lógica (Y de base, con X como desempate), y muestran `h0/h1/h2` para depuración. Este offset y estos polígonos son placeholders visuales, no especificación de arte final. La escena principal incluye un contenedor `Entities` con Y-sort habilitado para los actores.
+En el preview M2, cada nivel desplaza temporalmente la cara superior 18 px hacia arriba. Los desniveles se dibujan como caras laterales sombreadas mediante dos triángulos construidos desde la arista superior y el desplazamiento vertical exacto. Cuando ambos vectores se proyectan en la misma dirección, se añade un grosor lateral visual mínimo para que el polígono no colapse; en la pieza aislada, una celda vecina ausente se trata como altura 0. Las caras superiores se ordenan por profundidad lógica (Y de base, con X como desempate), y muestran `h0/h1/h2` para depuración. Este offset y estos polígonos son placeholders visuales, no especificación de arte final. La escena principal incluye un contenedor `Entities` con Y-sort habilitado para los actores.
 
-El hover solo detecta las caras superiores: PATH resalta en `#82BFE6`, GRASS en `#80E085` y MOUNTAIN en `#F5C25C`. El HUD superior muestra la coordenada axial local `(q,r)`, el terreno y la altura de la celda. Los cliffs no son superficies seleccionables. El proyecto ya inicia en Godot 4.7 sin errores; la interacción real del puntero está pendiente de inspección manual.
+El hover solo detecta las caras superiores: PATH resalta en `#82BFE6`, GRASS en `#80E085` y MOUNTAIN en `#F5C25C`. En el preview aislado, el HUD muestra coordenadas locales; sobre el tablero M3 muestra las coordenadas axiales globales `(q,r)`, el terreno y la altura. Los cliffs no son superficies seleccionables. La interacción de M3 está pendiente de inspección manual en Godot.
+
+Estado del preview M3: el tablero inicial y las piezas confirmadas se dibujan desde `HexGrid`; el ghost se compone sobre esas celdas. Se distinguen visualmente los sockets PATH exactos y sus brazos laterales flexibles; el HUD informa coordenada axial global, terreno, altura, legalidad y cantidad de conexiones. El renderer permanece en polígonos placeholder.
 
 ## 7. Filosofía visual Urtuk-like
 - Grid estricta por debajo.
@@ -108,3 +119,10 @@ Toggle para mostrar:
 - endpoints;
 - ruta de cada spawn;
 - footprint de pieza.
+
+## 11. Navegación del mapa
+- `Camera2D` controla el tablero; `CanvasLayer` mantiene la interfaz fija.
+- Botón central del ratón + arrastre desplaza el mapa. La velocidad compensa el zoom actual.
+- Rueda del ratón acerca o aleja alrededor del cursor, dentro del rango provisional `0.45×`–`2.5×`.
+- `H` muestra u oculta el HUD. `R` devuelve el zoom a `1×` y centra la cámara sobre el tablero colocado.
+- Estos controles y límites son decisiones provisionales de interfaz, registradas en [ADR-0005](../decisiones/ADR-0005-navegacion-de-mapa.md).

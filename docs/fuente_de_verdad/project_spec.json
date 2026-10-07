@@ -18,8 +18,35 @@
     [-1, 1],
     [-1, 0]
   ],
+  "starting_piece_open_path_neighbor_axial": [0, -2],
   "terrain_piece_rotation_step_degrees": 60,
   "terrain_piece_rotation_positions": 6,
+  "terrain_piece_initial_content_ids": [
+    "straight",
+    "gentle_turn",
+    "hard_turn",
+    "fork",
+    "convergence"
+  ],
+  "terrain_piece_placement": {
+    "requires_unique_cells": true,
+    "requires_connected_footprint": true,
+    "requires_board_edge_adjacency": true,
+    "internal_path_edges_are_reciprocal": true,
+    "external_path_edges_allow_lateral_flexible_sockets": true,
+    "expansion_path_edges_require_complementary_socket": true,
+    "expansion_requires_existing_path_connection": true,
+    "global_spawn_to_base_route_validation_milestone": "M4"
+  },
+  "map_navigation": {
+    "pan": "middle_mouse_drag",
+    "zoom": "mouse_wheel_at_cursor",
+    "zoom_min": 0.45,
+    "zoom_max": 2.5,
+    "toggle_hud_key": "H",
+    "recenter_key": "R",
+    "hud_layer": "CanvasLayer"
+  },
   "terrain_preview_elevation_pixel_offset": 18,
   "terrain_preview_colors": {
     "PATH": "#59666E",
@@ -31,7 +58,7 @@
     "GRASS": "#80E085",
     "MOUNTAIN": "#F5C25C"
   },
-  "terrain_preview_hover_coordinates": "local axial q,r in upper HUD",
+  "terrain_preview_hover_coordinates": "global axial q,r in upper HUD on board",
   "terrain": {
     "PATH": {
       "elevation": 0,

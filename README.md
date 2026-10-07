@@ -8,8 +8,8 @@ El paquete de diseño vigente está en [`docs/fuente_de_verdad/`](docs/fuente_de
 
 ## Ejecutar
 
-Abre esta carpeta con Godot 4.7 y ejecuta `game/main/main.tscn`. La escena presenta la plantilla inicial de siete hexágonos, coloreada por terreno. Usa los botones o Q/E para rotarla en pasos de 60° entre sus seis orientaciones.
+Abre esta carpeta con Godot 4.7 y ejecuta `game/main/main.tscn`. La escena muestra el tablero inicial y las cinco piezas placeholder de M3. Elige una pieza en el HUD; mueve el cursor para ajustar su pivote al grid, gira con Q/E o con los botones, y confirma solo cuando el fantasma esté verde. El fantasma rojo explica por qué la colocación no es legal. Usa el botón central + arrastre para panear, la rueda para hacer zoom, `H` para ocultar/mostrar la interfaz y `R` para centrar el tablero. La ruta global spawn-base se añadirá en M4.
 
 ## Estado
 
-La implementación anterior de terreno 3×3×3 se retiró al adoptar el paquete nuevo. M1 y el código de M2 están implementados; la verificación visual en Godot queda pendiente. El preview dibuja alturas y cliffs temporales, resalta por terreno al pasar el cursor sobre una cara superior y muestra `(q,r)` en el HUD. Los hitos pendientes aparecen en el [documento de progreso](docs/fuente_de_verdad/09_PROGRESS.md).
+La implementación anterior de terreno 3×3×3 se retiró al adoptar el paquete nuevo. M1 y M2 están implementados; M3 ya incluye datos y flujo de colocación, pendiente de inspección en Godot. El preview dibuja alturas y cliffs temporales, resalta por terreno al pasar el cursor sobre una cara superior y muestra `(q,r)` global en el HUD. Los hitos pendientes aparecen en el [documento de progreso](docs/fuente_de_verdad/09_PROGRESS.md).

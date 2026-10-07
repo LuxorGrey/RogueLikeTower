@@ -6,6 +6,12 @@
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
 
+[node name="Camera2D" type="Camera2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(720, 450)
+zoom = Vector2(1, 1)
+enabled = true
+
 [node name="Board" type="Node2D" parent="."]
 
 [node name="PiecePreview" type="Node2D" parent="Board"]
@@ -17,12 +23,14 @@ script = ExtResource("2_preview")
 y_sort_enabled = true
 
 [node name="HUD" type="CanvasLayer" parent="."]
+unique_name_in_owner = true
 
 [node name="Panel" type="PanelContainer" parent="HUD"]
+unique_name_in_owner = true
 offset_left = 24.0
 offset_top = 24.0
 offset_right = 560.0
-offset_bottom = 300.0
+offset_bottom = 474.0
 
 [node name="Margin" type="MarginContainer" parent="HUD/Panel"]
 layout_mode = 2
@@ -38,12 +46,22 @@ theme_override_constants/separation = 8
 [node name="Title" type="Label" parent="HUD/Panel/Margin/Content"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 21
-text = "ROGUE TOWER · PIEZA DE TERRENO"
+text = "ROGUE TOWER · EXPANSIÓN DE TERRENO M3"
 
 [node name="PieceStatus" type="Label" parent="HUD/Panel/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Preparando pieza de siete hexágonos..."
+
+[node name="PieceSelector" type="OptionButton" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PlacementStatus" type="Label" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+text = "Elige una pieza para iniciar la colocación."
 
 [node name="RotationStatus" type="Label" parent="HUD/Panel/Margin/Content"]
 unique_name_in_owner = true
@@ -88,7 +106,26 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Rotar +60°"
 
+[node name="PlacementButtons" type="HBoxContainer" parent="HUD/Panel/Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ConfirmPlacement" type="Button" parent="HUD/Panel/Margin/Content/PlacementButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Confirmar pieza"
+
+[node name="CancelPlacement" type="Button" parent="HUD/Panel/Margin/Content/PlacementButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Cancelar"
+
 [node name="Hint" type="Label" parent="HUD/Panel/Margin/Content"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "Altura h0 / h1 / h2 · 18 px por nivel · Q / E o botones para girar"
+text = "Mueve el cursor para posicionar · verde válido / rojo inválido · Q / E gira · clic confirma · Esc o clic derecho cancela"
+
+[node name="CameraHint" type="Label" parent="HUD/Panel/Margin/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Mapa: rueda = zoom · botón central + arrastrar = mover · H = mostrar/ocultar interfaz · R = recentrar"

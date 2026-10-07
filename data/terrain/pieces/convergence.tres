@@ -1,0 +1,59 @@
+[gd_resource type="Resource" script_class="TerrainPieceData" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://game/board/terrain_piece_cell_data.gd" id="1_cell"]
+[ext_resource type="Script" path="res://game/board/terrain_piece_data.gd" id="2_piece"]
+
+[sub_resource type="Resource" id="Cell_center"]
+script = ExtResource("1_cell")
+local_coord = Vector2i(0, 0)
+terrain_type = 0
+elevation = 0
+path_edges = 42
+
+[sub_resource type="Resource" id="Cell_northwest"]
+script = ExtResource("1_cell")
+local_coord = Vector2i(0, -1)
+terrain_type = 1
+elevation = 1
+
+[sub_resource type="Resource" id="Cell_northeast"]
+script = ExtResource("1_cell")
+local_coord = Vector2i(1, -1)
+terrain_type = 0
+elevation = 0
+path_edges = 36
+
+[sub_resource type="Resource" id="Cell_east"]
+script = ExtResource("1_cell")
+local_coord = Vector2i(1, 0)
+terrain_type = 2
+elevation = 2
+
+[sub_resource type="Resource" id="Cell_southeast"]
+script = ExtResource("1_cell")
+local_coord = Vector2i(0, 1)
+terrain_type = 0
+elevation = 0
+path_edges = 18
+
+[sub_resource type="Resource" id="Cell_southwest"]
+script = ExtResource("1_cell")
+local_coord = Vector2i(-1, 1)
+terrain_type = 1
+elevation = 1
+
+[sub_resource type="Resource" id="Cell_west"]
+script = ExtResource("1_cell")
+local_coord = Vector2i(-1, 0)
+terrain_type = 0
+elevation = 0
+path_edges = 9
+
+[resource]
+script = ExtResource("2_piece")
+id = &"convergence"
+display_name = "Convergencia"
+weight = 1.0
+tags = Array[StringName]([&"path", &"convergence"])
+requires_path_connection = true
+cells = Array[ExtResource("1_cell")]([SubResource("Cell_center"), SubResource("Cell_northwest"), SubResource("Cell_northeast"), SubResource("Cell_east"), SubResource("Cell_southeast"), SubResource("Cell_southwest"), SubResource("Cell_west")])

@@ -15,9 +15,9 @@ El diseño base establece que cada expansión usa una pieza compuesta por siete 
 - El giro ocurre en seis pasos de 60° alrededor del origen. Las coordenadas y los bits de conexiones de camino giran juntos; el Resource original no se modifica.
 - Esta huella define la primera plantilla, no todas las piezas futuras: el modelo conserva la regla de admitir cualquier conjunto conectado de siete hexágonos.
 
-## Alcance pendiente
+## Alcance y estado de implementación
 
-La plantilla se presenta con el renderer placeholder definido en ADR-0003. Todavía no se coloca en el mapa ni se validan solapamientos, adyacencia, entradas de camino o rutas hacia la base; esos requisitos siguen en M3 del roadmap.
+La plantilla inicial se presenta con el renderer placeholder definido en ADR-0003. M3 conserva este Resource como tablero semilla y añadió cinco Resources expansivos con sockets de camino, validador, preview y confirmación/cancelación. La ruta global spawn-base sigue pendiente de M4 porque requiere `PathGraph`; la interacción M3 está pendiente de inspección en Godot.
 
 ## Referencias
 

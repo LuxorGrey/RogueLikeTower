@@ -21,17 +21,16 @@ Estos nombres/números son temporales y NO diseño final.
 8. Elite — test de presión.
 
 ## Piezas
-Crear inicialmente:
+El milestone M3 crea primero cinco plantillas de conexión para comprobar el contrato de colocación:
 - straight;
 - gentle_turn;
 - hard_turn;
 - fork;
 - convergence;
-- mountain_reward;
-- long_path;
-- build_space.
 
-Cada una = 7 celdas.
+Quedan reservadas para expansión del pool de contenido: `mountain_reward`, `long_path` y `build_space`. Son propuestas de contenido placeholder, no requisitos técnicos nuevos de M3.
+
+Cada pieza = 7 celdas conectadas, con coordenadas locales y sockets PATH configurables en `.tres`. Los sockets laterales opcionales se derivan de las salidas externas según [05_HEX_GRID_AND_TERRAIN.md](05_HEX_GRID_AND_TERRAIN.md). Todas las composiciones y pesos iniciales son temporales; la plantilla inicial del tablero está separada del pool de piezas.
 
 ## Cartas
 Ejemplos de sistema:

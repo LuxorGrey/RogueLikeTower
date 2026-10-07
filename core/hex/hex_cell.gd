@@ -11,6 +11,7 @@ var occupied: bool = false
 var tower_id: StringName = &""
 var piece_instance_id: int = -1
 var path_edges: int = 0
+var flexible_path_edges: int = 0
 var visual_variant: StringName = &""
 
 func _init(cell_coord: HexCoord) -> void:

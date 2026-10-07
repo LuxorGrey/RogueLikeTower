@@ -15,7 +15,7 @@ script = ExtResource("1_cell")
 local_coord = Vector2i(0, -1)
 terrain_type = 0
 elevation = 0
-path_edges = 2
+path_edges = 18
 
 [sub_resource type="Resource" id="TerrainPieceCell_grass_northeast"]
 script = ExtResource("1_cell")
@@ -51,4 +51,5 @@ elevation = 2
 script = ExtResource("2_piece")
 id = &"starting_7_hex"
 display_name = "Loseta inicial de 7 hexágonos"
+requires_path_connection = false
 cells = Array[ExtResource("1_cell")]([SubResource("TerrainPieceCell_path_center"), SubResource("TerrainPieceCell_path_northwest"), SubResource("TerrainPieceCell_grass_northeast"), SubResource("TerrainPieceCell_grass_east"), SubResource("TerrainPieceCell_mountain_southeast"), SubResource("TerrainPieceCell_grass_southwest"), SubResource("TerrainPieceCell_mountain_west")])

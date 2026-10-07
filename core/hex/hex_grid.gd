@@ -20,6 +20,17 @@ func add_cell(coord: HexCoord) -> bool:
 	cells[coord.to_key()] = HexCell.new(coord)
 	return true
 
+func add_cells(new_cells: Dictionary[Vector2i, HexCell]) -> bool:
+	if new_cells.is_empty():
+		return false
+	for key in new_cells:
+		var cell: HexCell = new_cells[key]
+		if cell == null or cell.coord == null or cell.coord.to_key() != key or cells.has(key):
+			return false
+	for key in new_cells:
+		cells[key] = new_cells[key]
+	return true
+
 func fill_disc(radius: int) -> void:
 	clear()
 	if radius < 0:

@@ -16,14 +16,46 @@ const PATH_HOVER_COLOR: Color = Color(0.51, 0.75, 0.90)
 const GRASS_HOVER_COLOR: Color = Color(0.50, 0.88, 0.52)
 const MOUNTAIN_HOVER_COLOR: Color = Color(0.96, 0.76, 0.36)
 const CLIFF_DARKEN_FACTOR: float = 0.38
+const CLIFF_MIN_SCREEN_DEPTH: float = 6.0
 
 var _piece_data: TerrainPieceData
 var _rotation_steps: int = 0
 var _display_cells: Array[TerrainPieceCellData] = []
+var _board_cells: Dictionary[Vector2i, HexCell] = {}
+var _board_mode: bool = false
+var _placement_active: bool = false
+var _placement_anchor: Vector2i = Vector2i.ZERO
+var _placement_is_valid: bool = false
+var _board_display_cells: Array[TerrainPieceCellData] = []
+var _ghost_coords: Dictionary[Vector2i, bool] = {}
 var _hovered_cell: TerrainPieceCellData
 
 func set_piece(piece_data: TerrainPieceData) -> void:
 	_piece_data = piece_data
+	_rebuild_display_cells()
+	_refresh_hovered_cell()
+	queue_redraw()
+
+func set_board_cells(board_cells: Dictionary[Vector2i, HexCell]) -> void:
+	_board_mode = true
+	_board_cells = board_cells
+	_rebuild_display_cells()
+	_refresh_hovered_cell()
+	queue_redraw()
+
+func set_placement_preview(
+	piece_data: TerrainPieceData,
+	anchor_coord: Vector2i,
+	rotation_steps: int,
+	is_valid: bool,
+	active: bool = true
+) -> void:
+	_board_mode = true
+	_piece_data = piece_data
+	_rotation_steps = posmod(rotation_steps, 6)
+	_placement_anchor = anchor_coord
+	_placement_is_valid = is_valid
+	_placement_active = active
 	_rebuild_display_cells()
 	_refresh_hovered_cell()
 	queue_redraw()
@@ -38,17 +70,17 @@ func _process(_delta: float) -> void:
 	_refresh_hovered_cell()
 
 func _draw() -> void:
-	if _piece_data == null:
+	if _piece_data == null and _board_cells.is_empty():
 		return
 
-	var cells := _display_cells
+	var cells: Array[TerrainPieceCellData] = _active_display_cells()
 	var cells_by_coord: Dictionary[Vector2i, TerrainPieceCellData] = {}
 	for cell in cells:
 		cells_by_coord[cell.local_coord] = cell
 
 	_draw_cliffs(cells, cells_by_coord)
 	for cell in cells:
-		_draw_cell_top(cell)
+		_draw_cell_top(cell, _ghost_coords.has(cell.local_coord))
 
 func _draw_cliffs(
 	cells: Array[TerrainPieceCellData],
@@ -64,24 +96,31 @@ func _draw_cliffs(
 			if cell.elevation <= neighbor_elevation:
 				continue
 
-			var high_corners := _hex_corners(_top_center(cell.local_coord, cell.elevation))
-			var low_corners := _hex_corners(_top_center(neighbor_coord, neighbor_elevation))
+			var high_center := _top_center(cell.local_coord, cell.elevation)
+			var high_corners := _hex_corners(high_center)
 			var edge_start: int = posmod(direction_index + 1, 6)
 			var edge_end: int = posmod(direction_index + 2, 6)
-			var low_end: int = posmod(direction_index + 4, 6)
-			var low_start: int = posmod(direction_index + 5, 6)
-			var cliff := PackedVector2Array([
-				high_corners[edge_start],
-				high_corners[edge_end],
-				low_corners[low_end],
-				low_corners[low_start],
-			])
-			draw_colored_polygon(cliff, _terrain_color(cell.terrain_type).darkened(CLIFF_DARKEN_FACTOR))
-			var closed_cliff := cliff.duplicate()
-			closed_cliff.append(cliff[0])
+			var face_offset := Vector2(
+				0.0,
+				float(cell.elevation - neighbor_elevation) * ELEVATION_PIXEL_OFFSET
+			)
+			var upper_start: Vector2 = high_corners[edge_start]
+			var upper_end: Vector2 = high_corners[edge_end]
+			var cliff_edge: Vector2 = upper_end - upper_start
+			if absf(cliff_edge.cross(face_offset)) < 0.01:
+				var edge_midpoint: Vector2 = (upper_start + upper_end) * 0.5
+				face_offset += (edge_midpoint - high_center).normalized() * CLIFF_MIN_SCREEN_DEPTH
+			var lower_start: Vector2 = upper_start + face_offset
+			var lower_end: Vector2 = upper_end + face_offset
+			var cliff_color := _terrain_color(cell.terrain_type).darkened(CLIFF_DARKEN_FACTOR)
+			# El grosor mínimo evita caras degeneradas cuando la arista y la altura
+			# proyectan en la misma dirección de pantalla.
+			draw_colored_polygon(PackedVector2Array([upper_start, upper_end, lower_end]), cliff_color)
+			draw_colored_polygon(PackedVector2Array([upper_start, lower_end, lower_start]), cliff_color)
+			var closed_cliff := PackedVector2Array([upper_start, upper_end, lower_end, lower_start, upper_start])
 			draw_polyline(closed_cliff, _terrain_color(cell.terrain_type).darkened(0.55), 1.5, true)
 
-func _draw_cell_top(cell: TerrainPieceCellData) -> void:
+func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 	var center := _top_center(cell.local_coord, cell.elevation)
 	var corners := _hex_corners(center)
 	var closed_corners := corners.duplicate()
@@ -91,12 +130,22 @@ func _draw_cell_top(cell: TerrainPieceCellData) -> void:
 	var fill_color := _terrain_color(cell.terrain_type)
 	var outline_color := HEX_OUTLINE
 	var outline_width := 2.0
+	var placement_tint: Color = Color(0.20, 0.92, 0.37) if _placement_is_valid else Color(0.96, 0.20, 0.16)
+	if is_ghost:
+		fill_color = fill_color.lerp(placement_tint, 0.48)
+		fill_color.a = 0.78
+		outline_color = placement_tint.lightened(0.12)
+		outline_width = 2.5
 	if is_hovered:
 		fill_color = _terrain_hover_color(cell.terrain_type)
+		if is_ghost:
+			fill_color = fill_color.lerp(placement_tint, 0.3)
+			fill_color.a = 0.88
 		outline_color = fill_color.lightened(0.18)
 		outline_width = 3.5
 	draw_colored_polygon(corners, fill_color)
 	draw_polyline(closed_corners, outline_color, outline_width, true)
+	_draw_path_edges(cell, center, corners, is_ghost)
 	draw_string(
 		ThemeDB.fallback_font,
 		center + Vector2(-HEX_RADIUS, 8.0),
@@ -143,8 +192,9 @@ func _refresh_hovered_cell() -> void:
 	queue_redraw()
 
 func _find_hovered_cell(mouse_position: Vector2) -> TerrainPieceCellData:
-	for cell_index in range(_display_cells.size() - 1, -1, -1):
-		var cell: TerrainPieceCellData = _display_cells[cell_index]
+	var cells := _active_display_cells()
+	for cell_index in range(cells.size() - 1, -1, -1):
+		var cell: TerrainPieceCellData = cells[cell_index]
 		var top_face := _hex_corners(_top_center(cell.local_coord, cell.elevation))
 		if Geometry2D.is_point_in_polygon(mouse_position, top_face):
 			return cell
@@ -152,10 +202,65 @@ func _find_hovered_cell(mouse_position: Vector2) -> TerrainPieceCellData:
 
 func _rebuild_display_cells() -> void:
 	_display_cells.clear()
-	if _piece_data == null:
-		return
-	_display_cells = _piece_data.rotated_cells(_rotation_steps)
+	_board_display_cells.clear()
+	_ghost_coords.clear()
+	if _piece_data != null:
+		_display_cells = _piece_data.rotated_cells(_rotation_steps)
 	_display_cells.sort_custom(Callable(self, "_sort_cells_back_to_front"))
+	if not _board_mode:
+		return
+	for coord in _board_cells:
+		var source: HexCell = _board_cells[coord]
+		if source == null:
+			continue
+		var cell := TerrainPieceCellData.new()
+		cell.local_coord = coord
+		cell.terrain_type = source.terrain_type
+		cell.elevation = source.elevation
+		cell.path_edges = source.path_edges
+		cell.flexible_path_edges = source.flexible_path_edges
+		cell.visual_variant = source.visual_variant
+		_board_display_cells.append(cell)
+	if _placement_active and _piece_data != null:
+		for local_cell in _display_cells:
+			var ghost_cell := local_cell.duplicate(true) as TerrainPieceCellData
+			if ghost_cell == null:
+				continue
+			ghost_cell.local_coord = _placement_anchor + local_cell.local_coord
+			_ghost_coords[ghost_cell.local_coord] = true
+			_board_display_cells.append(ghost_cell)
+	_board_display_cells.sort_custom(Callable(self, "_sort_cells_back_to_front"))
+
+func _active_display_cells() -> Array[TerrainPieceCellData]:
+	return _board_display_cells if _board_mode else _display_cells
+
+func _draw_path_edges(
+	cell: TerrainPieceCellData,
+	center: Vector2,
+	corners: PackedVector2Array,
+	is_ghost: bool
+) -> void:
+	if cell.terrain_type != HexCell.TerrainType.PATH:
+		return
+	var edge_color := Color(0.86, 0.91, 0.93, 0.9)
+	var flexible_edge_color := Color(0.86, 0.91, 0.93, 0.55)
+	if is_ghost:
+		var placement_tint: Color = Color(0.20, 0.92, 0.37) if _placement_is_valid else Color(0.96, 0.20, 0.16)
+		edge_color = placement_tint.lightened(0.28)
+		flexible_edge_color = edge_color.darkened(0.08)
+	for direction_index in range(HexCoord.DIRECTION_OFFSETS.size()):
+		var edge_bit: int = 1 << direction_index
+		var is_explicit_edge: bool = (cell.path_edges & edge_bit) != 0
+		var is_flexible_edge: bool = (cell.flexible_path_edges & edge_bit) != 0
+		if not is_explicit_edge and not is_flexible_edge:
+			continue
+		var edge_start: int = posmod(direction_index + 1, 6)
+		var edge_end: int = posmod(direction_index + 2, 6)
+		var edge_midpoint: Vector2 = (corners[edge_start] + corners[edge_end]) * 0.5
+		var socket_color: Color = edge_color if is_explicit_edge else flexible_edge_color
+		var line_width: float = 3.0 if is_explicit_edge else 2.5
+		draw_line(center, edge_midpoint, socket_color, line_width, true)
+		draw_circle(edge_midpoint, 3.5 if is_explicit_edge else 3.0, socket_color)
 
 func _is_hovered(cell: TerrainPieceCellData) -> bool:
 	if _hovered_cell == null:

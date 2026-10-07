@@ -10,7 +10,7 @@ El diseño requiere terreno 2D con alturas lógicas 0/1/2, desplazamiento visual
 ## Decisión
 
 - El preview dibuja la cara superior de cada hexágono en `posición_lógica - altura × 18 px`.
-- En cada borde que enfrenta una celda más baja se genera una cara lateral sombreada. En el preview aislado, una celda ausente equivale a altura 0.
+- En cada borde que enfrenta una celda más baja se genera una cara lateral sombreada mediante dos triángulos construidos desde la arista superior y el desplazamiento vertical del desnivel. Si ambos vectores se proyectan en la misma dirección y la cara colapsaría, se añade un grosor visual lateral mínimo. En el preview aislado, una celda ausente equivale a altura 0.
 - Las caras laterales se dibujan antes de las caras superiores; estas últimas se ordenan por Y de base y X como desempate.
 - El hover solo selecciona polígonos de caras superiores. PATH se ilumina `#82BFE6`, GRASS `#80E085` y MOUNTAIN `#F5C25C`; el HUD superior muestra la coordenada axial local `(q,r)`, terreno y altura.
 - Se usan polígonos y colores de depuración, no sprites temporales importados. El offset de 18 px y el sombreado pueden cambiar al integrar renderer, cámara y arte final.
