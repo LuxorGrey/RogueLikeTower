@@ -64,6 +64,10 @@ Los cliffs rellenan visualmente la diferencia con vecinos más bajos.
 
 La selección/click debe mapear correctamente al HexCoord aunque el sprite esté desplazado.
 
+En el preview M2, cada nivel desplaza temporalmente la cara superior 18 px hacia arriba. Los desniveles se dibujan como caras laterales sombreadas; en la pieza aislada, una celda vecina ausente se trata como altura 0. Las caras superiores se ordenan por profundidad lógica (Y de base, con X como desempate), y muestran `h0/h1/h2` para depuración. Este offset y estos polígonos son placeholders visuales, no especificación de arte final. La escena principal incluye un contenedor `Entities` con Y-sort habilitado para los actores.
+
+El hover solo detecta las caras superiores: PATH resalta en `#82BFE6`, GRASS en `#80E085` y MOUNTAIN en `#F5C25C`. El HUD superior muestra la coordenada axial local `(q,r)`, el terreno y la altura de la celda. Los cliffs no son superficies seleccionables. El proyecto ya inicia en Godot 4.7 sin errores; la interacción real del puntero está pendiente de inspección manual.
+
 ## 7. Filosofía visual Urtuk-like
 - Grid estricta por debajo.
 - Arte orgánico por encima.

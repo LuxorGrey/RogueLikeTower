@@ -17,7 +17,7 @@ El diseño base establece que cada expansión usa una pieza compuesta por siete 
 
 ## Alcance pendiente
 
-Este cambio solo presenta y rota la plantilla. Todavía no la coloca en el mapa ni valida solapamientos, adyacencia, entradas de camino o rutas hacia la base. Esos requisitos siguen en M3 del roadmap.
+La plantilla se presenta con el renderer placeholder definido en ADR-0003. Todavía no se coloca en el mapa ni se validan solapamientos, adyacencia, entradas de camino o rutas hacia la base; esos requisitos siguen en M3 del roadmap.
 
 ## Referencias
 

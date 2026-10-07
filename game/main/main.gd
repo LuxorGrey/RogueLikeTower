@@ -7,12 +7,15 @@ var _rotation_steps: int = 0
 @onready var _piece_preview: TerrainPiecePreview = %PiecePreview
 @onready var _piece_status: Label = %PieceStatus
 @onready var _rotation_status: Label = %RotationStatus
+@onready var _hover_status: Label = %HoverStatus
 @onready var _rotate_left: Button = %RotateLeft
 @onready var _rotate_right: Button = %RotateRight
 
 func _ready() -> void:
 	_rotate_left.pressed.connect(_rotate_by.bind(-1))
 	_rotate_right.pressed.connect(_rotate_by.bind(1))
+	_piece_preview.hover_changed.connect(_on_preview_hover_changed)
+	_piece_preview.hover_cleared.connect(_on_preview_hover_cleared)
 	var validation_errors := STARTING_PIECE.validate()
 	if not validation_errors.is_empty():
 		_piece_status.text = "Plantilla inválida: %s" % "; ".join(validation_errors)
@@ -63,3 +66,25 @@ func _update_status() -> void:
 		_rotation_steps * 60,
 		_rotation_steps + 1,
 	]
+
+func _on_preview_hover_changed(local_coord: Vector2i, terrain_type: int, elevation: int) -> void:
+	_hover_status.text = "Casilla local (q,r): (%d, %d) · %s · h%d" % [
+		local_coord.x,
+		local_coord.y,
+		_terrain_display_name(terrain_type),
+		elevation,
+	]
+
+func _on_preview_hover_cleared() -> void:
+	_hover_status.text = "Casilla local (q,r): — · hover sobre cara superior"
+
+func _terrain_display_name(terrain_type: int) -> String:
+	match terrain_type:
+		HexCell.TerrainType.PATH:
+			return "CAMINO"
+		HexCell.TerrainType.GRASS:
+			return "GRASS"
+		HexCell.TerrainType.MOUNTAIN:
+			return "MONTAÑA"
+		_:
+			return "DESCONOCIDO"

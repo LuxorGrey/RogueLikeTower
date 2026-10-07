@@ -145,6 +145,8 @@ No hacer que la lógica dependa de TileMapLayer. `HexGrid` es la autoridad.
 
 TileMapLayer puede utilizarse como renderer/optimización más adelante, pero para el vertical slice es válido renderizar cada celda mediante nodos/sprites si facilita cliffs y elevación. Mantener una interfaz de renderer para poder optimizar sin reescribir gameplay.
 
+El preview M2 actual dibuja polígonos vectoriales temporales desde `TerrainPieceCellData`: aplica offset por elevación, genera caras laterales en desniveles, ordena las caras superiores por profundidad lógica y detecta hover sobre esas caras. No depende de sprites finales. La escena principal incluye un contenedor `Entities` con Y-sort habilitado para actores.
+
 ## Save
 Guardar solo datos estables:
 - versión de save;

@@ -6,10 +6,15 @@
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
 
-[node name="PiecePreview" type="Node2D" parent="."]
+[node name="Board" type="Node2D" parent="."]
+
+[node name="PiecePreview" type="Node2D" parent="Board"]
 unique_name_in_owner = true
 position = Vector2(720, 500)
 script = ExtResource("2_preview")
+
+[node name="Entities" type="Node2D" parent="Board"]
+y_sort_enabled = true
 
 [node name="HUD" type="CanvasLayer" parent="."]
 
@@ -17,7 +22,7 @@ script = ExtResource("2_preview")
 offset_left = 24.0
 offset_top = 24.0
 offset_right = 560.0
-offset_bottom = 272.0
+offset_bottom = 300.0
 
 [node name="Margin" type="MarginContainer" parent="HUD/Panel"]
 layout_mode = 2
@@ -44,6 +49,11 @@ text = "Preparando pieza de siete hexágonos..."
 unique_name_in_owner = true
 layout_mode = 2
 text = "Orientación: 0° · posición 1/6"
+
+[node name="HoverStatus" type="Label" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Casilla local (q,r): — · hover sobre cara superior"
 
 [node name="Legend" type="HBoxContainer" parent="HUD/Panel/Margin/Content"]
 layout_mode = 2
@@ -81,4 +91,4 @@ text = "Rotar +60°"
 [node name="Hint" type="Label" parent="HUD/Panel/Margin/Content"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "Teclas Q / E · seis posiciones válidas para encajar en la cuadrícula"
+text = "Altura h0 / h1 / h2 · 18 px por nivel · Q / E o botones para girar"

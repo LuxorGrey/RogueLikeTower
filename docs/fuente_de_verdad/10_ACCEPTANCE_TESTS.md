@@ -24,6 +24,10 @@
 - Mountain = 2.
 - Torre conserva su HexCoord aunque sprite se dibuje elevado.
 - Click/selección funciona sobre sprite desplazado.
+- Hover sobre una cara superior resalta con un color que distingue PATH, GRASS y MOUNTAIN.
+- El HUD superior muestra coordenadas axiales locales `(q,r)`, terreno y altura; al salir del top face se limpia.
+- Un cliff no se detecta como cara superior.
+- Los hijos del contenedor `Entities` se ordenan por Y.
 
 ## Combat
 - Enemy llega a base y causa daño.

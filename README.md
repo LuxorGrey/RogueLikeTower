@@ -12,4 +12,4 @@ Abre esta carpeta con Godot 4.7 y ejecuta `game/main/main.tscn`. La escena prese
 
 ## Estado
 
-La implementación anterior de terreno 3×3×3 se retiró al adoptar el paquete nuevo. La grilla lógica M1 está implementada; el preview de terreno de M2/M3 está en progreso. Los hitos y verificaciones pendientes aparecen en el [documento de progreso](docs/fuente_de_verdad/09_PROGRESS.md).
+La implementación anterior de terreno 3×3×3 se retiró al adoptar el paquete nuevo. M1 y el código de M2 están implementados; la verificación visual en Godot queda pendiente. El preview dibuja alturas y cliffs temporales, resalta por terreno al pasar el cursor sobre una cara superior y muestra `(q,r)` en el HUD. Los hitos pendientes aparecen en el [documento de progreso](docs/fuente_de_verdad/09_PROGRESS.md).

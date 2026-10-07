@@ -29,6 +29,7 @@ Codex debe ejecutar estos milestones en orden. **No saltar al contenido final.**
 - Offset visual por elevación.
 - Cliff/fachada visual separada de la celda lógica.
 - Y-sort correcto para torres/enemigos/decoración.
+- Hover en cara superior con color por terreno y coordenadas axiales en HUD.
 - Resultado: pequeño mapa estilo "2.5D dibujado" sin 3D real.
 
 ## M3 — TerrainPiece de 7 hexágonos

@@ -1,56 +1,182 @@
 class_name TerrainPiecePreview
 extends Node2D
 
+signal hover_changed(local_coord: Vector2i, terrain_type: int, elevation: int)
+signal hover_cleared
+
 const HEX_RADIUS: float = 52.0
+const ELEVATION_PIXEL_OFFSET: float = 18.0
 const HEX_OUTLINE: Color = Color(0.82, 0.87, 0.84)
 const LIGHT_LABEL_COLOR: Color = Color(0.98, 0.98, 0.93)
 const DARK_LABEL_COLOR: Color = Color(0.12, 0.14, 0.13)
 const PATH_COLOR: Color = Color(0.35, 0.40, 0.43)
 const GRASS_COLOR: Color = Color(0.28, 0.57, 0.34)
 const MOUNTAIN_COLOR: Color = Color(0.63, 0.58, 0.48)
+const PATH_HOVER_COLOR: Color = Color(0.51, 0.75, 0.90)
+const GRASS_HOVER_COLOR: Color = Color(0.50, 0.88, 0.52)
+const MOUNTAIN_HOVER_COLOR: Color = Color(0.96, 0.76, 0.36)
+const CLIFF_DARKEN_FACTOR: float = 0.38
 
 var _piece_data: TerrainPieceData
 var _rotation_steps: int = 0
+var _display_cells: Array[TerrainPieceCellData] = []
+var _hovered_cell: TerrainPieceCellData
 
 func set_piece(piece_data: TerrainPieceData) -> void:
 	_piece_data = piece_data
+	_rebuild_display_cells()
+	_refresh_hovered_cell()
 	queue_redraw()
 
 func set_rotation_steps(steps: int) -> void:
 	_rotation_steps = posmod(steps, 6)
+	_rebuild_display_cells()
+	_refresh_hovered_cell()
 	queue_redraw()
+
+func _process(_delta: float) -> void:
+	_refresh_hovered_cell()
 
 func _draw() -> void:
 	if _piece_data == null:
 		return
 
-	for cell in _piece_data.rotated_cells(_rotation_steps):
-		var coord := HexCoord.new(cell.local_coord.x, cell.local_coord.y)
-		var center := HexMath.axial_to_world(coord, HEX_RADIUS)
-		var corners := _hex_corners(center)
-		var closed_corners := corners.duplicate()
-		closed_corners.append(corners[0])
-		var label_color := _label_color(cell.terrain_type)
-		draw_colored_polygon(corners, _terrain_color(cell.terrain_type))
-		draw_polyline(closed_corners, HEX_OUTLINE, 2.0, true)
-		draw_string(
-			ThemeDB.fallback_font,
-			center + Vector2(-HEX_RADIUS, 8.0),
-			_terrain_initial(cell.terrain_type),
-			HORIZONTAL_ALIGNMENT_CENTER,
-			HEX_RADIUS * 2.0,
-			24,
-			label_color
+	var cells := _display_cells
+	var cells_by_coord: Dictionary[Vector2i, TerrainPieceCellData] = {}
+	for cell in cells:
+		cells_by_coord[cell.local_coord] = cell
+
+	_draw_cliffs(cells, cells_by_coord)
+	for cell in cells:
+		_draw_cell_top(cell)
+
+func _draw_cliffs(
+	cells: Array[TerrainPieceCellData],
+	cells_by_coord: Dictionary[Vector2i, TerrainPieceCellData]
+) -> void:
+	for cell in cells:
+		for direction_index in range(HexCoord.DIRECTION_OFFSETS.size()):
+			var neighbor_coord: Vector2i = cell.local_coord + HexCoord.DIRECTION_OFFSETS[direction_index]
+			var neighbor_cell: TerrainPieceCellData = cells_by_coord.get(neighbor_coord) as TerrainPieceCellData
+			var neighbor_elevation: int = 0
+			if neighbor_cell != null:
+				neighbor_elevation = neighbor_cell.elevation
+			if cell.elevation <= neighbor_elevation:
+				continue
+
+			var high_corners := _hex_corners(_top_center(cell.local_coord, cell.elevation))
+			var low_corners := _hex_corners(_top_center(neighbor_coord, neighbor_elevation))
+			var edge_start: int = posmod(direction_index + 1, 6)
+			var edge_end: int = posmod(direction_index + 2, 6)
+			var low_end: int = posmod(direction_index + 4, 6)
+			var low_start: int = posmod(direction_index + 5, 6)
+			var cliff := PackedVector2Array([
+				high_corners[edge_start],
+				high_corners[edge_end],
+				low_corners[low_end],
+				low_corners[low_start],
+			])
+			draw_colored_polygon(cliff, _terrain_color(cell.terrain_type).darkened(CLIFF_DARKEN_FACTOR))
+			var closed_cliff := cliff.duplicate()
+			closed_cliff.append(cliff[0])
+			draw_polyline(closed_cliff, _terrain_color(cell.terrain_type).darkened(0.55), 1.5, true)
+
+func _draw_cell_top(cell: TerrainPieceCellData) -> void:
+	var center := _top_center(cell.local_coord, cell.elevation)
+	var corners := _hex_corners(center)
+	var closed_corners := corners.duplicate()
+	closed_corners.append(corners[0])
+	var is_hovered := _is_hovered(cell)
+	var label_color := _label_color(cell.terrain_type, is_hovered)
+	var fill_color := _terrain_color(cell.terrain_type)
+	var outline_color := HEX_OUTLINE
+	var outline_width := 2.0
+	if is_hovered:
+		fill_color = _terrain_hover_color(cell.terrain_type)
+		outline_color = fill_color.lightened(0.18)
+		outline_width = 3.5
+	draw_colored_polygon(corners, fill_color)
+	draw_polyline(closed_corners, outline_color, outline_width, true)
+	draw_string(
+		ThemeDB.fallback_font,
+		center + Vector2(-HEX_RADIUS, 8.0),
+		_terrain_initial(cell.terrain_type),
+		HORIZONTAL_ALIGNMENT_CENTER,
+		HEX_RADIUS * 2.0,
+		24,
+		label_color
+	)
+	draw_string(
+		ThemeDB.fallback_font,
+		center + Vector2(-HEX_RADIUS, 31.0),
+		"%d,%d · h%d" % [cell.local_coord.x, cell.local_coord.y, cell.elevation],
+		HORIZONTAL_ALIGNMENT_CENTER,
+		HEX_RADIUS * 2.0,
+		12,
+		label_color
+	)
+
+func _refresh_hovered_cell() -> void:
+	var next_hovered_cell := _find_hovered_cell(get_local_mouse_position())
+	if next_hovered_cell == null:
+		if _hovered_cell != null:
+			_hovered_cell = null
+			hover_cleared.emit()
+			queue_redraw()
+		return
+
+	if _hovered_cell != null:
+		var same_cell: bool = (
+			_hovered_cell.local_coord == next_hovered_cell.local_coord
+			and _hovered_cell.terrain_type == next_hovered_cell.terrain_type
+			and _hovered_cell.elevation == next_hovered_cell.elevation
 		)
-		draw_string(
-			ThemeDB.fallback_font,
-			center + Vector2(-HEX_RADIUS, 31.0),
-			"%d,%d" % [cell.local_coord.x, cell.local_coord.y],
-			HORIZONTAL_ALIGNMENT_CENTER,
-			HEX_RADIUS * 2.0,
-			13,
-			label_color
-		)
+		if same_cell:
+			return
+
+	_hovered_cell = next_hovered_cell
+	hover_changed.emit(
+		_hovered_cell.local_coord,
+		_hovered_cell.terrain_type,
+		_hovered_cell.elevation
+	)
+	queue_redraw()
+
+func _find_hovered_cell(mouse_position: Vector2) -> TerrainPieceCellData:
+	for cell_index in range(_display_cells.size() - 1, -1, -1):
+		var cell: TerrainPieceCellData = _display_cells[cell_index]
+		var top_face := _hex_corners(_top_center(cell.local_coord, cell.elevation))
+		if Geometry2D.is_point_in_polygon(mouse_position, top_face):
+			return cell
+	return null
+
+func _rebuild_display_cells() -> void:
+	_display_cells.clear()
+	if _piece_data == null:
+		return
+	_display_cells = _piece_data.rotated_cells(_rotation_steps)
+	_display_cells.sort_custom(Callable(self, "_sort_cells_back_to_front"))
+
+func _is_hovered(cell: TerrainPieceCellData) -> bool:
+	if _hovered_cell == null:
+		return false
+	return (
+		_hovered_cell.local_coord == cell.local_coord
+		and _hovered_cell.terrain_type == cell.terrain_type
+		and _hovered_cell.elevation == cell.elevation
+	)
+
+func _sort_cells_back_to_front(a: TerrainPieceCellData, b: TerrainPieceCellData) -> bool:
+	var a_base := _top_center(a.local_coord, 0)
+	var b_base := _top_center(b.local_coord, 0)
+	if not is_equal_approx(a_base.y, b_base.y):
+		return a_base.y < b_base.y
+	return a_base.x < b_base.x
+
+func _top_center(coord: Vector2i, elevation: int) -> Vector2:
+	var hex_coord := HexCoord.new(coord.x, coord.y)
+	var ground_position := HexMath.axial_to_world(hex_coord, HEX_RADIUS)
+	return ground_position + Vector2(0.0, -float(elevation) * ELEVATION_PIXEL_OFFSET)
 
 func _terrain_color(terrain_type: int) -> Color:
 	match terrain_type:
@@ -63,6 +189,17 @@ func _terrain_color(terrain_type: int) -> Color:
 		_:
 			return Color.MAGENTA
 
+func _terrain_hover_color(terrain_type: int) -> Color:
+	match terrain_type:
+		HexCell.TerrainType.PATH:
+			return PATH_HOVER_COLOR
+		HexCell.TerrainType.GRASS:
+			return GRASS_HOVER_COLOR
+		HexCell.TerrainType.MOUNTAIN:
+			return MOUNTAIN_HOVER_COLOR
+		_:
+			return Color.WHITE
+
 func _terrain_initial(terrain_type: int) -> String:
 	match terrain_type:
 		HexCell.TerrainType.PATH:
@@ -74,7 +211,9 @@ func _terrain_initial(terrain_type: int) -> String:
 		_:
 			return "?"
 
-func _label_color(terrain_type: int) -> Color:
+func _label_color(terrain_type: int, is_hovered: bool = false) -> Color:
+	if is_hovered:
+		return DARK_LABEL_COLOR
 	if terrain_type == HexCell.TerrainType.MOUNTAIN:
 		return DARK_LABEL_COLOR
 	return LIGHT_LABEL_COLOR
