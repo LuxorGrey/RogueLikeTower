@@ -1,0 +1,59 @@
+{
+  "engine": "Godot 4.7",
+  "language": "GDScript",
+  "rendering": "2D with logical elevation",
+  "genre": [
+    "Tower Defense",
+    "Roguelike"
+  ],
+  "demo_rounds": 20,
+  "grid": "hexagonal axial",
+  "terrain_piece_cell_count": 7,
+  "terrain_piece_initial_footprint_axial": [
+    [0, 0],
+    [0, -1],
+    [1, -1],
+    [1, 0],
+    [0, 1],
+    [-1, 1],
+    [-1, 0]
+  ],
+  "terrain_piece_rotation_step_degrees": 60,
+  "terrain_piece_rotation_positions": 6,
+  "terrain_preview_colors": {
+    "PATH": "#59666E",
+    "GRASS": "#479157",
+    "MOUNTAIN": "#A1947A"
+  },
+  "terrain": {
+    "PATH": {
+      "elevation": 0,
+      "buildable": false
+    },
+    "GRASS": {
+      "elevation_default": 1,
+      "buildable": true
+    },
+    "MOUNTAIN": {
+      "elevation": 2,
+      "buildable": true
+    }
+  },
+  "support_buildings": false,
+  "enemy_core_stats": [
+    "health",
+    "armor",
+    "regeneration"
+  ],
+  "run_phases": [
+    "RUN_SETUP",
+    "ROUND_PREP",
+    "COMBAT",
+    "ROUND_REWARD",
+    "TERRAIN_EXPANSION",
+    "CARD_OFFER",
+    "ROUND_TRANSITION",
+    "RUN_VICTORY",
+    "RUN_DEFEAT"
+  ]
+}

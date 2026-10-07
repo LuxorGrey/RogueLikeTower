@@ -1,0 +1,84 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/main/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://game/board/terrain_piece_preview.gd" id="2_preview"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_main")
+
+[node name="PiecePreview" type="Node2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(720, 500)
+script = ExtResource("2_preview")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Panel" type="PanelContainer" parent="HUD"]
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 560.0
+offset_bottom = 272.0
+
+[node name="Margin" type="MarginContainer" parent="HUD/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
+
+[node name="Content" type="VBoxContainer" parent="HUD/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="HUD/Panel/Margin/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+text = "ROGUE TOWER · PIEZA DE TERRENO"
+
+[node name="PieceStatus" type="Label" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Preparando pieza de siete hexágonos..."
+
+[node name="RotationStatus" type="Label" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Orientación: 0° · posición 1/6"
+
+[node name="Legend" type="HBoxContainer" parent="HUD/Panel/Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="PathLegend" type="Label" parent="HUD/Panel/Margin/Content/Legend"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.40, 0.43, 1)
+text = "● CAMINO"
+
+[node name="GrassLegend" type="Label" parent="HUD/Panel/Margin/Content/Legend"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.28, 0.57, 0.34, 1)
+text = "● GRASS"
+
+[node name="MountainLegend" type="Label" parent="HUD/Panel/Margin/Content/Legend"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.63, 0.58, 0.48, 1)
+text = "● MONTAÑA"
+
+[node name="RotationButtons" type="HBoxContainer" parent="HUD/Panel/Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RotateLeft" type="Button" parent="HUD/Panel/Margin/Content/RotationButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Rotar −60°"
+
+[node name="RotateRight" type="Button" parent="HUD/Panel/Margin/Content/RotationButtons"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Rotar +60°"
+
+[node name="Hint" type="Label" parent="HUD/Panel/Margin/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Teclas Q / E · seis posiciones válidas para encajar en la cuadrícula"
