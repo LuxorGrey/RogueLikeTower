@@ -5,9 +5,10 @@ enum DamageTag {
 	PHYSICAL = 1,
 	FIRE = 2,
 	ARCANE = 4,
+	POISON = 8,
 }
 
-const ALL_DAMAGE_TAGS: int = DamageTag.PHYSICAL | DamageTag.FIRE | DamageTag.ARCANE
+const ALL_DAMAGE_TAGS: int = DamageTag.PHYSICAL | DamageTag.FIRE | DamageTag.ARCANE | DamageTag.POISON
 
 var raw_damage: float = 0.0
 var source_id: int = 0

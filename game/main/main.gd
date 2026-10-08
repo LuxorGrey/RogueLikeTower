@@ -13,12 +13,18 @@ const FIRST_WAVE: WaveData = preload("res://data/waves/round_01.tres")
 const M7_DAMAGE_TEST_WAVE: WaveData = preload("res://data/waves/m7_damage_test.tres")
 const M8_STATUS_TEST_WAVE: WaveData = preload("res://data/waves/m8_status_test.tres")
 const RUN_ECONOMY_DATA: Resource = preload("res://data/run/run_economy_m9.tres")
-const BASIC_BOLT: TowerData = preload("res://data/towers/basic_bolt.tres")
+const BALLISTA: TowerData = preload("res://data/towers/ballista.tres")
+const MORTAR: TowerData = preload("res://data/towers/mortar.tres")
+const TESLA_COIL: TowerData = preload("res://data/towers/tesla_coil.tres")
+const FROST_KEEP: TowerData = preload("res://data/towers/frost_keep.tres")
+const FLAME_THROWER: TowerData = preload("res://data/towers/flame_thrower.tres")
+const POISON_SPRAYER: TowerData = preload("res://data/towers/poison_sprayer.tres")
+const SHREDDER: TowerData = preload("res://data/towers/shredder.tres")
 const ARMOR_PIERCING_BOLT: TowerData = preload("res://data/towers/armor_piercing_bolt.tres")
 const SAPPING_BOLT: TowerData = preload("res://data/towers/sapping_bolt.tres")
 const STATUS_PROBE: TowerData = preload("res://data/towers/status_probe_m8.tres")
-const TOWER_PROFILES: Array[TowerData] = [BASIC_BOLT, ARMOR_PIERCING_BOLT, SAPPING_BOLT, STATUS_PROBE]
-const TOWER_SHORT_NAMES: PackedStringArray = ["BOLT", "PERFORADORA", "DRENADORA", "SONDA M8"]
+const TOWER_PROFILES: Array[TowerData] = [BALLISTA, MORTAR, TESLA_COIL, FROST_KEEP, FLAME_THROWER, POISON_SPRAYER, SHREDDER]
+const TOWER_SHORT_NAMES: PackedStringArray = ["BALLISTA", "MORTERO", "TESLA", "FRÍO", "FUEGO", "VENENO", "SHREDDER"]
 const MIN_CAMERA_ZOOM: float = 0.45
 const MAX_CAMERA_ZOOM: float = 2.5
 const CAMERA_ZOOM_STEP: float = 1.12
@@ -36,7 +42,7 @@ var _path_debug_visible: bool = false
 var _placement_enabled: bool = true
 var _selected_wave: WaveData = FIRST_WAVE
 var _active_wave_name: String = "Oleada básica"
-var _selected_tower_data: TowerData = BASIC_BOLT
+var _selected_tower_data: TowerData = BALLISTA
 var _combat_debug_timer: float = 0.0
 var _hovered_coord: Vector2i = Vector2i.ZERO
 var _has_hovered_cell: bool = false
@@ -59,6 +65,9 @@ var _has_hovered_cell: bool = false
 	%TowerShortcut2,
 	%TowerShortcut3,
 	%TowerShortcut4,
+	%TowerShortcut5,
+	%TowerShortcut6,
+	%TowerShortcut7,
 ]
 @onready var _camera: Camera2D = %Camera2D
 @onready var _rotate_left: Button = %RotateLeft
@@ -187,6 +196,24 @@ func _input(event: InputEvent) -> void:
 					get_viewport().set_input_as_handled()
 				KEY_4:
 					_select_tower_and_build(3)
+					get_viewport().set_input_as_handled()
+				KEY_5:
+					_select_tower_and_build(4)
+					get_viewport().set_input_as_handled()
+				KEY_6:
+					_select_tower_and_build(5)
+					get_viewport().set_input_as_handled()
+				KEY_7:
+					_select_tower_and_build(6)
+					get_viewport().set_input_as_handled()
+				KEY_8:
+					_select_debug_tower_and_build(ARMOR_PIERCING_BOLT)
+					get_viewport().set_input_as_handled()
+				KEY_9:
+					_select_debug_tower_and_build(SAPPING_BOLT)
+					get_viewport().set_input_as_handled()
+				KEY_0:
+					_select_debug_tower_and_build(STATUS_PROBE)
 					get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
@@ -434,7 +461,16 @@ func _handle_board_click() -> void:
 func _select_tower_and_build(index: int) -> void:
 	if index < 0 or index >= TOWER_PROFILES.size():
 		return
-	var chosen_tower: TowerData = TOWER_PROFILES[index]
+	_select_tower_profile_and_build(TOWER_PROFILES[index])
+
+func _select_debug_tower_and_build(tower_data: TowerData) -> void:
+	_select_tower_profile_and_build(tower_data)
+	if _build_controller.is_build_mode() and _selected_tower_data == tower_data:
+		_build_status.text = "Perfil de diagnóstico: %s · clic en Grass/Montaña libre." % tower_data.display_name
+
+func _select_tower_profile_and_build(chosen_tower: TowerData) -> void:
+	if chosen_tower == null:
+		return
 	if _build_controller.is_build_mode() and _selected_tower_data == chosen_tower:
 		_build_controller.cancel_build_mode()
 		_build_status.text = "Construcción cancelada."
@@ -478,7 +514,7 @@ func _populate_targeting_modes() -> void:
 	_tower_targeting_mode.select(TowerData.TargetingMode.FIRST_PROGRESS)
 
 func _populate_wave_options() -> void:
-	_selected_tower_data = BASIC_BOLT
+	_selected_tower_data = BALLISTA
 	_wave_selector.clear()
 	_wave_selector.add_item("Oleada básica · 3 enemigos")
 	_wave_selector.add_item("Diagnóstico · blindado regenerador")
@@ -545,17 +581,19 @@ func _refresh_tower_controls() -> void:
 		var shortcut_button: Button = _tower_shortcut_buttons[index]
 		var tower_data: TowerData = TOWER_PROFILES[index]
 		var mana_suffix: String = " · %.1f maná/ataque" % tower_data.mana_cost_per_attack if tower_data.mana_cost_per_attack > 0.0 else ""
-		shortcut_button.text = "%d · %s\n%d oro%s" % [
+		shortcut_button.text = "%d · %s\n%d oro" % [
 			index + 1,
 			TOWER_SHORT_NAMES[index],
 			tower_data.build_cost,
-			mana_suffix,
 		]
-		shortcut_button.tooltip_text = "%s · coste %d oro%s" % [
+		shortcut_button.tooltip_text = "%s\n%s · coste %d oro%s · %s" % [
 			tower_data.display_name,
+			tower_data.role_summary,
 			tower_data.build_cost,
 			mana_suffix,
+			_tower_attack_description(tower_data),
 		]
+		shortcut_button.add_theme_color_override("font_color", tower_data.visual_color)
 		shortcut_button.disabled = not can_build or not bool(_run_economy.call("can_afford_gold", tower_data.build_cost))
 		shortcut_button.set_pressed_no_signal(
 			build_mode and TOWER_PROFILES[index] == _selected_tower_data
@@ -581,9 +619,24 @@ func _refresh_tower_controls() -> void:
 	if build_mode:
 		_tower_status.text = "Construir: %s · selecciona Grass o Montaña" % _selected_tower_data.display_name
 	elif selected == null:
-		_tower_status.text = "Torre: ninguna · pulsa 1–4 para construir"
+		_tower_status.text = "Torre: ninguna · pulsa 1–7 para construir"
 	else:
 		_tower_status.text = selected.get_summary()
+
+func _tower_attack_description(tower_data: TowerData) -> String:
+	match tower_data.attack_pattern:
+		TowerData.AttackPattern.SINGLE_TARGET:
+			return "objetivo único"
+		TowerData.AttackPattern.AREA:
+			return "área %.1f hex" % tower_data.attack_area_radius_hexes
+		TowerData.AttackPattern.CHAIN:
+			return "hasta %d blancos" % tower_data.max_targets
+		TowerData.AttackPattern.CONE:
+			return "cono %.0f°" % tower_data.cone_angle_degrees
+		TowerData.AttackPattern.SAWBLADE:
+			return "hoja perforante por PATH"
+		_:
+			return "ataque no configurado"
 
 func _start_selected_wave() -> void:
 	if not _path_graph.is_valid or not _can_start_wave():
@@ -697,6 +750,8 @@ func _refresh_combat_debug() -> void:
 	var estimate: Variant = _damage_service.call("preview_damage", target, tower.create_damage_packet())
 	var status_summaries: PackedStringArray = target.get_active_status_summaries()
 	var status_text: String = "Estados: —" if status_summaries.is_empty() else "Estados: %s" % " · ".join(status_summaries)
+	var tower_data: TowerData = tower.get_tower_data()
+	var damage_tag_name: String = tower.get_damage_tag_name(tower_data.damage_tags)
 	var mana_text: String = ""
 	if tower.get_mana_cost_per_attack() > 0.0:
 		mana_text = " · sin maná" if tower.is_mana_blocked() else " · %.1f maná/ataque" % tower.get_mana_cost_per_attack()
@@ -704,7 +759,7 @@ func _refresh_combat_debug() -> void:
 	var effective_regen: float = target.get_effective_regen_per_second()
 	if not is_equal_approx(effective_regen, target.get_regen_per_second()):
 		regen_text = " → %.1f/s" % effective_regen
-	_combat_debug.text = "%s · %d/%d HP · arm %d · regen %.1f%s · impacto %d%s\n%s" % [
+	_combat_debug.text = "%s · %d/%d HP · arm %d · regen %.1f%s · impacto %d %s%s\n%s" % [
 		target.get_display_name(),
 		target.get_current_health(),
 		target.get_maximum_health(),
@@ -712,6 +767,7 @@ func _refresh_combat_debug() -> void:
 		target.get_regen_per_second(),
 		regen_text,
 		int(estimate.get("calculated_health_damage")),
+		damage_tag_name,
 		mana_text,
 		status_text,
 	]

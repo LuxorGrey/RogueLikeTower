@@ -132,9 +132,9 @@
     "debug_wave_id": "m7_damage_test",
     "temporary_tower_profiles": ["basic_bolt", "armor_piercing_bolt_m7_test", "sapping_bolt_m7_test"],
     "debug_tower_hotkeys": {
-      "1": "basic_bolt",
-      "2": "armor_piercing_bolt_m7_test",
-      "3": "sapping_bolt_m7_test"
+      "1": "ballista_demo",
+      "8": "armor_piercing_bolt_m7_test",
+      "9": "sapping_bolt_m7_test"
     },
     "debug_wave_replay": true,
     "terrain_diagnostics_toggle_key": "F3",
@@ -162,10 +162,10 @@
       "bleed": {"duration_seconds": 1.5, "tick_interval_seconds": 0.75, "damage_per_tick": 1.5, "damage_tag": "PHYSICAL", "max_stacks": 4, "stack_rule": "ADD_STACKS"}
     },
     "debug_tower_hotkeys": {
-      "1": "basic_bolt",
-      "2": "armor_piercing_bolt_m7_test",
-      "3": "sapping_bolt_m7_test",
-      "4": "status_probe_m8_test"
+      "1": "ballista_demo",
+      "8": "armor_piercing_bolt_m7_test",
+      "9": "sapping_bolt_m7_test",
+      "0": "status_probe_m8_test"
     },
     "balance_confirmed": false
   },
@@ -184,14 +184,25 @@
     "support_buildings": false,
     "balance_confirmed": false
   },
-  "m14_demo_tower_roster_proposal": [
-    {"id": "ballista_role", "working_name": "Ballesta", "parallel": "Rogue Tower Ballista", "role": "single_target_generalist"},
-    {"id": "mortar_role", "working_name": "Mortero", "parallel": "Rogue Tower Mortar", "role": "long_range_slow_area_anti_armor"},
-    {"id": "tesla_role", "working_name": "Bobina Tesla", "parallel": "Rogue Tower Tesla Coil", "role": "multi_target_mana_attack"},
-    {"id": "frost_role", "working_name": "Guardafría", "parallel": "Rogue Tower Frost Keep", "role": "mana_slow"},
-    {"id": "flame_role", "working_name": "Lanzallamas", "parallel": "Rogue Tower Flame Thrower", "role": "fire_burn_status"},
-    {"id": "poison_role", "working_name": "Pulverizador venenoso", "parallel": "Rogue Tower Poison Sprayer", "role": "poison_damage_over_time"}
-  ],
+  "m9_5_demo_tower_roster": {
+    "user_confirmed": true,
+    "profiles": [
+      {"id": "ballista_demo", "working_name": "Ballesta", "parallel": "Rogue Tower Ballista", "role": "single_target_generalist", "attack_pattern": "SINGLE_TARGET"},
+      {"id": "mortar_demo", "working_name": "Mortero", "parallel": "Rogue Tower Mortar", "role": "long_range_slow_area_anti_armor", "attack_pattern": "AREA"},
+      {"id": "tesla_coil_demo", "working_name": "Bobina Tesla", "parallel": "Rogue Tower Tesla Coil", "role": "multi_target_mana_attack", "attack_pattern": "CHAIN"},
+      {"id": "frost_keep_demo", "working_name": "Guardafría", "parallel": "Rogue Tower Frost Keep", "role": "mana_slow", "attack_pattern": "AREA"},
+      {"id": "flame_thrower_demo", "working_name": "Lanzallamas", "parallel": "Rogue Tower Flame Thrower", "role": "fire_burn_status", "attack_pattern": "CONE"},
+      {"id": "poison_sprayer_demo", "working_name": "Pulverizador venenoso", "parallel": "Rogue Tower Poison Sprayer", "role": "poison_damage_over_time", "attack_pattern": "CONE"},
+      {"id": "shredder_demo", "working_name": "Trituradora", "parallel": "Rogue Tower Shredder", "role": "path_following_piercing_bleed", "attack_pattern": "SAWBLADE"}
+    ],
+    "main_hotkeys": ["1", "2", "3", "4", "5", "6", "7"],
+    "diagnostic_hotkeys": {"8": "armor_piercing_bolt_m7_test", "9": "sapping_bolt_m7_test", "0": "status_probe_m8_test"},
+    "build_costs_provisional": {"ballista_demo": 30, "mortar_demo": 80, "tesla_coil_demo": 70, "frost_keep_demo": 50, "flame_thrower_demo": 65, "poison_sprayer_demo": 65, "shredder_demo": 100},
+    "mana_cost_per_attack_provisional": {"tesla_coil_demo": 5.0, "frost_keep_demo": 0.65, "flame_thrower_demo": 1.0, "poison_sprayer_demo": 1.0},
+    "poison_damage_tag": 8,
+    "enemy_shield_model": false,
+    "balance_confirmed": false
+  },
   "run_phases": [
     "RUN_SETUP",
     "ROUND_PREP",

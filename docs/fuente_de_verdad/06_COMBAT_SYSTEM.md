@@ -58,7 +58,8 @@ La fórmula final sigue abierta. Para prototipo usar bonus configurable y docume
 Catálogo reducido inicial:
 - Slow: modifica velocidad.
 - Burn: DoT.
-- Bleed: tercer ejemplo DoT provisional; no fija la lista final.
+- Bleed: DoT que permanece en las pruebas M8 y se asigna a Shredder.
+- Poison: DoT/tag de daño añadido para el roster M9.5; parámetros provisionales.
 
 El framework debe soportar:
 - duración;
@@ -75,6 +76,14 @@ El framework debe soportar:
 Reglas runtime: `REFRESH` conserva una acumulación; `ADD_STACKS` incrementa hasta `max_stacks`. En ambos casos la aplicación renueva la duración completa y conserva la fase del próximo tick. Una reaplicación del mismo ID usa los datos y el origen de la aplicación más reciente. Cada enemigo tiene sus propios contadores aunque varios compartan el mismo Resource. Los multiplicadores de velocidad se combinan por mínimo; `1.0` significa velocidad normal. Un estado desaparece al llegar su duración a cero y todos se limpian cuando el enemigo muere o llega a la base. Los ticks aplicados antes de que expire el tiempo restante se resuelven; no hay daño periódico después de la expiración.
 
 La muestra de M8 contiene Slow (`0.55×`, dura 2.5 s y refresca), Burn (2 de daño de Fuego por segundo, dura 5 s y acumula hasta 3) y Bleed (1.5 de daño Físico cada 0.75 s, dura 1.5 s y acumula hasta 4). La Sonda ataca cada 2 s para dejar visible el hueco de expiración de Bleed, mientras Slow se refresca y Burn alcanza el máximo de stacks. No se implementan resistencias de estados: el diseño no ofrece todavía resistencias configurables y el roadmap las deja condicionales. La torre `Sonda de estados M8` y el enemigo lento de 180 HP son solo fixtures de depuración, no balance ni catálogo final. ADR-0012 detalla estas elecciones; `10_ACCEPTANCE_TESTS.md` define los criterios de aceptación manual.
+
+## M9.5 — Roster de siete torres
+
+La demo incorpora Ballista, Mortar, Tesla Coil, Frost Keep, Flame Thrower, Poison Sprayer y Shredder antes de las cartas. Los perfiles viven en `TowerData`; los atajos `1–7` muestran nombre, color placeholder y coste. `8`, `9` y `0` retienen Perforadora, Drenadora y Sonda para diagnóstico M7/M8.
+
+Los patrones disponibles son objetivo único, área centrada en el objetivo, cadena limitada y cono. Shredder lanza una hoja visual que se dirige al punto más cercano de la ruta restante del objetivo, recorre los waypoints hacia la base, impacta cada enemigo una sola vez, reduce el daño bruto en 1 por impacto y aplica Bleed mediante `DamageService`. No conserva una rama al encontrar bifurcaciones: sigue la ruta del objetivo inicial. El Mortar resuelve el impacto como hitscan/AoE, no como proyectil balístico.
+
+Poison es el tag 8 de daño; `EnemyData.poison_damage_multiplier` participa junto con los otros multiplicadores por tag y el `DamageService` central. Los valores iniciales de Poison/Bleed, costes, cadencias, radios y conos son provisionales configurables. Los escudos de la tabla comunitaria no se implementan: el modelo actual solo define vida, armadura y regeneración. Ver [ADR-0014](../decisiones/ADR-0014-roster-jugable-de-siete-torres.md) y [11_INITIAL_CONTENT_PLACEHOLDERS.md](11_INITIAL_CONTENT_PLACEHOLDERS.md).
 
 ## Torre
 Estados:

@@ -147,6 +147,9 @@ func get_damage_tag_multiplier(damage_tags: int) -> float:
 func get_route_progress() -> float:
 	return _path_follower.get_progress_ratio()
 
+func get_remaining_route_waypoints() -> Array[Vector2]:
+	return _path_follower.get_remaining_route_waypoints()
+
 func _draw() -> void:
 	draw_circle(Vector2.ZERO, 13.0, BODY_OUTLINE)
 	draw_circle(Vector2.ZERO, 10.0, BODY_COLOR)
@@ -158,6 +161,8 @@ func _draw() -> void:
 		draw_arc(Vector2.ZERO, 18.0, 0.0, TAU, 24, Color(1.0, 0.48, 0.18, 0.9), 2.0, true)
 	if active_status_ids.has("bleed"):
 		draw_arc(Vector2.ZERO, 21.0, 0.0, TAU, 24, Color(0.92, 0.31, 0.43, 0.9), 2.0, true)
+	if active_status_ids.has("poison"):
+		draw_arc(Vector2.ZERO, 24.0, 0.0, TAU, 24, Color(0.42, 0.88, 0.36, 0.9), 2.0, true)
 	if _enemy_data == null:
 		return
 	var ratio: float = _health.get_health_ratio()

@@ -4,6 +4,7 @@ extends Resource
 const DAMAGE_TAG_PHYSICAL: int = 1
 const DAMAGE_TAG_FIRE: int = 2
 const DAMAGE_TAG_ARCANE: int = 4
+const DAMAGE_TAG_POISON: int = 8
 
 @export var id: StringName = &""
 @export var display_name: String = ""
@@ -16,6 +17,7 @@ const DAMAGE_TAG_ARCANE: int = 4
 @export_range(0.0, 4.0, 0.05) var physical_damage_multiplier: float = 1.0
 @export_range(0.0, 4.0, 0.05) var fire_damage_multiplier: float = 1.0
 @export_range(0.0, 4.0, 0.05) var arcane_damage_multiplier: float = 1.0
+@export_range(0.0, 4.0, 0.05) var poison_damage_multiplier: float = 1.0
 @export var scene: PackedScene
 
 func validate() -> PackedStringArray:
@@ -40,6 +42,7 @@ func validate() -> PackedStringArray:
 		physical_damage_multiplier < 0.0 or physical_damage_multiplier > 4.0
 		or fire_damage_multiplier < 0.0 or fire_damage_multiplier > 4.0
 		or arcane_damage_multiplier < 0.0 or arcane_damage_multiplier > 4.0
+		or poison_damage_multiplier < 0.0 or poison_damage_multiplier > 4.0
 	):
 		errors.append("Los multiplicadores de daño recibido deben estar entre 0 y 4.")
 	if scene == null:
@@ -54,4 +57,6 @@ func get_damage_tag_multiplier(damage_tags: int) -> float:
 		multiplier *= fire_damage_multiplier
 	if (damage_tags & DAMAGE_TAG_ARCANE) != 0:
 		multiplier *= arcane_damage_multiplier
+	if (damage_tags & DAMAGE_TAG_POISON) != 0:
+		multiplier *= poison_damage_multiplier
 	return multiplier

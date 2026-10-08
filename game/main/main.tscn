@@ -144,7 +144,7 @@ text = "Mejorar"
 unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 2
-text = "Atajos 1–4: elegir torre · clic en una casilla libre para construir"
+text = "Torres 1–7 · Diagnóstico 8–0 · clic en Grass/Montaña libre para construir"
 
 [node name="TerrainPanel" type="PanelContainer" parent="HUD"]
 unique_name_in_owner = true
@@ -266,9 +266,9 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -330.0
+offset_left = -470.0
 offset_top = -92.0
-offset_right = 330.0
+offset_right = 470.0
 offset_bottom = -20.0
 
 [node name="Margin" type="MarginContainer" parent="HUD/TowerToolbar"]
@@ -284,36 +284,60 @@ theme_override_constants/separation = 8
 
 [node name="TowerShortcut1" type="Button" parent="HUD/TowerToolbar/Margin/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 56)
+custom_minimum_size = Vector2(118, 56)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
-text = "1 · BOLT\nFísico"
+text = "1 · BALLISTA\n30 oro"
 theme_override_colors/font_color = Color(0.54, 0.86, 0.96, 1)
 
 [node name="TowerShortcut2" type="Button" parent="HUD/TowerToolbar/Margin/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 56)
+custom_minimum_size = Vector2(118, 56)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
-text = "2 · PERFORADORA\nAntiblindaje"
+text = "2 · MORTERO\n80 oro"
 theme_override_colors/font_color = Color(1, 0.74, 0.43, 1)
 
 [node name="TowerShortcut3" type="Button" parent="HUD/TowerToolbar/Margin/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 56)
+custom_minimum_size = Vector2(118, 56)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
-text = "3 · DRENADORA\nArcano · anti-regen"
+text = "3 · TESLA\n70 oro"
 theme_override_colors/font_color = Color(0.78, 0.66, 1, 1)
 
 [node name="TowerShortcut4" type="Button" parent="HUD/TowerToolbar/Margin/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 56)
+custom_minimum_size = Vector2(118, 56)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
-text = "4 · ESTADOS\nLento · fuego · sangrado"
+text = "4 · FRÍO\n50 oro"
 theme_override_colors/font_color = Color(0.55, 0.88, 0.78, 1)
+
+[node name="TowerShortcut5" type="Button" parent="HUD/TowerToolbar/Margin/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(118, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "5 · FUEGO\n65 oro"
+
+[node name="TowerShortcut6" type="Button" parent="HUD/TowerToolbar/Margin/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(118, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "6 · VENENO\n65 oro"
+
+[node name="TowerShortcut7" type="Button" parent="HUD/TowerToolbar/Margin/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(118, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "7 · SHREDDER\n100 oro"

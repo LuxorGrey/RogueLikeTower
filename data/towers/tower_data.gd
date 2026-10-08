@@ -2,23 +2,35 @@ class_name TowerData
 extends Resource
 
 enum TargetingMode { FIRST_PROGRESS, LAST_PROGRESS, HIGHEST_HEALTH, HIGHEST_ARMOR }
+enum AttackPattern { SINGLE_TARGET, AREA, CHAIN, CONE, SAWBLADE }
+enum VisualArchetype { BALLISTA, MORTAR, TESLA, FROST, FLAME, POISON, SHREDDER }
 
 const GRASS_FLAG: int = 1 << HexCell.TerrainType.GRASS
 const MOUNTAIN_FLAG: int = 1 << HexCell.TerrainType.MOUNTAIN
 const DAMAGE_TAG_PHYSICAL: int = 1
 const DAMAGE_TAG_FIRE: int = 2
 const DAMAGE_TAG_ARCANE: int = 4
-const ALL_DAMAGE_TAGS: int = DAMAGE_TAG_PHYSICAL | DAMAGE_TAG_FIRE | DAMAGE_TAG_ARCANE
+const DAMAGE_TAG_POISON: int = 8
+const ALL_DAMAGE_TAGS: int = DAMAGE_TAG_PHYSICAL | DAMAGE_TAG_FIRE | DAMAGE_TAG_ARCANE | DAMAGE_TAG_POISON
 
 @export var id: StringName = &""
 @export var display_name: String = ""
+@export_multiline var role_summary: String = ""
 @export_range(0, 1000000, 1) var build_cost: int = 0
 @export var upgrade_costs: Array[int] = [20, 35]
 @export_range(0.0, 100000.0, 0.5) var mana_cost_per_attack: float = 0.0
 @export_range(1, 100000, 1) var base_damage: int = 10
 @export_range(0.05, 100.0, 0.05) var attack_rate: float = 1.0
 @export_range(0.25, 20.0, 0.25) var range_hexes: float = 3.0
-@export_flags("Físico", "Fuego", "Arcano") var damage_tags: int = DAMAGE_TAG_PHYSICAL
+@export_enum("Single target", "Area", "Chain", "Cone", "Sawblade along path")
+var attack_pattern: int = AttackPattern.SINGLE_TARGET
+@export_range(0.0, 10.0, 0.1) var attack_area_radius_hexes: float = 0.0
+@export_range(1, 12, 1) var max_targets: int = 1
+@export_range(1.0, 180.0, 1.0) var cone_angle_degrees: float = 60.0
+@export_range(50.0, 2000.0, 10.0) var projectile_speed: float = 560.0
+@export_range(1.0, 64.0, 1.0) var projectile_hit_radius: float = 16.0
+@export_range(0.0, 100.0, 0.5) var pierce_damage_loss_per_hit: float = 1.0
+@export_flags("Físico", "Fuego", "Arcano", "Veneno") var damage_tags: int = DAMAGE_TAG_PHYSICAL
 @export_range(0.0, 4.0, 0.05) var armor_multiplier: float = 1.0
 @export_range(0.0, 4.0, 0.05) var health_multiplier: float = 1.0
 @export_range(0.0, 1.0, 0.05) var regen_counter_strength: float = 0.0
@@ -33,6 +45,9 @@ var targeting_mode: int = TargetingMode.FIRST_PROGRESS
 @export_range(0, 100000, 1) var upgrade_damage_per_level: int = 5
 @export_range(0.0, 10.0, 0.05) var upgrade_range_per_level: float = 0.25
 @export_range(0.0, 10.0, 0.05) var upgrade_attack_rate_per_level: float = 0.0
+@export_enum("Ballista", "Mortar", "Tesla Coil", "Frost Keep", "Flame Thrower", "Poison Sprayer", "Shredder")
+var visual_archetype: int = VisualArchetype.BALLISTA
+@export var visual_color: Color = Color(0.28, 0.64, 0.78)
 @export var scene: PackedScene
 
 func validate() -> PackedStringArray:
@@ -51,6 +66,20 @@ func validate() -> PackedStringArray:
 		errors.append("La cadencia de la torre debe ser mayor que cero.")
 	if range_hexes <= 0.0:
 		errors.append("El alcance de la torre debe ser mayor que cero.")
+	if attack_pattern < AttackPattern.SINGLE_TARGET or attack_pattern > AttackPattern.SAWBLADE:
+		errors.append("El patrón de ataque configurado no existe.")
+	if attack_pattern == AttackPattern.AREA and attack_area_radius_hexes <= 0.0:
+		errors.append("Un ataque de área requiere un radio positivo.")
+	if attack_pattern == AttackPattern.SAWBLADE and (projectile_speed <= 0.0 or projectile_hit_radius <= 0.0):
+		errors.append("La hoja de ruta requiere velocidad y radio de impacto positivos.")
+	if pierce_damage_loss_per_hit < 0.0:
+		errors.append("La pérdida de daño por perforación no puede ser negativa.")
+	if max_targets < 1 or max_targets > 12:
+		errors.append("El ataque debe admitir entre 1 y 12 objetivos.")
+	if cone_angle_degrees <= 0.0 or cone_angle_degrees > 180.0:
+		errors.append("El ángulo de cono debe estar entre 0 y 180 grados.")
+	if visual_archetype < VisualArchetype.BALLISTA or visual_archetype > VisualArchetype.SHREDDER:
+		errors.append("El arquetipo visual de la torre no existe.")
 	if damage_tags <= 0 or (damage_tags & ~ALL_DAMAGE_TAGS) != 0:
 		errors.append("La torre debe tener tipos de daño válidos.")
 	if armor_multiplier < 0.0 or armor_multiplier > 4.0 or health_multiplier < 0.0 or health_multiplier > 4.0:

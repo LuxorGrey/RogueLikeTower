@@ -79,7 +79,7 @@ Principio: un jugador nuevo probablemente no completa la run. Las derrotas alime
 
 ## 7. Decisiones todavía abiertas
 No inventar como definitivas:
-- Número final de torres.
+- Número total de torres del juego final. Para la demo, el usuario confirmó siete perfiles jugables en ADR-0014.
 - Roster final de enemigos.
 - Lista final de status.
 - Fórmula exacta de altura.

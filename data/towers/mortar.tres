@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="TowerData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://data/towers/tower_data.gd" id="1_tower_data"]
+[ext_resource type="PackedScene" path="res://game/towers/tower.tscn" id="2_tower_scene"]
+
+[resource]
+script = ExtResource("1_tower_data")
+id = &"mortar_demo"
+display_name = "Mortero · Mortar"
+role_summary = "Largo alcance · explosión antiarmadura"
+build_cost = 80
+upgrade_costs = Array[int]([30, 45])
+base_damage = 20
+attack_rate = 0.6
+range_hexes = 10.0
+attack_pattern = 1
+attack_area_radius_hexes = 1.6
+damage_tags = 1
+armor_multiplier = 0.55
+health_multiplier = 1.0
+allowed_terrain_mask = 6
+targeting_mode = 0
+max_level = 3
+upgrade_damage_per_level = 6
+upgrade_range_per_level = 0.25
+visual_archetype = 1
+visual_color = Color(0.66, 0.46, 0.29, 1)
+scene = ExtResource("2_tower_scene")

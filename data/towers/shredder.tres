@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="TowerData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://data/towers/tower_data.gd" id="1_tower_data"]
+[ext_resource type="PackedScene" path="res://game/towers/tower.tscn" id="2_tower_scene"]
+[ext_resource type="Resource" path="res://data/status_effects/bleed.tres" id="3_bleed"]
+
+[resource]
+script = ExtResource("1_tower_data")
+id = &"shredder_demo"
+display_name = "Trituradora · Shredder"
+role_summary = "Hoja que recorre PATH · perfora y causa Bleed"
+build_cost = 100
+upgrade_costs = Array[int]([100, 200])
+base_damage = 10
+attack_rate = 0.0833333
+range_hexes = 5.0
+attack_pattern = 4
+projectile_speed = 560.0
+projectile_hit_radius = 16.0
+pierce_damage_loss_per_hit = 1.0
+damage_tags = 1
+armor_multiplier = 1.0
+health_multiplier = 2.0
+status_effects = Array[Resource]([ExtResource("3_bleed")])
+allowed_terrain_mask = 6
+targeting_mode = 0
+max_level = 3
+upgrade_damage_per_level = 2
+upgrade_range_per_level = 0.25
+visual_archetype = 6
+visual_color = Color(0.72, 0.75, 0.63, 1)
+scene = ExtResource("2_tower_scene")

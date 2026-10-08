@@ -96,15 +96,17 @@ damage_profile
 targeting_mode
 status_to_apply
 mana_cost_or_usage (si aplica)
+attack_pattern + area/chain/cone parameters
+visual_archetype + placeholder_color
 allowed_terrain
 height_rules
 unlock_id
 scene
 ```
 
-M6 implementa en `data/towers/tower_data.gd`: `id`, `display_name`, `base_damage`, `attack_rate`, `range_hexes`, `allowed_terrain_mask`, `targeting_mode`, `height_range_bonus_per_level`, `max_level`, los incrementos configurables de mejora y `scene`. M9 incorpora `build_cost`, `upgrade_costs` (un coste por cada nivel alcanzable) y `mana_cost_per_attack`; la compra y la mejora se verifican antes de cambiar ocupación o nivel. La instancia del Resource es configuración compartida y no se modifica al comprar/mejorar. M7 añade `damage_tags` (bitmask de Físico/Fuego/Arcano), `armor_multiplier`, `health_multiplier`, `regen_counter_strength` y `regen_counter_duration`; los perfiles se copian a un `DamagePacket` por impacto, no se muta el Resource compartido.
+M6 implementa en `data/towers/tower_data.gd`: `id`, `display_name`, `base_damage`, `attack_rate`, `range_hexes`, `allowed_terrain_mask`, `targeting_mode`, `height_range_bonus_per_level`, `max_level`, los incrementos configurables de mejora y `scene`. M9 incorpora `build_cost`, `upgrade_costs` (un coste por cada nivel alcanzable) y `mana_cost_per_attack`; la compra y la mejora se verifican antes de cambiar ocupación o nivel. La instancia del Resource es configuración compartida y no se modifica al comprar/mejorar. M7 añade `damage_tags`, `armor_multiplier`, `health_multiplier`, `regen_counter_strength` y `regen_counter_duration`; los perfiles se copian a un `DamagePacket` por impacto, no se muta el Resource compartido. M9.5 añade `role_summary`, `attack_pattern` (`SINGLE_TARGET`, `AREA`, `CHAIN`, `CONE`, `SAWBLADE`), parámetros de radio/límite/ángulo, velocidad/radio de impacto/pérdida de daño de proyectil y `visual_archetype`/`visual_color`. `Tower` usa esos datos para impactos de objetivo único, área instantánea, cadena, cono o una hoja que recorre el PATH restante de su objetivo. Las cifras actuales de los siete Resources son placeholders de gameplay, no balance final.
 
-Las prioridades implementadas son `FIRST_PROGRESS`, `LAST_PROGRESS`, `HIGHEST_HEALTH` y `HIGHEST_ARMOR`. El progreso sale del índice y avance normalizados de `PathFollowerComponent`. Desde M7, el ataque hitscan llama a `DamageService.apply_damage`; no hay fórmulas de mitigación en `Tower`.
+Las prioridades implementadas son `FIRST_PROGRESS`, `LAST_PROGRESS`, `HIGHEST_HEALTH` y `HIGHEST_ARMOR`. El progreso sale del índice y avance normalizados de `PathFollowerComponent`. Todo daño directo llama a `DamageService.apply_damage`; `Tower` no contiene fórmulas de mitigación. Shredder usa el mismo servicio para cada enemigo que atraviesa y aplica su payload Bleed. El tipo Poison (bit 8) se añade en M9.5 con multiplicador recibido configurable en `EnemyData`; Shield queda fuera porque los enemigos no tienen ese stat/barra.
 
 ## EnemyData : Resource
 ```text
@@ -121,12 +123,13 @@ status_resistances
 physical_damage_multiplier
 fire_damage_multiplier
 arcane_damage_multiplier
+poison_damage_multiplier
 scene
 ```
 
-M5 implementó `id`, `display_name`, `max_health`, `move_speed`, `base_damage` y `scene`. M6 añadió `armor` para priorizar objetivos. M7 activa `armor`, `regen_per_second` y `physical_damage_multiplier`, `fire_damage_multiplier` y `arcane_damage_multiplier` en `data/enemies/enemy_data.gd`; los valores recibidos por múltiples tags se multiplican. La oleada M7 usa `data/enemies/armored_regenerator.tres` como fixture de diagnóstico. M9 añade `kill_reward`, que `WaveDirector` concede una vez tras la señal de derrota; llegar a base no paga la recompensa. Los stats, resistencias y recompensas de fixtures son provisionales.
+M5 implementó `id`, `display_name`, `max_health`, `move_speed`, `base_damage` y `scene`. M6 añadió `armor` para priorizar objetivos. M7 activa `armor`, `regen_per_second` y multiplicadores recibidos de daño Physical/Fire/Arcane; M9.5 añade `poison_damage_multiplier` para el tag Poison. Los valores recibidos por múltiples tags se multiplican. La oleada M7 usa `data/enemies/armored_regenerator.tres` como fixture de diagnóstico. M9 añade `kill_reward`, que `WaveDirector` concede una vez tras la señal de derrota; llegar a base no paga la recompensa. Los stats, resistencias y recompensas de fixtures son provisionales.
 
-`defense_tags` y `status_resistances` del modelo conceptual siguen reservados para decisiones de contenido/status posteriores; M7 implementa los tres multiplicadores explícitos de daño recibido y no interpreta esos campos como activos.
+`defense_tags` y `status_resistances` del modelo conceptual siguen reservados para decisiones de contenido/status posteriores; no hay stat ni barra de escudo de enemigo implementada.
 
 ## BaseData / HealthComponent
 
@@ -160,7 +163,7 @@ damage_per_tick
 damage_tags
 ```
 
-M8 implementa estos campos en `game/combat/status_effect_data.gd`. `duration` siempre es positiva; `tick_interval` puede ser cero si el efecto no hace daño periódico. `REFRESH` deja una acumulación y reinicia la duración; `ADD_STACKS` suma una acumulación hasta `max_stacks` y también reinicia la duración. Reaplicar no reinicia el reloj del próximo tick. El daño por tick se multiplica por las acumulaciones y pasa por `DamageService` con los `damage_tags` configurados. Si una torre reaplica el mismo ID, la definición y el `source_id` activos pasan a ser los de la aplicación más reciente. Cada enemigo guarda sus propias instancias runtime y no modifica los Resources compartidos. Los efectos de velocidad se combinan usando el menor `speed_multiplier`; al quitar el último efecto se restaura `1.0`. Muerte y llegada a la base limpian todos los estados. El campo de resistencias queda fuera mientras el diseño no lo necesite. Slow, Burn y Bleed son fixtures provisionales; Bleed no fija la lista final.
+M8 implementa estos campos en `game/combat/status_effect_data.gd`. `duration` siempre es positiva; `tick_interval` puede ser cero si el efecto no hace daño periódico. `REFRESH` deja una acumulación y reinicia la duración; `ADD_STACKS` suma una acumulación hasta `max_stacks` y también reinicia la duración. Reaplicar no reinicia el reloj del próximo tick. El daño por tick se multiplica por las acumulaciones y pasa por `DamageService` con los `damage_tags` configurados. Si una torre reaplica el mismo ID, la definición y el `source_id` activos pasan a ser los de la aplicación más reciente. Cada enemigo guarda sus propias instancias runtime y no modifica los Resources compartidos. Los efectos de velocidad se combinan usando el menor `speed_multiplier`; al quitar el último efecto se restaura `1.0`. Muerte y llegada a la base limpian todos los estados. El campo de resistencias queda fuera mientras el diseño no lo necesite. Slow, Burn, Bleed y el Poison de M9.5 son datos configurables provisionales; Bleed mantiene el fixture M8 y también se usa en Shredder.
 
 `TowerData.status_effects` es una lista de estos Resources, sin IDs repetidos dentro de una torre. `DamagePacket.status_payloads` transporta esa lista del impacto al `DamageService`, y `DamageResult.applied_status_ids` permite auditar qué se aplicó.
 

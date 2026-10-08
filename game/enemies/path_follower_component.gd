@@ -18,6 +18,14 @@ func get_waypoint_index() -> int:
 func get_waypoints() -> Array[Vector2]:
 	return _waypoints.duplicate()
 
+func get_remaining_route_waypoints() -> Array[Vector2]:
+	if _actor == null or not is_instance_valid(_actor) or _waypoints.is_empty():
+		return []
+	var remaining: Array[Vector2] = [_actor.global_position]
+	for index in range(_waypoint_index, _waypoints.size()):
+		remaining.append(_waypoints[index])
+	return remaining
+
 func get_progress_ratio() -> float:
 	if _waypoints.is_empty():
 		return 0.0

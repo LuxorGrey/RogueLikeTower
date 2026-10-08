@@ -6,7 +6,8 @@ enum StackRule { REFRESH, ADD_STACKS }
 const DAMAGE_TAG_PHYSICAL: int = 1
 const DAMAGE_TAG_FIRE: int = 2
 const DAMAGE_TAG_ARCANE: int = 4
-const ALL_DAMAGE_TAGS: int = DAMAGE_TAG_PHYSICAL | DAMAGE_TAG_FIRE | DAMAGE_TAG_ARCANE
+const DAMAGE_TAG_POISON: int = 8
+const ALL_DAMAGE_TAGS: int = DAMAGE_TAG_PHYSICAL | DAMAGE_TAG_FIRE | DAMAGE_TAG_ARCANE | DAMAGE_TAG_POISON
 
 @export var id: StringName = &""
 @export var display_name: String = ""
@@ -16,7 +17,7 @@ const ALL_DAMAGE_TAGS: int = DAMAGE_TAG_PHYSICAL | DAMAGE_TAG_FIRE | DAMAGE_TAG_
 @export_enum("Refresh", "Add stacks") var stack_rule: int = StackRule.REFRESH
 @export_range(0.05, 1.0, 0.05) var speed_multiplier: float = 1.0
 @export_range(0.0, 10000.0, 0.1) var damage_per_tick: float = 0.0
-@export_flags("Físico", "Fuego", "Arcano") var damage_tags: int = DAMAGE_TAG_PHYSICAL
+@export_flags("Físico", "Fuego", "Arcano", "Veneno") var damage_tags: int = DAMAGE_TAG_PHYSICAL
 
 func validate() -> PackedStringArray:
 	var errors := PackedStringArray()

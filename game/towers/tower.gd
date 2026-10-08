@@ -7,15 +7,14 @@ signal stats_changed(level: int)
 const ELEVATION_PIXEL_OFFSET: float = 18.0
 const SCAN_INTERVAL: float = 0.1
 const SHOT_FLASH_DURATION: float = 0.12
-const BASE_COLOR: Color = Color(0.28, 0.64, 0.78)
-const BASE_DARK_COLOR: Color = Color(0.10, 0.28, 0.36)
-const TURRET_COLOR: Color = Color(0.70, 0.87, 0.90)
 const RANGE_COLOR: Color = Color(0.30, 0.80, 1.0, 0.48)
 const SHOT_COLOR: Color = Color(1.0, 0.91, 0.46, 0.96)
 const DAMAGE_PACKET_SCRIPT: Script = preload("res://game/combat/damage_packet.gd")
+const SAWBLADE_SCRIPT: Script = preload("res://game/towers/sawblade_projectile.gd")
 const DAMAGE_TAG_PHYSICAL: int = 1
 const DAMAGE_TAG_FIRE: int = 2
 const DAMAGE_TAG_ARCANE: int = 4
+const DAMAGE_TAG_POISON: int = 8
 
 var cell_coord: Vector2i = Vector2i.ZERO
 var elevation: int = 0
@@ -33,6 +32,7 @@ var _scan_timer: float = 0.0
 var _attack_cooldown: float = 0.0
 var _shot_flash_timer: float = 0.0
 var _shot_target_position: Vector2 = Vector2.ZERO
+var _shot_target_positions: Array[Vector2] = []
 var _turret_angle: float = -PI * 0.5
 var _is_mana_blocked: bool = false
 
@@ -152,14 +152,33 @@ func get_summary() -> String:
 	var mana_summary: String = ""
 	if _tower_data.mana_cost_per_attack > 0.0:
 		mana_summary = " · %.1f maná/ataque" % _tower_data.mana_cost_per_attack
-	return "%s · N%d/%d · daño %d · alcance %.1f hex%s" % [
+	return "%s · N%d/%d · daño %d · alcance %.1f hex · %s · %s%s" % [
 		_tower_data.display_name,
 		level,
 		_tower_data.max_level,
 		get_current_damage(),
 		get_current_range_hexes(),
+		get_attack_pattern_name(),
+		get_damage_tag_name(_tower_data.damage_tags),
 		mana_summary,
 	]
+
+func get_attack_pattern_name() -> String:
+	if _tower_data == null:
+		return "sin ataque"
+	match _tower_data.attack_pattern:
+		TowerData.AttackPattern.SINGLE_TARGET:
+			return "objetivo único"
+		TowerData.AttackPattern.AREA:
+			return "área"
+		TowerData.AttackPattern.CHAIN:
+			return "hasta %d objetivos" % _tower_data.max_targets
+		TowerData.AttackPattern.CONE:
+			return "cono %.0f°" % _tower_data.cone_angle_degrees
+		TowerData.AttackPattern.SAWBLADE:
+			return "hoja perforante · sangrado"
+		_:
+			return "desconocido"
 
 func get_damage_tag_name(tags: int) -> String:
 	var names := PackedStringArray()
@@ -169,6 +188,8 @@ func get_damage_tag_name(tags: int) -> String:
 		names.append("fuego")
 	if (tags & DAMAGE_TAG_ARCANE) != 0:
 		names.append("arcano")
+	if (tags & DAMAGE_TAG_POISON) != 0:
+		names.append("veneno")
 	return " + ".join(names) if not names.is_empty() else "sin tipo"
 
 func get_targeting_mode_name(mode: int = -1) -> String:
@@ -257,14 +278,114 @@ func _fire_at_target() -> void:
 			return
 	_is_mana_blocked = false
 	var target: Enemy = _current_target
-	var result: Variant = _damage_service.call("apply_damage", target, create_damage_packet())
 	_attack_cooldown = 1.0 / maxf(get_current_attack_rate(), 0.001)
-	if result == null or not bool(result.get("is_valid")):
+	if _tower_data.attack_pattern == TowerData.AttackPattern.SAWBLADE:
+		if not _launch_sawblade(target):
+			_attack_cooldown = 0.25
+			return
+		_shot_target_position = target.global_position - global_position
+		_shot_target_positions = [_shot_target_position]
+		_shot_flash_timer = SHOT_FLASH_DURATION
+		attack_fired.emit(target, get_current_damage())
+		queue_redraw()
 		return
-	_shot_target_position = target.global_position - global_position
+	var packet: RefCounted = create_damage_packet()
+	var targets: Array[Enemy] = _get_attack_targets(target)
+	var did_hit: bool = false
+	_shot_target_positions.clear()
+	for affected_target in targets:
+		if affected_target == null or not is_instance_valid(affected_target):
+			continue
+		if affected_target.state != Enemy.State.MOVING:
+			continue
+		var result: Variant = _damage_service.call("apply_damage", affected_target, packet)
+		if result == null or not bool(result.get("is_valid")):
+			continue
+		var target_offset: Vector2 = affected_target.global_position - global_position
+		_shot_target_positions.append(target_offset)
+		if not did_hit:
+			_shot_target_position = target_offset
+			did_hit = true
+		attack_fired.emit(affected_target, int(result.get("health_damage")))
+	if not did_hit:
+		return
 	_shot_flash_timer = SHOT_FLASH_DURATION
-	attack_fired.emit(target, int(result.get("health_damage")))
 	queue_redraw()
+
+func _get_attack_targets(primary_target: Enemy) -> Array[Enemy]:
+	var targets: Array[Enemy] = [primary_target]
+	match _tower_data.attack_pattern:
+		TowerData.AttackPattern.SINGLE_TARGET:
+			return targets
+		TowerData.AttackPattern.AREA:
+			var radius: float = _tower_data.attack_area_radius_hexes * _hex_neighbor_distance()
+			var radius_squared: float = radius * radius
+			for node in get_tree().get_nodes_in_group(&"enemies"):
+				var candidate := node as Enemy
+				if candidate == null or not is_instance_valid(candidate) or candidate == primary_target:
+					continue
+				if candidate.state == Enemy.State.MOVING and candidate.global_position.distance_squared_to(primary_target.global_position) <= radius_squared:
+					targets.append(candidate)
+			return targets
+		TowerData.AttackPattern.CHAIN:
+			var candidates: Array[Enemy] = []
+			for node in get_tree().get_nodes_in_group(&"enemies"):
+				var candidate := node as Enemy
+				if candidate == null or not is_instance_valid(candidate) or candidate == primary_target:
+					continue
+				if candidate.state == Enemy.State.MOVING and _is_target_in_range(candidate):
+					candidates.append(candidate)
+			candidates.sort_custom(func(a: Enemy, b: Enemy) -> bool:
+				return primary_target.global_position.distance_squared_to(a.global_position) < primary_target.global_position.distance_squared_to(b.global_position)
+			)
+			for index in mini(candidates.size(), _tower_data.max_targets - 1):
+				targets.append(candidates[index])
+			return targets
+		TowerData.AttackPattern.CONE:
+			var forward: Vector2 = global_position.direction_to(primary_target.global_position)
+			var half_angle: float = deg_to_rad(_tower_data.cone_angle_degrees * 0.5)
+			var range_squared: float = get_current_range_pixels() * get_current_range_pixels()
+			for node in get_tree().get_nodes_in_group(&"enemies"):
+				var candidate := node as Enemy
+				if candidate == null or not is_instance_valid(candidate) or candidate == primary_target:
+					continue
+				if candidate.state != Enemy.State.MOVING:
+					continue
+				var offset: Vector2 = candidate.global_position - global_position
+				if offset.length_squared() <= range_squared and absf(forward.angle_to(offset.normalized())) <= half_angle:
+					targets.append(candidate)
+	return targets
+
+func _launch_sawblade(target: Enemy) -> bool:
+	if target == null or not is_instance_valid(target) or not target.has_method("get_remaining_route_waypoints"):
+		return false
+	var route: Array[Vector2] = target.call("get_remaining_route_waypoints")
+	if route.size() < 2:
+		return false
+	var projectile := SAWBLADE_SCRIPT.new() as Node2D
+	if projectile == null:
+		return false
+	var entities: Node = get_parent()
+	if entities == null:
+		projectile.free()
+		return false
+	entities.add_child(projectile)
+	if not bool(projectile.call(
+		"configure",
+		global_position,
+		route,
+		create_damage_packet(),
+		_damage_service,
+		_tower_data.projectile_speed,
+		_tower_data.projectile_hit_radius,
+		_tower_data.pierce_damage_loss_per_hit
+	)):
+		projectile.queue_free()
+		return false
+	return true
+
+func _hex_neighbor_distance() -> float:
+	return HexMath.axial_to_world(HexCoord.new(1, 0), _hex_radius).length()
 
 func _draw() -> void:
 	if _tower_data == null:
@@ -279,10 +400,47 @@ func _draw() -> void:
 		Vector2(10.0, 5.0),
 		Vector2(-10.0, 5.0),
 	])
-	draw_colored_polygon(pedestal, BASE_DARK_COLOR)
-	draw_circle(Vector2(0.0, -19.0), 12.0, BASE_COLOR)
-	draw_circle(Vector2(0.0, -19.0), 7.0, TURRET_COLOR)
-	var barrel_end: Vector2 = Vector2.RIGHT.rotated(_turret_angle) * 20.0 + Vector2(0.0, -19.0)
-	draw_line(Vector2(0.0, -19.0), barrel_end, BASE_DARK_COLOR, 5.0, true)
+	var body_color: Color = _tower_data.visual_color
+	var dark_color: Color = body_color.darkened(0.55)
+	var light_color: Color = body_color.lightened(0.4)
+	draw_colored_polygon(pedestal, dark_color)
+	var turret_center := Vector2(0.0, -19.0)
+	draw_circle(turret_center, 12.0, body_color)
+	match _tower_data.visual_archetype:
+		TowerData.VisualArchetype.BALLISTA:
+			draw_arc(turret_center, 13.0, -PI * 0.5, PI * 0.5, 16, light_color, 3.0, true)
+			draw_line(turret_center + Vector2(-11.0, 0.0), turret_center + Vector2(11.0, 0.0), dark_color, 2.0, true)
+			draw_line(turret_center, turret_center + Vector2.RIGHT.rotated(_turret_angle) * 21.0, light_color, 2.0, true)
+		TowerData.VisualArchetype.MORTAR:
+			draw_line(turret_center, turret_center + Vector2.RIGHT.rotated(_turret_angle) * 22.0, dark_color, 9.0, true)
+			draw_line(turret_center, turret_center + Vector2.RIGHT.rotated(_turret_angle) * 19.0, light_color, 4.0, true)
+		TowerData.VisualArchetype.TESLA:
+			draw_circle(turret_center, 5.0, light_color)
+			draw_line(turret_center + Vector2(-8.0, -8.0), turret_center + Vector2(-8.0, -18.0), light_color, 2.0, true)
+			draw_line(turret_center + Vector2(0.0, -8.0), turret_center + Vector2(0.0, -22.0), light_color, 2.0, true)
+			draw_line(turret_center + Vector2(8.0, -8.0), turret_center + Vector2(8.0, -18.0), light_color, 2.0, true)
+			draw_polyline(PackedVector2Array([turret_center + Vector2(-4.0, -21.0), turret_center + Vector2(2.0, -16.0), turret_center + Vector2(-2.0, -11.0), turret_center + Vector2(5.0, -7.0)]), Color.WHITE, 2.0, true)
+		TowerData.VisualArchetype.FROST:
+			for spoke in 3:
+				var direction := Vector2.RIGHT.rotated(float(spoke) * PI / 3.0)
+				draw_line(turret_center - direction * 10.0, turret_center + direction * 10.0, light_color, 2.5, true)
+				draw_line(turret_center + direction * 5.0, turret_center + direction.rotated(0.7) * 9.0, light_color, 1.5, true)
+				draw_line(turret_center + direction * 5.0, turret_center + direction.rotated(-0.7) * 9.0, light_color, 1.5, true)
+		TowerData.VisualArchetype.FLAME:
+			draw_colored_polygon(PackedVector2Array([turret_center + Vector2(-7.0, 1.0), turret_center + Vector2(-3.0, -12.0), turret_center + Vector2(1.0, -7.0), turret_center + Vector2(6.0, -20.0), turret_center + Vector2(8.0, -3.0)]), light_color)
+			draw_circle(turret_center + Vector2(0.0, 1.0), 4.0, Color(1.0, 0.55, 0.16))
+		TowerData.VisualArchetype.POISON:
+			draw_rect(Rect2(turret_center + Vector2(-7.0, -10.0), Vector2(14.0, 17.0)), dark_color)
+			draw_rect(Rect2(turret_center + Vector2(-4.0, -15.0), Vector2(8.0, 5.0)), light_color)
+			draw_circle(turret_center + Vector2(0.0, -2.0), 4.0, body_color.lightened(0.2))
+		TowerData.VisualArchetype.SHREDDER:
+			var teeth := PackedVector2Array()
+			for tooth in 16:
+				var angle: float = float(tooth) * TAU / 16.0 + _turret_angle
+				var radius: float = 12.0 if tooth % 2 == 0 else 8.0
+				teeth.append(turret_center + Vector2.RIGHT.rotated(angle) * radius)
+			draw_colored_polygon(teeth, light_color)
+			draw_circle(turret_center, 4.0, dark_color)
 	if _shot_flash_timer > 0.0:
-		draw_line(Vector2(0.0, -19.0), _shot_target_position, SHOT_COLOR, 3.0, true)
+		for target_offset in _shot_target_positions:
+			draw_line(turret_center, target_offset, SHOT_COLOR, 2.0, true)

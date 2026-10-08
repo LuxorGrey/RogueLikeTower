@@ -90,7 +90,7 @@ Contrato de M6: `BuildController` construye solo sobre `GRASS`/`MOUNTAIN` libres
 - UI debug de estadísticas.
 - Resultado: enemigos requieren respuestas diferentes.
 
-Contrato de la primera implementación M7: toda torre inyecta un `DamagePacket` en el `DamageService` de la escena `Main`; el servicio único resuelve tags de daño, armadura, vida y contrarregeneración. `EnemyData` configura armadura, regeneración por segundo y multiplicadores recibidos de daño físico/fuego/arcano. La regeneración acumula fracciones y nunca supera la vida máxima. Los perfiles de `Basic Bolt`, `Perforadora M7` y `Drenadora M7`, además de la oleada de diagnóstico con un blindado regenerador, son placeholders verificables y no balance final. El HUD ofrece atajos 1–3, un panel técnico bajo `F3` y la repetición de las oleadas básica/diagnóstica para pruebas. M7 no procesa aún status, modificadores de run, recompensas ni economía: corresponden a M8/M11/M9. ADR-0010 registra fórmula, propiedad del servicio y provisionalidades; ADR-0011 documenta el HUD temporal de prueba.
+Contrato de la primera implementación M7: toda torre inyecta un `DamagePacket` en el `DamageService` de la escena `Main`; el servicio único resuelve tags de daño, armadura, vida y contrarregeneración. `EnemyData` configura armadura, regeneración por segundo y multiplicadores recibidos de daño físico/fuego/arcano. La regeneración acumula fracciones y nunca supera la vida máxima. Los perfiles de `Basic Bolt`, `Perforadora M7` y `Drenadora M7`, además de la oleada de diagnóstico con un blindado regenerador, son placeholders verificables y no balance final. El HUD de M7 ofrecía atajos 1–3; tras el roster M9.5 Ballista ocupa `1` y los perfiles de diagnóstico se acceden con `8`/`9`. `F3` mantiene el panel técnico y las oleadas básica/diagnóstica se pueden repetir para pruebas. M7 no procesa aún status, modificadores de run, recompensas ni economía: corresponden a M8/M11/M9. ADR-0010 registra fórmula, propiedad del servicio y provisionalidades; ADR-0011 documenta el HUD temporal de prueba.
 
 ## M8 — Status Effects
 Implementar framework, no catálogo enorme.
@@ -101,7 +101,7 @@ Implementar framework, no catálogo enorme.
 - Resistencias si se necesitan.
 - Resultado: status combinables con torres.
 
-Contrato de la primera implementación: `StatusEffectData` es un Resource configurable; cada `Enemy` posee un controlador de efectos con estado runtime propio y cada torre declara payloads en `TowerData`. Slow reduce velocidad, Burn y Bleed hacen daño periódico a través del `DamageService`, y los estados duran, refrescan o acumulan según sus datos. Se selecciona Bleed solo como tercer ejemplo provisional; no se confirma el catálogo final. No se añaden resistencias porque el diseño todavía no define resistencias de estado. La escena de depuración ofrece la torre `Sonda de estados M8` con atajo `4` y una oleada de un enemigo de entrenamiento para verificar acumulación, refresco, ticks, expiración y limpieza. La aceptación manual sigue pendiente; ver [10_ACCEPTANCE_TESTS.md](10_ACCEPTANCE_TESTS.md) y [ADR-0012](../decisiones/ADR-0012-framework-de-estados-m8.md).
+Contrato de la primera implementación: `StatusEffectData` es un Resource configurable; cada `Enemy` posee un controlador de efectos con estado runtime propio y cada torre declara payloads en `TowerData`. Slow reduce velocidad, Burn y Bleed hacen daño periódico a través del `DamageService`, y los estados duran, refrescan o acumulan según sus datos. Se selecciona Bleed como tercer ejemplo M8 provisional; no confirma por sí mismo el catálogo final. No se añaden resistencias porque el diseño todavía no define resistencias de estado. La escena de depuración ofrece `Sonda de estados M8` y una oleada de un enemigo de entrenamiento para verificar acumulación, refresco, ticks, expiración y limpieza; el roster M9.5 reasigna la Sonda al atajo `0`. Poison se incorpora como cuarto tag/status para el arquetipo M9.5. La aceptación manual sigue pendiente; ver [10_ACCEPTANCE_TESTS.md](10_ACCEPTANCE_TESTS.md) y [ADR-0012](../decisiones/ADR-0012-framework-de-estados-m8.md).
 
 ## M9 — Economía de run + maná
 - Moneda de construcción.
@@ -113,6 +113,15 @@ Contrato de la primera implementación: `StatusEffectData` es un Resource config
 - Resultado: economía jugable.
 
 Contrato de implementación M9: `RunEconomyService` pertenece a `Main` y configura su estado desde `RunEconomyData`; el oro de la run no usa `MetaProgression.meta_currency`. `TowerData` define coste de construcción, coste por cada nivel de mejora y maná por ataque; `EnemyData` define recompensa por baja y `WaveData` la recompensa de ronda. Una baja concede su recompensa una sola vez; llegar a la base no la concede. La recompensa de ronda solo se paga al completar todos los spawns con cero enemigos vivos. Mejoras y construcciones verifican y cobran antes de confirmar la mutación. El maná se consume antes de disparar y, si falta, la torre espera; la regeneración y capacidad son configurables. Los costes y cifras de arranque de esta primera integración son provisionales, no balance final. La escena de prueba mantiene replay de oleadas M7/M8; esto no implementa la secuencia completa M10.
+
+## M9.5 — Roster jugable de demo (prioridad del usuario)
+- Crear los siete perfiles aceptados: Ballista, Mortar, Tesla Coil, Frost Keep, Flame Thrower, Poison Sprayer y Shredder.
+- Dar a cada perfil un ataque, estado/coste de maná si aplica, forma vectorial provisional y acceso de construcción en gameplay.
+- Mantener los fixtures de diagnóstico M7/M8 disponibles sin desplazar el roster principal.
+- Actualizar datos, aceptación y ADR antes de comenzar Cards.
+- Resultado: siete torres seleccionables y construibles que pueden probarse en la escena principal.
+
+El usuario pidió expresamente cerrar este roster antes de avanzar a M10/M11. Por ello M9.5 se ejecuta tras M9; al aceptar esta fase, M10 vuelve a ser el siguiente milestone del roadmap. Los números quedan configurables. No se añaden escudos ni se copia el balance de la referencia.
 
 ## M10 — Rondas 1-20
 - `WaveData` data-driven.
@@ -157,9 +166,9 @@ Contrato de implementación M9: `RunEconomyService` pertenece a `Main` y configu
 
 ## M14 — Vertical Slice
 Contenido provisional suficiente:
-- 4-6 torres.
+- 7 torres de demo (roster confirmado y adelantado a M9.5; número total del juego final sigue abierto).
 - 5-8 arquetipos de enemigo.
-- 3 status.
+- 4 status placeholder: Slow, Burn, Bleed y Poison.
 - 12-20 cartas.
 - 8-12 piezas de terreno.
 - 8-15 permanentes.

@@ -94,22 +94,22 @@ Para dar M6 por aceptado deben pasar todos los bullets de la sección y la prueb
 - Cada torre configurada crea un `DamagePacket` con ID de origen, tags, multiplicadores y counter definidos por `TowerData`; las torres no aplican fórmulas propias.
 - Todos los impactos de torre pasan por el `DamageService` de `Main`; no es Autoload ni comparte la instancia mutable de `TowerData`.
 - La mitigación sigue una fórmula única: `armadura_absorbida = min(daño_bruto, armadura × armor_multiplier)` y `daño_HP = floor(max(daño_bruto - armadura_absorbida, 0) × multiplicador_de_tags × health_multiplier)`, limitado a la vida restante.
-- Los tags Físico/Fuego/Arcano se validan como bitmask; cada enemigo declara sus multiplicadores recibidos y los tags combinados multiplican sus resultados.
+- Los tags Físico/Fuego/Arcano/Poison se validan como bitmask; cada enemigo declara sus multiplicadores recibidos y los tags combinados multiplican sus resultados.
 - La regeneración por segundo acumula fracciones, no supera la vida máxima y solo corre mientras el enemigo sigue vivo. El counter reduce la regen según su fuerza durante la duración configurada; varios impactos usan la mayor fuerza y el máximo tiempo restante.
 - `DamageService.preview_damage()` y `apply_damage()` usan el mismo cálculo; el servicio emite un resultado con armadura absorbida, multiplicador de tipo, HP aplicado y objetivo derrotado.
 - El HUD muestra HP, armadura, regen base/efectiva y daño estimado del objetivo de la torre seleccionada; la descripción de torre presenta su perfil configurado.
-- Se pueden seleccionar los perfiles de prueba Basic Bolt (6 HP al fixture), Perforadora (9 HP) y Drenadora Arcana (7 HP y 100% de contrarregeneración durante 1.25 s) contra el blindado de armadura 4, regen 2 HP/s y multiplicador arcano 1.25. Estos valores son placeholders.
+- Se pueden seleccionar Ballista (6 HP al fixture), Perforadora (9 HP) y Drenadora Arcana (7 HP y 100% de contrarregeneración durante 1.25 s) contra el blindado de armadura 4, regen 2 HP/s y multiplicador arcano 1.25. Estos valores son placeholders.
 - Status y sus payloads no se aplicaban en M7; M8/M9 añadieron estados y recompensas en hitos posteriores.
 
 ### Prueba manual de M7 en el juego
 1. Ejecutar `game/main/main.tscn`. La interfaz principal debe limitarse a base, estado de oleada, selección de oleada, resumen de torre y diagnóstico del objetivo. La cabecera muestra permanentemente **F3 - Terreno   H - Interfaz**; `F3` abre/cierra el panel técnico del terreno y `H` oculta/muestra todo el HUD.
-2. Elegir **Diagnóstico · blindado regenerador**. Construir una torre de prueba próxima al camino usando `1` (Basic Bolt), `2` (Perforadora) o `3` (Drenadora); las tres opciones deben estar visibles en la barra inferior. Hacer clic en una casilla libre de Grass/Montaña.
+2. Elegir **Diagnóstico · blindado regenerador**. Construir una torre próxima al camino usando `1` (Ballista), `8` (Perforadora) o `9` (Drenadora); las tres opciones deben estar disponibles. Hacer clic en una casilla libre de Grass/Montaña.
 3. Iniciar la oleada seleccionada. Seleccionar la torre si hace falta. Cuando el enemigo entre en alcance, el debug compacto debe mostrar vida actual/máxima, armadura, regeneración y daño estimado; si el counter está activo también debe mostrar la regen efectiva reducida.
-4. Repetir con cada perfil: Basic Bolt estima 6 HP; Perforadora estima 9 HP porque solo aplica 1 punto de armadura; Drenadora estima 7 HP por vulnerabilidad arcana y, tras impactar, reduce la regen a 0 HP/s durante hasta 1.25 s.
+4. Repetir con cada perfil: Ballista estima 6 HP; Perforadora estima 9 HP porque solo aplica 1 punto de armadura; Drenadora estima 7 HP por vulnerabilidad arcana y, tras impactar, reduce la regen a 0 HP/s durante hasta 1.25 s.
 5. Al completar una oleada debe habilitarse la expansión y la selección de oleada. Cambiar a **Oleada básica · 3 enemigos**, iniciar y completarla; después volver a elegir el diagnóstico e iniciarlo de nuevo. Coloca suficientes torres para derrotar enemigos y conservar vida de base durante la prueba: el HP perdido persiste entre fixtures. Repetir oleadas no debe dejar enemigos de la anterior ni bloquear el botón de inicio. Esta repetición sirve para depurar y no sustituye el loop de 20 rondas M10.
-6. Con Basic Bolt, observar el HP del blindado entre impactos: la vida perdida debe recuperarse a ritmo de 2 HP/s mientras no haya counter activo, hasta el máximo 60. Con Drenadora, no debe subir durante la contrarregeneración activa.
+6. Con Ballista, observar el HP del blindado entre impactos: la vida perdida debe recuperarse a ritmo de 2 HP/s mientras no haya counter activo, hasta el máximo 60. Con Drenadora, no debe subir durante la contrarregeneración activa.
 
-Para cerrar M7 deben pasar todos los criterios anteriores y la prueba manual debe confirmar que el HUD refleja los valores reales durante combate, que los atajos 1–3 funcionan incluso tras usar controles de interfaz y que se pueden iniciar oleadas distintas repetidamente. También se debe revisar que el HUD compacto y el panel F3 caben en la ventana de 1440×900. Los perfiles y cifras no se convierten en balance confirmado.
+Para cerrar M7 deben pasar todos los criterios anteriores y la prueba manual debe confirmar que el HUD refleja los valores reales durante combate, que los atajos 1, 8 y 9 funcionan incluso tras usar controles de interfaz y que se pueden iniciar oleadas distintas repetidamente. También se debe revisar que el HUD compacto y el panel F3 caben en la ventana de 1440×900. Los perfiles y cifras no se convierten en balance confirmado.
 
 ## M8 Status Effects
 - Cada `StatusEffectData` valida ID/nombre, duración, intervalo, regla, límite de stacks, velocidad y perfil DoT; los efectos sin efecto jugable o con tags inválidos se rechazan.
@@ -123,19 +123,19 @@ Para cerrar M7 deben pasar todos los criterios anteriores y la prueba manual deb
 - No hay resistencia de estado en M8: no está definida por el diseño fuente.
 
 ### Prueba manual de M8 en el juego
-1. Ejecutar `game/main/main.tscn`. En el selector de oleada elegir **Estados M8 · objetivo lento**. En la barra inferior deben estar visibles los atajos `1–4`; pulsar `4` y colocar **Sonda de estados (M8 prueba)** en Grass `(1,-1)`, que tiene alcance a lo largo de la ruta inicial.
+1. Ejecutar `game/main/main.tscn`. En el selector de oleada elegir **Estados M8 · objetivo lento**. Para el perfil de diagnóstico, pulsar `0` y colocar **Sonda de estados (M8 prueba)** en Grass `(1,-1)`, que tiene alcance a lo largo de la ruta inicial.
 2. Iniciar la oleada seleccionada. La línea de diagnóstico debe identificar **Objetivo de estados (M8 prueba)** y mostrar sus HP, impacto estimado y estados activos. El enemigo debe llevar aros celeste (Lento), naranja (Quemadura) y rojo/rosa (Sangrado).
 3. Observar al menos tres impactos: Lento debe mantenerse en una sola acumulación y su duración debe refrescarse; Quemadura debe mostrar `×2` y luego `×3`, sin superar el máximo configurado aunque haya impactos posteriores. El objetivo debe avanzar más despacio mientras Lento esté activo.
 4. Sangrado debe hacer bajar HP mediante ticks. Como dura 1.5 s y la torre ataca cada 2 s, su nombre/aro debe desaparecer durante el intervalo entre impactos y volver con el siguiente. Quemadura también debe reducir HP por ticks. Esta comparación comprueba expiración y aplicación del daño por el pipeline común.
 5. El objetivo de entrenamiento debe sobrevivir el tiempo suficiente para observar los efectos y finalmente llegar a la base; en ese cambio de estado, sus efectos y aros desaparecen. El HUD deja de mostrar un objetivo cuando ya no hay uno vivo en alcance. La oleada termina con cero enemigos activos y se habilita volver a elegir una oleada.
-6. Repetir la oleada M8: los stacks, timers y ticks deben comenzar limpios en la nueva instancia. Elegir después la oleada de diagnóstico M7 para confirmar que los atajos `1–3` y sus perfiles conservan el comportamiento anterior.
+6. Repetir la oleada M8: los stacks, timers y ticks deben comenzar limpios en la nueva instancia. Elegir después la oleada de diagnóstico M7 para confirmar que los atajos `1`, `8` y `9` y sus perfiles conservan el comportamiento anterior.
 
 Para dar M8 por aceptado deben pasar todos los criterios de la sección y la prueba manual debe verificar velocidad real, refresh, límite de stacks, daño periódico, expiración antes de la llegada, limpieza al finalizar la ruta, HUD y aros. Registrar cualquier ajuste de valores de fixture como provisional; la prueba no convierte Bleed ni estos números en diseño final.
 
 ## M9 Economy + Mana
 - `Main` configura `RunEconomyService` desde `RunEconomyData`; el perfil de prueba inicia con 150 oro, 30/100 maná y regen de 1.5/s. El HUD muestra ambos saldos y la regen.
 - El oro de construcción es runtime de esta run y no altera `MetaProgression.meta_currency` ni se persiste como moneda meta.
-- Las cuatro opciones del HUD muestran el coste: Basic Bolt 30 oro; Perforadora, Drenadora y Sonda M8 40 oro. Drenadora indica 4 maná por ataque; los otros perfiles no consumen maná.
+- Los siete perfiles principales y sus costes aparecen en la barra: Ballista 30, Mortar 80, Tesla 70, Frost 50, Flame 65, Poison 65 y Shredder 100 oro. Los atajos `8`, `9` y `0` mantienen Perforadora/Drenadora/Sonda a 40 oro; Drenadora indica 4 maná por ataque.
 - Una construcción legal cobra una sola vez antes de ocupar la celda. Terreno inválido, casilla ocupada o saldo insuficiente no cobran ni crean torre/ocupación.
 - Una mejora cobra `TowerData.get_upgrade_cost(nivel_actual)`: en los fixtures M9, nivel 1→2 cuesta 20 oro y nivel 2→3 cuesta 35. El nivel/stats aumentan una sola vez; tope o fondos insuficientes dejan nivel y saldo intactos.
 - Cada enemigo derrotado paga una sola vez el `EnemyData.kill_reward`, también si la muerte procede de DoT. Un enemigo que llega a base no paga recompensa de baja. Repetir callbacks no duplica el pago.
@@ -146,16 +146,38 @@ Para dar M8 por aceptado deben pasar todos los criterios de la sección y la pru
 - Los costes, recompensas y tasas actuales son fixtures configurables y provisionales, no balance confirmado.
 
 ### Prueba manual de M9 en el juego
-1. Ejecutar `game/main/main.tscn`. El HUD debe mostrar **Oro 150 · Maná 30 / 100 · regen 1.5/s**. La barra inferior debe indicar costes de los atajos `1–4`.
-2. Pulsar `1` y colocar Basic Bolt en una casilla Grass libre. El oro pasa a 120, la celda queda ocupada y aparece una sola torre. Seleccionarla y mejorarla: el saldo pasa a 100 al llegar a nivel 2 y a 65 al llegar a nivel 3; los stats cambian según el nivel y el botón deja de ofrecer otra mejora. Repetir clic sobre la torre o un terreno no construible no debe cobrar.
+1. Ejecutar `game/main/main.tscn`. El HUD debe mostrar **Oro 150 · Maná 30 / 100 · regen 1.5/s**. La barra inferior debe indicar los costes de los siete atajos `1–7`.
+2. Pulsar `1` y colocar Ballista en una casilla Grass libre. El oro pasa a 120, la celda queda ocupada y aparece una sola torre. Seleccionarla y mejorarla: el saldo pasa a 100 al llegar a nivel 2 y a 65 al llegar a nivel 3; los stats cambian según el nivel y el botón deja de ofrecer otra mejora. Repetir clic sobre la torre o un terreno no construible no debe cobrar.
 3. Iniciar **Oleada básica · 3 enemigos**. El oro sube +5 por cada enemigo derrotado, una vez por baja, y al terminar todos los spawns con cero enemigos activos sube +20 una sola vez. Si todos mueren, desde los 65 restantes debe terminar en 100. El aviso de recompensa y el saldo tienen que coincidir.
-4. Reiniciar la escena para disponer otra vez del perfil inicial. Construir tres Drenadoras M7 en celdas construibles próximas al camino (por ejemplo `(1,-1)`, `(1,0)` y `(0,1)`); deben costar 40 cada una. Con los 30 oro restantes, intentar construir la Sonda M8 de 40 (tecla `4`): el preview/HUD explica que faltan fondos, el botón se deshabilita y el oro se conserva en 30. Pulsar `Esc` para salir del preview rechazado antes de cambiar la oleada.
+4. Reiniciar la escena para disponer otra vez del perfil inicial. Construir tres Drenadoras M7 en celdas construibles próximas al camino (por ejemplo `(1,-1)`, `(1,0)` y `(0,1)`); deben costar 40 cada una usando la tecla `9`. Con los 30 oro restantes, intentar construir la Sonda M8 de 40 (tecla `0`): el preview/HUD explica que faltan fondos, el atajo se deshabilita y el oro se conserva en 30. Pulsar `Esc` para salir del preview rechazado antes de cambiar la oleada.
 5. Elegir **Estados M8 · objetivo lento** e iniciar la oleada. Con tres Drenadoras, el saldo de maná debe bajar en pasos de 4 por disparo mientras hay objetivo. Al llegar a cero, la torre seleccionada muestra **sin maná** y deja de disparar; su ataque no reduce HP ni aplica nuevos estados y el maná no queda negativo. El enemigo puede alcanzar la base; el daño de llegada no da recompensa de kill.
 6. Tras la oleada, observar el maná durante la expansión: debe aumentar a 1.5/s hasta 100 y nunca superar ese máximo. La barra de estado vuelve a permitir construir/repetir. Confirmar que el bonus de la oleada M8 es +10 cuando el director completa; repetirla debe pagar otra vez solo por la nueva instancia/ronda de prueba.
 7. Durante el instante posterior a una victoria, comprobar que aparece `ROUND_REWARD`; el botón de oleada/selector y la colocación permanecen bloqueados esos 0.8 s, y luego se habilitan al entrar en expansión.
 8. (Opcional, comprueba fallo) Reiniciar la escena, no construir torres, y dejar que se filtren enemigos en secuencia: oleada básica, diagnóstico M7 y estados M8. La llegada final que destruya la base debe terminar en derrota sin pagar el bonus de limpieza M8. Las recompensas por baja de eventos anteriores permanecen en el saldo.
 
 Para dar M9 por aceptado deben pasar todos los criterios de la sección y la prueba manual debe confirmar saldos y mensajes en pantalla, cobros atómicos, pago único por evento, rechazo sin fondos, bloqueo de disparos sin maná y regeneración acotada. La prueba debe incluir una llegada a base para verificar que no se confunde con una baja; el bonus de ronda se comprueba aparte. El smoke/validación automática de gameplay queda pendiente; la prueba descrita es interactiva.
+
+## Roster jugable M9.5
+- La barra principal muestra los siete perfiles en orden y con sus costes actuales: Ballista 30, Mortar 80, Tesla 70, Frost 50, Flame 65, Poison 65 y Shredder 100. Cada botón indica su color, nombre abreviado y coste; el tooltip explica el ataque y el maná.
+- Los atajos `1–7` seleccionan el mismo perfil que el botón y permiten construir solo en Grass/Montaña libre. PATH, terreno ocupado o saldo insuficiente no cobran ni crean torre. Cada una de las siete formas placeholder debe distinguirse en el mapa.
+- Ballista solo daña el objetivo elegido. Mortar aplica el daño a enemigos agrupados dentro de su radio de impacto; Frost también afecta en área y refresca Slow.
+- Tesla puede alcanzar hasta tres enemigos válidos dentro de rango por descarga, gasta 5 maná por ataque y no daña/aplica estado si el saldo no alcanza.
+- Flame daña a los enemigos del cono frontal y aplica Burn; Poison hace lo mismo con su tag Poison y aplica el estado Poison. El aro verde Poison aparece y los ticks pasan por `DamageService` y `EnemyData.poison_damage_multiplier`.
+- Shredder genera una hoja desde la torre hasta la ruta del objetivo, luego avanza por los waypoints hacia la base. Cada enemigo en el recorrido recibe un impacto como máximo; cada impacto posterior usa 1 menos de daño bruto; los objetivos supervivientes reciben Bleed. La hoja desaparece al terminar la ruta o agotar daño.
+- Las torres con maná gastan el coste indicado por disparo; al quedar sin saldo esperan y vuelven a atacar al regenerar. Las torres sin coste no lo consumen.
+- Los perfiles M7/M8 de diagnóstico siguen disponibles en `8` (Perforadora), `9` (Drenadora) y `0` (Sonda); no ocupan botones del roster principal.
+- Daño, costes, cadencias, radios, cono, multiplicadores y efectos son provisionales configurables. No se requiere Shield porque el modelo EnemyData no tiene escudo.
+
+### Prueba manual M9.5 en el juego
+1. Abrir `game/main/main.tscn`. Confirmar los siete botones y probar los atajos `1–7`; el perfil elegido y su nombre deben coincidir. En el tooltip revisar rol, coste, patrón y coste de maná.
+2. Reiniciar la escena entre perfiles para recuperar los 150 de oro. Construir cada torre una vez cerca del camino y verificar respectivamente los cargos 30/80/70/50/65/65/100, el color y la silueta. Repetir una colocación sobre PATH o terreno ocupado y confirmar que no se cobra.
+3. Ejecutar la oleada básica. Ballista debe seguir un único objetivo; Mortar debe mostrar impacto en el objetivo y afectar al menos otro enemigo si están dentro del radio; Tesla debe dibujar/emitir impactos a varios blancos dentro del límite; Frost debe ralentizar y afectar a enemigos dentro de su área.
+4. Probar Flame y Poison sobre enemigos alineados delante de la torre. El cono solo afecta enemigos dentro del ángulo y rango; verificar aros Burn naranja y Poison verde, y que el HP cae por ticks. En Poison, el diagnóstico debe identificar `veneno`, no `arcano`.
+5. Reiniciar, seleccionar **Estados M8 · objetivo lento** y construir Shredder (`7`) a rango del objetivo. Iniciar la oleada: la hoja debe recorrer visualmente el camino restante, alcanzar al objetivo y aplicar Bleed. Para comprobar perforación, usar la oleada básica con varios enemigos vivos en el mismo trazado; la hoja debe atravesar más de uno y los impactos siguientes deben reducir su daño.
+6. Dejar que las torres Tesla/Frost/Flame/Poison gasten su maná. Cuando falte, confirmar que se bloquean sin infligir impacto ni aplicar nuevos estados; esperar regeneración y confirmar que reanudan fuego. Ballista, Mortar y Shredder no deben gastar maná.
+7. Usar `8`, `9` y `0` para comprobar que los fixtures M7/M8 siguen seleccionables sin aparecer como parte de las siete torres finales.
+
+M9.5 queda aceptado cuando pasan todos los criterios y se observa cada perfil en la ventana del juego. La implementación está en código; la revisión visual/interactiva todavía está pendiente. Registrar cualquier ajuste de balance como provisional.
 
 ## Loop
 - Al terminar oleada se entra en expansión.
