@@ -37,6 +37,10 @@ var _ghost_coords: Dictionary[Vector2i, bool] = {}
 var _hovered_cell: TerrainPieceCellData
 var _path_graph: PathGraph
 var _path_debug_visible: bool = false
+var _tower_build_preview_active: bool = false
+var _tower_preview_coord: Vector2i = Vector2i.ZERO
+var _tower_preview_is_valid: bool = false
+var _tower_preview_range_pixels: float = 0.0
 
 func set_piece(piece_data: TerrainPieceData) -> void:
 	_piece_data = piece_data
@@ -57,6 +61,18 @@ func set_path_graph(path_graph: PathGraph) -> void:
 
 func set_path_debug_visible(debug_enabled: bool) -> void:
 	_path_debug_visible = debug_enabled
+	queue_redraw()
+
+func set_tower_build_preview(
+	active: bool,
+	coord: Vector2i = Vector2i.ZERO,
+	is_valid: bool = false,
+	range_pixels: float = 0.0
+) -> void:
+	_tower_build_preview_active = active
+	_tower_preview_coord = coord
+	_tower_preview_is_valid = is_valid
+	_tower_preview_range_pixels = maxf(range_pixels, 0.0)
 	queue_redraw()
 
 func set_placement_preview(
@@ -99,6 +115,22 @@ func _draw() -> void:
 		_draw_cell_top(cell, _ghost_coords.has(cell.local_coord))
 	if _board_mode and _path_debug_visible and _path_graph != null:
 		_draw_path_debug_overlay()
+	if _tower_build_preview_active:
+		_draw_tower_build_preview()
+
+func _draw_tower_build_preview() -> void:
+	var cell: HexCell = _board_cells.get(_tower_preview_coord) as HexCell
+	if cell == null:
+		return
+	var center := _top_center(_tower_preview_coord, cell.elevation)
+	var tint: Color = Color(0.26, 0.95, 0.43, 0.78) if _tower_preview_is_valid else Color(1.0, 0.25, 0.20, 0.78)
+	if _tower_preview_range_pixels > 0.0:
+		draw_arc(center, _tower_preview_range_pixels, 0.0, TAU, 72, Color(tint.r, tint.g, tint.b, 0.28), 2.0, true)
+	var corners := _hex_corners(center)
+	corners.append(corners[0])
+	draw_polyline(corners, tint, 3.0, true)
+	draw_circle(center + Vector2(0.0, -7.0), 9.0, tint)
+	draw_line(center + Vector2(0.0, -7.0), center + Vector2(15.0, -7.0), tint.lightened(0.18), 4.0, true)
 
 func _draw_path_debug_overlay() -> void:
 	for route_index in range(_path_graph.routes.size()):

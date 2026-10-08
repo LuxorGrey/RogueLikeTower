@@ -6,6 +6,7 @@ extends Resource
 @export_range(1, 100000, 1) var max_health: int = 20
 @export_range(1.0, 1000.0, 0.1) var move_speed: float = 90.0
 @export_range(0, 100000, 1) var base_damage: int = 10
+@export_range(0, 100000, 1) var armor: int = 0
 @export var scene: PackedScene
 
 func validate() -> PackedStringArray:
@@ -20,6 +21,8 @@ func validate() -> PackedStringArray:
 		errors.append("La velocidad del enemigo debe ser mayor que cero.")
 	if base_damage < 0:
 		errors.append("El daño del enemigo no puede ser negativo.")
+	if armor < 0:
+		errors.append("La armadura del enemigo no puede ser negativa.")
 	if scene == null:
 		errors.append("EnemyData requiere una escena de enemigo.")
 	return errors

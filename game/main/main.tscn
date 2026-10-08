@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://game/main/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://game/board/terrain_piece_preview.gd" id="2_preview"]
 [ext_resource type="PackedScene" path="res://game/main/game_base.tscn" id="3_base_scene"]
 [ext_resource type="Script" path="res://game/waves/wave_director.gd" id="4_wave_director"]
+[ext_resource type="Script" path="res://game/build/build_controller.gd" id="5_build_controller"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -32,6 +33,10 @@ unique_name_in_owner = true
 unique_name_in_owner = true
 script = ExtResource("4_wave_director")
 
+[node name="BuildController" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("5_build_controller")
+
 [node name="HUD" type="CanvasLayer" parent="."]
 unique_name_in_owner = true
 
@@ -40,7 +45,7 @@ unique_name_in_owner = true
 offset_left = 24.0
 offset_top = 24.0
 offset_right = 620.0
-offset_bottom = 655.0
+offset_bottom = 835.0
 
 [node name="Margin" type="MarginContainer" parent="HUD/Panel"]
 layout_mode = 2
@@ -56,7 +61,7 @@ theme_override_constants/separation = 8
 [node name="Title" type="Label" parent="HUD/Panel/Margin/Content"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 21
-text = "ROGUE TOWER · TERRENO Y PRIMERA OLEADA M5"
+text = "ROGUE TOWER · TORRES Y PRIMERA OLEADA M6"
 
 [node name="BaseStatus" type="Label" parent="HUD/Panel/Margin/Content"]
 unique_name_in_owner = true
@@ -73,6 +78,32 @@ text = "Oleada 1 lista"
 unique_name_in_owner = true
 layout_mode = 2
 text = "Iniciar oleada 1 de prueba"
+
+[node name="BuildTower" type="Button" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Construir Basic Bolt"
+
+[node name="BuildStatus" type="Label" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+text = "Construye en Grass o Montaña libres. Durante la oleada se pueden construir torres."
+
+[node name="TowerStatus" type="Label" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+text = "Ninguna torre seleccionada."
+
+[node name="TowerTargetingMode" type="OptionButton" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="UpgradeTower" type="Button" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Mejorar torre"
 
 [node name="PieceStatus" type="Label" parent="HUD/Panel/Margin/Content"]
 unique_name_in_owner = true
@@ -155,7 +186,7 @@ text = "Cancelar"
 [node name="Hint" type="Label" parent="HUD/Panel/Margin/Content"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "Mueve el cursor · verde válido / rojo inválido · Q / E gira · clic confirma · Esc o clic derecho cancela"
+text = "Torres: clic Construir, luego casilla libre Grass/Montaña · clic selecciona · Esc/clic derecho cancela. Terreno: Q/E gira · clic confirma."
 
 [node name="CameraHint" type="Label" parent="HUD/Panel/Margin/Content"]
 layout_mode = 2

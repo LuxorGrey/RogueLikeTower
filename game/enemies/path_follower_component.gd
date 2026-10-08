@@ -17,6 +17,11 @@ func get_waypoint_index() -> int:
 func get_waypoints() -> Array[Vector2]:
 	return _waypoints.duplicate()
 
+func get_progress_ratio() -> float:
+	if _waypoints.is_empty():
+		return 0.0
+	return clampf((float(_waypoint_index) + current_progress) / float(_waypoints.size()), 0.0, 1.0)
+
 func stop() -> void:
 	_is_following = false
 	set_physics_process(false)

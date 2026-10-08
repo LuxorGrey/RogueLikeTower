@@ -10,6 +10,7 @@ const HARD_TURN_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/har
 const FORK_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/fork.tres")
 const CONVERGENCE_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/convergence.tres")
 const FIRST_WAVE: WaveData = preload("res://data/waves/round_01.tres")
+const BASIC_BOLT: TowerData = preload("res://data/towers/basic_bolt.tres")
 const MIN_CAMERA_ZOOM: float = 0.45
 const MAX_CAMERA_ZOOM: float = 2.5
 const CAMERA_ZOOM_STEP: float = 1.12
@@ -26,6 +27,8 @@ var _path_graph := PathGraph.new()
 var _path_debug_visible: bool = false
 var _placement_enabled: bool = true
 var _first_wave_completed: bool = false
+var _hovered_coord: Vector2i = Vector2i.ZERO
+var _has_hovered_cell: bool = false
 
 @onready var _piece_preview: TerrainPiecePreview = %PiecePreview
 @onready var _piece_status: Label = %PieceStatus
@@ -47,6 +50,12 @@ var _first_wave_completed: bool = false
 @onready var _base_status: Label = %BaseStatus
 @onready var _wave_status: Label = %WaveStatus
 @onready var _start_wave_button: Button = %StartWave
+@onready var _build_controller: BuildController = %BuildController
+@onready var _build_tower_button: Button = %BuildTower
+@onready var _build_status: Label = %BuildStatus
+@onready var _tower_status: Label = %TowerStatus
+@onready var _tower_targeting_mode: OptionButton = %TowerTargetingMode
+@onready var _upgrade_tower_button: Button = %UpgradeTower
 
 func _ready() -> void:
 	_camera.position = get_viewport_rect().size * 0.5
@@ -66,6 +75,14 @@ func _ready() -> void:
 	_wave_director.wave_failed.connect(_on_wave_failed)
 	_wave_director.enemy_count_changed.connect(_on_enemy_count_changed)
 	_wave_director.base_damaged.connect(_on_base_damaged)
+	_build_controller.tower_selected.connect(_on_tower_selected)
+	_build_controller.tower_upgraded.connect(_on_tower_upgraded)
+	_build_controller.build_mode_changed.connect(_on_build_mode_changed)
+	_build_tower_button.pressed.connect(_on_build_tower_pressed)
+	_tower_targeting_mode.item_selected.connect(_on_targeting_mode_selected)
+	_upgrade_tower_button.pressed.connect(_on_upgrade_tower_pressed)
+	_build_controller.configure(_board_grid, _entities, _piece_preview.global_position, HEX_RADIUS)
+	_populate_targeting_modes()
 
 	var starting_errors := STARTING_PIECE.validate()
 	if not starting_errors.is_empty():
@@ -88,9 +105,11 @@ func _ready() -> void:
 		HEX_RADIUS
 	)
 	_on_base_health_changed(_base.get_current_health(), _base.get_maximum_health())
+	_refresh_tower_controls()
 	_start_wave_button.disabled = not _path_graph.is_valid
 	_wave_status.text = "Oleada 1 lista · 3 enemigos de prueba"
 	RunManager.transition_to(RunManager.Phase.ROUND_PREP)
+	_refresh_tower_controls()
 	_refresh_path_status()
 	_piece_selector.add_item("— sin pieza —", 0)
 	for piece in _pieces:
@@ -99,7 +118,7 @@ func _ready() -> void:
 	_on_piece_selected(1)
 
 func _process(_delta: float) -> void:
-	if _is_panning or not _placement_enabled:
+	if _is_panning or not _placement_enabled or _build_controller.is_build_mode():
 		return
 	_update_anchor_from_mouse()
 
@@ -137,7 +156,7 @@ func _update_anchor_from_mouse() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		_cancel_placement()
+		_cancel_active_tool()
 		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventKey:
@@ -168,10 +187,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_zoom_at_cursor(1.0 / CAMERA_ZOOM_STEP)
 			get_viewport().set_input_as_handled()
 		elif mouse_event.pressed and mouse_event.button_index == MOUSE_BUTTON_LEFT:
-			_confirm_placement()
+			_handle_board_click()
 			get_viewport().set_input_as_handled()
 		elif mouse_event.pressed and mouse_event.button_index == MOUSE_BUTTON_RIGHT:
-			_cancel_placement()
+			_cancel_active_tool()
 			get_viewport().set_input_as_handled()
 
 func _toggle_hud() -> void:
@@ -211,7 +230,7 @@ func _board_center_world() -> Vector2:
 	return (minimum + maximum) * 0.5
 
 func _rotate_by(step_delta: int) -> void:
-	if not _placement_enabled or _selected_piece == null:
+	if not _placement_enabled or _build_controller.is_build_mode() or _selected_piece == null:
 		return
 	_rotation_steps = posmod(_rotation_steps + step_delta, 6)
 	_refresh_placement()
@@ -228,10 +247,11 @@ func _on_piece_selected(index: int) -> void:
 	_refresh_placement()
 
 func _refresh_placement() -> void:
-	_piece_selector.disabled = not _placement_enabled
-	_rotate_left.disabled = not _placement_enabled or _selected_piece == null
-	_rotate_right.disabled = not _placement_enabled or _selected_piece == null
-	_cancel_button.disabled = not _placement_enabled or _selected_piece == null
+	var can_edit_terrain: bool = _placement_enabled and not _build_controller.is_build_mode()
+	_piece_selector.disabled = not can_edit_terrain
+	_rotate_left.disabled = not can_edit_terrain or _selected_piece == null
+	_rotate_right.disabled = not can_edit_terrain or _selected_piece == null
+	_cancel_button.disabled = not can_edit_terrain or _selected_piece == null
 	if _selected_piece == null:
 		_latest_placement = null
 		_piece_preview.set_placement_preview(null, _anchor_coord, _rotation_steps, false, false)
@@ -253,7 +273,7 @@ func _refresh_placement() -> void:
 		_rotation_steps,
 		_latest_placement.is_valid
 	)
-	_confirm_button.disabled = not _placement_enabled or not _latest_placement.is_valid
+	_confirm_button.disabled = not can_edit_terrain or not _latest_placement.is_valid
 	_rotation_status.text = "Orientación: %d° · posición %d/6" % [
 		_rotation_steps * 60,
 		_rotation_steps + 1,
@@ -298,6 +318,127 @@ func _cancel_placement() -> void:
 	_piece_selector.select(0)
 	_refresh_placement()
 
+func _cancel_active_tool() -> void:
+	if _build_controller.is_build_mode():
+		_build_controller.cancel_build_mode()
+		_refresh_build_preview()
+		_refresh_placement()
+		_refresh_tower_controls()
+		return
+	_cancel_placement()
+
+func _handle_board_click() -> void:
+	if _build_controller.is_build_mode():
+		if not _has_hovered_cell:
+			_build_status.text = "Coloca el cursor sobre una casilla existente."
+			return
+		if _build_controller.place_tower(_hovered_coord):
+			_build_status.text = "Basic Bolt construida en (%d, %d)." % [_hovered_coord.x, _hovered_coord.y]
+			_build_controller.cancel_build_mode()
+			_refresh_build_preview()
+			_refresh_placement()
+			_refresh_tower_controls()
+		else:
+			_build_status.text = _build_controller.last_error
+			_refresh_build_preview()
+		return
+	if _has_hovered_cell:
+		var tower: Tower = _build_controller.get_tower_at(_hovered_coord)
+		if tower != null:
+			_cancel_placement()
+			_build_controller.select_tower_at(_hovered_coord)
+			_refresh_tower_controls()
+			return
+	if _placement_enabled:
+		_confirm_placement()
+
+func _on_build_tower_pressed() -> void:
+	if _build_controller.is_build_mode():
+		_build_controller.cancel_build_mode()
+		_build_status.text = "Construcción cancelada."
+	else:
+		_cancel_placement()
+		if _build_controller.begin_build(BASIC_BOLT):
+			_build_status.text = "Basic Bolt · elige una casilla libre de Grass o Montaña."
+		else:
+			_build_status.text = _build_controller.last_error
+	_refresh_build_preview()
+	_refresh_placement()
+	_refresh_tower_controls()
+
+func _on_build_mode_changed(is_active: bool) -> void:
+	if not is_active:
+		_piece_preview.set_tower_build_preview(false)
+	_refresh_build_preview()
+	_refresh_placement()
+	_refresh_tower_controls()
+
+func _refresh_build_preview() -> void:
+	if not _build_controller.is_build_mode() or not _has_hovered_cell:
+		_piece_preview.set_tower_build_preview(false)
+		return
+	var error: String = _build_controller.get_placement_error(_hovered_coord)
+	_piece_preview.set_tower_build_preview(
+		true,
+		_hovered_coord,
+		error.is_empty(),
+		_build_controller.get_preview_range_pixels(_hovered_coord)
+	)
+
+func _populate_targeting_modes() -> void:
+	_tower_targeting_mode.clear()
+	_tower_targeting_mode.add_item("Más avanzado", TowerData.TargetingMode.FIRST_PROGRESS)
+	_tower_targeting_mode.add_item("Menos avanzado", TowerData.TargetingMode.LAST_PROGRESS)
+	_tower_targeting_mode.add_item("Más vida", TowerData.TargetingMode.HIGHEST_HEALTH)
+	_tower_targeting_mode.add_item("Más armadura", TowerData.TargetingMode.HIGHEST_ARMOR)
+	_tower_targeting_mode.select(TowerData.TargetingMode.FIRST_PROGRESS)
+
+func _on_targeting_mode_selected(index: int) -> void:
+	if index < 0 or index >= _tower_targeting_mode.item_count:
+		return
+	var mode: int = _tower_targeting_mode.get_item_id(index)
+	if _build_controller.set_selected_targeting_mode(mode):
+		_refresh_tower_controls()
+
+func _on_upgrade_tower_pressed() -> void:
+	if _build_controller.upgrade_selected_tower():
+		_build_status.text = "Torre mejorada sin coste en este prototipo (la economía llega en M9)."
+	else:
+		_build_status.text = _build_controller.last_error
+	_refresh_tower_controls()
+
+func _on_tower_selected(tower: Tower, _coord: Vector2i) -> void:
+	if tower == null or not is_instance_valid(tower):
+		return
+	_tower_status.text = tower.get_summary()
+	var mode_index: int = _tower_targeting_mode.get_item_index(tower.get_targeting_mode())
+	if mode_index >= 0:
+		_tower_targeting_mode.select(mode_index)
+	_refresh_tower_controls()
+
+func _on_tower_upgraded(tower: Tower, _new_level: int) -> void:
+	_on_tower_selected(tower, tower.cell_coord)
+
+func _refresh_tower_controls() -> void:
+	var build_mode: bool = _build_controller.is_build_mode()
+	var selected: Tower = _build_controller.selected_tower
+	_build_tower_button.disabled = not _build_controller.can_build_in_current_phase()
+	_build_tower_button.text = "Cancelar construcción" if build_mode else "Construir Basic Bolt"
+	_tower_targeting_mode.disabled = build_mode or selected == null or not _build_controller.can_build_in_current_phase()
+	_upgrade_tower_button.disabled = (
+		build_mode
+		or selected == null
+		or selected.level >= selected.get_tower_data().max_level
+		or not _build_controller.can_build_in_current_phase()
+	)
+	if build_mode:
+		_tower_status.text = "Basic Bolt · preview de alcance y terreno válido"
+	elif selected == null:
+		_tower_status.text = "Ninguna torre seleccionada."
+		_build_status.text = "Construye una torre o selecciona una ya colocada."
+	else:
+		_tower_status.text = selected.get_summary()
+
 func _start_first_wave() -> void:
 	if _first_wave_completed or not _path_graph.is_valid:
 		return
@@ -321,22 +462,26 @@ func _start_first_wave() -> void:
 func _on_wave_started(round_number: int) -> void:
 	RunManager.transition_to(RunManager.Phase.COMBAT)
 	_wave_status.text = "Oleada %d · enemigos activos: 0" % round_number
+	_refresh_tower_controls()
 
 func _on_wave_completed(round_number: int) -> void:
 	_first_wave_completed = true
 	_placement_enabled = true
 	_start_wave_button.disabled = true
 	_start_wave_button.text = "Oleada de prueba completada"
-	_wave_status.text = "Oleada %d completada · expansión disponible; las torres llegan en M6" % round_number
+	_wave_status.text = "Oleada %d completada · puedes expandir el terreno o preparar la siguiente prueba" % round_number
 	RunManager.transition_to(RunManager.Phase.TERRAIN_EXPANSION)
 	_refresh_placement()
+	_refresh_tower_controls()
 
 func _on_wave_failed(reason: String) -> void:
+	_build_controller.cancel_build_mode()
 	_placement_enabled = false
 	_start_wave_button.disabled = true
 	_wave_status.text = "DERROTA · %s" % reason
 	RunManager.transition_to(RunManager.Phase.RUN_DEFEAT)
 	_refresh_placement()
+	_refresh_tower_controls()
 
 func _on_enemy_count_changed(alive_count: int) -> void:
 	if RunManager.phase == RunManager.Phase.COMBAT:
@@ -376,15 +521,20 @@ func _piece_summary(piece: TerrainPieceData) -> String:
 	]
 
 func _on_preview_hover_changed(local_coord: Vector2i, terrain_type: int, elevation: int) -> void:
+	_hovered_coord = local_coord
+	_has_hovered_cell = true
 	_hover_status.text = "Casilla del tablero (q,r): (%d, %d) · %s · h%d" % [
 		local_coord.x,
 		local_coord.y,
 		_terrain_display_name(terrain_type),
 		elevation,
 	]
+	_refresh_build_preview()
 
 func _on_preview_hover_cleared() -> void:
+	_has_hovered_cell = false
 	_hover_status.text = "Casilla del tablero (q,r): — · hover sobre cara superior"
+	_piece_preview.set_tower_build_preview(false)
 
 func _toggle_path_debug() -> void:
 	_path_debug_visible = not _path_debug_visible

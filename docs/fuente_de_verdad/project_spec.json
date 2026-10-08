@@ -43,6 +43,24 @@
     "blocking_terrain_placement_during_combat": true,
     "automatic_next_round": false
   },
+  "m6_towers_prototype": {
+    "initial_tower_id": "basic_bolt",
+    "base_damage_provisional": 10,
+    "attack_rate_per_second_provisional": 1.0,
+    "range_hexes_provisional": 3.0,
+    "allowed_terrain": ["GRASS", "MOUNTAIN"],
+    "buildable_phases": ["ROUND_PREP", "COMBAT", "TERRAIN_EXPANSION"],
+    "targeting_modes": ["FIRST_PROGRESS", "LAST_PROGRESS", "HIGHEST_HEALTH", "HIGHEST_ARMOR"],
+    "target_scan_interval_seconds": 0.1,
+    "attack": "hitscan_direct_to_enemy_until_m7_damage_pipeline",
+    "height_range_bonus_per_elevation_level_provisional": 0.25,
+    "upgrade_max_level": 3,
+    "upgrade_damage_per_level_provisional": 5,
+    "upgrade_range_hexes_per_level_provisional": 0.25,
+    "upgrade_costs": "free_placeholder_until_m9_economy",
+    "sale": false,
+    "path_blocking": false
+  },
   "terrain_piece_rotation_step_degrees": 60,
   "terrain_piece_rotation_positions": 6,
   "terrain_piece_initial_content_ids": [
@@ -103,6 +121,7 @@
     "armor",
     "regeneration"
   ],
+  "m6_enemy_armor_usage": "target_priority_only; damage mitigation belongs to M7",
   "run_phases": [
     "RUN_SETUP",
     "ROUND_PREP",

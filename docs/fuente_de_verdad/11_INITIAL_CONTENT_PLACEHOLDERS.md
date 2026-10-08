@@ -3,7 +3,7 @@
 Estos nombres/números son temporales y NO diseño final.
 
 ## Torres de prueba
-1. Basic Bolt — generalista.
+1. Basic Bolt — generalista. M6 implementa la primera versión vectorial con estadísticas configurables en `data/towers/basic_bolt.tres`; sus cifras son placeholders de sistema, no balance ni arte final.
 2. Breaker — mejor contra armor.
 3. Executioner — mejor contra health.
 4. Hexfire — Burn.

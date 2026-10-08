@@ -11,7 +11,7 @@
 | M3 7-Hex Pieces | Implementación en código; interacción por revisar | Cinco Resources de 7 hexes, rotación no destructiva a seis orientaciones, sockets explícitos con aperturas laterales flexibles, validador de solapamiento/adyacencia y conexión compatible, tablero persistente, ghost legal/ilegal, selección, hover global, confirmación/cancelación. Sockets y colocación aún necesitan inspección en Godot. |
 | M4 Path Graph | Implementado; 7 escenarios smoke correctos | `PathGraph` axial con sockets exactos/flexibles complementarios, endpoints spawn/base, BFS de coste unitario determinista, rutas mínimas cacheadas por spawn, bifurcaciones, rechazo de subredes/salidas sin ruta, recalculo solo al iniciar y confirmar pieza, overlay `D`. La escena principal y `tests/path_graph_smoke.tscn` cargan en Godot 4.7; las siete pruebas lógicas pasan. Falta inspección visual manual del overlay. Provisionalidades en ADR-0007. |
 | M5 Enemy + Base | Implementado; smoke de oleada correcto | Base con vida, `Enemy` data-driven, movimiento sobre `PathRoute`, `WaveDirector`, daño por llegada, derrota y fases `COMBAT`/`RUN_DEFEAT`/`TERRAIN_EXPANSION`. La primera oleada configurable completa sus spawns y termina con base en 20/50 HP. Falta revisar visualmente la integración en ventana. Valores/política provisionales en ADR-0008. |
-| M6 Towers | TODO | |
+| M6 Towers | Implementación; smoke correcto; aceptación manual pendiente | `TowerData`/Basic Bolt, `BuildController`, colocación sobre Grass/Mountain, selección de prioridad, rango/cadencia, hitscan, mejoras hasta nivel 3 y UI de preview/selección implementados. `tests/m6_tower_smoke.tscn` valida fases, construcción, rechazo, upgrades, altura, prioridades, rango, cooldown/cadencia, daño y descarte seguro de objetivos eliminados. Falta seguir la prueba manual M6 de `10_ACCEPTANCE_TESTS.md` para confirmar lectura visual y clics en ventana. Provisionalidades en ADR-0009. |
 | M7 Damage Model | TODO | |
 | M8 Status Effects | TODO | |
 | M9 Economy + Mana | TODO | |
@@ -34,6 +34,7 @@
 - La navegación M3 usa `Camera2D`: botón central + arrastre panea, rueda hace zoom centrado en cursor, `H` oculta/muestra HUD y `R` centra el tablero. El HUD permanece en `CanvasLayer`.
 - M4 deriva una ruta mínima en BFS por cada salida exacta externa abierta y conserva la topología de ramas en el grafo. M5 activa el primer candidato en orden determinista solo para la muestra; base `(0,0)` sigue como anclaje provisional.
 - M5 usa una base de 50 HP, enemigos con 20 HP, velocidad 90 px/s y 10 de daño de llegada, tres enemigos con 1 s de separación y selección `FIRST_SORTED`. Son valores de prueba configurables, no balance final; están registrados en ADR-0008.
+- M6 añade Basic Bolt con 10 de daño, 1 ataque/s, rango base 3 hexes, mejoras +5 daño/+0.25 hex hasta nivel 3 y alcance +0.25 hex por nivel de elevación. Son cifras provisionales configurables, no balance final. Las mejoras son gratis hasta M9 y el ataque usa daño directo hasta M7; ADR-0009 registra el límite.
 
 ## Bugs/deuda conocida
 - Falta comprobar manualmente con el puntero los colores y coordenadas del hover, además de la rotación. `run_project` confirmó que Godot 4.7 inicia la escena sin errores, pero no automatizó el movimiento del puntero.
@@ -43,8 +44,11 @@
 ## Última verificación
 - Godot 4.7 ejecutó `tests/path_graph_smoke.tscn`: pasan siete escenarios M4 (ruta inicial, pareja exacta/flexible, flexible que no crea spawn, salida inválida hacia GRASS, socket exacto sin pareja, PATH desconectado y bifurcación/convergencia con BFS determinista).
 - Godot 4.7 ejecutó `tests/m5_wave_smoke.tscn`: ruta M4, muerte de enemigo, derrota de base y oleada completa correctos; la base queda en 20/50 HP y no hay enemigos activos.
+- Godot 4.7 ejecutó `tests/m6_tower_smoke.tscn`: fases `RUN_SETUP`/prep/combat/expansión/derrota; construcción en Grass/Mountain; rechazo de PATH/ocupado; ocupación axial; mejoras y límite; bonus de elevación; prioridades first/last/highest health/highest armor; filtro de rango, cadencia, daño hitscan y descarte seguro de una referencia tras liberar el objetivo.
+- Godot 4.7 arrancó `game/main/main.tscn` durante tres frames headless sin errores de escena ni GDScript. El host reportó que no pudo leer su almacén de certificados raíz, sin afectar el arranque o smoke.
+- Los smokes M5/M6 pasan usando `--log-file` dentro del workspace. Sin esa opción, este host intentó escribir en un `user://logs` no disponible y Godot falló antes de imprimir el resultado; no es un fallo reproducible con la ruta de log explícita.
 - `game/main/main.tscn` arranca sin errores de carga ni de GDScript en ejecución headless. El host imprime un error al leer su almacén de certificados raíz; no afecta al código del proyecto ni al resultado de las pruebas.
 - Las pruebas no sustituyen la inspección visual con ratón: quedan por revisar el hover/cliffs, rotación/colocación y overlay `D` en ventana Godot.
 
 ## Próximo paso
-Revisar visualmente M2–M5 en la ventana de Godot y continuar con M6 (build mode y torres). M5 no implementa combate defensivo ni rondas repetibles: los enemigos de la muestra llegan a la base porque las torres corresponden a M6; la gestión completa de rondas corresponde a M10.
+Seguir la prueba manual M6 de `10_ACCEPTANCE_TESTS.md` en una ventana de Godot: feedback rojo/verde de construcción, selección y anillo de alcance, HUD de prioridad/mejora y disparos durante la oleada. Cerrar M6 cuando esa inspección visual/interactiva pase; después avanzar a M7 (Damage model). Siguen pendientes las inspecciones visuales históricas de M2–M5 anotadas arriba. La gestión completa de rondas corresponde a M10.

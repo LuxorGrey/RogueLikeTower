@@ -79,6 +79,8 @@ Contrato del prototipo: la base temporal se dibuja sobre PATH `(0,0)` y los enem
 - Venta opcional solo como placeholder configurable.
 - Resultado: Tower Defense mínimo jugable.
 
+Contrato de la primera implementación: `BuildController` construye solo sobre `GRASS`/`MOUNTAIN` libres durante preparación, combate o expansión; una torre no puede ocupar PATH, así que no altera ni bloquea la ruta M4. `Basic Bolt` es la única torre inicial y usa `TowerData`; ofrece prioridades first/last progress, highest health y highest armor, alcance y cadencia configurables, y ataque hitscan directo al `Enemy`. La muestra habilita mejoras gratuitas hasta nivel 3 porque los costes pertenecen a M9; la venta queda omitida. Daño 10, cadencia 1/s, alcance 3 hexes, mejoras +5 daño/+0.25 hex por nivel y bonus de alcance +0.25 por nivel de elevación son placeholders, no balance confirmado. La armadura solo sirve para la prioridad de target; la mitigación y `DamagePacket` corresponden a M7. ADR-0009 registra estas decisiones.
+
 ## M7 — Damage model
 - Health.
 - Armor.

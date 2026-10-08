@@ -20,6 +20,7 @@ var _enemy_data: EnemyData
 @onready var _path_follower: PathFollowerComponent = %PathFollower
 
 func _ready() -> void:
+	add_to_group(&"enemies")
 	_health.health_changed.connect(_on_health_changed)
 	_health.health_depleted.connect(_on_health_depleted)
 	_path_follower.route_completed.connect(_on_route_completed)
@@ -63,6 +64,12 @@ func get_current_health() -> int:
 
 func get_maximum_health() -> int:
 	return _health.maximum_health
+
+func get_armor_value() -> int:
+	return _enemy_data.armor if _enemy_data != null else 0
+
+func get_route_progress() -> float:
+	return _path_follower.get_progress_ratio()
 
 func _draw() -> void:
 	draw_circle(Vector2.ZERO, 13.0, BODY_OUTLINE)

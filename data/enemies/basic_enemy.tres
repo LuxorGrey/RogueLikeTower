@@ -10,4 +10,5 @@ display_name = "Asaltante básico (placeholder)"
 max_health = 20
 move_speed = 90.0
 base_damage = 10
+armor = 0
 scene = ExtResource("2_enemy_scene")

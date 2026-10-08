@@ -66,6 +66,30 @@
 - Status expira correctamente.
 - Matar enemigo entrega recompensa una vez.
 
+## M6 Towers
+- `Basic Bolt` carga desde `TowerData`; ID, daño, cadencia, alcance, terreno permitido, prioridades y mejoras están configurados en Resource.
+- Build mode se inicia en `ROUND_PREP`, `COMBAT` y `TERRAIN_EXPANSION`, y no en `RUN_SETUP` ni `RUN_DEFEAT`.
+- Una torre se coloca en una celda `GRASS` o `MOUNTAIN` construible y libre; PATH, una celda vacía del mapa, terreno no permitido y una celda ocupada se rechazan con explicación en HUD.
+- Confirmar construcción marca `HexCell.occupied` y `tower_id`, crea una sola torre en la escena y la selecciona; no cambia el `PathGraph`.
+- El preview de construcción aparece en la casilla bajo el cursor: verde si es legal, rojo si no, con el alcance provisional. Al seleccionar una torre, su marcador de alcance coincide con sus estadísticas actuales.
+- La UI selecciona cada prioridad: más avanzado, menos avanzado, más vida actual y más armadura. Los empates conservan orden estable por ID de instancia.
+- Una torre solo adquiere y ataca enemigos `MOVING` dentro de su alcance durante `COMBAT`; mantiene la cadencia configurada y el daño reduce la vida del objetivo. Fuera de alcance o fuera de combate no ataca.
+- La elevación suma el bonus de alcance configurable de TowerData. La elevación no modifica la coordenada ni la ocupación lógica de la torre.
+- Mejorar aumenta los stats configurados hasta `max_level`; una mejora posterior se bloquea. En M6 los upgrades son gratuitos como placeholder; costes quedan pendientes de M9.
+- El placeholder muestra la torre en `Entities` Y-sorted, orientación hacia el objetivo y un flash de ataque; el anillo de alcance se ve al seleccionar.
+- El `armor` de `EnemyData` permite ordenar por highest armor; no mitiga daño hasta M7.
+- Smoke M6: `tests/m6_tower_smoke.tscn` comprueba fases, Grass/Mountain, rechazo de PATH/ocupado, ocupación axial, niveles/alcance, elevación, las cuatro prioridades, filtro de rango, cooldown/cadencia, daño hitscan y descarte seguro de una referencia a enemigo eliminado.
+
+### Prueba manual de M6 en el juego
+1. Ejecutar `game/main/main.tscn`; en `ROUND_PREP` pulsar **Construir Basic Bolt**.
+2. Pasar el cursor por el camino `(0,0)`: el HUD debe explicar que solo vale Grass o Montaña y el preview debe marcarlo rojo. Hacer clic no debe ocupar esa casilla.
+3. Pasar el cursor por Grass `(1,-1)`: el preview debe ser verde y mostrar el anillo de alcance. Hacer clic; debe aparecer una torre seleccionada, su alcance real y sus estadísticas. Intentar construir otra en el mismo hex debe ser rechazado.
+4. Elegir prioridades distintas en el selector; la prioridad elegida debe aparecer en el estado de la torre. Usar **Mejorar torre** dos veces: nivel 3/3, daño 20 y alcance mayor que en nivel 1; el botón queda deshabilitado al máximo.
+5. Iniciar la oleada de prueba. Enemigos dentro del radio deben perder vida al ritmo de la cadencia, la torre debe girar hacia un objetivo y mostrar el flash de ataque. La oleada termina cuando el director no tiene enemigos activos; no se deben crear recompensas ni cobrarse costes todavía.
+6. (Opcional) Repetir la colocación en Montaña `(0,1)`: debe aceptar la casilla y el estado/preview debe reflejar su bonus provisional de elevación.
+
+Para dar M6 por aceptado deben pasar todos los bullets de la sección y la prueba manual debe confirmar el feedback visual e interacción. El smoke prueba reglas deterministas; la prueba manual cubre el render y el input de la escena.
+
 ## Loop
 - Al terminar oleada se entra en expansión.
 - No empieza siguiente ronda hasta colocar pieza válida.

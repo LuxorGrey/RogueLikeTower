@@ -102,6 +102,10 @@ unlock_id
 scene
 ```
 
+M6 implementa en `data/towers/tower_data.gd`: `id`, `display_name`, `base_damage`, `attack_rate`, `range_hexes`, `allowed_terrain_mask`, `targeting_mode`, `height_range_bonus_per_level`, `max_level`, los incrementos configurables de mejora y `scene`. `data/towers/basic_bolt.tres` es el primer contenido placeholder. Los costes siguen fuera del modelo activo hasta M9. `Tower` conserva su coordenada/elevación axial, nivel, prioridad y cooldown; su ataque hitscan aplica el daño con `Enemy.apply_damage` como puente temporal hasta el `DamagePacket` de M7.
+
+Las prioridades implementadas son `FIRST_PROGRESS`, `LAST_PROGRESS`, `HIGHEST_HEALTH` y `HIGHEST_ARMOR`. El progreso sale del índice y avance normalizados de `PathFollowerComponent`. M6 añade `armor` a `EnemyData` solo para leer la prioridad highest armor; no reduce daño ni activa regeneración.
+
 ## EnemyData : Resource
 ```text
 id
@@ -117,7 +121,7 @@ status_resistances
 scene
 ```
 
-M5 implementa de momento `id`, `display_name`, `max_health`, `move_speed`, `base_damage` y `scene` en `data/enemies/enemy_data.gd`. Armor, regeneración, recompensa, tags y resistencias se incorporarán en sus milestones; no se fingen como estadísticas ya funcionales. La escena de muestra y sus valores están en `data/enemies/basic_enemy.tres` y son provisionales.
+M5 implementó `id`, `display_name`, `max_health`, `move_speed`, `base_damage` y `scene` en `data/enemies/enemy_data.gd`. M6 añade `armor` como dato de selección de objetivo, pero no lo usa para mitigar daño. Regeneración, recompensa, tags, resistencias y el cálculo central se incorporarán en M7/M9; no se fingen como funcionales. La escena de muestra y sus valores están en `data/enemies/basic_enemy.tres` y son provisionales.
 
 ## BaseData / HealthComponent
 

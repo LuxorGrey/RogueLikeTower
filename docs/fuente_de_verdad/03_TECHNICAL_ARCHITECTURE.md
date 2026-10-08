@@ -82,8 +82,8 @@ Main (Node2D)
 │   ├── Decorations
 │   ├── Entities (Y-sort)
 │   │   ├── GameBase
-│   │   ├── Towers (futuro)
-│   │   └── Enemies
+│   │   ├── Tower instances (M6)
+│   │   └── Enemy instances
 │   ├── Projectiles
 │   └── Effects
 ├── WaveDirector
@@ -156,7 +156,9 @@ En M3, `HexGrid` es autoridad para las celdas confirmadas; `TerrainPlacementVali
 
 La navegación del mapa la controla un `Camera2D` en `Main`: el HUD vive en `CanvasLayer` y no se desplaza ni escala con la cámara. Mover la cámara mantiene el mapa dentro del mundo lógico; el zoom con rueda se centra en el cursor.
 
-M5 añade `GameBase` y `WaveDirector` a la escena principal. `GameBase` posee un `HealthComponent`; `Enemy` compone su propio `HealthComponent` y `PathFollowerComponent`. `WaveDirector` recibe la oleada, el snapshot M4, la base y el contenedor Y-sort; crea enemigos desde sus Resources y escucha sus señales de llegada o muerte. La UI de `Main` presenta vida, recuento y estado, y traduce las señales de oleada a fases de `RunManager`. Durante `COMBAT` se bloquean las entradas de colocación. Es una integración local para M5; la economía, torres, pipeline de daño y progresión de rondas siguen fuera de alcance.
+M5 añade `GameBase` y `WaveDirector` a la escena principal. `GameBase` posee un `HealthComponent`; `Enemy` compone su propio `HealthComponent` y `PathFollowerComponent`. `WaveDirector` recibe la oleada, el snapshot M4, la base y el contenedor Y-sort; crea enemigos desde sus Resources y escucha sus señales de llegada o muerte. La UI de `Main` presenta vida, recuento y estado, y traduce las señales de oleada a fases de `RunManager`. Durante `COMBAT` se bloquean las entradas de colocación de terreno.
+
+M6 añade `BuildController` a `Main`; recibe el `HexGrid`, `Entities`, el origen y el radio del mapa. El controlador valida fase, terreno construible y ocupación antes de instanciar una escena desde `TowerData`, y registra la torre en `HexCell.occupied/tower_id`. Solo Grass y Mountain permiten construir, así que las torres no cambian `PathGraph`. `Tower` es una escena Y-sorted con datos, nivel, selección, prioridad de objetivo, alcance y cadencia; consulta los nodos del grupo `enemies` cada 0.1 s y usa `PathFollowerComponent.get_progress_ratio()` para first/last progress. Su placeholder vectorial dibuja pedestal, orientación, anillo de alcance al seleccionarlo y un flash hitscan al atacar. `TerrainPiecePreview` representa el marcador/rango de colocación. La UI de `Main` alterna build mode, muestra errores, cambia la prioridad y mejora la torre. Las mejoras de esta muestra son gratuitas hasta que M9 integre economía. M6 aplica daño llamando `Enemy.apply_damage`; el pipeline central de M7 sustituirá esa ruta. ADR-0009 recoge las reglas temporales.
 
 ## Save
 Guardar solo datos estables:
