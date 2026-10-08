@@ -759,15 +759,17 @@ func _refresh_combat_debug() -> void:
 	var effective_regen: float = target.get_effective_regen_per_second()
 	if not is_equal_approx(effective_regen, target.get_regen_per_second()):
 		regen_text = " → %.1f/s" % effective_regen
-	_combat_debug.text = "%s · %d/%d HP · arm %d · regen %.1f%s · impacto %d %s%s\n%s" % [
+	var damage_summary: String = "impacto %d %s" % [int(estimate.get("calculated_health_damage")), damage_tag_name]
+	if tower_data.attack_pattern == TowerData.AttackPattern.SAWBLADE:
+		damage_summary = "Bleed bruto %d" % tower.get_current_damage()
+	_combat_debug.text = "%s · %d/%d HP · arm %d · regen %.1f%s · %s%s\n%s" % [
 		target.get_display_name(),
 		target.get_current_health(),
 		target.get_maximum_health(),
 		target.get_armor_value(),
 		target.get_regen_per_second(),
 		regen_text,
-		int(estimate.get("calculated_health_damage")),
-		damage_tag_name,
+		damage_summary,
 		mana_text,
 		status_text,
 	]

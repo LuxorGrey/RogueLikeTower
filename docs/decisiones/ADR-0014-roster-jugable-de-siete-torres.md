@@ -9,3 +9,4 @@
 - Consecuencias: `M10` se implementará después de cerrar la aceptación manual M9.5; las cartas M11 siguen posteriores a M10. Los siete perfiles tienen placeholder vectorial y no requieren assets de terceros.
 - Verificación: [10_ACCEPTANCE_TESTS.md](../fuente_de_verdad/10_ACCEPTANCE_TESTS.md#roster-jugable-m95) describe cómo probar cada patrón y su coste/maná/estado.
 - Referencia comunitaria consultada el 2026-10-08: [Shredder — Rogue Tower Wiki](https://rogue-tower.fandom.com/wiki/Shredder), edición/versionado no visible. Describe hoja que recorre PATH, perfora, pierde daño por enemigo y aplica Bleed. Se usa como referencia de rol; la implementación conserva el patrón general con cifras configurables del proyecto.
+- La descripción inicial de Shredder que lo hacía dirigirse al punto de ruta más cercano quedó sustituida por [ADR-0015](ADR-0015-shredder-bleed-y-recorrido.md): la hoja primero alcanza al objetivo actual y entonces sigue el resto de su ruta.

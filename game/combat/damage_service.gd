@@ -57,9 +57,12 @@ func apply_damage(target: Enemy, packet: RefCounted) -> RefCounted:
 	var applied_status_ids := PackedStringArray()
 	if is_instance_valid(target) and target.state == Enemy.State.MOVING:
 		var status_payloads: Array[Resource] = packet.get("status_payloads")
+		var total_damage_overrides: Dictionary[StringName, int] = packet.get("status_total_damage_overrides")
 		var source_id: int = int(packet.get("source_id"))
 		for effect_data in status_payloads:
-			if target.apply_status_effect(effect_data, source_id):
+			var effect_id: StringName = StringName(effect_data.get("id"))
+			var total_damage_override: int = int(total_damage_overrides.get(effect_id, -1))
+			if target.apply_status_effect(effect_data, source_id, total_damage_override):
 				applied_status_ids.append(String(effect_data.get("id")))
 	result.set("applied_status_ids", applied_status_ids)
 	result.set("target_killed", target.state == Enemy.State.DEAD)

@@ -9,6 +9,8 @@ class ActiveStatus:
 	var remaining_duration: float = 0.0
 	var time_until_tick: float = 0.0
 	var source_id: int = 0
+	var total_damage_remaining: int = -1
+	var total_damage_ticks_remaining: int = 0
 
 const DAMAGE_PACKET_SCRIPT: Script = preload("res://game/combat/damage_packet.gd")
 const STACK_RULE_REFRESH: int = 0
@@ -28,7 +30,7 @@ func _ready() -> void:
 func configure_damage_service(damage_service: Node) -> void:
 	_damage_service = damage_service
 
-func apply_effect(effect_data: Resource, source_id: int) -> bool:
+func apply_effect(effect_data: Resource, source_id: int, total_damage_override: int = -1) -> bool:
 	if _enemy == null or not is_instance_valid(_enemy) or _enemy.state != Enemy.State.MOVING:
 		return false
 	if effect_data == null or not effect_data.has_method("validate"):
@@ -56,6 +58,13 @@ func apply_effect(effect_data: Resource, source_id: int) -> bool:
 				active_status.stacks = 1
 			STACK_RULE_ADD_STACKS:
 				active_status.stacks = mini(active_status.stacks + 1, int(effect_data.get("max_stacks")))
+	var tick_count: int = _get_effect_tick_count(effect_data)
+	if total_damage_override >= 0 and tick_count > 0:
+		active_status.total_damage_remaining = total_damage_override * active_status.stacks
+		active_status.total_damage_ticks_remaining = tick_count
+	else:
+		active_status.total_damage_remaining = -1
+		active_status.total_damage_ticks_remaining = 0
 
 	_recalculate_speed_multiplier()
 	set_process(true)
@@ -128,15 +137,25 @@ func _apply_damage_tick(effect_id: StringName, active_status: ActiveStatus) -> v
 	if _damage_service == null or not is_instance_valid(_damage_service):
 		return
 	var packet: RefCounted = DAMAGE_PACKET_SCRIPT.new()
-	packet.set(
-		"raw_damage",
-		float(active_status.data.get("damage_per_tick")) * float(active_status.stacks)
-	)
+	var damage_for_tick: float = float(active_status.data.get("damage_per_tick")) * float(active_status.stacks)
+	if active_status.total_damage_remaining >= 0 and active_status.total_damage_ticks_remaining > 0:
+		damage_for_tick = float(ceili(
+			float(active_status.total_damage_remaining) / float(active_status.total_damage_ticks_remaining)
+		))
+		active_status.total_damage_remaining = maxi(active_status.total_damage_remaining - int(damage_for_tick), 0)
+		active_status.total_damage_ticks_remaining -= 1
+	packet.set("raw_damage", damage_for_tick)
 	packet.set("source_id", active_status.source_id)
 	packet.set("damage_tags", int(active_status.data.get("damage_tags")))
 	var result: Variant = _damage_service.call("apply_damage", _enemy, packet)
 	var applied_damage: int = int(result.get("health_damage")) if result != null else 0
 	status_ticked.emit(effect_id, applied_damage)
+
+func _get_effect_tick_count(effect_data: Resource) -> int:
+	var tick_interval: float = float(effect_data.get("tick_interval"))
+	if tick_interval <= 0.0:
+		return 0
+	return int(floor(float(effect_data.get("duration")) / tick_interval + 0.0001))
 
 func _recalculate_speed_multiplier() -> void:
 	if _enemy == null or not is_instance_valid(_enemy):

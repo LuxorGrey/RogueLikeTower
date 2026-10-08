@@ -119,7 +119,10 @@ func create_damage_packet() -> RefCounted:
 	packet.set("source_id", get_instance_id())
 	packet.set("damage_tags", _tower_data.damage_tags)
 	packet.set("armor_multiplier", _tower_data.armor_multiplier)
-	packet.set("health_multiplier", _tower_data.health_multiplier)
+	var health_multiplier: float = _tower_data.health_multiplier
+	if _tower_data.attack_pattern == TowerData.AttackPattern.SAWBLADE:
+		health_multiplier = 0.0
+	packet.set("health_multiplier", health_multiplier)
 	packet.set("regen_counter_strength", _tower_data.regen_counter_strength)
 	packet.set("regen_counter_duration", _tower_data.regen_counter_duration)
 	packet.set("status_payloads", _tower_data.status_effects.duplicate())

@@ -106,10 +106,10 @@ func apply_regen_counter(strength: float, duration: float) -> void:
 	_regen_counter_strength = maxf(_regen_counter_strength, clampf(strength, 0.0, 1.0))
 	_regen_counter_time_left = maxf(_regen_counter_time_left, duration)
 
-func apply_status_effect(effect_data: Resource, source_id: int) -> bool:
+func apply_status_effect(effect_data: Resource, source_id: int, total_damage_override: int = -1) -> bool:
 	if state != State.MOVING:
 		return false
-	return bool(_status_controller.call("apply_effect", effect_data, source_id))
+	return bool(_status_controller.call("apply_effect", effect_data, source_id, total_damage_override))
 
 func set_status_speed_multiplier(multiplier: float) -> void:
 	_path_follower.set_speed_multiplier(multiplier)

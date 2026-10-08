@@ -145,10 +145,11 @@ health_multiplier
 regen_counter_strength
 regen_counter_duration
 status_payloads
+status_total_damage_overrides # presupuesto bruto total opcional por estado, distribuido entre sus ticks
 critical? # mantener desactivado si no se aprueba
 ```
 
-M7 implementa `DamagePacket` como `RefCounted` transitorio y `DamageResult` como resultado auditable por HUD/señales. `DamageService` calcula `armor_absorbed = min(raw_damage, armor * armor_multiplier)`, luego `floor(max(raw_damage - armor_absorbed, 0) * damage_tag_multiplier * health_multiplier)`. El multiplicador por tag viene de `EnemyData`; si se combinan tags se multiplican sus valores. La vida aplicada queda limitada al HP actual. La contrarregeneración suprime la fracción configurada de `regen_per_second` durante `regen_counter_duration`; impactos sucesivos conservan la mayor fuerza y refrescan el tiempo restante con el máximo. Estos contratos son provisionales y están registrados en ADR-0010. M8 consume `status_payloads` después del daño directo y la contrarregeneración, solo si el objetivo sigue vivo.
+M7 implementa `DamagePacket` como `RefCounted` transitorio y `DamageResult` como resultado auditable por HUD/señales. `DamageService` calcula `armor_absorbed = min(raw_damage, armor * armor_multiplier)`, luego `floor(max(raw_damage - armor_absorbed, 0) * damage_tag_multiplier * health_multiplier)`. El multiplicador por tag viene de `EnemyData`; si se combinan tags se multiplican sus valores. La vida aplicada queda limitada al HP actual. La contrarregeneración suprime la fracción configurada de `regen_per_second` durante `regen_counter_duration`; impactos sucesivos conservan la mayor fuerza y refrescan el tiempo restante con el máximo. Estos contratos son provisionales y están registrados en ADR-0010. M8 consume `status_payloads` después del daño directo y la contrarregeneración, solo si el objetivo sigue vivo. `status_total_damage_overrides` es opcional: establece un presupuesto bruto por aplicación de estado que el controlador distribuye entre sus ticks; cada tick sigue pasando por `DamageService` y sus defensas.
 
 ## StatusEffectData
 ```text
@@ -165,7 +166,7 @@ damage_tags
 
 M8 implementa estos campos en `game/combat/status_effect_data.gd`. `duration` siempre es positiva; `tick_interval` puede ser cero si el efecto no hace daño periódico. `REFRESH` deja una acumulación y reinicia la duración; `ADD_STACKS` suma una acumulación hasta `max_stacks` y también reinicia la duración. Reaplicar no reinicia el reloj del próximo tick. El daño por tick se multiplica por las acumulaciones y pasa por `DamageService` con los `damage_tags` configurados. Si una torre reaplica el mismo ID, la definición y el `source_id` activos pasan a ser los de la aplicación más reciente. Cada enemigo guarda sus propias instancias runtime y no modifica los Resources compartidos. Los efectos de velocidad se combinan usando el menor `speed_multiplier`; al quitar el último efecto se restaura `1.0`. Muerte y llegada a la base limpian todos los estados. El campo de resistencias queda fuera mientras el diseño no lo necesite. Slow, Burn, Bleed y el Poison de M9.5 son datos configurables provisionales; Bleed mantiene el fixture M8 y también se usa en Shredder.
 
-`TowerData.status_effects` es una lista de estos Resources, sin IDs repetidos dentro de una torre. `DamagePacket.status_payloads` transporta esa lista del impacto al `DamageService`, y `DamageResult.applied_status_ids` permite auditar qué se aplicó.
+`TowerData.status_effects` es una lista de estos Resources, sin IDs repetidos dentro de una torre. `DamagePacket.status_payloads` transporta esa lista del impacto al `DamageService`, y `DamageResult.applied_status_ids` permite auditar qué se aplicó. El override de presupuesto no modifica el Resource compartido: el controlador guarda el total y los ticks restantes en la instancia del estado de cada enemigo.
 
 ## WaveData
 ```text

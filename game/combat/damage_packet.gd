@@ -19,6 +19,8 @@ var health_multiplier: float = 1.0
 var regen_counter_strength: float = 0.0
 var regen_counter_duration: float = 0.0
 var status_payloads: Array[Resource] = []
+## Optional total raw damage budgets, distributed across the effect's ticks.
+var status_total_damage_overrides: Dictionary[StringName, int] = {}
 
 func validate() -> PackedStringArray:
 	var errors := PackedStringArray()
@@ -32,6 +34,7 @@ func validate() -> PackedStringArray:
 		errors.append("La fuerza anti-regeneración debe estar entre 0 y 1.")
 	if regen_counter_duration < 0.0:
 		errors.append("La duración anti-regeneración no puede ser negativa.")
+	var status_ids: Dictionary[StringName, bool] = {}
 	for status_effect: Resource in status_payloads:
 		if status_effect == null or not status_effect.has_method("validate"):
 			errors.append("DamagePacket incluye un payload de estado no válido.")
@@ -39,4 +42,10 @@ func validate() -> PackedStringArray:
 		var status_errors: PackedStringArray = status_effect.call("validate")
 		for status_error in status_errors:
 			errors.append("Payload de estado: %s" % status_error)
+		status_ids[StringName(status_effect.get("id"))] = true
+	for effect_id: StringName in status_total_damage_overrides:
+		if not status_ids.has(effect_id):
+			errors.append("DamagePacket define daño total para un estado que no incluye.")
+		if status_total_damage_overrides[effect_id] < 0:
+			errors.append("El daño total de un estado no puede ser negativo.")
 	return errors
