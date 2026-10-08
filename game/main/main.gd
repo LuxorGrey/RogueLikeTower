@@ -16,6 +16,8 @@ const TOWER_LAYER_TEST_WAVE: WaveData = preload("res://data/waves/tower_layer_tr
 const RUN_ECONOMY_DATA: Resource = preload("res://data/run/run_economy_m9.tres")
 const DEMO_CARD_POOL: Resource = preload("res://data/cards/demo_card_pool.tres")
 const META_SHOP_PANEL_SCRIPT: Script = preload("res://game/progression/meta_shop_panel.gd")
+const HUD_STYLE_SCRIPT: Script = preload("res://game/ui/rogue_hud_style.gd")
+const ICON_CATALOG_SCRIPT: Script = preload("res://game/ui/icon_catalog.gd")
 const BALLISTA: TowerData = preload("res://data/towers/ballista.tres")
 const MORTAR: TowerData = preload("res://data/towers/mortar.tres")
 const TESLA_COIL: TowerData = preload("res://data/towers/tesla_coil.tres")
@@ -39,6 +41,7 @@ var _rotation_steps: int = 0
 var _anchor_coord: Vector2i = Vector2i.ZERO
 var _next_piece_instance_id: int = 1
 var _latest_placement: TerrainPlacementResult
+var _placement_path_graph: PathGraph
 var _is_panning: bool = false
 var _path_graph := PathGraph.new()
 var _path_debug_visible: bool = false
@@ -60,12 +63,23 @@ var _selected_expansion_piece: TerrainPieceData
 var _pending_expansion_round: int = 0
 var _pending_expansion_reward: int = 0
 var _upgrade_card_buttons: Array[Button] = []
-var _upgrade_card_titles: Array[Label] = []
-var _upgrade_card_descriptions: Array[Label] = []
+var _upgrade_card_titles: Array[RichTextLabel] = []
+var _upgrade_card_descriptions: Array[RichTextLabel] = []
 var _upgrade_card_rarities: Array[Label] = []
+var _upgrade_card_tower_icons: Array[TextureRect] = []
 var _upgrade_card_panel: PanelContainer
 var _upgrade_card_heading: Label
 var _meta_shop_panel: CanvasLayer
+var _hud_style: RefCounted
+var _icon_catalog: RefCounted
+var _base_health_fill_style: StyleBoxFlat
+var _tower_shortcut_names: Array[Label] = []
+var _tower_shortcut_prices: Array[Label] = []
+var _tower_shortcut_icons: Array[TextureRect] = []
+var _tower_upgrade_amounts: Array[Label] = []
+var _tower_upgrade_cost_icons: Array[TextureRect] = []
+var _tower_upgrade_layer_icons: Array[TextureRect] = []
+var _hovered_tower: Tower
 
 @onready var _piece_preview: TerrainPiecePreview = %PiecePreview
 @onready var _piece_status: Label = %PieceStatus
@@ -77,6 +91,8 @@ var _meta_shop_panel: CanvasLayer
 @onready var _confirm_button: Button = %ConfirmPlacement
 @onready var _cancel_button: Button = %CancelPlacement
 @onready var _hud_panel: PanelContainer = %Panel
+@onready var _round_panel: PanelContainer = %RoundPanel
+@onready var _tower_info_panel: PanelContainer = %TowerInfoPanel
 @onready var _hud: CanvasLayer = %HUD
 @onready var _terrain_panel: PanelContainer = %TerrainPanel
 @onready var _terrain_card_panel: PanelContainer = %TerrainCardPanel
@@ -111,20 +127,21 @@ var _meta_shop_panel: CanvasLayer
 @onready var _entities: Node2D = %Entities
 @onready var _base: GameBase = %GameBase
 @onready var _wave_director: WaveDirector = %WaveDirector
+@onready var _base_health_bar: ProgressBar = %BaseHealthBar
 @onready var _base_status: Label = %BaseStatus
-@onready var _economy_status: Label = %EconomyStatus
-@onready var _wave_status: Label = %WaveStatus
+@onready var _gold_icon: TextureRect = %GoldIcon
+@onready var _gold_status: Label = %GoldStatus
+@onready var _mana_icon: TextureRect = %ManaIcon
+@onready var _mana_status: Label = %ManaStatus
+@onready var _wave_status: RichTextLabel = %WaveStatus
+@onready var _round_progress: Control = %RoundProgress
 @onready var _start_wave_button: Button = %StartWave
 @onready var _build_controller: BuildController = %BuildController
-@onready var _build_status: Label = %BuildStatus
-@onready var _tower_status: Label = %TowerStatus
-@onready var _combat_debug: Label = %CombatDebug
+@onready var _build_status: RichTextLabel = %BuildStatus
+@onready var _tower_status: RichTextLabel = %TowerStatus
+@onready var _combat_debug: RichTextLabel = %CombatDebug
 @onready var _tower_actions: VBoxContainer = %TowerActions
-@onready var _tower_priority_selectors: Array[OptionButton] = [
-	%TowerPriority1,
-	%TowerPriority2,
-	%TowerPriority3,
-]
+@onready var _tower_priority_menu: MenuButton = %TowerPriorityMenu
 @onready var _tower_upgrade_buttons: Array[Button] = [
 	%UpgradeHealth,
 	%UpgradeArmor,
@@ -153,10 +170,15 @@ func _ready() -> void:
 	_pieces = [STRAIGHT_PIECE, GENTLE_TURN_PIECE, HARD_TURN_PIECE, FORK_PIECE, CONVERGENCE_PIECE]
 	_rotate_left.pressed.connect(_rotate_by.bind(-1))
 	_rotate_right.pressed.connect(_rotate_by.bind(1))
+	_hud_style = HUD_STYLE_SCRIPT.new() as RefCounted
+	_hud_style.call("apply_to_tree", _hud)
+	_configure_hud_visuals()
+	_configure_hud_tooltips()
 	for index in _terrain_card_buttons.size():
 		_terrain_card_buttons[index].pressed.connect(_on_terrain_card_selected.bind(index))
 		_style_terrain_card_button(_terrain_card_buttons[index])
 	_create_upgrade_card_panel()
+	_hud_style.call("apply_to_tree", _upgrade_card_panel)
 	_meta_shop_panel = META_SHOP_PANEL_SCRIPT.new() as CanvasLayer
 	_meta_shop_panel.call(
 		"configure",
@@ -191,8 +213,7 @@ func _ready() -> void:
 	_build_controller.tower_demolished.connect(_on_tower_demolished)
 	_build_controller.tower_upgraded.connect(_on_tower_upgraded)
 	_build_controller.build_mode_changed.connect(_on_build_mode_changed)
-	for slot in _tower_priority_selectors.size():
-		_tower_priority_selectors[slot].item_selected.connect(_on_targeting_mode_selected.bind(slot))
+	_tower_priority_menu.get_popup().id_pressed.connect(_on_targeting_mode_toggled)
 	for layer in _tower_upgrade_buttons.size():
 		_tower_upgrade_buttons[layer].pressed.connect(_on_upgrade_tower_pressed.bind(layer))
 	_demolish_tower_button.pressed.connect(_on_demolish_tower_pressed)
@@ -206,6 +227,7 @@ func _ready() -> void:
 		_run_card_service,
 		MetaProgression
 	)
+	_damage_service.connect(&"damage_resolved", _on_damage_resolved)
 	var unlocked_content_ids: Array[StringName] = []
 	unlocked_content_ids.assign(MetaProgression.call("get_unlocked_content_ids"))
 	if not bool(_run_card_service.call("configure", DEMO_CARD_POOL, unlocked_content_ids, current_run_seed, true)):
@@ -254,6 +276,7 @@ func _ready() -> void:
 		push_error("No se pudo iniciar la economía de run: %s" % _run_economy.get("last_error"))
 	_refresh_tower_controls()
 	_refresh_path_status()
+	_round_progress.call("set_progress", _campaign_round_number, 0)
 	_piece_selector.add_item("— sin pieza —", 0)
 	for piece in _pieces:
 		_piece_selector.add_item(piece.display_name)
@@ -390,6 +413,145 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _toggle_hud() -> void:
 	_hud.visible = not _hud.visible
+	_refresh_tower_controls()
+
+func _configure_hud_visuals() -> void:
+	_icon_catalog = ICON_CATALOG_SCRIPT.new() as RefCounted
+	_gold_icon.texture = _icon_catalog.call("get_icon", &"gold") as Texture2D
+	_mana_icon.texture = _icon_catalog.call("get_icon", &"mana") as Texture2D
+	_configure_tower_shortcut_visuals()
+	_configure_tower_upgrade_visuals()
+
+	var background_style := StyleBoxFlat.new()
+	background_style.bg_color = Color("#253238")
+	background_style.set_corner_radius_all(4)
+	var fill_style := StyleBoxFlat.new()
+	fill_style.bg_color = Color("#76bd82")
+	fill_style.set_corner_radius_all(4)
+	_base_health_fill_style = fill_style
+	_base_health_bar.add_theme_stylebox_override("background", background_style)
+	_base_health_bar.add_theme_stylebox_override("fill", _base_health_fill_style)
+
+func _configure_tower_shortcut_visuals() -> void:
+	var icon_names: Array[StringName] = [
+		&"ballista", &"mortar", &"tesla_coil", &"frost_keep", &"flame_thrower", &"poison_sprayer", &"shredder",
+	]
+	_tower_shortcut_names.clear()
+	_tower_shortcut_prices.clear()
+	_tower_shortcut_icons.clear()
+	for index in _tower_shortcut_buttons.size():
+		var shortcut_button: Button = _tower_shortcut_buttons[index]
+		shortcut_button.text = ""
+		shortcut_button.custom_minimum_size = Vector2(132.0, 132.0)
+		shortcut_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		var margins := MarginContainer.new()
+		margins.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		margins.add_theme_constant_override("margin_left", 4)
+		margins.add_theme_constant_override("margin_top", 4)
+		margins.add_theme_constant_override("margin_right", 4)
+		margins.add_theme_constant_override("margin_bottom", 4)
+		margins.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var content := VBoxContainer.new()
+		content.alignment = BoxContainer.ALIGNMENT_CENTER
+		content.add_theme_constant_override("separation", 2)
+		content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		margins.add_child(content)
+		var icon := TextureRect.new()
+		icon.custom_minimum_size = Vector2(56.0, 56.0)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture = _icon_catalog.call("get_icon", icon_names[index]) as Texture2D
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		content.add_child(icon)
+		var name_label := Label.new()
+		name_label.text = TOWER_SHORT_NAMES[index]
+		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		name_label.add_theme_font_size_override("font_size", 11)
+		name_label.add_theme_color_override("font_color", TOWER_PROFILES[index].visual_color.lightened(0.45))
+		name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		content.add_child(name_label)
+		var price_row := HBoxContainer.new()
+		price_row.alignment = BoxContainer.ALIGNMENT_CENTER
+		price_row.add_theme_constant_override("separation", 3)
+		price_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		content.add_child(price_row)
+		var price_icon := TextureRect.new()
+		price_icon.custom_minimum_size = Vector2(17.0, 17.0)
+		price_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		price_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		price_icon.texture = _gold_icon.texture
+		price_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		price_row.add_child(price_icon)
+		var price_label := Label.new()
+		price_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		price_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		price_label.add_theme_font_size_override("font_size", 13)
+		price_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		price_row.add_child(price_label)
+		shortcut_button.add_child(margins)
+		_tower_shortcut_icons.append(icon)
+		_tower_shortcut_names.append(name_label)
+		_tower_shortcut_prices.append(price_label)
+
+func _configure_tower_upgrade_visuals() -> void:
+	_tower_upgrade_amounts.clear()
+	_tower_upgrade_cost_icons.clear()
+	_tower_upgrade_layer_icons.clear()
+	var layer_icons: Array[StringName] = [&"health", &"armor", &"shield"]
+	for layer in _tower_upgrade_buttons.size():
+		var button: Button = _tower_upgrade_buttons[layer]
+		button.text = ""
+		var row := HBoxContainer.new()
+		row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		row.add_theme_constant_override("separation", 3)
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var layer_icon := TextureRect.new()
+		layer_icon.custom_minimum_size = Vector2(19.0, 19.0)
+		layer_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		layer_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		layer_icon.texture = _icon_catalog.call("get_icon", layer_icons[layer]) as Texture2D
+		layer_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(layer_icon)
+		var amount_label := Label.new()
+		amount_label.add_theme_font_size_override("font_size", 11)
+		amount_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(amount_label)
+		var cost_icon := TextureRect.new()
+		cost_icon.custom_minimum_size = Vector2(15.0, 15.0)
+		cost_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		cost_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		cost_icon.texture = _gold_icon.texture
+		cost_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(cost_icon)
+		button.add_child(row)
+		_tower_upgrade_layer_icons.append(layer_icon)
+		_tower_upgrade_amounts.append(amount_label)
+		_tower_upgrade_cost_icons.append(cost_icon)
+
+func _configure_hud_tooltips() -> void:
+	_base_health_bar.tooltip_text = "Vida restante de la base. Si llega a cero, termina la run."
+	_gold_status.tooltip_text = "Moneda disponible para construir y mejorar torres."
+	_mana_status.tooltip_text = "Energía disponible para activar algunas torres."
+	_wave_status.tooltip_text = "Fase y actividad de la ronda de campaña actual."
+	_round_progress.tooltip_text = "Veinte segmentos: rondas completadas, ronda actual y rondas pendientes."
+	_wave_selector.tooltip_text = "Selector técnico de rondas y perfiles DEBUG. Solo aparece en el panel F3."
+	_piece_selector.tooltip_text = "Selecciona una pieza disponible para inspeccionar o colocar."
+	_rotate_left.tooltip_text = "Gira la pieza 60 grados en sentido antihorario. Atajo: Q."
+	_rotate_right.tooltip_text = "Gira la pieza 60 grados en sentido horario. Atajo: E."
+	_confirm_button.tooltip_text = "Confirma la pieza si el preview indica que su posición es válida."
+	_cancel_button.tooltip_text = "Cancela la colocación activa. También puedes pulsar Esc o clic derecho."
+	_combat_debug.tooltip_text = "Inspección técnica de capas, regeneración, daño previsto y estados del objetivo."
+	_build_status.tooltip_text = "Estado de construcción, recompensa reciente o motivo de rechazo."
+	_start_wave_button.tooltip_text = "Inicia la ronda activa de la campaña."
+	_tower_priority_menu.tooltip_text = "Selecciona hasta tres criterios. El orden determina prioridad y desempates."
+	for layer in _tower_upgrade_buttons.size():
+		_tower_upgrade_buttons[layer].tooltip_text = "Mejora el multiplicador de daño de %s." % _hp_layer_name(layer)
+	_demolish_tower_button.tooltip_text = "Retira la torre seleccionada sin reembolso y reduce el coste futuro de ese tipo."
 
 func _is_mouse_over_hud(mouse_position: Vector2) -> bool:
 	if _meta_shop_panel != null and bool(_meta_shop_panel.call("is_open")):
@@ -398,6 +560,8 @@ func _is_mouse_over_hud(mouse_position: Vector2) -> bool:
 		return false
 	return (
 		(_hud_panel.visible and _hud_panel.get_global_rect().has_point(mouse_position))
+		or (_round_panel.visible and _round_panel.get_global_rect().has_point(mouse_position))
+		or (_tower_info_panel.visible and _tower_info_panel.get_global_rect().has_point(mouse_position))
 		or (_tower_toolbar.visible and _tower_toolbar.get_global_rect().has_point(mouse_position))
 		or (_terrain_panel.visible and _terrain_panel.get_global_rect().has_point(mouse_position))
 		or (_terrain_card_panel.visible and _terrain_card_panel.get_global_rect().has_point(mouse_position))
@@ -406,6 +570,9 @@ func _is_mouse_over_hud(mouse_position: Vector2) -> bool:
 
 func _toggle_terrain_panel() -> void:
 	_terrain_panel.visible = not _terrain_panel.visible
+	if _terrain_panel.visible:
+		_refresh_combat_debug()
+	_refresh_tower_controls()
 
 func _zoom_at_cursor(factor: float) -> void:
 	var old_zoom: float = _camera.zoom.x
@@ -460,6 +627,7 @@ func _on_piece_selected(index: int) -> void:
 func _refresh_placement() -> void:
 	if RunManager.phase == RunManager.Phase.CARD_OFFER:
 		_latest_placement = null
+		_placement_path_graph = null
 		_piece_preview.set_placement_preview(null, _anchor_coord, _rotation_steps, false, false)
 		_piece_selector.disabled = true
 		_rotate_left.disabled = true
@@ -483,6 +651,7 @@ func _refresh_placement() -> void:
 	_cancel_button.text = "Volver a cartas" if is_campaign_card_placement else "Cancelar"
 	if _selected_piece == null:
 		_latest_placement = null
+		_placement_path_graph = null
 		_piece_preview.set_placement_preview(null, _anchor_coord, _rotation_steps, false, false)
 		_confirm_button.disabled = true
 		_piece_status.text = "Tablero confirmado · %d casillas" % _board_grid.cells.size()
@@ -500,25 +669,103 @@ func _refresh_placement() -> void:
 		_rotation_steps,
 		_board_grid.cells
 	)
+	_placement_path_graph = null
+	var placement_is_valid: bool = _latest_placement.is_valid
+	if placement_is_valid and can_edit_terrain:
+		_placement_path_graph = _build_placement_preview_graph()
+		placement_is_valid = _placement_path_graph.is_valid
 	_piece_preview.set_placement_preview(
 		_selected_piece,
 		_anchor_coord,
 		_rotation_steps,
-		_latest_placement.is_valid,
-		can_edit_terrain
+		placement_is_valid,
+		can_edit_terrain,
+		_placement_path_graph
 	)
-	_confirm_button.disabled = not can_edit_terrain or not _latest_placement.is_valid
+	_confirm_button.disabled = not can_edit_terrain or not placement_is_valid
 	_rotation_status.text = "Orientación: %d° · posición %d/6" % [
 		_rotation_steps * 60,
 		_rotation_steps + 1,
 	]
+	var placement_message: String = _latest_placement.message()
+	if _latest_placement.is_valid and can_edit_terrain:
+		if _placement_path_graph == null or not _placement_path_graph.is_valid:
+			placement_message = "Esta posición deja la red PATH inválida. "
+			if _placement_path_graph != null and not _placement_path_graph.errors.is_empty():
+				placement_message += "; ".join(_placement_path_graph.errors)
+		else:
+			placement_message += " · " + _spawn_preview_summary(_placement_path_graph)
 	_placement_status.text = "%s · conexiones: %d" % [
-		_latest_placement.message(),
+		placement_message,
 		_latest_placement.path_connection_count,
 	]
 
+func _build_placement_preview_graph() -> PathGraph:
+	var candidate_board: Dictionary[Vector2i, HexCell] = {}
+	for coord in _board_grid.cells:
+		candidate_board[coord] = _board_grid.cells[coord]
+	var piece_cells: Dictionary[Vector2i, HexCell] = TerrainPlacementValidator.instantiate_cells(
+		_selected_piece,
+		_anchor_coord,
+		_rotation_steps,
+		_next_piece_instance_id
+	)
+	for coord in piece_cells:
+		candidate_board[coord] = piece_cells[coord]
+	var candidate_grid := HexGrid.new()
+	candidate_grid.cells = candidate_board
+	for hole_coord in candidate_grid.get_enclosed_void_coords():
+		# El tipo de relleno no cambia el grafo porque solo PATH tiene conexiones.
+		var preview_fill := HexCell.new(HexCoord.new(hole_coord.x, hole_coord.y))
+		preview_fill.terrain_type = HexCell.TerrainType.GRASS
+		preview_fill.elevation = 1
+		preview_fill.buildable = true
+		preview_fill.visual_variant = &"auto_filled_void_preview"
+		candidate_board[hole_coord] = preview_fill
+	var candidate_graph := PathGraph.new()
+	candidate_graph.rebuild(candidate_board, _base_coord, int(STARTING_BOARD.get("minimum_spawn_route_cells")))
+	return candidate_graph
+
+func _spawn_preview_summary(candidate_graph: PathGraph) -> String:
+	var current_keys: Dictionary = _get_spawn_endpoint_keys(_path_graph)
+	var candidate_keys: Dictionary = _get_spawn_endpoint_keys(candidate_graph)
+	var added_count: int = 0
+	var closed_count: int = 0
+	for key in candidate_keys:
+		if not current_keys.has(key):
+			added_count += 1
+	for key in current_keys:
+		if not candidate_keys.has(key):
+			closed_count += 1
+	if added_count == 0 and closed_count == 0:
+		return "Spawns %d → %d · sin cambios" % [current_keys.size(), candidate_keys.size()]
+	return "Spawns %d → %d · %d nuevos · %d se cierran" % [
+		current_keys.size(),
+		candidate_keys.size(),
+		added_count,
+		closed_count,
+	]
+
+func _get_spawn_endpoint_keys(graph: PathGraph) -> Dictionary:
+	var keys: Dictionary = {}
+	if graph == null:
+		return keys
+	for route in graph.routes:
+		if route == null or not route.is_reachable or route.spawn_endpoint == null:
+			continue
+		var endpoint: PathEndpoint = route.spawn_endpoint
+		keys["%d,%d,%d" % [endpoint.cell_coord.x, endpoint.cell_coord.y, endpoint.edge_direction]] = true
+	return keys
+
 func _confirm_placement() -> void:
-	if not _placement_enabled or _selected_piece == null or _latest_placement == null or not _latest_placement.is_valid:
+	if (
+		not _placement_enabled
+		or _selected_piece == null
+		or _latest_placement == null
+		or not _latest_placement.is_valid
+		or _placement_path_graph == null
+		or not _placement_path_graph.is_valid
+	):
 		return
 	var cells := TerrainPlacementValidator.instantiate_cells(
 		_selected_piece,
@@ -623,18 +870,18 @@ func _handle_board_click() -> void:
 			_build_status.text = "Coloca el cursor sobre una casilla existente."
 			return
 		if _build_controller.place_tower(_hovered_coord):
-			_build_status.text = "%s construida por %d oro en (%d, %d)." % [
+			_set_rich_text_with_currency_icons(_build_status, "%s construida por %d oro en (%d, %d)." % [
 				_selected_tower_data.display_name,
 				_selected_tower_data.build_cost,
 				_hovered_coord.x,
 				_hovered_coord.y,
-			]
+			])
 			_build_controller.cancel_build_mode()
 			_refresh_build_preview()
 			_refresh_placement()
 			_refresh_tower_controls()
 		else:
-			_build_status.text = _build_controller.last_error
+			_set_rich_text_with_currency_icons(_build_status, _build_controller.last_error)
 			_refresh_build_preview()
 		return
 	if _has_hovered_cell:
@@ -645,6 +892,9 @@ func _handle_board_click() -> void:
 			_build_controller.select_tower_at(_hovered_coord)
 			_refresh_tower_controls()
 			return
+	if _build_controller.selected_tower != null:
+		_build_controller.clear_selection()
+		_refresh_tower_controls()
 	if _placement_enabled:
 		_confirm_placement()
 
@@ -678,7 +928,7 @@ func _select_tower_profile_and_build(chosen_tower: TowerData) -> void:
 	if _build_controller.begin_build(_selected_tower_data):
 		_build_status.text = "%s · clic en Grass/Montaña libre." % _selected_tower_data.display_name
 	else:
-		_build_status.text = _build_controller.last_error
+		_set_rich_text_with_currency_icons(_build_status, _build_controller.last_error)
 	_refresh_build_preview()
 	_refresh_placement()
 	_refresh_tower_controls()
@@ -699,7 +949,8 @@ func _refresh_build_preview() -> void:
 		true,
 		_hovered_coord,
 		error.is_empty(),
-		_build_controller.get_preview_range_pixels(_hovered_coord)
+		_build_controller.get_preview_range_pixels(_hovered_coord),
+		_icon_catalog.call("get_tower_icon", StringName(_selected_tower_data.id)) as Texture2D
 	)
 
 func _populate_targeting_modes() -> void:
@@ -708,12 +959,12 @@ func _populate_targeting_modes() -> void:
 		"Más armadura", "Más escudo", "Menos vida", "Menos armadura",
 		"Menos escudo", "Más lento", "Más rápido",
 	]
-	for selector in _tower_priority_selectors:
-		selector.clear()
-		selector.add_item("Sin criterio", -1)
-		for mode in labels.size():
-			selector.add_item(labels[mode], mode)
-		selector.select(1)
+	var popup: PopupMenu = _tower_priority_menu.get_popup()
+	popup.clear()
+	for mode in labels.size():
+		popup.add_check_item(labels[mode], mode)
+		popup.set_item_metadata(popup.item_count - 1, labels[mode])
+	_tower_priority_menu.text = "Criterios · 1/3"
 
 func _populate_wave_options() -> void:
 	_selected_tower_data = BALLISTA
@@ -783,38 +1034,63 @@ func _on_wave_profile_selected(index: int) -> void:
 	_start_wave_button.text = "▶ Iniciar prueba" if _selected_wave_is_debug else "▶ Iniciar ronda %d/20" % _campaign_round_number
 	_refresh_tower_controls()
 
-func _on_targeting_mode_selected(index: int, slot: int) -> void:
-	if slot < 0 or slot >= _tower_priority_selectors.size():
+func _on_targeting_mode_toggled(mode: int) -> void:
+	var tower: Tower = _build_controller.selected_tower
+	if tower == null or not is_instance_valid(tower):
 		return
-	var selector: OptionButton = _tower_priority_selectors[slot]
-	if index < 0 or index >= selector.item_count:
+	var current: Array[int] = tower.get_targeting_priorities()
+	var next_priorities: Array[int] = []
+	var was_selected: bool = current.has(mode)
+	for current_mode in current:
+		if current_mode >= 0 and current_mode != mode and not next_priorities.has(current_mode):
+			next_priorities.append(current_mode)
+	if not was_selected:
+		if next_priorities.size() >= 3:
+			_build_status.text = "Puedes activar hasta tres criterios de objetivo."
+			_sync_targeting_priority_menu(tower)
+			return
+		next_priorities.append(mode)
+	for slot in range(3):
+		var next_mode: int = next_priorities[slot] if slot < next_priorities.size() else -1
+		_build_controller.set_selected_targeting_priority(slot, next_mode)
+	_sync_targeting_priority_menu(tower)
+	_refresh_tower_controls()
+
+func _sync_targeting_priority_menu(tower: Tower) -> void:
+	if tower == null or not is_instance_valid(tower):
+		_tower_priority_menu.text = "Criterios · 0/3"
 		return
-	var mode: int = selector.get_item_id(index)
-	if _build_controller.set_selected_targeting_priority(slot, mode):
-		_refresh_tower_controls()
-	else:
-		_build_status.text = "Cada criterio de prioridad solo puede aparecer una vez."
-		var selected_tower: Tower = _build_controller.selected_tower
-		if selected_tower != null and is_instance_valid(selected_tower):
-			_on_tower_selected(selected_tower, selected_tower.cell_coord)
+	var selected_modes: Array[int] = tower.get_targeting_priorities()
+	var selected_count: int = 0
+	var popup: PopupMenu = _tower_priority_menu.get_popup()
+	for item_index in popup.item_count:
+		var mode: int = popup.get_item_id(item_index)
+		var priority_order: int = selected_modes.find(mode)
+		var is_selected: bool = priority_order >= 0
+		popup.set_item_checked(item_index, is_selected)
+		var base_label: String = String(popup.get_item_metadata(item_index))
+		popup.set_item_text(item_index, "%d · %s" % [priority_order + 1, base_label] if is_selected else base_label)
+		if is_selected:
+			selected_count += 1
+	_tower_priority_menu.text = "Criterios · %d/3" % selected_count
 
 func _on_upgrade_tower_pressed(layer: int) -> void:
 	var tower: Tower = _build_controller.selected_tower
 	var upgrade_cost: int = tower.get_next_upgrade_cost() if tower != null and is_instance_valid(tower) else -1
 	if _build_controller.upgrade_selected_tower(layer):
-		_build_status.text = "Torre mejorada: +1 daño base y +1 %s · −%d oro." % [
+		_set_rich_text_with_currency_icons(_build_status, "Torre mejorada: +1 daño base y +1 %s · −%d oro." % [
 			_hp_layer_name(layer),
 			upgrade_cost,
-		]
+		])
 	else:
-		_build_status.text = _build_controller.last_error
+		_set_rich_text_with_currency_icons(_build_status, _build_controller.last_error)
 	_refresh_tower_controls()
 
 func _on_demolish_tower_pressed() -> void:
 	if _build_controller.demolish_selected_tower():
-		_build_status.text = "Torre demolida. No se devuelve oro; baja el coste de la siguiente torre de ese tipo."
+		_build_status.text = "Torre retirada. El siguiente precio de este tipo baja."
 	else:
-		_build_status.text = _build_controller.last_error
+		_set_rich_text_with_currency_icons(_build_status, _build_controller.last_error)
 	_refresh_tower_controls()
 
 func _on_tower_list_changed(_tower: Tower, _coord: Vector2i) -> void:
@@ -827,13 +1103,9 @@ func _on_tower_demolished(_tower_data: TowerData, _next_build_cost: int) -> void
 func _on_tower_selected(tower: Tower, _coord: Vector2i) -> void:
 	if tower == null or not is_instance_valid(tower):
 		return
-	_tower_status.text = tower.get_summary()
-	var priorities: Array[int] = tower.get_targeting_priorities()
-	for slot in _tower_priority_selectors.size():
-		var mode: int = priorities[slot] if slot < priorities.size() else -1
-		var mode_index: int = _tower_priority_selectors[slot].get_item_index(mode)
-		if mode_index >= 0:
-			_tower_priority_selectors[slot].select(mode_index)
+	_set_rich_text_with_currency_icons(_tower_status, tower.get_summary())
+	_sync_targeting_priority_menu(tower)
+	_refresh_combat_debug()
 	_refresh_tower_controls()
 
 func _on_tower_upgraded(tower: Tower, _new_level: int) -> void:
@@ -853,58 +1125,73 @@ func _refresh_tower_controls() -> void:
 		var effective_mana_cost: float = tower_data.mana_cost_per_attack
 		if effective_mana_cost > 0.0 and _run_card_service != null:
 			effective_mana_cost *= float(_run_card_service.call("get_tower_mana_cost_multiplier", tower_data.id))
-		var mana_suffix: String = ""
+		var energy_suffix: String = ""
 		if tower_data.mana_cost_per_second > 0.0:
 			var mana_per_second: float = tower_data.mana_cost_per_second
 			if _run_card_service != null:
 				mana_per_second *= float(_run_card_service.call("get_tower_mana_cost_multiplier", tower_data.id))
-			mana_suffix = " · %.1f maná/s" % mana_per_second
+			energy_suffix = " · consume %.1f/s" % mana_per_second
 		elif effective_mana_cost > 0.0:
-			mana_suffix = " · %.1f maná/ataque" % effective_mana_cost
+			energy_suffix = " · consume %.1f por ataque" % effective_mana_cost
 		var build_cost: int = _build_controller.get_current_build_cost(tower_data)
-		shortcut_button.text = "%d · %s\n%d oro" % [
-			index + 1,
-			TOWER_SHORT_NAMES[index],
-			build_cost,
-		]
-		shortcut_button.tooltip_text = "%s\n%s · coste %d oro%s · %s" % [
+		_tower_shortcut_prices[index].text = "%d" % build_cost
+		var role_summary: String = tower_data.role_summary.replace("maná", "energía").replace("mana", "energía")
+		shortcut_button.tooltip_text = "%s\n%s · precio %d%s · %s" % [
 			tower_data.display_name,
-			tower_data.role_summary,
+			role_summary,
 			build_cost,
-			mana_suffix,
+			energy_suffix,
 			_tower_attack_description(tower_data),
 		]
-		shortcut_button.add_theme_color_override("font_color", tower_data.visual_color)
-		shortcut_button.disabled = not can_build or not bool(_run_economy.call("can_afford_gold", build_cost))
+		var can_afford: bool = bool(_run_economy.call("can_afford_gold", build_cost))
+		shortcut_button.disabled = not can_build or not can_afford
+		# Los controles personalizados dentro del Button no heredan su estilo disabled.
+		shortcut_button.modulate = Color("#778187") if shortcut_button.disabled else Color.WHITE
+		if can_build and not can_afford:
+			shortcut_button.tooltip_text += "\nNo hay oro suficiente para comprar esta torre."
 		shortcut_button.set_pressed_no_signal(
 			build_mode and TOWER_PROFILES[index] == _selected_tower_data
 		)
 	_refresh_wave_option_states()
 	_wave_selector.disabled = build_mode or not _can_start_wave() or is_run_ended
-	_tower_actions.visible = selected != null and not build_mode
+	var has_selected_tower: bool = selected != null and is_instance_valid(selected)
+	_tower_actions.visible = has_selected_tower and not build_mode
+	_tower_info_panel.visible = (
+		_hud.visible
+		and not _terrain_panel.visible
+		and (build_mode or has_selected_tower)
+	)
+	_build_status.visible = build_mode or has_selected_tower
 	_start_wave_button.disabled = (
 		build_mode
 		or not _path_graph.is_valid
 		or not _can_start_selected_wave()
 		or is_run_ended
 	)
-	for selector in _tower_priority_selectors:
-		selector.disabled = build_mode or selected == null or not _build_controller.can_build_in_current_phase()
-	var next_upgrade_cost: int = selected.get_next_upgrade_cost() if selected != null else -1
+	_tower_priority_menu.disabled = build_mode or not has_selected_tower or not _build_controller.can_build_in_current_phase()
+	var next_upgrade_cost: int = selected.get_next_upgrade_cost() if has_selected_tower else -1
 	for layer in _tower_upgrade_buttons.size():
 		var upgrade_button: Button = _tower_upgrade_buttons[layer]
+		_tower_upgrade_layer_icons[layer].visible = has_selected_tower
+		_tower_upgrade_cost_icons[layer].visible = has_selected_tower and next_upgrade_cost >= 0
 		if next_upgrade_cost >= 0:
-			upgrade_button.text = "+%s · %d oro" % [_hp_layer_name(layer), next_upgrade_cost]
+			_tower_upgrade_amounts[layer].text = "%d" % next_upgrade_cost
 		else:
-			upgrade_button.text = "+%s · máx." % _hp_layer_name(layer)
-		upgrade_button.disabled = build_mode or selected == null or next_upgrade_cost < 0 or not bool(_run_economy.call("can_afford_gold", next_upgrade_cost)) or not _build_controller.can_build_in_current_phase()
-	_demolish_tower_button.disabled = build_mode or selected == null or not _build_controller.can_build_in_current_phase()
+			_tower_upgrade_amounts[layer].text = "máx."
+		upgrade_button.disabled = build_mode or not has_selected_tower or next_upgrade_cost < 0 or not bool(_run_economy.call("can_afford_gold", next_upgrade_cost)) or not _build_controller.can_build_in_current_phase()
+		upgrade_button.tooltip_text = "Precio %d. Suma +1 al daño base y +1 al multiplicador de %s." % [next_upgrade_cost, _hp_layer_name(layer)] if next_upgrade_cost >= 0 else "La torre alcanzó su nivel máximo."
+	_demolish_tower_button.disabled = build_mode or not has_selected_tower or not _build_controller.can_build_in_current_phase()
+	_demolish_tower_button.tooltip_text = "Retira esta torre sin devolución y reduce el precio siguiente de su tipo."
 	if build_mode:
 		_tower_status.text = "Construir: %s · selecciona Grass o Montaña" % _selected_tower_data.display_name
-	elif selected == null:
+	elif not has_selected_tower:
 		_tower_status.text = "Torre: ninguna · pulsa 1–7 para construir"
 	else:
-		_tower_status.text = selected.get_summary()
+		_set_rich_text_with_currency_icons(_tower_status, selected.get_summary())
+		_tower_status.tooltip_text = "Consulta F3 para ver el objetivo en alcance, sus capas, regeneración y estados."
+	_tower_priority_menu.tooltip_text = "Selecciona hasta tres criterios. El orden de selección resuelve los empates."
+	_build_status.tooltip_text = "Estado de construcción, recompensa reciente o motivo por el que una acción no se puede realizar."
+	_start_wave_button.tooltip_text = "Inicia la ronda activa. La campaña avanza en orden y termina tras la ronda 20."
 
 func _tower_attack_description(tower_data: TowerData) -> String:
 	match tower_data.attack_pattern:
@@ -987,13 +1274,15 @@ func _on_wave_completed(round_number: int) -> void:
 		_build_controller.cancel_build_mode()
 	var completed_wave: WaveData = _selected_wave
 	var was_debug_wave: bool = _selected_wave_is_debug
+	if not was_debug_wave:
+		_round_progress.call("set_progress", round_number, round_number)
 	var return_phase: int = _debug_return_phase
 	var round_reward: int = completed_wave.round_reward if completed_wave != null and not was_debug_wave else 0
-	_wave_status.text = "%s completada · ronda %d · +%d oro · procesando recompensa…" % [
+	_set_rich_text_with_currency_icons(_wave_status, "%s completada · ronda %d · +%d oro · procesando recompensa…" % [
 		_active_wave_name,
 		round_number,
 		round_reward,
-	]
+	])
 	_start_wave_button.text = "Procesando recompensa…"
 	_refresh_tower_controls()
 	await get_tree().create_timer(0.8).timeout
@@ -1015,7 +1304,7 @@ func _on_wave_completed(round_number: int) -> void:
 			_placement_enabled = false
 			_awaiting_campaign_expansion = false
 			RunManager.transition_to(RunManager.Phase.RUN_VICTORY)
-			_wave_status.text = "¡DEMO COMPLETADA! · 20/20 rondas superadas · +%d oro" % round_reward
+			_set_rich_text_with_currency_icons(_wave_status, "¡DEMO COMPLETADA! · 20/20 rondas superadas · +%d oro" % round_reward)
 			_start_wave_button.text = "DEMO COMPLETADA"
 			_show_run_end(&"VICTORY", round_number)
 		else:
@@ -1131,9 +1420,9 @@ func _on_reward_earned(amount: int, reason: int) -> void:
 	if accepted <= 0:
 		return
 	if reason == WaveDirector.RewardReason.ENEMY_KILL:
-		_build_status.text = "Recompensa por baja: +%d oro." % accepted
+		_set_rich_text_with_currency_icons(_build_status, "Recompensa por baja: +%d oro." % accepted)
 	elif reason == WaveDirector.RewardReason.ROUND_CLEAR:
-		_build_status.text = "Recompensa por oleada: +%d oro." % accepted
+		_set_rich_text_with_currency_icons(_build_status, "Recompensa por oleada: +%d oro." % accepted)
 
 func _on_gold_changed(_current_gold: int, _delta: int, _reason: StringName) -> void:
 	_refresh_economy_status()
@@ -1142,26 +1431,64 @@ func _on_gold_changed(_current_gold: int, _delta: int, _reason: StringName) -> v
 func _on_mana_changed(_current_mana: float, _maximum_mana: float) -> void:
 	_refresh_economy_status()
 
-func _refresh_economy_status() -> void:
-	if _run_economy == null or _economy_status == null:
+func _on_damage_resolved(target: Enemy, _packet: RefCounted, result: RefCounted) -> void:
+	if target == null or not is_instance_valid(target) or result == null:
 		return
-	_economy_status.text = "Oro %d  ·  Maná %.1f / %.0f  ·  regen %.1f/s" % [
-		int(_run_economy.call("get_gold")),
+	var damage_result := result as DamageResult
+	if damage_result == null or not damage_result.is_valid or damage_result.total_damage <= 0:
+		return
+	var layer: int = damage_result.active_hit_point_layer
+	if damage_result.shield_damage > 0:
+		layer = Enemy.HitPointLayer.SHIELD
+	elif damage_result.armor_damage > 0:
+		layer = Enemy.HitPointLayer.ARMOR
+	elif damage_result.health_damage > 0:
+		layer = Enemy.HitPointLayer.HEALTH
+	target.show_damage_feedback(layer, damage_result.total_damage, damage_result.critical_multiplier > 1.0)
+
+func _refresh_economy_status() -> void:
+	if _run_economy == null or _gold_status == null or _mana_status == null:
+		return
+	_gold_status.text = "%d" % int(_run_economy.call("get_gold"))
+	_mana_status.text = "%.1f / %.0f" % [
 		float(_run_economy.call("get_mana")),
 		float(_run_economy.call("get_maximum_mana")),
-		float(_run_economy.call("get_mana_regen_per_second")),
 	]
+	_mana_status.tooltip_text = "Maná disponible · regeneración: %s." % _format_mana_regeneration(
+		float(_run_economy.call("get_mana_regen_per_second"))
+	)
+
+func _format_mana_regeneration(rate_per_second: float) -> String:
+	var numerator: int = int(roundf(maxf(rate_per_second, 0.0) * 100.0))
+	if numerator == 0:
+		return "0 maná/s"
+	var denominator: int = 100
+	var divisor_a: int = numerator
+	var divisor_b: int = denominator
+	while divisor_b != 0:
+		var remainder: int = divisor_a % divisor_b
+		divisor_a = divisor_b
+		divisor_b = remainder
+	var divisor: int = maxi(divisor_a, 1)
+	numerator = floori(float(numerator) / float(divisor))
+	denominator = floori(float(denominator) / float(divisor))
+	if denominator == 1:
+		return "%d maná/s" % numerator
+	return "%d maná cada %d s" % [numerator, denominator]
 
 func _refresh_combat_debug() -> void:
 	var tower: Tower = _build_controller.selected_tower
 	if tower == null or not is_instance_valid(tower):
-		_combat_debug.text = "Objetivo: selecciona una torre"
+		_set_rich_text_with_currency_icons(_combat_debug, "Objetivo: selecciona una torre")
+		_tower_status.tooltip_text = "Selecciona una torre para consultar sus estadísticas. F3 abre los controles técnicos."
 		return
 	var target: Enemy = tower.get_current_target()
 	if target == null or not is_instance_valid(target) or target.state != Enemy.State.MOVING:
-		_combat_debug.text = "Objetivo: ninguno en alcance"
+		var no_target_text: String = "Objetivo: ninguno en alcance"
 		if tower.is_mana_blocked():
-			_combat_debug.text += " · sin maná"
+			no_target_text += " · sin maná"
+		_set_rich_text_with_currency_icons(_combat_debug, no_target_text)
+		_tower_status.tooltip_text = no_target_text
 		return
 	var estimate: Variant = _damage_service.call("preview_damage", target, tower.create_damage_packet(false))
 	var status_summaries: PackedStringArray = target.get_active_status_summaries()
@@ -1170,7 +1497,7 @@ func _refresh_combat_debug() -> void:
 	var damage_tag_name: String = tower.get_damage_tag_name(tower_data.damage_tags)
 	var mana_text: String = ""
 	if tower.get_mana_cost_per_attack() > 0.0:
-		mana_text = " · sin maná" if tower.is_mana_blocked() else " · %.1f maná/ataque" % tower.get_mana_cost_per_attack()
+		mana_text = " · sin maná" if tower.is_mana_blocked() else " · consumo %.1f maná/ataque" % tower.get_mana_cost_per_attack()
 	var active_layer: int = target.get_active_hit_point_layer()
 	var damage_summary: String = "impacto %d %s · %s" % [
 		int(estimate.get("total_damage")),
@@ -1184,7 +1511,7 @@ func _refresh_combat_debug() -> void:
 			int(estimate.get("total_damage")),
 			blade_damage,
 		]
-	_combat_debug.text = "%s · Esc %d/%d · Arm %d/%d · Vida %d/%d · regen E/A/V %.1f/%.1f/%.1f/s · %s%s\n%s" % [
+	var debug_text: String = "%s · Esc %d/%d · Arm %d/%d · Vida %d/%d · regen E/A/V %.1f/%.1f/%.1f/s · %s%s\n%s" % [
 		target.get_display_name(),
 		target.get_shield_value(),
 		target.get_maximum_shield(),
@@ -1199,11 +1526,22 @@ func _refresh_combat_debug() -> void:
 		mana_text,
 		status_text,
 	]
+	_set_rich_text_with_currency_icons(_combat_debug, debug_text)
+	_tower_status.tooltip_text = "Consulta F3 para ver el objetivo en alcance, sus capas, regeneración y estados."
 
 func _on_base_health_changed(current_health: int, maximum_health: int) -> void:
-	_base_status.text = "Base · vida %d / %d" % [current_health, maximum_health]
+	var health_ratio: float = float(current_health) / float(maximum_health) if maximum_health > 0 else 0.0
+	var health_color: Color = Color("#76bd82")
+	if health_ratio <= 0.25:
+		health_color = Color("#e27661")
+	elif health_ratio <= 0.5:
+		health_color = Color("#e5be6a")
+	_base_health_bar.max_value = maxi(maximum_health, 1)
+	_base_health_bar.value = clampi(current_health, 0, maxi(maximum_health, 1))
+	_base_health_fill_style.bg_color = health_color
+	_base_status.text = "%d / %d" % [current_health, maximum_health]
 	if current_health <= 0:
-		_base_status.text += " · DESTRUIDA"
+		_base_status.text = "DESTRUIDA  ·  0 / %d" % maximum_health
 
 func _show_run_end(outcome: StringName, reached_round: int) -> void:
 	if _meta_shop_panel == null:
@@ -1281,11 +1619,11 @@ func _begin_campaign_terrain_expansion(round_number: int, round_reward: int) -> 
 	_placement_enabled = false
 	_awaiting_campaign_expansion = true
 	RunManager.transition_to(RunManager.Phase.TERRAIN_EXPANSION)
-	_wave_status.text = "Ronda %d/20 completada · +%d oro · elige una de tres piezas para desbloquear la ronda %d" % [
+	_set_rich_text_with_currency_icons(_wave_status, "Ronda %d/20 completada · +%d oro · elige una de tres piezas para desbloquear la ronda %d" % [
 		round_number,
 		round_reward,
 		round_number + 1,
-	]
+	])
 	_present_terrain_card_offer()
 
 func _present_upgrade_card_offer(round_number: int, cards: Array[Resource]) -> void:
@@ -1297,10 +1635,13 @@ func _present_upgrade_card_offer(round_number: int, cards: Array[Resource]) -> v
 	_upgrade_card_heading.text = "MEJORAS DE RUN · RONDA %02d" % round_number
 	for index in _upgrade_card_buttons.size():
 		var card: Resource = cards[index]
-		_upgrade_card_titles[index].text = String(card.get("display_name"))
-		_upgrade_card_descriptions[index].text = String(card.get("description"))
+		_set_rich_text_with_currency_icons(_upgrade_card_titles[index], String(card.get("display_name")))
+		_set_rich_text_with_currency_icons(_upgrade_card_descriptions[index], String(card.get("description")))
 		_upgrade_card_rarities[index].text = _card_rarity_name(int(card.get("rarity")))
-		_upgrade_card_buttons[index].tooltip_text = String(card.get("description"))
+		_upgrade_card_buttons[index].tooltip_text = ""
+		var tower_icon_name: StringName = _get_card_tower_icon_name(card)
+		_upgrade_card_tower_icons[index].texture = _icon_catalog.call("get_icon", tower_icon_name) as Texture2D if tower_icon_name != &"" else null
+		_upgrade_card_tower_icons[index].visible = tower_icon_name != &""
 		_style_upgrade_card_button(_upgrade_card_buttons[index], int(card.get("rarity")))
 	_upgrade_card_panel.show()
 	_terrain_card_panel.hide()
@@ -1311,10 +1652,10 @@ func _present_upgrade_card_offer(round_number: int, cards: Array[Resource]) -> v
 	_piece_selector.select(0)
 	_refresh_placement()
 	RunManager.transition_to(RunManager.Phase.CARD_OFFER)
-	_wave_status.text = "Ronda %d/20 completada · +%d oro · elige una mejora para la run" % [
+	_set_rich_text_with_currency_icons(_wave_status, "Ronda %d/20 completada · +%d oro · elige una mejora para la run" % [
 		round_number,
 		_pending_expansion_reward,
-	]
+	])
 	_start_wave_button.disabled = true
 	_start_wave_button.text = "Elige una carta de mejora"
 	_refresh_tower_controls()
@@ -1331,6 +1672,7 @@ func _on_upgrade_card_selected(index: int) -> void:
 
 func _prepare_next_campaign_round() -> void:
 	_campaign_round_number += 1
+	_round_progress.call("set_progress", _campaign_round_number, _campaign_round_number - 1)
 	_selected_wave = _get_campaign_round(_campaign_round_number)
 	_selected_wave_is_debug = false
 	if _selected_wave == null:
@@ -1449,17 +1791,29 @@ func _create_upgrade_card_panel() -> void:
 		rarity_label.add_theme_color_override("font_color", Color("aac1c6"))
 		rarity_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card_content.add_child(rarity_label)
-		var title_label := Label.new()
+		var tower_icon := TextureRect.new()
+		tower_icon.custom_minimum_size = Vector2(50.0, 50.0)
+		tower_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tower_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tower_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		tower_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tower_icon.hide()
+		card_content.add_child(tower_icon)
+		var title_label := RichTextLabel.new()
 		title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		title_label.fit_content = true
+		title_label.scroll_active = false
 		title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		title_label.add_theme_font_size_override("font_size", 20)
 		title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card_content.add_child(title_label)
-		var description_label := Label.new()
+		var description_label := RichTextLabel.new()
 		description_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		description_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		description_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		description_label.fit_content = false
+		description_label.scroll_active = false
 		description_label.add_theme_font_size_override("font_size", 15)
 		description_label.add_theme_color_override("font_color", Color("d3dcdf"))
 		description_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1468,6 +1822,40 @@ func _create_upgrade_card_panel() -> void:
 		_upgrade_card_titles.append(title_label)
 		_upgrade_card_descriptions.append(description_label)
 		_upgrade_card_rarities.append(rarity_label)
+		_upgrade_card_tower_icons.append(tower_icon)
+
+func _get_card_tower_icon_name(card: Resource) -> StringName:
+	if card == null:
+		return &""
+	var operations: Array = card.get("modifier_operations")
+	for operation_variant in operations:
+		var operation: Resource = operation_variant as Resource
+		if operation == null:
+			continue
+		var tower_id: StringName = StringName(_icon_catalog.call("normalize_tower_icon_id", StringName(operation.get("affected_tower_id"))))
+		if tower_id in [&"ballista", &"mortar", &"tesla_coil", &"frost_keep", &"flame_thrower", &"poison_sprayer", &"shredder"]:
+			return tower_id
+	return &""
+
+func _set_rich_text_with_currency_icons(label: RichTextLabel, source_text: String) -> void:
+	label.clear()
+	var currency_pattern := RegEx.new()
+	currency_pattern.compile("(?i)\\b(oro|moneda|man[aá])\\b|\\{icon:(gold|mana|health|armor|shield)\\}")
+	var matches: Array[RegExMatch] = currency_pattern.search_all(source_text)
+	var cursor: int = 0
+	for currency_match in matches:
+		var match_start: int = currency_match.get_start(0)
+		label.append_text(source_text.substr(cursor, match_start - cursor))
+		var currency_text: String = currency_match.get_string(1).to_lower()
+		var icon_token: String = currency_match.get_string(2).to_lower()
+		var icon_name: StringName = StringName(icon_token)
+		if icon_token.is_empty():
+			icon_name = &"mana" if currency_text.begins_with("man") else &"gold"
+		var currency_icon: Texture2D = _icon_catalog.call("get_icon", icon_name) as Texture2D
+		if currency_icon != null:
+			label.add_image(currency_icon, 17, 17)
+		cursor = currency_match.get_end(0)
+	label.append_text(source_text.substr(cursor))
 
 func _on_terrain_card_selected(index: int) -> void:
 	if (
@@ -1559,6 +1947,7 @@ func _style_terrain_card_button(button: Button) -> void:
 func _on_preview_hover_changed(local_coord: Vector2i, terrain_type: int, elevation: int) -> void:
 	_hovered_coord = local_coord
 	_has_hovered_cell = true
+	_update_hovered_tower(local_coord)
 	_base.set_hovered(local_coord == _base_coord)
 	_hover_status.text = "Casilla del tablero (q,r): (%d, %d) · %s · h%d" % [
 		local_coord.x,
@@ -1570,9 +1959,20 @@ func _on_preview_hover_changed(local_coord: Vector2i, terrain_type: int, elevati
 
 func _on_preview_hover_cleared() -> void:
 	_has_hovered_cell = false
+	_update_hovered_tower(Vector2i.ZERO, false)
 	_base.set_hovered(false)
 	_hover_status.text = "Casilla del tablero (q,r): — · hover sobre cara superior"
 	_piece_preview.set_tower_build_preview(false)
+
+func _update_hovered_tower(coord: Vector2i, has_cell: bool = true) -> void:
+	var next_tower: Tower = _build_controller.get_tower_at(coord) if has_cell else null
+	if _hovered_tower == next_tower:
+		return
+	if _hovered_tower != null and is_instance_valid(_hovered_tower):
+		_hovered_tower.set_hovered(false)
+	_hovered_tower = next_tower if next_tower != null and is_instance_valid(next_tower) else null
+	if _hovered_tower != null:
+		_hovered_tower.set_hovered(true)
 
 func _toggle_path_debug() -> void:
 	_path_debug_visible = not _path_debug_visible

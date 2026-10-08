@@ -16,6 +16,20 @@ const HEALTH_BACK_COLOR: Color = Color(0.12, 0.13, 0.14)
 const HEALTH_FILL_COLOR: Color = Color(0.36, 0.86, 0.40)
 const ARMOR_FILL_COLOR: Color = Color(0.78, 0.69, 0.48)
 const SHIELD_FILL_COLOR: Color = Color(0.31, 0.73, 0.98)
+const DAMAGE_TEXT_COLORS: Dictionary = {
+	HitPointLayer.HEALTH: Color("#ff6b68"),
+	HitPointLayer.ARMOR: Color("#f2c46e"),
+	HitPointLayer.SHIELD: Color("#65ceff"),
+}
+const ICON_CATALOG_SCRIPT: Script = preload("res://game/ui/icon_catalog.gd")
+const STATUS_ICON_IDS: Dictionary = {
+	"burn": &"burn",
+	"slow": &"slow",
+	"poison": &"poison",
+	"bleed": &"bleed",
+}
+const HIT_JUMP_DURATION: float = 0.32
+const HIT_FLASH_DURATION: float = 0.14
 
 var state: State = State.UNCONFIGURED
 var _enemy_data: EnemyData
@@ -29,12 +43,17 @@ var _shield_current: int = 0
 var _status_speed_multiplier: float = 1.0
 var _regen_counter_strength: float = 0.0
 var _regen_counter_time_left: float = 0.0
+var _icon_catalog: RefCounted
+var _hit_jump_time_left: float = 0.0
+var _hit_flash_time_left: float = 0.0
+var _jump_height: float = 0.0
 
 @onready var _health: HealthComponent = %Health
 @onready var _path_follower: PathFollowerComponent = %PathFollower
 @onready var _status_controller: Node = %StatusEffects
 
 func _ready() -> void:
+	_icon_catalog = ICON_CATALOG_SCRIPT.new() as RefCounted
 	add_to_group(&"enemies")
 	_health.health_changed.connect(_on_health_changed)
 	_health.health_depleted.connect(_on_health_depleted)
@@ -42,6 +61,14 @@ func _ready() -> void:
 	_status_controller.connect(&"status_changed", _on_status_effects_changed)
 
 func _process(delta: float) -> void:
+	if _hit_jump_time_left > 0.0 or _hit_flash_time_left > 0.0:
+		_hit_jump_time_left = maxf(_hit_jump_time_left - delta, 0.0)
+		_hit_flash_time_left = maxf(_hit_flash_time_left - delta, 0.0)
+		var jump_progress: float = 1.0 - _hit_jump_time_left / HIT_JUMP_DURATION
+		_jump_height = sin(clampf(jump_progress, 0.0, 1.0) * PI) * 10.0
+		queue_redraw()
+	else:
+		_jump_height = 0.0
 	if state != State.MOVING or _enemy_data == null or delta <= 0.0:
 		return
 	var active_status_ids: PackedStringArray = _status_controller.call("get_active_status_ids")
@@ -191,6 +218,35 @@ func get_current_move_speed() -> float:
 func get_active_status_summaries() -> PackedStringArray:
 	return _status_controller.call("get_active_status_summaries")
 
+func show_damage_feedback(layer: int, amount: int, is_critical: bool = false) -> void:
+	if amount <= 0:
+		return
+	_hit_jump_time_left = HIT_JUMP_DURATION
+	_hit_flash_time_left = HIT_FLASH_DURATION
+	queue_redraw()
+	var effects_parent: Node = get_parent()
+	if effects_parent == null:
+		return
+	var popup := Label.new()
+	popup.text = "−%d%s" % [amount, "!" if is_critical else ""]
+	popup.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	popup.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	popup.size = Vector2(84.0, 26.0)
+	popup.pivot_offset = popup.size * 0.5
+	popup.z_index = 100
+	popup.add_theme_font_size_override("font_size", 17 if is_critical else 15)
+	popup.add_theme_color_override("font_color", DAMAGE_TEXT_COLORS.get(layer, Color.WHITE))
+	popup.add_theme_color_override("font_outline_color", Color("#111820"))
+	popup.add_theme_constant_override("outline_size", 3)
+	effects_parent.add_child(popup)
+	var initial_position: Vector2 = global_position + Vector2(-42.0, -_body_radius - 65.0)
+	popup.global_position = initial_position
+	var tween: Tween = popup.create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(popup, "global_position", initial_position + Vector2(0.0, -31.0), 0.58).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(popup, "modulate:a", 0.0, 0.58).set_delay(0.16)
+	tween.chain().tween_callback(popup.queue_free)
+
 func get_display_name() -> String:
 	return _enemy_data.display_name if _enemy_data != null else "Enemigo"
 
@@ -270,8 +326,13 @@ func get_remaining_route_waypoints() -> Array[Vector2]:
 	return _path_follower.get_remaining_route_waypoints()
 
 func _draw() -> void:
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.42))
+	draw_circle(Vector2.ZERO, _body_radius + 2.0, Color(0.02, 0.03, 0.04, 0.28))
+	draw_set_transform(Vector2(0.0, -_jump_height), 0.0, Vector2.ONE)
 	draw_circle(Vector2.ZERO, _body_radius + 3.0, BODY_OUTLINE)
-	draw_circle(Vector2.ZERO, _body_radius, _body_color)
+	var flash_ratio: float = _hit_flash_time_left / HIT_FLASH_DURATION
+	var body_color: Color = _body_color.lerp(Color.WHITE, clampf(flash_ratio, 0.0, 1.0))
+	draw_circle(Vector2.ZERO, _body_radius, body_color)
 	draw_arc(Vector2.ZERO, _body_radius + 2.0, 0.0, TAU, 20, Color(1.0, 0.82, 0.62), 1.5, true)
 	var active_status_ids: PackedStringArray = _status_controller.call("get_active_status_ids")
 	if active_status_ids.has("slow"):
@@ -283,30 +344,71 @@ func _draw() -> void:
 	if active_status_ids.has("poison"):
 		draw_arc(Vector2.ZERO, 24.0, 0.0, TAU, 24, Color(0.42, 0.88, 0.36, 0.9), 2.0, true)
 	if _enemy_data == null:
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		return
-	var total_maximum: float = float(get_total_maximum_hit_points())
-	if total_maximum <= 0.0:
-		return
-	var bar_width: float = _body_radius * 4.4
+	_draw_status_icons()
+	_draw_hit_point_bars()
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+func _draw_hit_point_bars() -> void:
+	var bar_width: float = maxf(_body_radius * 5.4, 68.0)
 	var bar_left: float = -bar_width * 0.5
-	var bar_y: float = -_body_radius - 14.0
-	var segment_specs: Array[Dictionary] = [
-		{"current": _shield_current, "maximum": _enemy_data.shield, "color": SHIELD_FILL_COLOR},
-		{"current": _armor_current, "maximum": _enemy_data.armor, "color": ARMOR_FILL_COLOR},
-		{"current": _health.current_health, "maximum": _health.maximum_health, "color": HEALTH_FILL_COLOR},
+	var row_y: float = -_body_radius - 22.0
+	var bar_height: float = 8.0
+	var row_gap: float = 2.0
+	var rows: Array[Dictionary] = [
+		{"id": &"shield", "current": _shield_current, "maximum": _enemy_data.shield, "color": SHIELD_FILL_COLOR},
+		{"id": &"armor", "current": _armor_current, "maximum": _enemy_data.armor, "color": ARMOR_FILL_COLOR},
+		{"id": &"health", "current": _health.current_health, "maximum": _health.maximum_health, "color": HEALTH_FILL_COLOR},
 	]
-	var cursor_x: float = bar_left
-	for segment in segment_specs:
-		var segment_maximum: int = int(segment["maximum"])
-		if segment_maximum <= 0:
+	var displayed_rows: int = 0
+	for row in rows:
+		var maximum: int = int(row["maximum"])
+		if maximum <= 0:
 			continue
-		var segment_width: float = bar_width * float(segment_maximum) / total_maximum
-		draw_rect(Rect2(cursor_x, bar_y, segment_width, 7.0), HEALTH_BACK_COLOR)
-		var fill_ratio: float = clampf(float(segment["current"]) / float(segment_maximum), 0.0, 1.0)
-		draw_rect(Rect2(cursor_x, bar_y, segment_width * fill_ratio, 7.0), segment["color"])
-		draw_rect(Rect2(cursor_x, bar_y, segment_width, 7.0), Color(0.92, 0.95, 0.98, 0.8), false, 0.7)
-		cursor_x += segment_width
-	draw_rect(Rect2(bar_left, bar_y, bar_width, 7.0), Color(0.08, 0.1, 0.12, 0.9), false, 1.0)
+		var current: int = int(row["current"])
+		var icon_name: StringName = StringName(row["id"])
+		var fill_color: Color = row["color"]
+		var layer_icon: Texture2D = _icon_catalog.call("get_icon", icon_name) as Texture2D
+		if layer_icon != null:
+			draw_texture_rect(layer_icon, Rect2(bar_left - 17.0, row_y - 3.0, 14.0, 14.0), false)
+		draw_rect(Rect2(bar_left, row_y, bar_width, bar_height), HEALTH_BACK_COLOR)
+		var fill_ratio: float = clampf(float(current) / float(maximum), 0.0, 1.0)
+		draw_rect(Rect2(bar_left, row_y, bar_width * fill_ratio, bar_height), fill_color)
+		if icon_name == &"health":
+			for segment_index in range(1, 10):
+				var segment_x: float = bar_left + bar_width * float(segment_index) / 10.0
+				draw_line(Vector2(segment_x, row_y), Vector2(segment_x, row_y + bar_height), Color(0.08, 0.1, 0.12, 0.78), 1.0)
+		draw_rect(Rect2(bar_left, row_y, bar_width, bar_height), Color(0.92, 0.95, 0.98, 0.84), false, 0.7)
+		row_y += bar_height + row_gap
+		displayed_rows += 1
+	if displayed_rows > 1:
+		draw_rect(Rect2(bar_left - 1.5, -_body_radius - 23.5, bar_width + 3.0, float(displayed_rows) * (bar_height + row_gap) - row_gap + 3.0), Color(0.08, 0.1, 0.12, 0.74), false, 1.0)
+
+func _draw_status_icons() -> void:
+	var stacks_by_id: Dictionary = _status_controller.call("get_active_status_stacks")
+	if stacks_by_id.is_empty():
+		return
+	var status_ids: Array = stacks_by_id.keys()
+	status_ids.sort()
+	var icon_size: float = 20.0
+	var gap: float = 4.0
+	var total_width: float = float(status_ids.size()) * icon_size + float(maxi(status_ids.size() - 1, 0)) * gap
+	var start_x: float = -total_width * 0.5
+	var status_y: float = -_body_radius - 48.0
+	for status_id_variant in status_ids:
+		var status_id: StringName = StringName(status_id_variant)
+		var icon_name: StringName = STATUS_ICON_IDS.get(String(status_id), &"")
+		var icon_texture: Texture2D = _icon_catalog.call("get_icon", icon_name) as Texture2D if icon_name != &"" else null
+		if icon_texture != null:
+			var icon_rect := Rect2(start_x, status_y, icon_size, icon_size)
+			draw_texture_rect(icon_texture, icon_rect, false)
+		var stacks: int = int(stacks_by_id[status_id_variant])
+		if stacks > 1 and ThemeDB.fallback_font != null:
+			var count_position: Vector2 = Vector2(start_x + icon_size + 1.0, status_y + icon_size + 1.0)
+			draw_string(ThemeDB.fallback_font, count_position + Vector2(1.0, 1.0), str(stacks), HORIZONTAL_ALIGNMENT_RIGHT, 15.0, 12, Color("#101820"))
+			draw_string(ThemeDB.fallback_font, count_position, str(stacks), HORIZONTAL_ALIGNMENT_RIGHT, 15.0, 12, Color.WHITE)
+		start_x += icon_size + gap
 
 func _on_health_changed(current_health: int, maximum_health: int) -> void:
 	health_changed.emit(current_health, maximum_health)

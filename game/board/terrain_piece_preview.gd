@@ -17,7 +17,9 @@ const CLIFF_DARKEN_FACTOR: float = 0.38
 const CLIFF_MIN_SCREEN_DEPTH: float = 6.0
 const SPAWN_MARKER_DARK: Color = Color(0.035, 0.05, 0.06, 0.96)
 const SPAWN_MARKER_COLOR: Color = Color(0.94, 0.27, 0.18, 1.0)
-const SPAWN_MARKER_HIGHLIGHT: Color = Color(1.0, 0.79, 0.3, 1.0)
+const SPAWN_NEXT_COLOR: Color = Color("#55e39a")
+const SPAWN_RETAINED_COLOR: Color = Color("#5dcfff")
+const SPAWN_CLOSING_COLOR: Color = Color("#ff7068")
 const ROUTE_DEBUG_COLORS: Array[Color] = [
 	Color(0.25, 0.78, 1.0, 0.92),
 	Color(1.0, 0.76, 0.25, 0.92),
@@ -37,11 +39,13 @@ var _board_display_cells: Array[TerrainPieceCellData] = []
 var _ghost_coords: Dictionary[Vector2i, bool] = {}
 var _hovered_cell: TerrainPieceCellData
 var _path_graph: PathGraph
+var _placement_path_graph: PathGraph
 var _path_debug_visible: bool = false
 var _tower_build_preview_active: bool = false
 var _tower_preview_coord: Vector2i = Vector2i.ZERO
 var _tower_preview_is_valid: bool = false
 var _tower_preview_range_pixels: float = 0.0
+var _tower_preview_icon: Texture2D
 var _combo_strength_by_coord: Dictionary[Vector2i, int] = {}
 var _combo_animation_time: float = 0.0
 var _combo_redraw_timer: float = 0.0
@@ -71,12 +75,14 @@ func set_tower_build_preview(
 	active: bool,
 	coord: Vector2i = Vector2i.ZERO,
 	is_valid: bool = false,
-	range_pixels: float = 0.0
+	range_pixels: float = 0.0,
+	icon_texture: Texture2D = null
 ) -> void:
 	_tower_build_preview_active = active
 	_tower_preview_coord = coord
 	_tower_preview_is_valid = is_valid
 	_tower_preview_range_pixels = maxf(range_pixels, 0.0)
+	_tower_preview_icon = icon_texture
 	queue_redraw()
 
 func set_placement_preview(
@@ -84,7 +90,8 @@ func set_placement_preview(
 	anchor_coord: Vector2i,
 	rotation_steps: int,
 	is_valid: bool,
-	active: bool = true
+	active: bool = true,
+	placement_path_graph: PathGraph = null
 ) -> void:
 	_board_mode = true
 	_piece_data = piece_data
@@ -92,6 +99,7 @@ func set_placement_preview(
 	_placement_anchor = anchor_coord
 	_placement_is_valid = is_valid
 	_placement_active = active
+	_placement_path_graph = placement_path_graph
 	_rebuild_display_cells()
 	_refresh_hovered_cell()
 	queue_redraw()
@@ -141,8 +149,10 @@ func _draw_tower_build_preview() -> void:
 	var corners := _hex_corners(center)
 	corners.append(corners[0])
 	draw_polyline(corners, tint, 3.0, true)
-	draw_circle(center + Vector2(0.0, -7.0), 9.0, tint)
-	draw_line(center + Vector2(0.0, -7.0), center + Vector2(15.0, -7.0), tint.lightened(0.18), 4.0, true)
+	if _tower_preview_icon != null:
+		draw_texture_rect(_tower_preview_icon, Rect2(center + Vector2(-27.0, -54.0), Vector2(54.0, 54.0)), false)
+	else:
+		draw_circle(center + Vector2(0.0, -7.0), 9.0, tint)
 
 func _draw_path_debug_overlay() -> void:
 	for route_index in range(_path_graph.routes.size()):
@@ -165,46 +175,87 @@ func _draw_path_debug_overlay() -> void:
 		draw_circle(base_center, 8.0, Color(1.0, 0.85, 0.28, 1.0))
 
 func _draw_spawn_markers() -> void:
+	var preview_is_active: bool = (
+		_placement_active
+		and _placement_is_valid
+		and _placement_path_graph != null
+		and _placement_path_graph.is_valid
+	)
+	if not preview_is_active:
+		for route in _path_graph.routes:
+			if route.is_reachable and route.spawn_endpoint != null:
+				_draw_spawn_marker(route.spawn_endpoint, SPAWN_MARKER_COLOR, "SPAWN")
+		return
+
+	var current_spawn_keys: Dictionary = {}
+	var preview_spawn_keys: Dictionary = {}
+	for route in _path_graph.routes:
+		if route.is_reachable and route.spawn_endpoint != null:
+			current_spawn_keys[_spawn_endpoint_key(route.spawn_endpoint)] = true
+	for route in _placement_path_graph.routes:
+		if route.is_reachable and route.spawn_endpoint != null:
+			preview_spawn_keys[_spawn_endpoint_key(route.spawn_endpoint)] = true
+
 	for route in _path_graph.routes:
 		if not route.is_reachable or route.spawn_endpoint == null:
 			continue
-		var endpoint: PathEndpoint = route.spawn_endpoint
-		var spawn_center: Vector2 = _top_center(endpoint.outside_coord, 0)
-		var path_center: Vector2 = _top_center(endpoint.cell_coord, 0)
-		var inward_direction: Vector2 = (path_center - spawn_center).normalized()
-		var path_corners: PackedVector2Array = _hex_corners(path_center)
-		var edge_start: int = posmod(endpoint.edge_direction + 1, 6)
-		var edge_end: int = posmod(endpoint.edge_direction + 2, 6)
-		var path_edge_midpoint: Vector2 = (path_corners[edge_start] + path_corners[edge_end]) * 0.5
+		var current_key: String = _spawn_endpoint_key(route.spawn_endpoint)
+		if not preview_spawn_keys.has(current_key):
+			_draw_spawn_marker(route.spawn_endpoint, SPAWN_CLOSING_COLOR, "CIERRA", true)
 
-		# Deja la cara PATH despejada y hace visible el punto exterior donde nace el enemigo.
-		draw_line(path_edge_midpoint, spawn_center, SPAWN_MARKER_DARK, 8.0, true)
-		draw_line(path_edge_midpoint, spawn_center, SPAWN_MARKER_COLOR, 4.5, true)
-		draw_circle(spawn_center, 15.0, SPAWN_MARKER_DARK)
-		draw_circle(spawn_center, 11.0, SPAWN_MARKER_COLOR)
-		draw_arc(spawn_center, 12.5, 0.0, TAU, 24, SPAWN_MARKER_HIGHLIGHT, 2.0, true)
+	for route in _placement_path_graph.routes:
+		if not route.is_reachable or route.spawn_endpoint == null:
+			continue
+		var candidate_key: String = _spawn_endpoint_key(route.spawn_endpoint)
+		var is_new_spawn: bool = not current_spawn_keys.has(candidate_key)
+		_draw_spawn_marker(
+			route.spawn_endpoint,
+			SPAWN_NEXT_COLOR if is_new_spawn else SPAWN_RETAINED_COLOR,
+			"NUEVO" if is_new_spawn else "SIGUE"
+		)
 
-		var arrow_tip: Vector2 = spawn_center + inward_direction * 7.0
-		var arrow_back: Vector2 = spawn_center - inward_direction * 5.0
-		var arrow_side: Vector2 = inward_direction.orthogonal() * 4.0
+func _draw_spawn_marker(endpoint: PathEndpoint, marker_color: Color, label: String, is_closing: bool = false) -> void:
+	var spawn_center: Vector2 = _top_center(endpoint.outside_coord, 0)
+	var path_center: Vector2 = _top_center(endpoint.cell_coord, 0)
+	var inward_direction: Vector2 = (path_center - spawn_center).normalized()
+	var path_corners: PackedVector2Array = _hex_corners(path_center)
+	var edge_start: int = posmod(endpoint.edge_direction + 1, 6)
+	var edge_end: int = posmod(endpoint.edge_direction + 2, 6)
+	var path_edge_midpoint: Vector2 = (path_corners[edge_start] + path_corners[edge_end]) * 0.5
+	# El color separa el spawn futuro de los actuales sin tapar las caras del terreno.
+	draw_line(path_edge_midpoint, spawn_center, SPAWN_MARKER_DARK, 9.0, true)
+	draw_line(path_edge_midpoint, spawn_center, marker_color, 5.5, true)
+	draw_circle(spawn_center, 17.0, SPAWN_MARKER_DARK)
+	draw_circle(spawn_center, 12.5, marker_color)
+	draw_arc(spawn_center, 14.5, 0.0, TAU, 24, marker_color.lightened(0.35), 2.5, true)
+	if is_closing:
+		draw_line(spawn_center + Vector2(-6.0, -6.0), spawn_center + Vector2(6.0, 6.0), Color.WHITE, 2.5, true)
+		draw_line(spawn_center + Vector2(6.0, -6.0), spawn_center + Vector2(-6.0, 6.0), Color.WHITE, 2.5, true)
+	else:
+		var arrow_tip: Vector2 = spawn_center + inward_direction * 8.0
+		var arrow_back: Vector2 = spawn_center - inward_direction * 6.0
+		var arrow_side: Vector2 = inward_direction.orthogonal() * 4.5
 		draw_colored_polygon(PackedVector2Array([
 			arrow_tip,
 			arrow_back + arrow_side,
 			arrow_back - arrow_side,
-		]), SPAWN_MARKER_HIGHLIGHT)
+		]), marker_color.lightened(0.35))
 
-		var label_rect := Rect2(spawn_center + Vector2(14.0, -10.0), Vector2(64.0, 20.0))
-		draw_rect(label_rect, SPAWN_MARKER_DARK, true)
-		draw_rect(label_rect, SPAWN_MARKER_HIGHLIGHT, false, 1.0)
-		draw_string(
-			ThemeDB.fallback_font,
-			label_rect.position + Vector2(5.0, 14.0),
-			"SPAWN",
-			HORIZONTAL_ALIGNMENT_LEFT,
-			-1.0,
-			11,
-			SPAWN_MARKER_HIGHLIGHT
-		)
+	var label_rect := Rect2(spawn_center + Vector2(16.0, -11.0), Vector2(76.0, 22.0))
+	draw_rect(label_rect, SPAWN_MARKER_DARK, true)
+	draw_rect(label_rect, marker_color.lightened(0.18), false, 1.2)
+	draw_string(
+		ThemeDB.fallback_font,
+		label_rect.position + Vector2(5.0, 15.0),
+		label,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1.0,
+		12,
+		marker_color.lightened(0.42)
+	)
+
+func _spawn_endpoint_key(endpoint: PathEndpoint) -> String:
+	return "%d,%d,%d" % [endpoint.cell_coord.x, endpoint.cell_coord.y, endpoint.edge_direction]
 
 func _draw_cliffs(
 	cells: Array[TerrainPieceCellData],

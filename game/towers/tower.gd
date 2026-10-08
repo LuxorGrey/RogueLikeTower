@@ -12,6 +12,7 @@ const SHOT_COLOR: Color = Color(1.0, 0.91, 0.46, 0.96)
 const DAMAGE_PACKET_SCRIPT: Script = preload("res://game/combat/damage_packet.gd")
 const SAWBLADE_SCRIPT: Script = preload("res://game/towers/sawblade_projectile.gd")
 const TOWER_PROJECTILE_SCRIPT: Script = preload("res://game/towers/tower_projectile.gd")
+const ICON_CATALOG_SCRIPT: Script = preload("res://game/ui/icon_catalog.gd")
 const DAMAGE_TAG_PHYSICAL: int = 1
 const DAMAGE_TAG_FIRE: int = 2
 const DAMAGE_TAG_ARCANE: int = 4
@@ -30,6 +31,9 @@ var _meta_progression: Node
 var _board_grid: HexGrid
 var _hex_radius: float = 52.0
 var _is_selected: bool = false
+var _is_hovered: bool = false
+var _icon_catalog: RefCounted
+var _tower_icon: Texture2D
 var _current_target: Enemy
 var _targeting_mode: int = TowerData.TargetingMode.FIRST_PROGRESS
 var _targeting_priorities: Array[int] = [TowerData.TargetingMode.FIRST_PROGRESS]
@@ -65,6 +69,8 @@ func configure(
 		last_error = "; ".join(errors)
 		return false
 	_tower_data = tower_data
+	_icon_catalog = ICON_CATALOG_SCRIPT.new() as RefCounted
+	_tower_icon = _icon_catalog.call("get_tower_icon", StringName(tower_data.id)) as Texture2D
 	_damage_service = damage_service
 	_run_economy = run_economy
 	_run_card_service = run_card_service
@@ -102,6 +108,12 @@ func _on_run_card_modifiers_changed() -> void:
 
 func set_selected(is_selected: bool) -> void:
 	_is_selected = is_selected
+	queue_redraw()
+
+func set_hovered(is_hovered: bool) -> void:
+	if _is_hovered == is_hovered:
+		return
+	_is_hovered = is_hovered
 	queue_redraw()
 
 func set_targeting_mode(mode: int) -> bool:
@@ -336,22 +348,22 @@ func get_summary() -> String:
 		mana_summary = " · %.1f maná/s" % current_mana_per_second
 	elif get_current_mana_cost() > 0.0:
 		mana_summary = " · %.1f maná/ataque" % get_current_mana_cost()
-	return "%s · N%d/%d · daño %d · H/A/E %.1f/%.1f/%.1f · alcance %.1f hex · %.0f RPM · crítico %.0f%% · XP H/A/E %.0f/%.0f/%.0f · %s%s" % [
+	return "%s · NIVEL %d/%d\nDaño %d · Rango %.1f hex · %.0f RPM\nVida {icon:health} %.1f · Armadura {icon:armor} %.1f · Escudo {icon:shield} %.1f\nCrítico %.0f%% · %s%s\nXP {icon:health} %.0f · {icon:armor} %.0f · {icon:shield} %.0f" % [
 		_tower_data.display_name,
 		level,
 		_tower_data.max_level,
 		get_current_damage(),
+		get_current_range_hexes(),
+		get_current_rounds_per_minute(),
 		get_hit_point_damage_multiplier(Enemy.HitPointLayer.HEALTH),
 		get_hit_point_damage_multiplier(Enemy.HitPointLayer.ARMOR),
 		get_hit_point_damage_multiplier(Enemy.HitPointLayer.SHIELD),
-		get_current_range_hexes(),
-		get_current_rounds_per_minute(),
 		get_current_crit_chance() * 100.0,
+		get_attack_pattern_name(),
+		mana_summary,
 		get_targeting_xp(Enemy.HitPointLayer.HEALTH),
 		get_targeting_xp(Enemy.HitPointLayer.ARMOR),
 		get_targeting_xp(Enemy.HitPointLayer.SHIELD),
-		get_attack_pattern_name(),
-		mana_summary,
 	]
 
 func get_attack_pattern_name() -> String:
@@ -706,8 +718,9 @@ func _hex_neighbor_distance() -> float:
 func _draw() -> void:
 	if _tower_data == null:
 		return
-	if _is_selected:
-		draw_arc(Vector2.ZERO, get_current_range_pixels(), 0.0, TAU, 72, RANGE_COLOR, 2.0, true)
+	if _is_selected or _is_hovered:
+		var range_color: Color = Color(0.36, 0.86, 1.0, 0.36) if _is_selected else Color(0.65, 0.9, 1.0, 0.2)
+		draw_arc(Vector2.ZERO, get_current_range_pixels(), 0.0, TAU, 72, range_color, 2.0 if _is_selected else 1.4, true)
 	var pedestal := PackedVector2Array([
 		Vector2(-16.0, -2.0),
 		Vector2(-11.0, -12.0),
@@ -718,45 +731,13 @@ func _draw() -> void:
 	])
 	var body_color: Color = _tower_data.visual_color
 	var dark_color: Color = body_color.darkened(0.55)
-	var light_color: Color = body_color.lightened(0.4)
+	var icon_center := Vector2(0.0, -27.0)
+	if _is_selected or _is_hovered:
+		var outline_color: Color = Color(1.0, 0.92, 0.56, 0.98) if _is_selected else Color(0.82, 0.94, 1.0, 0.8)
+		draw_arc(icon_center, 27.0, 0.0, TAU, 48, outline_color, 3.2 if _is_selected else 2.0, true)
 	draw_colored_polygon(pedestal, dark_color)
-	var turret_center := Vector2(0.0, -19.0)
-	draw_circle(turret_center, 12.0, body_color)
-	match _tower_data.visual_archetype:
-		TowerData.VisualArchetype.BALLISTA:
-			draw_arc(turret_center, 13.0, -PI * 0.5, PI * 0.5, 16, light_color, 3.0, true)
-			draw_line(turret_center + Vector2(-11.0, 0.0), turret_center + Vector2(11.0, 0.0), dark_color, 2.0, true)
-			draw_line(turret_center, turret_center + Vector2.RIGHT.rotated(_turret_angle) * 21.0, light_color, 2.0, true)
-		TowerData.VisualArchetype.MORTAR:
-			draw_line(turret_center, turret_center + Vector2.RIGHT.rotated(_turret_angle) * 22.0, dark_color, 9.0, true)
-			draw_line(turret_center, turret_center + Vector2.RIGHT.rotated(_turret_angle) * 19.0, light_color, 4.0, true)
-		TowerData.VisualArchetype.TESLA:
-			draw_circle(turret_center, 5.0, light_color)
-			draw_line(turret_center + Vector2(-8.0, -8.0), turret_center + Vector2(-8.0, -18.0), light_color, 2.0, true)
-			draw_line(turret_center + Vector2(0.0, -8.0), turret_center + Vector2(0.0, -22.0), light_color, 2.0, true)
-			draw_line(turret_center + Vector2(8.0, -8.0), turret_center + Vector2(8.0, -18.0), light_color, 2.0, true)
-			draw_polyline(PackedVector2Array([turret_center + Vector2(-4.0, -21.0), turret_center + Vector2(2.0, -16.0), turret_center + Vector2(-2.0, -11.0), turret_center + Vector2(5.0, -7.0)]), Color.WHITE, 2.0, true)
-		TowerData.VisualArchetype.FROST:
-			for spoke in 3:
-				var direction := Vector2.RIGHT.rotated(float(spoke) * PI / 3.0)
-				draw_line(turret_center - direction * 10.0, turret_center + direction * 10.0, light_color, 2.5, true)
-				draw_line(turret_center + direction * 5.0, turret_center + direction.rotated(0.7) * 9.0, light_color, 1.5, true)
-				draw_line(turret_center + direction * 5.0, turret_center + direction.rotated(-0.7) * 9.0, light_color, 1.5, true)
-		TowerData.VisualArchetype.FLAME:
-			draw_colored_polygon(PackedVector2Array([turret_center + Vector2(-7.0, 1.0), turret_center + Vector2(-3.0, -12.0), turret_center + Vector2(1.0, -7.0), turret_center + Vector2(6.0, -20.0), turret_center + Vector2(8.0, -3.0)]), light_color)
-			draw_circle(turret_center + Vector2(0.0, 1.0), 4.0, Color(1.0, 0.55, 0.16))
-		TowerData.VisualArchetype.POISON:
-			draw_rect(Rect2(turret_center + Vector2(-7.0, -10.0), Vector2(14.0, 17.0)), dark_color)
-			draw_rect(Rect2(turret_center + Vector2(-4.0, -15.0), Vector2(8.0, 5.0)), light_color)
-			draw_circle(turret_center + Vector2(0.0, -2.0), 4.0, body_color.lightened(0.2))
-		TowerData.VisualArchetype.SHREDDER:
-			var teeth := PackedVector2Array()
-			for tooth in 16:
-				var angle: float = float(tooth) * TAU / 16.0 + _turret_angle
-				var radius: float = 12.0 if tooth % 2 == 0 else 8.0
-				teeth.append(turret_center + Vector2.RIGHT.rotated(angle) * radius)
-			draw_colored_polygon(teeth, light_color)
-			draw_circle(turret_center, 4.0, dark_color)
+	if _tower_icon != null:
+		draw_texture_rect(_tower_icon, Rect2(icon_center - Vector2(27.0, 27.0), Vector2(54.0, 54.0)), false)
 	if _shot_flash_timer > 0.0:
 		for target_offset in _shot_target_positions:
-			draw_line(turret_center, target_offset, SHOT_COLOR, 2.0, true)
+			draw_line(icon_center, target_offset, SHOT_COLOR, 2.0, true)

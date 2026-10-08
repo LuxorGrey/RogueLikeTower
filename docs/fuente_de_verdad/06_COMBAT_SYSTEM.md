@@ -131,13 +131,13 @@ El contenido M5 continúa siendo una prueba funcional de base 50 HP, enemigo 20 
 
 ## M9 — Economía y maná
 
-`TowerData` declara `build_cost`, el coste indexado por nivel en `upgrade_costs` y `mana_cost_per_attack`. `BuildController` rechaza una compra sin oro y solo marca ocupada la celda cuando el cobro se acepta. Una mejora cobra el coste del siguiente nivel; si la torre no puede subir de nivel, no se cobra. La barra de atajos y el botón de mejora muestran el coste y se deshabilitan si no hay saldo.
+`TowerData` declara `build_cost`, el coste indexado por nivel en `upgrade_costs` y `mana_cost_per_attack`. `BuildController` rechaza una compra sin oro y solo marca ocupada la celda cuando el cobro se acepta. Una mejora cobra el coste del siguiente nivel; si la torre no puede subir de nivel, no se cobra. La barra de atajos y el botón de mejora muestran el coste y se deshabilitan si no hay saldo; los atajos también atenúan su contenido para que la indisponibilidad sea visible.
 
 Antes de ejecutar el paquete de daño, una torre con coste de maná solicita el gasto al `RunEconomyService`. Sin saldo suficiente no dispara y vuelve a intentarlo después de una espera corta; no se acumula deuda ni se permite saldo negativo. El servicio regenera maná durante las fases activas de run y limita el total a `maximum_mana`. M9 no tiene edificios de soporte ni fuentes de maná por torre.
 
 `WaveDirector` paga `EnemyData.kill_reward` exactamente una vez cuando el enemigo muere, incluidos kills de DoT. Un enemigo que llega a la base no cobra. `WaveData.round_reward` se paga cuando terminaron todos los spawns y no queda ningún enemigo activo; una derrota no da el bonus de limpieza, pero tampoco revierte pagos por bajas ya efectuadas. La UI pasa por `ROUND_REWARD` durante 0.8 s y después habilita `TERRAIN_EXPANSION`. Si el calendario M11 lo indica, al colocar el terreno se abre `CARD_OFFER` y la próxima ronda no pasa a `ROUND_PREP` hasta seleccionar una carta.
 
-La primera configuración arranca con 150 oro, 30/100 maná y regen 1.5/s; costes y recompensas en los `.tres` son cifras provisionales editables, no balance confirmado. El oro de run es distinto a la moneda meta que M12 conserva entre runs. Sin economía inyectada, los callers antiguos de `Tower`/`BuildController` mantienen compatibilidad para smokes previos; `Main` siempre inyecta el servicio configurado. Ver ADR-0013 y el procedimiento manual M9 en `10_ACCEPTANCE_TESTS.md`.
+La primera configuración arranca con 150 oro y 100/100 maná; su tasa base es 1.5 maná/s (equivalente a 3 maná cada 2 s). Las cifras son provisionales, no balance confirmado. La interfaz presenta las mejoras de regeneración con equivalencias de cantidades enteras por intervalos enteros y sin decimales; conserva internamente la tasa exacta. El oro de run es distinto a la moneda meta que M12 conserva entre runs. Sin economía inyectada, los callers antiguos de `Tower`/`BuildController` mantienen compatibilidad para smokes previos; `Main` siempre inyecta el servicio configurado. Ver ADR-0013, ADR-0030 y el procedimiento manual M9 en `10_ACCEPTANCE_TESTS.md`.
 
 ## M11 — Modificadores de carta
 

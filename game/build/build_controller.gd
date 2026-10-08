@@ -125,7 +125,7 @@ func get_placement_error(coord: Vector2i) -> String:
 		]
 	var build_cost: int = get_current_build_cost(_tower_data)
 	if _run_economy != null and not bool(_run_economy.call("can_afford_gold", build_cost)):
-		return "Oro insuficiente: %d disponibles · %d necesarios." % [
+		return "Moneda insuficiente: %d disponibles · %d necesarios." % [
 			int(_run_economy.call("get_gold")),
 			build_cost,
 		]
@@ -159,7 +159,7 @@ func place_tower(coord: Vector2i) -> bool:
 		return false
 	var build_cost: int = get_current_build_cost(_tower_data)
 	if _run_economy != null and not bool(_run_economy.call("try_spend_gold", build_cost, &"tower_build")):
-		last_error = "No se pudo completar la compra: oro insuficiente."
+		last_error = "No se pudo completar la compra: moneda insuficiente."
 		tower.free()
 		return false
 	_entities.add_child(tower)
@@ -196,13 +196,13 @@ func upgrade_selected_tower(hit_point_layer: int = Enemy.HitPointLayer.HEALTH) -
 		last_error = "La torre ya está en su nivel máximo."
 		return false
 	if _run_economy != null and not bool(_run_economy.call("can_afford_gold", upgrade_cost)):
-		last_error = "Oro insuficiente: %d disponibles · %d necesarios." % [
+		last_error = "Moneda insuficiente: %d disponibles · %d necesarios." % [
 			int(_run_economy.call("get_gold")),
 			upgrade_cost,
 		]
 		return false
 	if _run_economy != null and not bool(_run_economy.call("try_spend_gold", upgrade_cost, &"tower_upgrade")):
-		last_error = "No se pudo completar la mejora: oro insuficiente."
+		last_error = "No se pudo completar la mejora: moneda insuficiente."
 		return false
 	if not selected_tower.upgrade(hit_point_layer):
 		if _run_economy != null:

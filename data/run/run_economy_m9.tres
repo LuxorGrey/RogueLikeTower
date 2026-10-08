@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1_run_economy_data")
 starting_gold = 150
-starting_mana = 30.0
+starting_mana = 100.0
 maximum_mana = 100.0
 mana_regen_per_second = 1.5

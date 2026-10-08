@@ -112,7 +112,7 @@ Contrato de la primera implementación: `StatusEffectData` es un Resource config
 - Sin support buildings.
 - Resultado: economía jugable.
 
-Contrato de implementación M9: `RunEconomyService` pertenece a `Main` y configura su estado desde `RunEconomyData`; el oro de la run no usa `MetaProgression.meta_currency`. `TowerData` define coste de construcción, coste por cada nivel de mejora y maná por ataque; `EnemyData` define recompensa por baja y `WaveData` la recompensa de ronda. Una baja concede su recompensa una sola vez; llegar a la base no la concede. La recompensa de ronda solo se paga al completar todos los spawns con cero enemigos vivos. Mejoras y construcciones verifican y cobran antes de confirmar la mutación. El maná se consume antes de disparar y, si falta, la torre espera; la regeneración y capacidad son configurables. Los costes y cifras de arranque de esta primera integración son provisionales, no balance final. La escena de prueba mantiene replay de oleadas M7/M8; esto no implementa la secuencia completa M10.
+Contrato de implementación M9: `RunEconomyService` pertenece a `Main` y configura su estado desde `RunEconomyData`; el oro de la run no usa `MetaProgression.meta_currency`. `TowerData` define coste de construcción, coste por cada nivel de mejora y maná por ataque; `EnemyData` define recompensa por baja y `WaveData` la recompensa de ronda. Una baja concede su recompensa una sola vez; llegar a la base no la concede. La recompensa de ronda solo se paga al completar todos los spawns con cero enemigos vivos. Mejoras y construcciones verifican y cobran antes de confirmar la mutación; el atajo de una torre inasequible queda deshabilitado y atenuado. El maná se consume antes de disparar y, si falta, la torre espera; la regeneración y capacidad son configurables. El perfil provisional empieza con la reserva completa, y la regeneración se describe sin decimales mediante equivalencias enteras sin cambiar su tasa interna. Los costes y cifras de arranque de esta primera integración son provisionales, no balance final. La escena de prueba mantiene replay de oleadas M7/M8; esto no implementa la secuencia completa M10.
 
 ## M9.5 — Roster jugable de demo (prioridad del usuario)
 - Crear los siete perfiles aceptados: Ballista, Mortar, Tesla Coil, Frost Keep, Flame Thrower, Poison Sprayer y Shredder.
@@ -133,7 +133,7 @@ El usuario pidió expresamente cerrar este roster antes de avanzar a M10/M11. Po
 - Ronda 20 completa demo.
 - Resultado: run completa técnicamente.
 
-Contrato M10: la campaña contiene un `WaveData` validado por ronda y una sola ronda de campaña puede iniciarse por vez. Las rondas 17 y 19 contienen minijefe y la 20 un jefe Tier 2 genérico hasta elegir variante; estos hitos provienen de las reglas propias confirmadas en `docs/borradores_personales/02_monstruos.md`. Las estadísticas, composición normal y crecimiento de salud/daño/recompensa son placeholders configurables; no se copian valores ni habilidades de Rogue Tower. En cada pulso de campaña se genera simultáneamente un enemigo por cada endpoint PATH abierto y alcanzable; `WaveEnemyGroupData.count` representa pulsos por endpoint y el contador pendiente refleja el total de rutas. Cada oleada termina con cero spawns pendientes y cero enemigos vivos. Tras las rondas 1–19, `TERRAIN_EXPANSION` ofrece tres piezas distintas y bloquea el combate hasta elegir una y confirmar exactamente una colocación válida conectada; `Esc` durante esa colocación vuelve a la oferta existente. Tras confirmar, los huecos encerrados del tablero se rellenan al azar con Grass/Montaña, preservando aberturas PATH de spawn, y después se prepara la siguiente ronda, salvo que M11 solicite primero una elección de mejora. La ronda 20 pasa a `RUN_VICTORY`. Los fixtures M7/M8 quedan etiquetados `DEBUG`, sin avance de campaña, pagos ni daño a base. Esta oferta selecciona piezas de terreno; las cartas de mejoras `CardData` siguen en M11. Capas Shield/Armor/Health y meta-progresión no forman parte de M10.
+Contrato M10: la campaña contiene un `WaveData` validado por ronda y una sola ronda de campaña puede iniciarse por vez. Las rondas 17 y 19 contienen minijefe y la 20 un jefe Tier 2 genérico hasta elegir variante; estos hitos provienen de las reglas propias confirmadas en `docs/borradores_personales/02_monstruos.md`. Las estadísticas, composición normal y crecimiento de salud/daño/recompensa son placeholders configurables; no se copian valores ni habilidades de Rogue Tower. En cada pulso de campaña se genera simultáneamente un enemigo por cada endpoint PATH abierto y alcanzable; `WaveEnemyGroupData.count` representa pulsos por endpoint y el contador pendiente refleja el total de rutas. Cada oleada termina con cero spawns pendientes y cero enemigos vivos. Tras las rondas 1–19, `TERRAIN_EXPANSION` ofrece tres piezas distintas y bloquea el combate hasta elegir una y confirmar exactamente una colocación válida conectada; `Esc` durante esa colocación vuelve a la oferta existente. Mientras se mueve el ghost de una colocación geométricamente válida, `Main` construye un grafo candidato sin mutar el tablero y `TerrainPiecePreview` compara spawns actuales y siguientes: marca los que continúan, los nuevos y los que se cierran, e informa el recuento antes de confirmar. Si el grafo candidato no es válido, no se presenta como una colocación confirmable. El preview incluye los huecos que se rellenarían, usando Grass/Montaña como terreno no PATH para calcular la misma topología. Tras confirmar, los huecos encerrados del tablero se rellenan al azar con Grass/Montaña, preservando aberturas PATH de spawn, y después se prepara la siguiente ronda, salvo que M11 solicite primero una elección de mejora. La ronda 20 pasa a `RUN_VICTORY`. Los fixtures M7/M8 quedan etiquetados `DEBUG`, sin avance de campaña, pagos ni daño a base. Esta oferta selecciona piezas de terreno; las cartas de mejoras `CardData` siguen en M11. Capas Shield/Armor/Health y meta-progresión no forman parte de M10.
 
 ## M11 — Cards
 - `CardModifierOperation`, `CardData`, `CardPoolData` y `RunCardService` mantienen definición de contenido, calendario/oferta y selección separados.
@@ -169,17 +169,22 @@ Contrato M12 implementado: `MetaProgression` conserva su estado fuera de las esc
 Contrato M12A implementado en código, con aceptación manual pendiente. Las reglas/números de la tabla que pegó el usuario prevalecen para este conjunto de perfiles. Son provisionales el overkill (el excedente no atraviesa de una capa a otra), los costes de upgrade, umbrales de XP, áreas exactas, velocidades y la falta de reembolso al demoler. Los criterios están en `10_ACCEPTANCE_TESTS.md` y las decisiones en [ADR-0023](../decisiones/ADR-0023-reglas-de-torres-y-capas-de-vida.md).
 
 ## M13 — UX/UI
-- HUD ronda/20.
-- Vida base.
-- Moneda.
-- Maná.
-- Torre seleccionada.
-- Panel stats.
-- Preview de pieza y controles de rotación.
-- Pantalla derrota/victoria.
-- Tienda.
-- Tooltips.
+- HUD en tres paneles: recursos arriba a la izquierda, ronda/progreso/acción arriba al centro y estadísticas/acciones de torre a la derecha.
+- Barra de salud de base con valor superpuesto, oro y maná con iconos reutilizables; el oro recibe más énfasis visual y la moneda meta se reserva al cierre de run.
+- Al seleccionar una torre, mostrar en líneas legibles nivel, daño, multiplicadores H/A/E con iconos de vida/armadura/escudo, alcance, RPM, crítico, patrón, maná y XP; conservar prioridades, mejoras y demolición en el panel derecho, que desaparece al deseleccionar.
+- PNG RGBA transparentes e independientes, uno por objeto, para moneda, energía, vida/armadura/escudo, siete torres y cuatro estados; no se usa atlas. Los atajos inferiores son cuadrados y usan los mismos iconos de la selección, preview y torre colocada.
+- Hover/selección de torre muestra alcance y contorno; el panel lateral usa scroll y un único menú de prioridades con selección múltiple de hasta tres criterios.
+- Enemigos muestran barras apiladas por escudo/armadura/vida con salud fragmentada, iconos de estados y contador de acumulaciones; el daño tiene destello, salto y texto flotante coloreado por capa.
+- Las cards de mejora incluyen el icono de torre afectada. Los textos de economía/campaña y descripciones convierten oro/maná en iconos PNG reutilizables.
+- La inspección técnica de enemigos y la selección de fixtures DEBUG se pliegan bajo `F3`; las estadísticas de objetivo siguen accesibles como tooltip de la torre seleccionada.
+- Preview/selección de pieza y controles de rotación/confirmación/cancelación conservan indicaciones de uso y tooltips.
+- Pantalla terminal clara para victoria/derrota: resultado, ronda alcanzada, rondas completas, recompensa y saldo de moneda meta.
+- Tienda de fin de run separa desbloqueos de torres y mejoras permanentes en categorías; muestra coste, estado de compra, efecto y acción de nueva run sin mezclar la moneda meta con el oro de partida.
+- Tooltips explican atajos, coste, patrón de ataque, mejoras, prioridades y operaciones de terreno.
+- Lenguaje visual consistente con el tablero: placas oscuras azul pizarra, bordes de acero, acciones ámbar, éxitos verde bosque y derrota terracota; sin assets externos.
 - Resultado: todos los sistemas comprensibles sin debug.
+
+Contrato base de M13 registrado en [ADR-0026](../decisiones/ADR-0026-jerarquia-ux-ui.md); la distribución en tres paneles, iconos raster transparentes y feedback de combate se especifican en [ADR-0027](../decisiones/ADR-0027-hud-en-tres-paneles-e-iconos-vectoriales.md), [ADR-0028](../decisiones/ADR-0028-iconos-png-y-feedback-visual.md) y [ADR-0031](../decisiones/ADR-0031-png-individuales-por-objeto.md). La interfaz está implementada en código; falta la aceptación manual en ventana Godot según `10_ACCEPTANCE_TESTS.md`. El roster, las cifras y la economía no se rebalancean en este milestone.
 
 ## M14 — Vertical Slice
 Contenido provisional suficiente:

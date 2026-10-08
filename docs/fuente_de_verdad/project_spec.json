@@ -40,7 +40,8 @@
     "rebuild": "initialization_and_confirmed_piece_placement",
     "debug_toggle_key": "D",
     "reachable_spawn_marker": "always_visible_red_amber_portal_with_inward_arrow_and_SPAWN_label",
-    "spawn_marker_data_source": "reachable_PathGraph_routes"
+    "spawn_marker_data_source": "reachable_PathGraph_routes",
+    "placement_spawn_preview": "valid_piece_ghost_compares_candidate_graph; retained_SIGUE_cyan; added_NUEVO_green; removed_CIERRA_red_cross; live_count_to_candidate_count; no_board_mutation_until_confirm"
   },
   "m5_first_wave_prototype": {
     "status": "historical_m5_fixture; campaign_start_uses_starting_board",
@@ -189,9 +190,10 @@
     "service_scope": "Main_scene_local",
     "configuration_resource": "RunEconomyData",
     "starting_gold_provisional": 150,
-    "starting_mana_provisional": 30.0,
+    "starting_mana_provisional": 100.0,
     "maximum_mana_provisional": 100.0,
     "mana_regen_per_second_provisional": 1.5,
+    "mana_regeneration_display": "whole_mana_equivalents_over_whole_second_intervals; keep_exact_runtime_rate",
     "build_and_upgrade_costs": "TowerData",
     "kill_rewards": "EnemyData.kill_reward_paid_once_on_defeat",
     "round_rewards": "WaveData.round_reward_paid_once_when_spawning_finished_and_no_enemies_remain_and_wave_not_failed",
@@ -264,6 +266,41 @@
     "base_card_pool_count": 12,
     "card_archive_unlocks": ["archive_burnished_blades", "archive_mana_channel"],
     "balance_confirmed": false
+  },
+  "m13_ux_ui": {
+    "main_hud_panels": {
+      "top_left": ["base_health_bar_with_value", "run_gold_icon_and_value", "run_mana_icon_and_value", "F3_H_shortcuts"],
+      "top_center": ["campaign_phase", "round_progress_20", "start_round_action"],
+      "top_right": ["selected_tower_stats_and_actions", "hidden_when_deselected"]
+    },
+    "tower_panel_dismissal": "click_empty_cell_or_outside_board",
+    "icon_assets": {
+      "directory": "game/ui/icons/",
+      "format": "16 individual transparent RGBA PNG files, each 256x256; no shared atlas",
+      "ids": ["gold", "mana", "health", "armor", "shield", "ballista", "mortar", "tesla_coil", "frost_keep", "flame_thrower", "poison_sprayer", "shredder", "burn", "slow", "poison", "bleed"]
+    },
+    "tower_shortcuts": "square_buttons_with_shared_tower_sprite_large_icon_name_and_gold_icon_price",
+    "tower_stat_layer_icons": "health_armor_shield_icons_in_layer_multipliers_xp_and_upgrade_actions",
+    "tower_hover_selection": "show_attack_radius_and_outline; selected_tower_panel_scrollable",
+    "target_priorities_ui": "single_checkable_selector_up_to_three_distinct_criteria",
+    "enemy_health_visual": "larger_single_frame_with_shield_and_armor_rows_above_fragmented_health_row_and_larger_layer_icons; status_icons_show_stack_count_after_one",
+    "enemy_status_icons": "transparent_PNG_symbols_without_backing_plate; larger_icons; count_only_for_stacks_above_one",
+    "enemy_hit_feedback": "flash_jump_and_floating_layer_colored_damage_text",
+    "tower_upgrade_cards": "show_affected_tower_sprite",
+    "currency_text": "inline_gold_and_mana_icons_in_ui_text",
+    "game_title_in_hud": false,
+    "round_progress_colors": {"completed": "forest_green", "active": "amber", "future": "slate", "special_rounds": [17, 19, 20]},
+    "debug_panel_key": "F3",
+    "debug_panel_contents": ["terrain_tools", "wave_and_debug_fixture_selector", "continuous_target_inspector"],
+    "selected_tower_target_detail": "tooltip",
+    "hud_visibility_key": "H",
+    "terminal_outcomes": ["RUN_VICTORY", "RUN_DEFEAT"],
+    "terminal_summary": ["reached_round", "completed_rounds", "meta_reward", "total_meta_currency"],
+    "meta_shop_categories": ["tower_unlocks", "permanent_upgrades"],
+    "shop_actions": ["purchase_with_validation", "start_new_run"],
+    "ui_style": {"surface": "slate", "edge": "steel", "action": "amber", "success": "forest_green", "defeat": "terracotta", "external_assets": false},
+    "balance_confirmed": false,
+    "acceptance": "manual_window_review_pending"
   },
   "run_phases": [
     "RUN_SETUP",

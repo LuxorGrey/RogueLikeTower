@@ -1,6 +1,6 @@
 # ADR-0013: Economía de run y maná M9
 
-- Estado: aceptado para implementación; balance provisional.
+- Estado: aceptado para implementación; balance provisional. El valor inicial y la presentación de regeneración se actualizan parcialmente en ADR-0030.
 - Fecha: 2026-10-08.
 - Milestone: M9.
 
@@ -24,7 +24,7 @@ M9 necesita financiar construcción/mejoras, pagar bajas y oleadas, y habilitar 
 | Dato | Valor de prueba |
 |---|---:|
 | Oro inicial | 150 |
-| Maná inicial / máximo | 30 / 100 |
+| Maná inicial / máximo (valor original, sustituido por ADR-0030) | 30 / 100 |
 | Regeneración | 1.5 maná/s |
 | Basic Bolt / perfiles de diagnóstico | 30 / 40 oro |
 | Mejoras (nivel 1→2 / 2→3) | 20 / 35 oro |

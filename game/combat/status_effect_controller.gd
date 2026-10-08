@@ -93,6 +93,14 @@ func get_active_status_summaries() -> PackedStringArray:
 		summaries.append("%s %.1fs" % [label, active_status.remaining_duration])
 	return summaries
 
+func get_active_status_stacks() -> Dictionary:
+	var stacks: Dictionary = {}
+	for effect_id in _active_statuses:
+		var active_status: ActiveStatus = _active_statuses[effect_id] as ActiveStatus
+		if active_status != null:
+			stacks[String(effect_id)] = active_status.stacks
+	return stacks
+
 func clear_all() -> void:
 	if _active_statuses.is_empty():
 		return
