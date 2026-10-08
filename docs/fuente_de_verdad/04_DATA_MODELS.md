@@ -102,9 +102,9 @@ unlock_id
 scene
 ```
 
-M6 implementa en `data/towers/tower_data.gd`: `id`, `display_name`, `base_damage`, `attack_rate`, `range_hexes`, `allowed_terrain_mask`, `targeting_mode`, `height_range_bonus_per_level`, `max_level`, los incrementos configurables de mejora y `scene`. `data/towers/basic_bolt.tres` es el primer contenido placeholder. Los costes siguen fuera del modelo activo hasta M9. `Tower` conserva su coordenada/elevación axial, nivel, prioridad y cooldown; su ataque hitscan aplica el daño con `Enemy.apply_damage` como puente temporal hasta el `DamagePacket` de M7.
+M6 implementa en `data/towers/tower_data.gd`: `id`, `display_name`, `base_damage`, `attack_rate`, `range_hexes`, `allowed_terrain_mask`, `targeting_mode`, `height_range_bonus_per_level`, `max_level`, los incrementos configurables de mejora y `scene`. Los costes siguen fuera del modelo activo hasta M9. M7 añade `damage_tags` (bitmask de Físico/Fuego/Arcano), `armor_multiplier`, `health_multiplier`, `regen_counter_strength` y `regen_counter_duration`; los perfiles se copian a un `DamagePacket` por impacto, no se muta el Resource compartido.
 
-Las prioridades implementadas son `FIRST_PROGRESS`, `LAST_PROGRESS`, `HIGHEST_HEALTH` y `HIGHEST_ARMOR`. El progreso sale del índice y avance normalizados de `PathFollowerComponent`. M6 añade `armor` a `EnemyData` solo para leer la prioridad highest armor; no reduce daño ni activa regeneración.
+Las prioridades implementadas son `FIRST_PROGRESS`, `LAST_PROGRESS`, `HIGHEST_HEALTH` y `HIGHEST_ARMOR`. El progreso sale del índice y avance normalizados de `PathFollowerComponent`. Desde M7, el ataque hitscan llama a `DamageService.apply_damage`; no hay fórmulas de mitigación en `Tower`.
 
 ## EnemyData : Resource
 ```text
@@ -118,10 +118,15 @@ base_damage
 reward
 defense_tags
 status_resistances
+physical_damage_multiplier
+fire_damage_multiplier
+arcane_damage_multiplier
 scene
 ```
 
-M5 implementó `id`, `display_name`, `max_health`, `move_speed`, `base_damage` y `scene` en `data/enemies/enemy_data.gd`. M6 añade `armor` como dato de selección de objetivo, pero no lo usa para mitigar daño. Regeneración, recompensa, tags, resistencias y el cálculo central se incorporarán en M7/M9; no se fingen como funcionales. La escena de muestra y sus valores están en `data/enemies/basic_enemy.tres` y son provisionales.
+M5 implementó `id`, `display_name`, `max_health`, `move_speed`, `base_damage` y `scene`. M6 añadió `armor` para priorizar objetivos. M7 activa `armor`, `regen_per_second` y `physical_damage_multiplier`, `fire_damage_multiplier` y `arcane_damage_multiplier` en `data/enemies/enemy_data.gd`; los valores recibidos por múltiples tags se multiplican. La oleada M7 usa `data/enemies/armored_regenerator.tres` como fixture de diagnóstico. Los stats y resistencias del fixture son provisionales. Recompensa sigue reservada a M9.
+
+`defense_tags` y `status_resistances` del modelo conceptual siguen reservados para decisiones de contenido/status posteriores; M7 implementa los tres multiplicadores explícitos de daño recibido y no interpreta esos campos como activos.
 
 ## BaseData / HealthComponent
 
@@ -135,9 +140,12 @@ damage_tags
 armor_multiplier
 health_multiplier
 regen_counter_strength
+regen_counter_duration
 status_payloads
 critical? # mantener desactivado si no se aprueba
 ```
+
+M7 implementa `DamagePacket` como `RefCounted` transitorio y `DamageResult` como resultado auditable por HUD/señales. `DamageService` calcula `armor_absorbed = min(raw_damage, armor * armor_multiplier)`, luego `floor(max(raw_damage - armor_absorbed, 0) * damage_tag_multiplier * health_multiplier)`. El multiplicador por tag viene de `EnemyData`; si se combinan tags se multiplican sus valores. La vida aplicada queda limitada al HP actual. La contrarregeneración suprime la fracción configurada de `regen_per_second` durante `regen_counter_duration`; impactos sucesivos conservan la mayor fuerza y refrescan el tiempo restante con el máximo. Estos contratos son provisionales y están registrados en ADR-0010. `status_payloads` queda preparado en el paquete, pero no se procesa hasta M8.
 
 ## StatusEffectData
 ```text

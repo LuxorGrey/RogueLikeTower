@@ -65,7 +65,7 @@ Contrato técnico del prototipo: grafo axial propio y BFS determinista sin coste
 - Vida y muerte.
 - Resultado: primera oleada funcional.
 
-Contrato del prototipo: la base temporal se dibuja sobre PATH `(0,0)` y los enemigos consumen `PathRoute` de M4; `WaveDirector` inicia una sola oleada de demostración desde el primer endpoint ordenado. La muestra usa 3 enemigos, 20 de vida, velocidad 90 px/s y 10 de daño a base, con una base de 50 de vida. Son valores y política de spawn provisionales editables como Resources, no balance confirmado. La colocación de terreno queda bloqueada durante combate; al completar se habilita expansión, sin iniciar otra ronda (eso corresponde a M10). Las decisiones están en [ADR-0008](../decisiones/ADR-0008-primera-oleada-y-movimiento-de-enemigos.md).
+Contrato del prototipo M5: la base temporal se dibuja sobre PATH `(0,0)` y los enemigos consumen `PathRoute` de M4; la oleada inicial sale del primer endpoint ordenado. La muestra usa 3 enemigos, 20 de vida, velocidad 90 px/s y 10 de daño a base, con una base de 50 de vida. Son valores y política de spawn provisionales editables como Resources, no balance confirmado. La colocación de terreno queda bloqueada durante combate y al completar se habilita expansión. Desde el HUD de depuración M7 se pueden repetir dos fixtures para verificar daño; eso no es la progresión de rondas M10. Las decisiones están en [ADR-0008](../decisiones/ADR-0008-primera-oleada-y-movimiento-de-enemigos.md) y [ADR-0011](../decisiones/ADR-0011-hud-de-depuracion-m7.md).
 
 ## M6 — Torres
 - Build mode.
@@ -79,7 +79,7 @@ Contrato del prototipo: la base temporal se dibuja sobre PATH `(0,0)` y los enem
 - Venta opcional solo como placeholder configurable.
 - Resultado: Tower Defense mínimo jugable.
 
-Contrato de la primera implementación: `BuildController` construye solo sobre `GRASS`/`MOUNTAIN` libres durante preparación, combate o expansión; una torre no puede ocupar PATH, así que no altera ni bloquea la ruta M4. `Basic Bolt` es la única torre inicial y usa `TowerData`; ofrece prioridades first/last progress, highest health y highest armor, alcance y cadencia configurables, y ataque hitscan directo al `Enemy`. La muestra habilita mejoras gratuitas hasta nivel 3 porque los costes pertenecen a M9; la venta queda omitida. Daño 10, cadencia 1/s, alcance 3 hexes, mejoras +5 daño/+0.25 hex por nivel y bonus de alcance +0.25 por nivel de elevación son placeholders, no balance confirmado. La armadura solo sirve para la prioridad de target; la mitigación y `DamagePacket` corresponden a M7. ADR-0009 registra estas decisiones.
+Contrato de M6: `BuildController` construye solo sobre `GRASS`/`MOUNTAIN` libres durante preparación, combate o expansión; una torre no puede ocupar PATH, así que no altera ni bloquea la ruta M4. `Basic Bolt` usa `TowerData`; ofrece prioridades first/last progress, highest health y highest armor, alcance y cadencia configurables, y ataque hitscan. La muestra habilita mejoras gratuitas hasta nivel 3 porque los costes pertenecen a M9; la venta queda omitida. Daño 10, cadencia 1/s, alcance 3 hexes, mejoras +5 daño/+0.25 hex por nivel y bonus de alcance +0.25 por nivel de elevación son placeholders, no balance confirmado. M7 sustituyó el puente inicial de daño directo por `DamagePacket`/`DamageService` y activó mitigación de armor; ADR-0009/0010 registran el cambio y sus reglas.
 
 ## M7 — Damage model
 - Health.
@@ -89,6 +89,8 @@ Contrato de la primera implementación: `BuildController` construye solo sobre `
 - Pipeline de daño central.
 - UI debug de estadísticas.
 - Resultado: enemigos requieren respuestas diferentes.
+
+Contrato de la primera implementación M7: toda torre inyecta un `DamagePacket` en el `DamageService` de la escena `Main`; el servicio único resuelve tags de daño, armadura, vida y contrarregeneración. `EnemyData` configura armadura, regeneración por segundo y multiplicadores recibidos de daño físico/fuego/arcano. La regeneración acumula fracciones y nunca supera la vida máxima. Los perfiles de `Basic Bolt`, `Perforadora M7` y `Drenadora M7`, además de la oleada de diagnóstico con un blindado regenerador, son placeholders verificables y no balance final. El HUD ofrece atajos 1–3, un panel técnico bajo `F3` y la repetición de las oleadas básica/diagnóstica para pruebas. M7 no procesa aún status, modificadores de run, recompensas ni economía: corresponden a M8/M11/M9. ADR-0010 registra fórmula, propiedad del servicio y provisionalidades; ADR-0011 documenta el HUD temporal de prueba.
 
 ## M8 — Status Effects
 Implementar framework, no catálogo enorme.

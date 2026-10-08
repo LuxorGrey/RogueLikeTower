@@ -52,7 +52,7 @@
     "buildable_phases": ["ROUND_PREP", "COMBAT", "TERRAIN_EXPANSION"],
     "targeting_modes": ["FIRST_PROGRESS", "LAST_PROGRESS", "HIGHEST_HEALTH", "HIGHEST_ARMOR"],
     "target_scan_interval_seconds": 0.1,
-    "attack": "hitscan_direct_to_enemy_until_m7_damage_pipeline",
+    "attack": "hitscan_through_scene_local_damage_service",
     "height_range_bonus_per_elevation_level_provisional": 0.25,
     "upgrade_max_level": 3,
     "upgrade_damage_per_level_provisional": 5,
@@ -121,7 +121,25 @@
     "armor",
     "regeneration"
   ],
-  "m6_enemy_armor_usage": "target_priority_only; damage mitigation belongs to M7",
+  "m7_damage_model": {
+    "damage_service_scope": "Main_scene_local; injected_into_towers",
+    "damage_tags": ["PHYSICAL", "FIRE", "ARCANE"],
+    "armor_formula": "min(raw_damage, armor * packet_armor_multiplier)",
+    "health_formula": "floor(max(raw_damage - armor_absorbed, 0) * target_tag_multiplier * packet_health_multiplier)",
+    "regeneration": "fractional_hp_per_second_capped_at_max_health",
+    "regen_counter_strength_range": [0.0, 1.0],
+    "regen_counter_duration_seconds_provisional": 1.25,
+    "debug_wave_id": "m7_damage_test",
+    "temporary_tower_profiles": ["basic_bolt", "armor_piercing_bolt_m7_test", "sapping_bolt_m7_test"],
+    "debug_tower_hotkeys": {
+      "1": "basic_bolt",
+      "2": "armor_piercing_bolt_m7_test",
+      "3": "sapping_bolt_m7_test"
+    },
+    "debug_wave_replay": true,
+    "terrain_diagnostics_toggle_key": "F3",
+    "balance_confirmed": false
+  },
   "run_phases": [
     "RUN_SETUP",
     "ROUND_PREP",

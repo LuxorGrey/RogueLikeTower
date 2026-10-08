@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://data/enemies/enemy_data.gd" id="1_enemy_data"]
+[ext_resource type="PackedScene" path="res://game/enemies/enemy.tscn" id="2_enemy_scene"]
+
+[resource]
+script = ExtResource("1_enemy_data")
+id = &"armored_regenerator_m7_test"
+display_name = "Blindado regenerador (M7 prueba)"
+max_health = 60
+move_speed = 90.0
+base_damage = 10
+armor = 4
+regen_per_second = 2.0
+physical_damage_multiplier = 1.0
+fire_damage_multiplier = 0.5
+arcane_damage_multiplier = 1.25
+scene = ExtResource("2_enemy_scene")

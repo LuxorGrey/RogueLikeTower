@@ -3,12 +3,14 @@
 Estos nombres/números son temporales y NO diseño final.
 
 ## Torres de prueba
-1. Basic Bolt — generalista. M6 implementa la primera versión vectorial con estadísticas configurables en `data/towers/basic_bolt.tres`; sus cifras son placeholders de sistema, no balance ni arte final.
+1. Basic Bolt — generalista. M6 implementa la primera versión vectorial con estadísticas configurables en `data/towers/basic_bolt.tres`; M7 lo enruta por `DamageService`.
 2. Breaker — mejor contra armor.
 3. Executioner — mejor contra health.
 4. Hexfire — Burn.
 5. Frost — Slow.
 6. Suppressor — anti-regen.
+
+M7 expone `Basic Bolt`, `Perforadora M7` (mitiga menos armor por impacto) y `Drenadora M7` (tag Arcano y anti-regen temporal) como perfiles placeholder de prueba que comparten el mismo sprite vectorial. El enemigo `Armored Regenerator` y su oleada de diagnóstico también son fixtures; no son aún decisiones del contenido final. Todos los valores están configurados en Resources y detallados en ADR-0010.
 
 ## Enemigos de prueba
 1. Grunt — baseline.

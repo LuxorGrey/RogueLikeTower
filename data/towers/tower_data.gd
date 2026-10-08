@@ -5,12 +5,21 @@ enum TargetingMode { FIRST_PROGRESS, LAST_PROGRESS, HIGHEST_HEALTH, HIGHEST_ARMO
 
 const GRASS_FLAG: int = 1 << HexCell.TerrainType.GRASS
 const MOUNTAIN_FLAG: int = 1 << HexCell.TerrainType.MOUNTAIN
+const DAMAGE_TAG_PHYSICAL: int = 1
+const DAMAGE_TAG_FIRE: int = 2
+const DAMAGE_TAG_ARCANE: int = 4
+const ALL_DAMAGE_TAGS: int = DAMAGE_TAG_PHYSICAL | DAMAGE_TAG_FIRE | DAMAGE_TAG_ARCANE
 
 @export var id: StringName = &""
 @export var display_name: String = ""
 @export_range(1, 100000, 1) var base_damage: int = 10
 @export_range(0.05, 100.0, 0.05) var attack_rate: float = 1.0
 @export_range(0.25, 20.0, 0.25) var range_hexes: float = 3.0
+@export_flags("Físico", "Fuego", "Arcano") var damage_tags: int = DAMAGE_TAG_PHYSICAL
+@export_range(0.0, 4.0, 0.05) var armor_multiplier: float = 1.0
+@export_range(0.0, 4.0, 0.05) var health_multiplier: float = 1.0
+@export_range(0.0, 1.0, 0.05) var regen_counter_strength: float = 0.0
+@export_range(0.0, 10.0, 0.1) var regen_counter_duration: float = 1.0
 @export_flags("Path (no construible)", "Grass", "Montaña")
 var allowed_terrain_mask: int = GRASS_FLAG | MOUNTAIN_FLAG
 @export_enum("First progress", "Last progress", "Highest health", "Highest armor")
@@ -34,6 +43,12 @@ func validate() -> PackedStringArray:
 		errors.append("La cadencia de la torre debe ser mayor que cero.")
 	if range_hexes <= 0.0:
 		errors.append("El alcance de la torre debe ser mayor que cero.")
+	if damage_tags <= 0 or (damage_tags & ~ALL_DAMAGE_TAGS) != 0:
+		errors.append("La torre debe tener tipos de daño válidos.")
+	if armor_multiplier < 0.0 or armor_multiplier > 4.0 or health_multiplier < 0.0 or health_multiplier > 4.0:
+		errors.append("Los multiplicadores del perfil de daño deben estar entre 0 y 4.")
+	if regen_counter_strength < 0.0 or regen_counter_strength > 1.0 or regen_counter_duration < 0.0:
+		errors.append("El perfil anti-regeneración configurado no es válido.")
 	if allowed_terrain_mask == 0:
 		errors.append("La torre debe permitir al menos un tipo de terreno construible.")
 	if targeting_mode < TargetingMode.FIRST_PROGRESS or targeting_mode > TargetingMode.HIGHEST_ARMOR:

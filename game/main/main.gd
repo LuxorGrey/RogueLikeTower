@@ -10,7 +10,11 @@ const HARD_TURN_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/har
 const FORK_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/fork.tres")
 const CONVERGENCE_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/convergence.tres")
 const FIRST_WAVE: WaveData = preload("res://data/waves/round_01.tres")
+const M7_DAMAGE_TEST_WAVE: WaveData = preload("res://data/waves/m7_damage_test.tres")
 const BASIC_BOLT: TowerData = preload("res://data/towers/basic_bolt.tres")
+const ARMOR_PIERCING_BOLT: TowerData = preload("res://data/towers/armor_piercing_bolt.tres")
+const SAPPING_BOLT: TowerData = preload("res://data/towers/sapping_bolt.tres")
+const TOWER_PROFILES: Array[TowerData] = [BASIC_BOLT, ARMOR_PIERCING_BOLT, SAPPING_BOLT]
 const MIN_CAMERA_ZOOM: float = 0.45
 const MAX_CAMERA_ZOOM: float = 2.5
 const CAMERA_ZOOM_STEP: float = 1.12
@@ -26,7 +30,10 @@ var _is_panning: bool = false
 var _path_graph := PathGraph.new()
 var _path_debug_visible: bool = false
 var _placement_enabled: bool = true
-var _first_wave_completed: bool = false
+var _selected_wave: WaveData = FIRST_WAVE
+var _active_wave_name: String = "Oleada básica"
+var _selected_tower_data: TowerData = BASIC_BOLT
+var _combat_debug_timer: float = 0.0
 var _hovered_coord: Vector2i = Vector2i.ZERO
 var _has_hovered_cell: bool = false
 
@@ -41,6 +48,13 @@ var _has_hovered_cell: bool = false
 @onready var _cancel_button: Button = %CancelPlacement
 @onready var _hud_panel: PanelContainer = %Panel
 @onready var _hud: CanvasLayer = %HUD
+@onready var _terrain_panel: PanelContainer = %TerrainPanel
+@onready var _tower_toolbar: PanelContainer = %TowerToolbar
+@onready var _tower_shortcut_buttons: Array[Button] = [
+	%TowerShortcut1,
+	%TowerShortcut2,
+	%TowerShortcut3,
+]
 @onready var _camera: Camera2D = %Camera2D
 @onready var _rotate_left: Button = %RotateLeft
 @onready var _rotate_right: Button = %RotateRight
@@ -51,11 +65,14 @@ var _has_hovered_cell: bool = false
 @onready var _wave_status: Label = %WaveStatus
 @onready var _start_wave_button: Button = %StartWave
 @onready var _build_controller: BuildController = %BuildController
-@onready var _build_tower_button: Button = %BuildTower
 @onready var _build_status: Label = %BuildStatus
 @onready var _tower_status: Label = %TowerStatus
+@onready var _combat_debug: Label = %CombatDebug
+@onready var _tower_actions: HBoxContainer = %TowerActions
 @onready var _tower_targeting_mode: OptionButton = %TowerTargetingMode
 @onready var _upgrade_tower_button: Button = %UpgradeTower
+@onready var _wave_selector: OptionButton = %WaveSelector
+@onready var _damage_service: Node = %DamageService
 
 func _ready() -> void:
 	_camera.position = get_viewport_rect().size * 0.5
@@ -63,7 +80,10 @@ func _ready() -> void:
 	_pieces = [STRAIGHT_PIECE, GENTLE_TURN_PIECE, HARD_TURN_PIECE, FORK_PIECE, CONVERGENCE_PIECE]
 	_rotate_left.pressed.connect(_rotate_by.bind(-1))
 	_rotate_right.pressed.connect(_rotate_by.bind(1))
-	_start_wave_button.pressed.connect(_start_first_wave)
+	_start_wave_button.pressed.connect(_start_selected_wave)
+	_wave_selector.item_selected.connect(_on_wave_profile_selected)
+	for index in _tower_shortcut_buttons.size():
+		_tower_shortcut_buttons[index].pressed.connect(_select_tower_and_build.bind(index))
 	_confirm_button.pressed.connect(_confirm_placement)
 	_cancel_button.pressed.connect(_cancel_placement)
 	_piece_selector.item_selected.connect(_on_piece_selected)
@@ -78,10 +98,16 @@ func _ready() -> void:
 	_build_controller.tower_selected.connect(_on_tower_selected)
 	_build_controller.tower_upgraded.connect(_on_tower_upgraded)
 	_build_controller.build_mode_changed.connect(_on_build_mode_changed)
-	_build_tower_button.pressed.connect(_on_build_tower_pressed)
 	_tower_targeting_mode.item_selected.connect(_on_targeting_mode_selected)
 	_upgrade_tower_button.pressed.connect(_on_upgrade_tower_pressed)
-	_build_controller.configure(_board_grid, _entities, _piece_preview.global_position, HEX_RADIUS)
+	_build_controller.configure(
+		_board_grid,
+		_entities,
+		_piece_preview.global_position,
+		HEX_RADIUS,
+		_damage_service
+	)
+	_populate_wave_options()
 	_populate_targeting_modes()
 
 	var starting_errors := STARTING_PIECE.validate()
@@ -107,7 +133,7 @@ func _ready() -> void:
 	_on_base_health_changed(_base.get_current_health(), _base.get_maximum_health())
 	_refresh_tower_controls()
 	_start_wave_button.disabled = not _path_graph.is_valid
-	_wave_status.text = "Oleada 1 lista · 3 enemigos de prueba"
+	_wave_status.text = "Preparada · 3 enemigos"
 	RunManager.transition_to(RunManager.Phase.ROUND_PREP)
 	_refresh_tower_controls()
 	_refresh_path_status()
@@ -118,6 +144,10 @@ func _ready() -> void:
 	_on_piece_selected(1)
 
 func _process(_delta: float) -> void:
+	_combat_debug_timer -= _delta
+	if _combat_debug_timer <= 0.0:
+		_refresh_combat_debug()
+		_combat_debug_timer = 0.2
 	if _is_panning or not _placement_enabled or _build_controller.is_build_mode():
 		return
 	_update_anchor_from_mouse()
@@ -129,11 +159,22 @@ func _input(event: InputEvent) -> void:
 		if key_event.pressed and not key_event.echo and key_event.keycode == KEY_H:
 			_toggle_hud()
 			get_viewport().set_input_as_handled()
+		elif key_event.pressed and not key_event.echo:
+			match key_event.keycode:
+				KEY_1:
+					_select_tower_and_build(0)
+					get_viewport().set_input_as_handled()
+				KEY_2:
+					_select_tower_and_build(1)
+					get_viewport().set_input_as_handled()
+				KEY_3:
+					_select_tower_and_build(2)
+					get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
 		if mouse_event.button_index != MOUSE_BUTTON_MIDDLE:
 			return
-		if mouse_event.pressed and _hud.visible and _hud_panel.get_global_rect().has_point(mouse_event.position):
+		if mouse_event.pressed and _is_mouse_over_hud(mouse_event.position):
 			return
 		_is_panning = mouse_event.pressed
 		if not _is_panning:
@@ -145,7 +186,7 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _update_anchor_from_mouse() -> void:
-	if _hud.visible and _hud_panel.get_global_rect().has_point(get_viewport().get_mouse_position()):
+	if _is_mouse_over_hud(get_viewport().get_mouse_position()):
 		return
 	var mouse_position: Vector2 = _piece_preview.get_local_mouse_position()
 	var next_anchor: Vector2i = HexMath.world_to_axial(mouse_position, HEX_RADIUS).to_key()
@@ -176,6 +217,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_D:
 				_toggle_path_debug()
 				get_viewport().set_input_as_handled()
+			KEY_F3:
+				_toggle_terrain_panel()
+				get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
 		if mouse_event == null:
@@ -195,6 +239,18 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _toggle_hud() -> void:
 	_hud.visible = not _hud.visible
+
+func _is_mouse_over_hud(mouse_position: Vector2) -> bool:
+	if not _hud.visible:
+		return false
+	return (
+		(_hud_panel.visible and _hud_panel.get_global_rect().has_point(mouse_position))
+		or (_tower_toolbar.visible and _tower_toolbar.get_global_rect().has_point(mouse_position))
+		or (_terrain_panel.visible and _terrain_panel.get_global_rect().has_point(mouse_position))
+	)
+
+func _toggle_terrain_panel() -> void:
+	_terrain_panel.visible = not _terrain_panel.visible
 
 func _zoom_at_cursor(factor: float) -> void:
 	var old_zoom: float = _camera.zoom.x
@@ -333,7 +389,11 @@ func _handle_board_click() -> void:
 			_build_status.text = "Coloca el cursor sobre una casilla existente."
 			return
 		if _build_controller.place_tower(_hovered_coord):
-			_build_status.text = "Basic Bolt construida en (%d, %d)." % [_hovered_coord.x, _hovered_coord.y]
+			_build_status.text = "%s construida en (%d, %d)." % [
+				_selected_tower_data.display_name,
+				_hovered_coord.x,
+				_hovered_coord.y,
+			]
 			_build_controller.cancel_build_mode()
 			_refresh_build_preview()
 			_refresh_placement()
@@ -352,16 +412,21 @@ func _handle_board_click() -> void:
 	if _placement_enabled:
 		_confirm_placement()
 
-func _on_build_tower_pressed() -> void:
-	if _build_controller.is_build_mode():
+func _select_tower_and_build(index: int) -> void:
+	if index < 0 or index >= TOWER_PROFILES.size():
+		return
+	var chosen_tower: TowerData = TOWER_PROFILES[index]
+	if _build_controller.is_build_mode() and _selected_tower_data == chosen_tower:
 		_build_controller.cancel_build_mode()
 		_build_status.text = "Construcción cancelada."
+		_refresh_tower_controls()
+		return
+	_selected_tower_data = chosen_tower
+	_cancel_placement()
+	if _build_controller.begin_build(_selected_tower_data):
+		_build_status.text = "%s · clic en Grass/Montaña libre." % _selected_tower_data.display_name
 	else:
-		_cancel_placement()
-		if _build_controller.begin_build(BASIC_BOLT):
-			_build_status.text = "Basic Bolt · elige una casilla libre de Grass o Montaña."
-		else:
-			_build_status.text = _build_controller.last_error
+		_build_status.text = _build_controller.last_error
 	_refresh_build_preview()
 	_refresh_placement()
 	_refresh_tower_controls()
@@ -393,6 +458,29 @@ func _populate_targeting_modes() -> void:
 	_tower_targeting_mode.add_item("Más armadura", TowerData.TargetingMode.HIGHEST_ARMOR)
 	_tower_targeting_mode.select(TowerData.TargetingMode.FIRST_PROGRESS)
 
+func _populate_wave_options() -> void:
+	_selected_tower_data = BASIC_BOLT
+	_wave_selector.clear()
+	_wave_selector.add_item("Oleada básica · 3 enemigos")
+	_wave_selector.add_item("Diagnóstico · blindado regenerador")
+	_wave_selector.select(0)
+	_selected_wave = FIRST_WAVE
+	_active_wave_name = "Oleada básica"
+	_wave_status.text = "Preparada · 3 enemigos"
+	_start_wave_button.text = "▶ Iniciar oleada seleccionada"
+	_refresh_tower_controls()
+
+func _on_wave_profile_selected(index: int) -> void:
+	if index < 0 or index > 1:
+		return
+	_selected_wave = FIRST_WAVE if index == 0 else M7_DAMAGE_TEST_WAVE
+	_active_wave_name = "Oleada básica" if index == 0 else "Diagnóstico blindado"
+	_start_wave_button.text = "▶ Iniciar oleada seleccionada"
+	if index == 0:
+		_wave_status.text = "Preparada · 3 enemigos"
+	else:
+		_wave_status.text = "Preparada · 1 blindado · armadura 4 · regen 2/s"
+
 func _on_targeting_mode_selected(index: int) -> void:
 	if index < 0 or index >= _tower_targeting_mode.item_count:
 		return
@@ -422,8 +510,22 @@ func _on_tower_upgraded(tower: Tower, _new_level: int) -> void:
 func _refresh_tower_controls() -> void:
 	var build_mode: bool = _build_controller.is_build_mode()
 	var selected: Tower = _build_controller.selected_tower
-	_build_tower_button.disabled = not _build_controller.can_build_in_current_phase()
-	_build_tower_button.text = "Cancelar construcción" if build_mode else "Construir Basic Bolt"
+	var can_build: bool = _build_controller.can_build_in_current_phase()
+	var is_defeated: bool = RunManager.phase == RunManager.Phase.RUN_DEFEAT
+	for index in _tower_shortcut_buttons.size():
+		var shortcut_button: Button = _tower_shortcut_buttons[index]
+		shortcut_button.disabled = not can_build
+		shortcut_button.set_pressed_no_signal(
+			build_mode and TOWER_PROFILES[index] == _selected_tower_data
+		)
+	_wave_selector.disabled = build_mode or RunManager.phase == RunManager.Phase.COMBAT or is_defeated
+	_tower_actions.visible = selected != null and not build_mode
+	_start_wave_button.disabled = (
+		build_mode
+		or not _path_graph.is_valid
+		or RunManager.phase == RunManager.Phase.COMBAT
+		or is_defeated
+	)
 	_tower_targeting_mode.disabled = build_mode or selected == null or not _build_controller.can_build_in_current_phase()
 	_upgrade_tower_button.disabled = (
 		build_mode
@@ -432,22 +534,23 @@ func _refresh_tower_controls() -> void:
 		or not _build_controller.can_build_in_current_phase()
 	)
 	if build_mode:
-		_tower_status.text = "Basic Bolt · preview de alcance y terreno válido"
+		_tower_status.text = "Construir: %s · selecciona Grass o Montaña" % _selected_tower_data.display_name
 	elif selected == null:
-		_tower_status.text = "Ninguna torre seleccionada."
-		_build_status.text = "Construye una torre o selecciona una ya colocada."
+		_tower_status.text = "Torre: ninguna · pulsa 1, 2 o 3 para construir"
 	else:
 		_tower_status.text = selected.get_summary()
 
-func _start_first_wave() -> void:
-	if _first_wave_completed or not _path_graph.is_valid:
+func _start_selected_wave() -> void:
+	if not _path_graph.is_valid or RunManager.phase == RunManager.Phase.COMBAT or RunManager.phase == RunManager.Phase.RUN_DEFEAT:
 		return
+	if _build_controller.is_build_mode():
+		_build_controller.cancel_build_mode()
 	_cancel_placement()
 	_placement_enabled = false
 	_refresh_placement()
 	_start_wave_button.disabled = true
 	if not _wave_director.start_wave(
-		FIRST_WAVE,
+		_selected_wave,
 		_path_graph,
 		_base,
 		_entities,
@@ -455,22 +558,23 @@ func _start_first_wave() -> void:
 		HEX_RADIUS
 	):
 		_placement_enabled = true
-		_start_wave_button.disabled = false
 		_refresh_placement()
-		_wave_status.text = "No se pudo iniciar la oleada: %s" % _wave_director.last_error
+		_wave_status.text = "No se pudo iniciar: %s" % _wave_director.last_error
+		_refresh_tower_controls()
 
 func _on_wave_started(round_number: int) -> void:
 	RunManager.transition_to(RunManager.Phase.COMBAT)
-	_wave_status.text = "Oleada %d · enemigos activos: 0" % round_number
+	_wave_status.text = "%s · ronda %d · enemigos 0" % [_active_wave_name, round_number]
 	_refresh_tower_controls()
 
 func _on_wave_completed(round_number: int) -> void:
-	_first_wave_completed = true
 	_placement_enabled = true
-	_start_wave_button.disabled = true
-	_start_wave_button.text = "Oleada de prueba completada"
-	_wave_status.text = "Oleada %d completada · puedes expandir el terreno o preparar la siguiente prueba" % round_number
 	RunManager.transition_to(RunManager.Phase.TERRAIN_EXPANSION)
+	_wave_status.text = "%s completada · ronda %d · elige otra y vuelve a probar" % [
+		_active_wave_name,
+		round_number,
+	]
+	_start_wave_button.text = "↻ Probar oleada seleccionada"
 	_refresh_placement()
 	_refresh_tower_controls()
 
@@ -485,7 +589,31 @@ func _on_wave_failed(reason: String) -> void:
 
 func _on_enemy_count_changed(alive_count: int) -> void:
 	if RunManager.phase == RunManager.Phase.COMBAT:
-		_wave_status.text = "Oleada 1 · enemigos en ruta: %d" % alive_count
+		_wave_status.text = "%s · enemigos en ruta: %d" % [_active_wave_name, alive_count]
+
+func _refresh_combat_debug() -> void:
+	var tower: Tower = _build_controller.selected_tower
+	if tower == null or not is_instance_valid(tower):
+		_combat_debug.text = "Objetivo: selecciona una torre"
+		return
+	var target: Enemy = tower.get_current_target()
+	if target == null or not is_instance_valid(target) or target.state != Enemy.State.MOVING:
+		_combat_debug.text = "Objetivo: ninguno en alcance"
+		return
+	var estimate: Variant = _damage_service.call("preview_damage", target, tower.create_damage_packet())
+	var regen_text: String = ""
+	var effective_regen: float = target.get_effective_regen_per_second()
+	if not is_equal_approx(effective_regen, target.get_regen_per_second()):
+		regen_text = " → %.1f/s" % effective_regen
+	_combat_debug.text = "%s · %d/%d HP · arm %d · regen %.1f%s · impacto %d" % [
+		target.get_display_name(),
+		target.get_current_health(),
+		target.get_maximum_health(),
+		target.get_armor_value(),
+		target.get_regen_per_second(),
+		regen_text,
+		int(estimate.get("calculated_health_damage")),
+	]
 
 func _on_base_health_changed(current_health: int, maximum_health: int) -> void:
 	_base_status.text = "Base · vida %d / %d" % [current_health, maximum_health]

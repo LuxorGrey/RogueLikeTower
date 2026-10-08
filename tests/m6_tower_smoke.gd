@@ -1,5 +1,7 @@
 extends Node
 
+const DAMAGE_SERVICE_SCRIPT: Script = preload("res://game/combat/damage_service.gd")
+
 const STARTING_PIECE: TerrainPieceData = preload("res://data/terrain/starting_terrain_piece.tres")
 const BASIC_BOLT: TowerData = preload("res://data/towers/basic_bolt.tres")
 const WAVE_DATA: WaveData = preload("res://data/waves/round_01.tres")
@@ -22,7 +24,9 @@ func _run_smoke() -> void:
 	add_child(_entities)
 	var controller := BuildController.new()
 	add_child(controller)
-	if not controller.configure(grid, _entities, MAP_ORIGIN, HEX_RADIUS):
+	var damage_service: Node = DAMAGE_SERVICE_SCRIPT.new()
+	add_child(damage_service)
+	if not controller.configure(grid, _entities, MAP_ORIGIN, HEX_RADIUS, damage_service):
 		_fail("BuildController no aceptó el grid de prueba.")
 		return
 	if controller.begin_build(BASIC_BOLT):

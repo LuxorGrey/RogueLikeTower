@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" path="res://game/main/game_base.tscn" id="3_base_scene"]
 [ext_resource type="Script" path="res://game/waves/wave_director.gd" id="4_wave_director"]
 [ext_resource type="Script" path="res://game/build/build_controller.gd" id="5_build_controller"]
+[ext_resource type="Script" path="res://game/combat/damage_service.gd" id="6_damage_service"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -37,6 +38,10 @@ script = ExtResource("4_wave_director")
 unique_name_in_owner = true
 script = ExtResource("5_build_controller")
 
+[node name="DamageService" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("6_damage_service")
+
 [node name="HUD" type="CanvasLayer" parent="."]
 unique_name_in_owner = true
 
@@ -44,24 +49,36 @@ unique_name_in_owner = true
 unique_name_in_owner = true
 offset_left = 24.0
 offset_top = 24.0
-offset_right = 620.0
-offset_bottom = 835.0
+offset_right = 420.0
+offset_bottom = 390.0
 
 [node name="Margin" type="MarginContainer" parent="HUD/Panel"]
 layout_mode = 2
 theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 12
+theme_override_constants/margin_top = 14
 theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_bottom = 14
 
 [node name="Content" type="VBoxContainer" parent="HUD/Panel/Margin"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Title" type="Label" parent="HUD/Panel/Margin/Content"]
+[node name="TitleBar" type="HBoxContainer" parent="HUD/Panel/Margin/Content"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 21
-text = "ROGUE TOWER · TORRES Y PRIMERA OLEADA M6"
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="HUD/Panel/Margin/Content/TitleBar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "ROGUE TOWER"
+
+[node name="ShortcutHint" type="Label" parent="HUD/Panel/Margin/Content/TitleBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.68, 0.75, 0.8, 1)
+theme_override_font_sizes/font_size = 11
+horizontal_alignment = 2
+text = "F3 - Terreno   H - Interfaz"
 
 [node name="BaseStatus" type="Label" parent="HUD/Panel/Margin/Content"]
 unique_name_in_owner = true
@@ -74,121 +91,209 @@ layout_mode = 2
 autowrap_mode = 2
 text = "Oleada 1 lista"
 
+[node name="WaveSelector" type="OptionButton" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
 [node name="StartWave" type="Button" parent="HUD/Panel/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Iniciar oleada 1 de prueba"
-
-[node name="BuildTower" type="Button" parent="HUD/Panel/Margin/Content"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Construir Basic Bolt"
-
-[node name="BuildStatus" type="Label" parent="HUD/Panel/Margin/Content"]
-unique_name_in_owner = true
-layout_mode = 2
-autowrap_mode = 2
-text = "Construye en Grass o Montaña libres. Durante la oleada se pueden construir torres."
+text = "Iniciar oleada seleccionada"
 
 [node name="TowerStatus" type="Label" parent="HUD/Panel/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 2
-text = "Ninguna torre seleccionada."
+text = "Torre: ninguna seleccionada"
 
-[node name="TowerTargetingMode" type="OptionButton" parent="HUD/Panel/Margin/Content"]
+[node name="CombatDebug" type="Label" parent="HUD/Panel/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_font_sizes/font_size = 13
+autowrap_mode = 2
+text = "Objetivo: —"
 
-[node name="UpgradeTower" type="Button" parent="HUD/Panel/Margin/Content"]
+[node name="TowerActions" type="HBoxContainer" parent="HUD/Panel/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Mejorar torre"
+theme_override_constants/separation = 8
 
-[node name="PieceStatus" type="Label" parent="HUD/Panel/Margin/Content"]
+[node name="TowerTargetingMode" type="OptionButton" parent="HUD/Panel/Margin/Content/TowerActions"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="UpgradeTower" type="Button" parent="HUD/Panel/Margin/Content/TowerActions"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Mejorar"
+
+[node name="BuildStatus" type="Label" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+text = "Atajos 1–3: elegir torre · clic en una casilla libre para construir"
+
+[node name="TerrainPanel" type="PanelContainer" parent="HUD"]
+unique_name_in_owner = true
+visible = false
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -376.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = 486.0
+
+[node name="Margin" type="MarginContainer" parent="HUD/TerrainPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="Content" type="VBoxContainer" parent="HUD/TerrainPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TerrainTitle" type="Label" parent="HUD/TerrainPanel/Margin/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "TERRENO · F3 para ocultar"
+
+[node name="PieceStatus" type="Label" parent="HUD/TerrainPanel/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Preparando pieza de siete hexágonos..."
 
-[node name="PieceSelector" type="OptionButton" parent="HUD/Panel/Margin/Content"]
+[node name="PieceSelector" type="OptionButton" parent="HUD/TerrainPanel/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="PlacementStatus" type="Label" parent="HUD/Panel/Margin/Content"]
+[node name="PlacementStatus" type="Label" parent="HUD/TerrainPanel/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 2
 text = "Elige una pieza para iniciar la colocación."
 
-[node name="RotationStatus" type="Label" parent="HUD/Panel/Margin/Content"]
+[node name="RotationStatus" type="Label" parent="HUD/TerrainPanel/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Orientación: 0° · posición 1/6"
 
-[node name="HoverStatus" type="Label" parent="HUD/Panel/Margin/Content"]
+[node name="HoverStatus" type="Label" parent="HUD/TerrainPanel/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Casilla global (q,r): — · hover sobre cara superior"
 
-[node name="PathStatus" type="Label" parent="HUD/Panel/Margin/Content"]
+[node name="PathStatus" type="Label" parent="HUD/TerrainPanel/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "PATH: preparando grafo..."
 
-[node name="Legend" type="HBoxContainer" parent="HUD/Panel/Margin/Content"]
+[node name="Legend" type="HBoxContainer" parent="HUD/TerrainPanel/Margin/Content"]
 layout_mode = 2
 theme_override_constants/separation = 18
 
-[node name="PathLegend" type="Label" parent="HUD/Panel/Margin/Content/Legend"]
+[node name="PathLegend" type="Label" parent="HUD/TerrainPanel/Margin/Content/Legend"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.35, 0.40, 0.43, 1)
 text = "● CAMINO"
 
-[node name="GrassLegend" type="Label" parent="HUD/Panel/Margin/Content/Legend"]
+[node name="GrassLegend" type="Label" parent="HUD/TerrainPanel/Margin/Content/Legend"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.28, 0.57, 0.34, 1)
 text = "● GRASS"
 
-[node name="MountainLegend" type="Label" parent="HUD/Panel/Margin/Content/Legend"]
+[node name="MountainLegend" type="Label" parent="HUD/TerrainPanel/Margin/Content/Legend"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.63, 0.58, 0.48, 1)
 text = "● MONTAÑA"
 
-[node name="RotationButtons" type="HBoxContainer" parent="HUD/Panel/Margin/Content"]
+[node name="RotationButtons" type="HBoxContainer" parent="HUD/TerrainPanel/Margin/Content"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="RotateLeft" type="Button" parent="HUD/Panel/Margin/Content/RotationButtons"]
+[node name="RotateLeft" type="Button" parent="HUD/TerrainPanel/Margin/Content/RotationButtons"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Rotar −60°"
 
-[node name="RotateRight" type="Button" parent="HUD/Panel/Margin/Content/RotationButtons"]
+[node name="RotateRight" type="Button" parent="HUD/TerrainPanel/Margin/Content/RotationButtons"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Rotar +60°"
 
-[node name="PlacementButtons" type="HBoxContainer" parent="HUD/Panel/Margin/Content"]
+[node name="PlacementButtons" type="HBoxContainer" parent="HUD/TerrainPanel/Margin/Content"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="ConfirmPlacement" type="Button" parent="HUD/Panel/Margin/Content/PlacementButtons"]
+[node name="ConfirmPlacement" type="Button" parent="HUD/TerrainPanel/Margin/Content/PlacementButtons"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Confirmar pieza"
 
-[node name="CancelPlacement" type="Button" parent="HUD/Panel/Margin/Content/PlacementButtons"]
+[node name="CancelPlacement" type="Button" parent="HUD/TerrainPanel/Margin/Content/PlacementButtons"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Cancelar"
 
-[node name="Hint" type="Label" parent="HUD/Panel/Margin/Content"]
+[node name="Hint" type="Label" parent="HUD/TerrainPanel/Margin/Content"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "Torres: clic Construir, luego casilla libre Grass/Montaña · clic selecciona · Esc/clic derecho cancela. Terreno: Q/E gira · clic confirma."
+text = "Terreno: Q/E gira · clic confirma · Esc/clic derecho cancela. D dibuja las rutas."
 
-[node name="CameraHint" type="Label" parent="HUD/Panel/Margin/Content"]
+[node name="CameraHint" type="Label" parent="HUD/TerrainPanel/Margin/Content"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "Mapa: rueda = zoom · botón central + arrastrar = mover · H = interfaz · R = recentrar · D = rutas"
+text = "Mapa: rueda = zoom · botón central + arrastrar = mover · R recentra · H oculta toda la interfaz."
+
+[node name="TowerToolbar" type="PanelContainer" parent="HUD"]
+unique_name_in_owner = true
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -252.0
+offset_top = -92.0
+offset_right = 252.0
+offset_bottom = -20.0
+
+[node name="Margin" type="MarginContainer" parent="HUD/TowerToolbar"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 7
+
+[node name="Buttons" type="HBoxContainer" parent="HUD/TowerToolbar/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TowerShortcut1" type="Button" parent="HUD/TowerToolbar/Margin/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "1 · BOLT\nFísico"
+theme_override_colors/font_color = Color(0.54, 0.86, 0.96, 1)
+
+[node name="TowerShortcut2" type="Button" parent="HUD/TowerToolbar/Margin/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "2 · PERFORADORA\nAntiblindaje"
+theme_override_colors/font_color = Color(1, 0.74, 0.43, 1)
+
+[node name="TowerShortcut3" type="Button" parent="HUD/TowerToolbar/Margin/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "3 · DRENADORA\nArcano · anti-regen"
+theme_override_colors/font_color = Color(0.78, 0.66, 1, 1)

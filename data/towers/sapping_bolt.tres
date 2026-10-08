@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="TowerData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://data/towers/tower_data.gd" id="1_tower_data"]
+[ext_resource type="PackedScene" path="res://game/towers/tower.tscn" id="2_tower_scene"]
+
+[resource]
+script = ExtResource("1_tower_data")
+id = &"sapping_bolt_m7_test"
+display_name = "Drenadora M7 (prueba)"
+base_damage = 10
+attack_rate = 1.0
+range_hexes = 3.0
+damage_tags = 4
+armor_multiplier = 1.0
+health_multiplier = 1.0
+regen_counter_strength = 1.0
+regen_counter_duration = 1.25
+allowed_terrain_mask = 6
+targeting_mode = 0
+height_range_bonus_per_level = 0.25
+max_level = 3
+upgrade_damage_per_level = 5
+upgrade_range_per_level = 0.25
+upgrade_attack_rate_per_level = 0.0
+scene = ExtResource("2_tower_scene")

@@ -12,6 +12,10 @@ const BASE_DARK_COLOR: Color = Color(0.10, 0.28, 0.36)
 const TURRET_COLOR: Color = Color(0.70, 0.87, 0.90)
 const RANGE_COLOR: Color = Color(0.30, 0.80, 1.0, 0.48)
 const SHOT_COLOR: Color = Color(1.0, 0.91, 0.46, 0.96)
+const DAMAGE_PACKET_SCRIPT: Script = preload("res://game/combat/damage_packet.gd")
+const DAMAGE_TAG_PHYSICAL: int = 1
+const DAMAGE_TAG_FIRE: int = 2
+const DAMAGE_TAG_ARCANE: int = 4
 
 var cell_coord: Vector2i = Vector2i.ZERO
 var elevation: int = 0
@@ -19,6 +23,7 @@ var level: int = 1
 var last_error: String = ""
 
 var _tower_data: TowerData
+var _damage_service: Node
 var _hex_radius: float = 52.0
 var _is_selected: bool = false
 var _current_target: Enemy
@@ -34,17 +39,19 @@ func configure(
 	coord: Vector2i,
 	cell_elevation: int,
 	map_origin: Vector2,
-	hex_radius: float
+	hex_radius: float,
+	damage_service: Node
 ) -> bool:
 	last_error = ""
-	if tower_data == null or hex_radius <= 0.0 or cell_elevation < 0 or cell_elevation > 2:
-		last_error = "La torre recibió datos geométricos inválidos."
+	if tower_data == null or damage_service == null or hex_radius <= 0.0 or cell_elevation < 0 or cell_elevation > 2:
+		last_error = "La torre recibió datos inválidos o no tiene DamageService."
 		return false
 	var errors := tower_data.validate()
 	if not errors.is_empty():
 		last_error = "; ".join(errors)
 		return false
 	_tower_data = tower_data
+	_damage_service = damage_service
 	cell_coord = coord
 	elevation = cell_elevation
 	_hex_radius = hex_radius
@@ -89,6 +96,19 @@ func get_current_damage() -> int:
 		return 0
 	return _tower_data.base_damage + (level - 1) * _tower_data.upgrade_damage_per_level
 
+func create_damage_packet() -> RefCounted:
+	var packet: RefCounted = DAMAGE_PACKET_SCRIPT.new()
+	if _tower_data == null:
+		return packet
+	packet.set("raw_damage", float(get_current_damage()))
+	packet.set("source_id", get_instance_id())
+	packet.set("damage_tags", _tower_data.damage_tags)
+	packet.set("armor_multiplier", _tower_data.armor_multiplier)
+	packet.set("health_multiplier", _tower_data.health_multiplier)
+	packet.set("regen_counter_strength", _tower_data.regen_counter_strength)
+	packet.set("regen_counter_duration", _tower_data.regen_counter_duration)
+	return packet
+
 func get_current_attack_rate() -> float:
 	if _tower_data == null:
 		return 0.0
@@ -113,15 +133,23 @@ func get_targeting_mode() -> int:
 func get_summary() -> String:
 	if _tower_data == null:
 		return "Torre sin configurar."
-	return "%s · nivel %d/%d · daño %d · alcance %.2f hex · %.2f disparos/s · %s" % [
+	return "%s · N%d/%d · daño %d · alcance %.1f hex" % [
 		_tower_data.display_name,
 		level,
 		_tower_data.max_level,
 		get_current_damage(),
 		get_current_range_hexes(),
-		get_current_attack_rate(),
-		get_targeting_mode_name(_targeting_mode),
 	]
+
+func get_damage_tag_name(tags: int) -> String:
+	var names := PackedStringArray()
+	if (tags & DAMAGE_TAG_PHYSICAL) != 0:
+		names.append("físico")
+	if (tags & DAMAGE_TAG_FIRE) != 0:
+		names.append("fuego")
+	if (tags & DAMAGE_TAG_ARCANE) != 0:
+		names.append("arcano")
+	return " + ".join(names) if not names.is_empty() else "sin tipo"
 
 func get_targeting_mode_name(mode: int = -1) -> String:
 	var active_mode: int = _targeting_mode if mode < 0 else mode
@@ -197,16 +225,16 @@ func _is_target_in_range(target: Enemy) -> bool:
 	return global_position.distance_squared_to(target.global_position) <= effective_range * effective_range
 
 func _fire_at_target() -> void:
-	if not _is_target_in_range(_current_target):
+	if _damage_service == null or not _is_target_in_range(_current_target):
 		return
 	var target: Enemy = _current_target
-	var applied_damage: int = target.apply_damage(get_current_damage())
+	var result: Variant = _damage_service.call("apply_damage", target, create_damage_packet())
 	_attack_cooldown = 1.0 / maxf(get_current_attack_rate(), 0.001)
-	if applied_damage <= 0:
+	if result == null or not bool(result.get("is_valid")):
 		return
 	_shot_target_position = target.global_position - global_position
 	_shot_flash_timer = SHOT_FLASH_DURATION
-	attack_fired.emit(target, applied_damage)
+	attack_fired.emit(target, int(result.get("health_damage")))
 	queue_redraw()
 
 func _draw() -> void:

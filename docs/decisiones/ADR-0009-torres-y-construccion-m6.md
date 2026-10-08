@@ -1,6 +1,6 @@
 # ADR-0009: construcción y primera torre M6
 
-- Estado: aceptada para el prototipo; contenido, números y regla de altura provisionales.
+- Estado: aceptada para el prototipo; el camino temporal de daño directo quedó sustituido por ADR-0010. Contenido, números y regla de altura siguen provisionales.
 - Fecha: 2026-10-08.
 
 ## Contexto

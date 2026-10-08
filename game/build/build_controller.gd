@@ -13,6 +13,7 @@ var _entities: Node2D
 var _map_origin: Vector2 = Vector2.ZERO
 var _hex_radius: float = 52.0
 var _tower_data: TowerData
+var _damage_service: Node
 var _is_build_mode: bool = false
 var _towers_by_coord: Dictionary[Vector2i, Tower] = {}
 
@@ -20,15 +21,17 @@ func configure(
 	board_grid: HexGrid,
 	entities: Node2D,
 	map_origin: Vector2,
-	hex_radius: float
+	hex_radius: float,
+	damage_service: Node
 ) -> bool:
-	if board_grid == null or entities == null or hex_radius <= 0.0:
-		last_error = "BuildController requiere grid, entidades y radio positivos."
+	if board_grid == null or entities == null or damage_service == null or hex_radius <= 0.0:
+		last_error = "BuildController requiere grid, entidades, DamageService y radio positivos."
 		return false
 	_board_grid = board_grid
 	_entities = entities
 	_map_origin = map_origin
 	_hex_radius = hex_radius
+	_damage_service = damage_service
 	return true
 
 func can_build_in_current_phase() -> bool:
@@ -112,7 +115,7 @@ func place_tower(coord: Vector2i) -> bool:
 		last_error = "La escena de TowerData no crea un nodo Tower."
 		return false
 	_entities.add_child(tower)
-	if not tower.configure(_tower_data, coord, cell.elevation, _map_origin, _hex_radius):
+	if not tower.configure(_tower_data, coord, cell.elevation, _map_origin, _hex_radius, _damage_service):
 		last_error = tower.last_error
 		tower.queue_free()
 		return false
