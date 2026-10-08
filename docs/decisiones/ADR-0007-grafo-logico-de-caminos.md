@@ -20,7 +20,7 @@ La documentación aún no sitúa la base en una coordenada. Para completar el gr
 
 ## Consecuencias
 
-- Las bifurcaciones y convergencias permanecen en la adyacencia del grafo. El BFS elige una ruta determinista por endpoint para depuración y el movimiento M5; no elimina otras ramas. M5 configura la selección de endpoints en `WaveEnemyGroupData` (`FIRST_SORTED` o `ROUND_ROBIN`), y la selección definitiva por ronda queda abierta.
+- Las bifurcaciones y convergencias permanecen en la adyacencia del grafo. El BFS elige una ruta determinista por endpoint para depuración y el movimiento M5; no elimina otras ramas. M5 configura `FIRST_SORTED` o `ROUND_ROBIN` para sus muestras. En campaña M10, ADR-0018 sustituye la incertidumbre: todos los endpoints PATH abiertos alcanzables generan enemigos simultáneamente por pulso.
 - `PathRoute` almacena la secuencia ordenada de coordenadas PATH de spawn a base. M5 consume esa secuencia en el enemigo para mantener sus waypoints, índice y progreso durante la oleada.
 - Se rechazan snapshots con subredes PATH aisladas o extremos sin retorno a base; activar un subconjunto de candidatos sigue siendo responsabilidad del sistema de oleadas.
 - La base `(0,0)`, el algoritmo sin pesos y la tecla `D` son decisiones técnicas/provisionales. El sistema de datos y APIs permiten cambiar la base y el control visual sin alterar las coordenadas del tablero.

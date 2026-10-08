@@ -7,8 +7,6 @@ signal hover_cleared
 const HEX_RADIUS: float = 52.0
 const ELEVATION_PIXEL_OFFSET: float = 18.0
 const HEX_OUTLINE: Color = Color(0.82, 0.87, 0.84)
-const LIGHT_LABEL_COLOR: Color = Color(0.98, 0.98, 0.93)
-const DARK_LABEL_COLOR: Color = Color(0.12, 0.14, 0.13)
 const PATH_COLOR: Color = Color(0.35, 0.40, 0.43)
 const GRASS_COLOR: Color = Color(0.28, 0.57, 0.34)
 const MOUNTAIN_COLOR: Color = Color(0.63, 0.58, 0.48)
@@ -41,6 +39,9 @@ var _tower_build_preview_active: bool = false
 var _tower_preview_coord: Vector2i = Vector2i.ZERO
 var _tower_preview_is_valid: bool = false
 var _tower_preview_range_pixels: float = 0.0
+var _combo_strength_by_coord: Dictionary[Vector2i, int] = {}
+var _combo_animation_time: float = 0.0
+var _combo_redraw_timer: float = 0.0
 
 func set_piece(piece_data: TerrainPieceData) -> void:
 	_piece_data = piece_data
@@ -100,6 +101,12 @@ func set_rotation_steps(steps: int) -> void:
 
 func _process(_delta: float) -> void:
 	_refresh_hovered_cell()
+	if not _combo_strength_by_coord.is_empty():
+		_combo_animation_time += _delta
+		_combo_redraw_timer -= _delta
+		if _combo_redraw_timer <= 0.0:
+			_combo_redraw_timer = 0.12
+			queue_redraw()
 
 func _draw() -> void:
 	if _piece_data == null and _board_cells.is_empty():
@@ -206,7 +213,6 @@ func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 	var closed_corners := corners.duplicate()
 	closed_corners.append(corners[0])
 	var is_hovered := _is_hovered(cell)
-	var label_color := _label_color(cell.terrain_type, is_hovered)
 	var fill_color := _terrain_color(cell.terrain_type)
 	var outline_color := HEX_OUTLINE
 	var outline_width := 2.0
@@ -224,26 +230,20 @@ func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 		outline_color = fill_color.lightened(0.18)
 		outline_width = 3.5
 	draw_colored_polygon(corners, fill_color)
+	var combo_strength: int = int(_combo_strength_by_coord.get(cell.local_coord, 0))
+	if combo_strength >= 3:
+		var combo_color := _combo_color(cell.terrain_type)
+		var pulse: float = 0.5 + 0.5 * sin(_combo_animation_time * 2.0)
+		var glow_alpha: float = 0.055 + pulse * 0.035
+		if combo_strength >= 5:
+			glow_alpha += 0.025
+		combo_color.a = glow_alpha
+		draw_colored_polygon(corners, combo_color)
+		outline_color = _combo_color(cell.terrain_type)
+		outline_color.a = 0.42 + pulse * 0.18
+		outline_width = 2.5 if combo_strength < 5 else 3.0
 	draw_polyline(closed_corners, outline_color, outline_width, true)
 	_draw_path_edges(cell, center, corners, is_ghost)
-	draw_string(
-		ThemeDB.fallback_font,
-		center + Vector2(-HEX_RADIUS, 8.0),
-		_terrain_initial(cell.terrain_type),
-		HORIZONTAL_ALIGNMENT_CENTER,
-		HEX_RADIUS * 2.0,
-		24,
-		label_color
-	)
-	draw_string(
-		ThemeDB.fallback_font,
-		center + Vector2(-HEX_RADIUS, 31.0),
-		"%d,%d · h%d" % [cell.local_coord.x, cell.local_coord.y, cell.elevation],
-		HORIZONTAL_ALIGNMENT_CENTER,
-		HEX_RADIUS * 2.0,
-		12,
-		label_color
-	)
 
 func _refresh_hovered_cell() -> void:
 	var next_hovered_cell := _find_hovered_cell(get_local_mouse_position())
@@ -310,6 +310,38 @@ func _rebuild_display_cells() -> void:
 			_ghost_coords[ghost_cell.local_coord] = true
 			_board_display_cells.append(ghost_cell)
 	_board_display_cells.sort_custom(Callable(self, "_sort_cells_back_to_front"))
+	_rebuild_combo_highlights()
+
+func _rebuild_combo_highlights() -> void:
+	_combo_strength_by_coord.clear()
+	var terrain_by_coord: Dictionary[Vector2i, int] = {}
+	for cell in _board_display_cells:
+		if cell.terrain_type == HexCell.TerrainType.PATH:
+			continue
+		terrain_by_coord[cell.local_coord] = cell.terrain_type
+
+	var visited: Dictionary[Vector2i, bool] = {}
+	for coord in terrain_by_coord:
+		if visited.has(coord):
+			continue
+		var terrain_type: int = terrain_by_coord[coord]
+		var component: Array[Vector2i] = []
+		var pending: Array[Vector2i] = [coord]
+		visited[coord] = true
+		while not pending.is_empty():
+			var current: Vector2i = pending.pop_back()
+			component.append(current)
+			for offset in HexCoord.DIRECTION_OFFSETS:
+				var neighbor: Vector2i = current + offset
+				if visited.has(neighbor) or terrain_by_coord.get(neighbor, -1) != terrain_type:
+					continue
+				visited[neighbor] = true
+				pending.append(neighbor)
+		if component.size() < 3:
+			continue
+		var combo_strength: int = 5 if component.size() >= 5 else 3
+		for component_coord in component:
+			_combo_strength_by_coord[component_coord] = combo_strength
 
 func _active_display_cells() -> Array[TerrainPieceCellData]:
 	return _board_display_cells if _board_mode else _display_cells
@@ -385,23 +417,14 @@ func _terrain_hover_color(terrain_type: int) -> Color:
 		_:
 			return Color.WHITE
 
-func _terrain_initial(terrain_type: int) -> String:
+func _combo_color(terrain_type: int) -> Color:
 	match terrain_type:
-		HexCell.TerrainType.PATH:
-			return "P"
 		HexCell.TerrainType.GRASS:
-			return "G"
+			return Color(0.77, 1.0, 0.82)
 		HexCell.TerrainType.MOUNTAIN:
-			return "M"
+			return Color(1.0, 0.91, 0.68)
 		_:
-			return "?"
-
-func _label_color(terrain_type: int, is_hovered: bool = false) -> Color:
-	if is_hovered:
-		return DARK_LABEL_COLOR
-	if terrain_type == HexCell.TerrainType.MOUNTAIN:
-		return DARK_LABEL_COLOR
-	return LIGHT_LABEL_COLOR
+			return Color.WHITE
 
 func _hex_corners(center: Vector2) -> PackedVector2Array:
 	var corners := PackedVector2Array()

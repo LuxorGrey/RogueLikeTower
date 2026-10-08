@@ -185,6 +185,8 @@ round_reward
 
 M5 implementa `WaveData` y `WaveEnemyGroupData` como Resources validados: datos de enemigo, cantidad, intervalo, política de endpoint y demora de grupo. La oleada de demostración `data/waves/round_01.tres` genera tres enemigos con intervalo de 1 segundo. `FIRST_SORTED` selecciona siempre el primer `PathRoute` válido en orden determinista; `ROUND_ROBIN` también está disponible. Esta selección se limita a la muestra M5 y no confirma una política de balance para las rondas definitivas.
 
+En M10, para grupos de campaña, `count` significa número de pulsos por endpoint: cada pulso crea en el mismo frame un enemigo por cada ruta alcanzable del `PathGraph`, y `spawn_interval` separa pulsos, no enemigos de endpoints distintos. Así todos los finales PATH abiertos participan y los contadores se inicializan con `count × rutas`. Las políticas `FIRST_SORTED`/`ROUND_ROBIN` permanecen para las oleadas de diagnóstico M5/M7/M8.
+
 `PathFollowerComponent` conserva waypoints mundiales derivados de las coordenadas axiales de `PathRoute`, índice del waypoint y progreso normalizado del tramo. El movimiento ocurre en `_physics_process`; el mapa no cambia mientras la oleada está activa.
 
 M9 implementa `round_reward` en `WaveData`; se concede una sola vez cuando terminan todos los spawns y no quedan enemigos activos. Los grupos pueden pagar bajas inmediatamente; un enemigo que llega a base no recibe recompensa. Si una oleada falla no se paga el bonus de ronda, aunque las bajas ya resueltas conservan su pago.

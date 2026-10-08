@@ -52,6 +52,9 @@ var _selected_tower_data: TowerData = BALLISTA
 var _combat_debug_timer: float = 0.0
 var _hovered_coord: Vector2i = Vector2i.ZERO
 var _has_hovered_cell: bool = false
+var _terrain_rng := RandomNumberGenerator.new()
+var _offered_terrain_pieces: Array[TerrainPieceData] = []
+var _selected_expansion_piece: TerrainPieceData
 
 @onready var _piece_preview: TerrainPiecePreview = %PiecePreview
 @onready var _piece_status: Label = %PieceStatus
@@ -65,6 +68,22 @@ var _has_hovered_cell: bool = false
 @onready var _hud_panel: PanelContainer = %Panel
 @onready var _hud: CanvasLayer = %HUD
 @onready var _terrain_panel: PanelContainer = %TerrainPanel
+@onready var _terrain_card_panel: PanelContainer = %TerrainCardPanel
+@onready var _terrain_card_buttons: Array[Button] = [
+	%TerrainCard1,
+	%TerrainCard2,
+	%TerrainCard3,
+]
+@onready var _terrain_card_titles: Array[Label] = [
+	%CardTitle1,
+	%CardTitle2,
+	%CardTitle3,
+]
+@onready var _terrain_card_previews: Array[Control] = [
+	%CardPreview1,
+	%CardPreview2,
+	%CardPreview3,
+]
 @onready var _tower_toolbar: PanelContainer = %TowerToolbar
 @onready var _tower_shortcut_buttons: Array[Button] = [
 	%TowerShortcut1,
@@ -99,17 +118,21 @@ var _has_hovered_cell: bool = false
 var _reward_transition_token: int = 0
 
 func _ready() -> void:
+	_terrain_rng.randomize()
 	_camera.position = get_viewport_rect().size * 0.5
 	_camera.make_current()
 	_pieces = [STRAIGHT_PIECE, GENTLE_TURN_PIECE, HARD_TURN_PIECE, FORK_PIECE, CONVERGENCE_PIECE]
 	_rotate_left.pressed.connect(_rotate_by.bind(-1))
 	_rotate_right.pressed.connect(_rotate_by.bind(1))
+	for index in _terrain_card_buttons.size():
+		_terrain_card_buttons[index].pressed.connect(_on_terrain_card_selected.bind(index))
+		_style_terrain_card_button(_terrain_card_buttons[index])
 	_start_wave_button.pressed.connect(_start_selected_wave)
 	_wave_selector.item_selected.connect(_on_wave_profile_selected)
 	for index in _tower_shortcut_buttons.size():
 		_tower_shortcut_buttons[index].pressed.connect(_select_tower_and_build.bind(index))
 	_confirm_button.pressed.connect(_confirm_placement)
-	_cancel_button.pressed.connect(_cancel_placement)
+	_cancel_button.pressed.connect(_cancel_active_tool)
 	_piece_selector.item_selected.connect(_on_piece_selected)
 	_piece_preview.hover_changed.connect(_on_preview_hover_changed)
 	_piece_preview.hover_cleared.connect(_on_preview_hover_cleared)
@@ -140,7 +163,6 @@ func _ready() -> void:
 	if not campaign_errors.is_empty():
 		_campaign_is_valid = false
 		push_error("Campaña M10 inválida: %s" % "; ".join(campaign_errors))
-	_populate_wave_options()
 	_populate_targeting_modes()
 
 	var starting_errors := STARTING_PIECE.validate()
@@ -159,10 +181,13 @@ func _ready() -> void:
 
 	_piece_preview.set_board_cells(_board_grid.cells)
 	_piece_preview.set_path_graph(_path_graph)
+	_populate_wave_options()
 	_base.global_position = _piece_preview.global_position + HexMath.axial_to_world(
 		HexCoord.new(PROVISIONAL_BASE_COORD.x, PROVISIONAL_BASE_COORD.y),
 		HEX_RADIUS
 	)
+	_base.footprint_radius = HEX_RADIUS
+	_base.queue_redraw()
 	_on_base_health_changed(_base.get_current_health(), _base.get_maximum_health())
 	_refresh_tower_controls()
 	_start_wave_button.disabled = not _path_graph.is_valid
@@ -178,6 +203,7 @@ func _ready() -> void:
 		_piece_selector.add_item(piece.display_name)
 	_piece_selector.select(0)
 	_on_piece_selected(0)
+	_terrain_card_panel.hide()
 
 func _process(_delta: float) -> void:
 	_combat_debug_timer -= _delta
@@ -304,6 +330,7 @@ func _is_mouse_over_hud(mouse_position: Vector2) -> bool:
 		(_hud_panel.visible and _hud_panel.get_global_rect().has_point(mouse_position))
 		or (_tower_toolbar.visible and _tower_toolbar.get_global_rect().has_point(mouse_position))
 		or (_terrain_panel.visible and _terrain_panel.get_global_rect().has_point(mouse_position))
+		or (_terrain_card_panel.visible and _terrain_card_panel.get_global_rect().has_point(mouse_position))
 	)
 
 func _toggle_terrain_panel() -> void:
@@ -361,17 +388,27 @@ func _on_piece_selected(index: int) -> void:
 
 func _refresh_placement() -> void:
 	var can_edit_terrain: bool = _placement_enabled and not _build_controller.is_build_mode()
-	_piece_selector.disabled = not can_edit_terrain
+	var is_campaign_card_placement: bool = (
+		_awaiting_campaign_expansion
+		and RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION
+		and _selected_expansion_piece != null
+	)
+	_piece_selector.disabled = not can_edit_terrain or is_campaign_card_placement
 	_rotate_left.disabled = not can_edit_terrain or _selected_piece == null
 	_rotate_right.disabled = not can_edit_terrain or _selected_piece == null
 	_cancel_button.disabled = not can_edit_terrain or _selected_piece == null
+	_cancel_button.text = "Volver a cartas" if is_campaign_card_placement else "Cancelar"
 	if _selected_piece == null:
 		_latest_placement = null
 		_piece_preview.set_placement_preview(null, _anchor_coord, _rotation_steps, false, false)
 		_confirm_button.disabled = true
 		_piece_status.text = "Tablero confirmado · %d casillas" % _board_grid.cells.size()
 		_rotation_status.text = "Orientación: —"
-		_placement_status.text = "Elige una pieza para iniciar la colocación."
+		_placement_status.text = (
+			"Elige una carta de terreno para continuar."
+			if _awaiting_campaign_expansion
+			else "Elige una pieza para iniciar la colocación."
+		)
 		return
 
 	_latest_placement = TerrainPlacementValidator.evaluate(
@@ -384,7 +421,8 @@ func _refresh_placement() -> void:
 		_selected_piece,
 		_anchor_coord,
 		_rotation_steps,
-		_latest_placement.is_valid
+		_latest_placement.is_valid,
+		can_edit_terrain
 	)
 	_confirm_button.disabled = not can_edit_terrain or not _latest_placement.is_valid
 	_rotation_status.text = "Orientación: %d° · posición %d/6" % [
@@ -410,12 +448,21 @@ func _confirm_placement() -> void:
 		candidate_board[coord] = _board_grid.cells[coord]
 	for coord in cells:
 		candidate_board[coord] = cells[coord]
+	var candidate_grid := HexGrid.new()
+	candidate_grid.cells = candidate_board
+	var cells_to_add: Dictionary[Vector2i, HexCell] = {}
+	for coord in cells:
+		cells_to_add[coord] = cells[coord]
+	for hole_coord in candidate_grid.get_enclosed_void_coords():
+		var filled_cell: HexCell = _create_auto_fill_cell(hole_coord)
+		candidate_board[hole_coord] = filled_cell
+		cells_to_add[hole_coord] = filled_cell
 	var candidate_graph := PathGraph.new()
 	candidate_graph.rebuild(candidate_board, PROVISIONAL_BASE_COORD)
 	if not candidate_graph.is_valid:
 		_placement_status.text = "No se confirma: red PATH inválida · %s" % "; ".join(candidate_graph.errors)
 		return
-	if not _board_grid.add_cells(cells):
+	if not _board_grid.add_cells(cells_to_add):
 		_placement_status.text = "La pieza dejó de encajar antes de confirmar."
 		return
 	_path_graph = candidate_graph
@@ -423,9 +470,18 @@ func _confirm_placement() -> void:
 	_piece_preview.set_board_cells(_board_grid.cells)
 	_piece_preview.set_path_graph(_path_graph)
 	_refresh_path_status()
-	_cancel_placement()
-	if _awaiting_campaign_expansion and RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION:
+	_refresh_campaign_option_counts()
+	var confirmed_campaign_expansion: bool = (
+		_awaiting_campaign_expansion
+		and RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION
+	)
+	if confirmed_campaign_expansion:
 		_awaiting_campaign_expansion = false
+		_selected_expansion_piece = null
+		_offered_terrain_pieces.clear()
+		_terrain_card_panel.hide()
+	_cancel_placement()
+	if confirmed_campaign_expansion:
 		_placement_enabled = false
 		_campaign_round_number += 1
 		_selected_wave = _get_campaign_round(_campaign_round_number)
@@ -444,6 +500,15 @@ func _confirm_placement() -> void:
 		_refresh_placement()
 		_refresh_tower_controls()
 
+func _create_auto_fill_cell(coord: Vector2i) -> HexCell:
+	var fill_mountain: bool = _terrain_rng.randi_range(0, 1) == 1
+	var cell := HexCell.new(HexCoord.new(coord.x, coord.y))
+	cell.terrain_type = HexCell.TerrainType.MOUNTAIN if fill_mountain else HexCell.TerrainType.GRASS
+	cell.elevation = 2 if fill_mountain else 1
+	cell.buildable = true
+	cell.visual_variant = &"auto_filled_void"
+	return cell
+
 func _cancel_placement() -> void:
 	_selected_piece = null
 	_latest_placement = null
@@ -451,6 +516,18 @@ func _cancel_placement() -> void:
 	_refresh_placement()
 
 func _cancel_active_tool() -> void:
+	if _terrain_card_panel.visible and _selected_expansion_piece == null:
+		return
+	if (
+		_awaiting_campaign_expansion
+		and RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION
+		and _selected_expansion_piece != null
+	):
+		if _build_controller.is_build_mode():
+			_build_controller.cancel_build_mode()
+			_refresh_build_preview()
+		_return_to_terrain_card_offer()
+		return
 	if _build_controller.is_build_mode():
 		_build_controller.cancel_build_mode()
 		_refresh_build_preview()
@@ -482,7 +559,8 @@ func _handle_board_click() -> void:
 	if _has_hovered_cell:
 		var tower: Tower = _build_controller.get_tower_at(_hovered_coord)
 		if tower != null:
-			_cancel_placement()
+			if _selected_expansion_piece == null:
+				_cancel_placement()
 			_build_controller.select_tower_at(_hovered_coord)
 			_refresh_tower_controls()
 			return
@@ -502,13 +580,17 @@ func _select_debug_tower_and_build(tower_data: TowerData) -> void:
 func _select_tower_profile_and_build(chosen_tower: TowerData) -> void:
 	if chosen_tower == null:
 		return
+	if _awaiting_campaign_expansion and _selected_expansion_piece == null:
+		_build_status.text = "Elige una carta de terreno antes de continuar."
+		return
 	if _build_controller.is_build_mode() and _selected_tower_data == chosen_tower:
 		_build_controller.cancel_build_mode()
 		_build_status.text = "Construcción cancelada."
 		_refresh_tower_controls()
 		return
 	_selected_tower_data = chosen_tower
-	_cancel_placement()
+	if _selected_expansion_piece == null:
+		_cancel_placement()
 	if _build_controller.begin_build(_selected_tower_data):
 		_build_status.text = "%s · clic en Grass/Montaña libre." % _selected_tower_data.display_name
 	else:
@@ -567,6 +649,15 @@ func _populate_wave_options() -> void:
 	]
 	_start_wave_button.text = "▶ Iniciar ronda %d/20" % _campaign_round_number
 	_refresh_tower_controls()
+
+func _refresh_campaign_option_counts() -> void:
+	for round_index in range(20):
+		var wave: WaveData = _get_campaign_round(round_index + 1)
+		_wave_selector.set_item_text(round_index, "Ronda %02d/20 · %s · %d enemigos" % [
+			round_index + 1,
+			_encounter_label(wave),
+			_get_wave_enemy_count(wave),
+		])
 
 func _on_wave_profile_selected(index: int) -> void:
 	if index < 0:
@@ -628,7 +719,8 @@ func _on_tower_upgraded(tower: Tower, _new_level: int) -> void:
 func _refresh_tower_controls() -> void:
 	var build_mode: bool = _build_controller.is_build_mode()
 	var selected: Tower = _build_controller.selected_tower
-	var can_build: bool = _build_controller.can_build_in_current_phase()
+	var waiting_for_terrain_card: bool = _awaiting_campaign_expansion and _selected_expansion_piece == null
+	var can_build: bool = _build_controller.can_build_in_current_phase() and not waiting_for_terrain_card
 	var is_run_ended: bool = RunManager.phase == RunManager.Phase.RUN_DEFEAT or RunManager.phase == RunManager.Phase.RUN_VICTORY
 	for index in _tower_shortcut_buttons.size():
 		var shortcut_button: Button = _tower_shortcut_buttons[index]
@@ -697,8 +789,12 @@ func _start_selected_wave() -> void:
 		return
 	if _selected_wave_is_debug:
 		_debug_return_phase = RunManager.phase
+		if _debug_return_phase == RunManager.Phase.TERRAIN_EXPANSION:
+			_selected_expansion_piece = null
+			_terrain_card_panel.hide()
 	elif _selected_wave == null or _selected_wave.round_number != _campaign_round_number:
 		return
+	_terrain_card_panel.hide()
 	if _build_controller.is_build_mode():
 		_build_controller.cancel_build_mode()
 	_cancel_placement()
@@ -716,7 +812,9 @@ func _start_selected_wave() -> void:
 		DEMO_CAMPAIGN if not _selected_wave_is_debug else null,
 		_selected_wave_is_debug
 	):
-		_placement_enabled = _selected_wave_is_debug and _debug_return_phase == RunManager.Phase.TERRAIN_EXPANSION
+		_placement_enabled = false
+		if _selected_wave_is_debug and _debug_return_phase == RunManager.Phase.TERRAIN_EXPANSION and _awaiting_campaign_expansion:
+			_present_terrain_card_offer()
 		_refresh_placement()
 		_wave_status.text = "No se pudo iniciar: %s" % _wave_director.last_error
 		_refresh_tower_controls()
@@ -731,6 +829,8 @@ func _on_wave_completed(round_number: int) -> void:
 	_reward_transition_token += 1
 	var transition_token: int = _reward_transition_token
 	RunManager.transition_to(RunManager.Phase.ROUND_REWARD)
+	if _build_controller.is_build_mode():
+		_build_controller.cancel_build_mode()
 	var completed_wave: WaveData = _selected_wave
 	var was_debug_wave: bool = _selected_wave_is_debug
 	var return_phase: int = _debug_return_phase
@@ -746,9 +846,11 @@ func _on_wave_completed(round_number: int) -> void:
 	if transition_token != _reward_transition_token or RunManager.phase != RunManager.Phase.ROUND_REWARD:
 		return
 	if was_debug_wave:
-		_placement_enabled = return_phase == RunManager.Phase.TERRAIN_EXPANSION and _awaiting_campaign_expansion
+		_placement_enabled = false
 		if return_phase == RunManager.Phase.TERRAIN_EXPANSION:
 			RunManager.transition_to(RunManager.Phase.TERRAIN_EXPANSION)
+			if _awaiting_campaign_expansion:
+				_present_terrain_card_offer()
 		else:
 			RunManager.transition_to(RunManager.Phase.ROUND_PREP)
 		_wave_status.text = "Prueba de diagnóstico completada · campaña detenida en ronda %d/20" % _campaign_round_number
@@ -762,24 +864,26 @@ func _on_wave_completed(round_number: int) -> void:
 			_wave_status.text = "¡DEMO COMPLETADA! · 20/20 rondas superadas · +%d oro" % round_reward
 			_start_wave_button.text = "DEMO COMPLETADA"
 		else:
-			_placement_enabled = true
+			_placement_enabled = false
 			_awaiting_campaign_expansion = true
 			RunManager.transition_to(RunManager.Phase.TERRAIN_EXPANSION)
-			_wave_status.text = "Ronda %d/20 completada · +%d oro · coloca una pieza válida de 7 hexágonos para desbloquear la ronda %d" % [
+			_wave_status.text = "Ronda %d/20 completada · +%d oro · elige una de tres piezas para desbloquear la ronda %d" % [
 				round_number,
 				round_reward,
 				round_number + 1,
 			]
-			_start_wave_button.text = "Coloca terreno para continuar"
+			_present_terrain_card_offer()
 	_refresh_placement()
 	_refresh_tower_controls()
 
 func _on_wave_failed(reason: String) -> void:
 	_build_controller.cancel_build_mode()
 	if _selected_wave_is_debug:
-		_placement_enabled = _debug_return_phase == RunManager.Phase.TERRAIN_EXPANSION and _awaiting_campaign_expansion
+		_placement_enabled = false
 		if _debug_return_phase == RunManager.Phase.TERRAIN_EXPANSION:
 			RunManager.transition_to(RunManager.Phase.TERRAIN_EXPANSION)
+			if _awaiting_campaign_expansion:
+				_present_terrain_card_offer()
 		else:
 			RunManager.transition_to(RunManager.Phase.ROUND_PREP)
 		_wave_status.text = "Diagnóstico detenido · %s · campaña en ronda %d/20" % [reason, _campaign_round_number]
@@ -838,7 +942,17 @@ func _get_wave_enemy_count(wave: WaveData) -> int:
 	for group in wave.groups:
 		if group != null:
 			total += group.count
-	return total
+	var route_count: int = _get_reachable_spawn_route_count()
+	return total * maxi(route_count, 1)
+
+func _get_reachable_spawn_route_count() -> int:
+	if _path_graph == null:
+		return 0
+	var route_count: int = 0
+	for route in _path_graph.routes:
+		if route != null and route.is_reachable:
+			route_count += 1
+	return route_count
 
 func _encounter_label(wave: WaveData) -> String:
 	if wave == null:
@@ -957,9 +1071,127 @@ func _piece_summary(piece: TerrainPieceData) -> String:
 		mountain_count,
 	]
 
+func _present_terrain_card_offer() -> void:
+	if _offered_terrain_pieces.is_empty():
+		var candidates: Array[TerrainPieceData] = []
+		candidates.append_array(_pieces)
+		candidates.shuffle()
+		for index in range(mini(_terrain_card_buttons.size(), candidates.size())):
+			_offered_terrain_pieces.append(candidates[index])
+	if _offered_terrain_pieces.size() != _terrain_card_buttons.size():
+		push_error("La expansión necesita tres piezas de terreno diferentes para ofrecer.")
+		return
+
+	for index in _terrain_card_buttons.size():
+		var piece: TerrainPieceData = _offered_terrain_pieces[index]
+		_terrain_card_buttons[index].text = ""
+		_terrain_card_buttons[index].tooltip_text = ""
+		_terrain_card_buttons[index].disabled = false
+		_terrain_card_buttons[index].set_pressed_no_signal(false)
+		_terrain_card_titles[index].text = piece.display_name
+		_terrain_card_previews[index].call("set_piece", piece)
+	_set_terrain_card_layout(false)
+	_terrain_card_panel.show()
+	_placement_enabled = false
+	_selected_expansion_piece = null
+	_selected_piece = null
+	_piece_selector.select(0)
+	_refresh_placement()
+	_start_wave_button.disabled = true
+	_start_wave_button.text = "Elige terreno para continuar"
+	_refresh_tower_controls()
+
+func _on_terrain_card_selected(index: int) -> void:
+	if (
+		index < 0
+		or index >= _offered_terrain_pieces.size()
+		or not _awaiting_campaign_expansion
+		or RunManager.phase != RunManager.Phase.TERRAIN_EXPANSION
+	):
+		return
+	if _build_controller.is_build_mode():
+		_build_controller.cancel_build_mode()
+		_refresh_build_preview()
+	_selected_expansion_piece = _offered_terrain_pieces[index]
+	_selected_piece = _selected_expansion_piece
+	_rotation_steps = 0
+	_placement_enabled = true
+	_piece_selector.select(_pieces.find(_selected_piece) + 1)
+	_piece_status.text = _piece_summary(_selected_piece)
+	for card_index in _terrain_card_buttons.size():
+		_terrain_card_buttons[card_index].set_pressed_no_signal(card_index == index)
+	_set_terrain_card_layout(true)
+	_terrain_card_panel.show()
+	_wave_status.text = "Expansión · %s seleccionada · coloca una posición válida" % _selected_piece.display_name
+	_start_wave_button.disabled = true
+	_start_wave_button.text = "Coloca terreno para continuar"
+	_refresh_placement()
+	_refresh_tower_controls()
+
+func _return_to_terrain_card_offer() -> void:
+	_selected_expansion_piece = null
+	_selected_piece = null
+	_latest_placement = null
+	_placement_enabled = false
+	_piece_selector.select(0)
+	_present_terrain_card_offer()
+
+func _set_terrain_card_layout(is_inventory: bool) -> void:
+	_terrain_card_panel.anchor_left = 0.5
+	_terrain_card_panel.anchor_right = 0.5
+	if is_inventory:
+		_terrain_card_panel.anchor_top = 1.0
+		_terrain_card_panel.anchor_bottom = 1.0
+		_terrain_card_panel.offset_left = -310.0
+		_terrain_card_panel.offset_top = -258.0
+		_terrain_card_panel.offset_right = 310.0
+		_terrain_card_panel.offset_bottom = -104.0
+		_terrain_card_panel.custom_minimum_size = Vector2(620.0, 154.0)
+	else:
+		_terrain_card_panel.anchor_top = 0.5
+		_terrain_card_panel.anchor_bottom = 0.5
+		_terrain_card_panel.offset_left = -390.0
+		_terrain_card_panel.offset_top = -170.0
+		_terrain_card_panel.offset_right = 390.0
+		_terrain_card_panel.offset_bottom = 170.0
+		_terrain_card_panel.custom_minimum_size = Vector2(780.0, 340.0)
+	var margin: MarginContainer = _terrain_card_panel.get_node("Margin") as MarginContainer
+	margin.add_theme_constant_override("margin_left", 10 if is_inventory else 18)
+	margin.add_theme_constant_override("margin_right", 10 if is_inventory else 18)
+	margin.add_theme_constant_override("margin_top", 8 if is_inventory else 14)
+	margin.add_theme_constant_override("margin_bottom", 8 if is_inventory else 14)
+	var card_size: Vector2 = Vector2(184.0, 126.0) if is_inventory else Vector2(232.0, 278.0)
+	var preview_size: Vector2 = Vector2(168.0, 82.0) if is_inventory else Vector2(208.0, 230.0)
+	for index in _terrain_card_buttons.size():
+		_terrain_card_buttons[index].custom_minimum_size = card_size
+		_terrain_card_previews[index].custom_minimum_size = preview_size
+		_terrain_card_titles[index].add_theme_font_size_override("font_size", 14 if is_inventory else 18)
+
+func _style_terrain_card_button(button: Button) -> void:
+	var normal_style := StyleBoxFlat.new()
+	normal_style.bg_color = Color(0.10, 0.14, 0.16, 0.98)
+	normal_style.border_color = Color(0.37, 0.47, 0.49, 1.0)
+	normal_style.set_border_width_all(2)
+	normal_style.set_corner_radius_all(10)
+	normal_style.content_margin_left = 8.0
+	normal_style.content_margin_top = 8.0
+	normal_style.content_margin_right = 8.0
+	normal_style.content_margin_bottom = 8.0
+	var hover_style := normal_style.duplicate() as StyleBoxFlat
+	hover_style.bg_color = Color(0.15, 0.21, 0.22, 1.0)
+	hover_style.border_color = Color(0.70, 0.84, 0.75, 1.0)
+	var selected_style := normal_style.duplicate() as StyleBoxFlat
+	selected_style.bg_color = Color(0.16, 0.22, 0.19, 1.0)
+	selected_style.border_color = Color(0.94, 0.78, 0.34, 1.0)
+	selected_style.set_border_width_all(3)
+	button.add_theme_stylebox_override("normal", normal_style)
+	button.add_theme_stylebox_override("hover", hover_style)
+	button.add_theme_stylebox_override("pressed", selected_style)
+
 func _on_preview_hover_changed(local_coord: Vector2i, terrain_type: int, elevation: int) -> void:
 	_hovered_coord = local_coord
 	_has_hovered_cell = true
+	_base.set_hovered(local_coord == PROVISIONAL_BASE_COORD)
 	_hover_status.text = "Casilla del tablero (q,r): (%d, %d) · %s · h%d" % [
 		local_coord.x,
 		local_coord.y,
@@ -970,6 +1202,7 @@ func _on_preview_hover_changed(local_coord: Vector2i, terrain_type: int, elevati
 
 func _on_preview_hover_cleared() -> void:
 	_has_hovered_cell = false
+	_base.set_hovered(false)
 	_hover_status.text = "Casilla del tablero (q,r): — · hover sobre cara superior"
 	_piece_preview.set_tower_build_preview(false)
 

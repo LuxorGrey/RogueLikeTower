@@ -17,7 +17,9 @@ Requisito:
 
 La plantilla inicial confirmada por el usuario usa el centro `(0,0)` y sus seis vecinos inmediatos: `(0,-1)`, `(1,-1)`, `(1,0)`, `(0,1)`, `(-1,1)` y `(-1,0)`. Sus seis orientaciones válidas se obtienen rotando en pasos de 60° alrededor de `(0,0)`. Esta huella es la plantilla inicial; el modelo sigue admitiendo cualquier grupo conectado de siete hexágonos para piezas futuras.
 
-Las celdas de la plantilla pueden ser PATH, GRASS o MOUNTAIN. La vista debug diferencia esos tipos por color y etiqueta: PATH `#59666E`, GRASS `#479157` y MOUNTAIN `#A1947A`. Los colores y la composición de la plantilla de muestra son provisionales, no arte ni balance final.
+Las celdas de la plantilla pueden ser PATH, GRASS o MOUNTAIN. La vista diferencia esos tipos solo por color: PATH `#59666E`, GRASS `#479157` y MOUNTAIN `#A1947A`; no dibuja iniciales ni coordenadas encima de las caras. El panel de terreno muestra axial `(q,r)`, tipo y altura al pasar el cursor por una cara superior. Los colores y la composición de la plantilla de muestra son provisionales, no arte ni balance final.
+
+Desde M10, las expansiones rellenan al azar con Grass o Montaña los espacios vacíos completamente encerrados dentro de la envolvente axial del tablero. Un espacio conectado a un borde exterior o a una salida PATH abierta queda vacío. Los rellenos son celdas construibles y no forman parte de una pieza del jugador. Grupos conectados de 3–4 Grass/Montaña reciben un brillo tenue de combo 3; grupos de 5 o más reciben un brillo algo más intenso de combo 5. Es señal visual sin bonus numérico confirmado.
 
 La silueta NO tiene por qué ser siempre el hexágono central + seis vecinos si en el futuro se diseñan otras formas de 7 celdas. El sistema debe soportar cualquier conjunto conectado de 7 hexes.
 
@@ -57,7 +59,7 @@ No asumir que cada endpoint es siempre un spawn.
 
 Esto permite que ampliar terreno "haga que puedan venir desde más sitios" sin obligar a activar todos inmediatamente.
 
-En M4, cada salida exacta `path_edges` que queda abierta hacia una coordenada fuera del tablero se presenta como candidato spawn. Las aperturas exclusivamente flexibles no son endpoints; solo forman conexión cuando una celda PATH vecina ofrece la cara recíproca. El endpoint guarda la celda PATH, la dirección axial y la coordenada exterior para que M5 pueda colocar el enemigo antes de recorrer la ruta. La muestra M5 instancia `GameBase` en `(0,0)`, sobre el PATH central de la pieza inicial; la ubicación sigue siendo provisional, no un compromiso de diseño final. Véase [ADR-0007](../decisiones/ADR-0007-grafo-logico-de-caminos.md).
+En M4, cada salida exacta `path_edges` que queda abierta hacia una coordenada fuera del tablero se presenta como candidato spawn. Las aperturas exclusivamente flexibles no son endpoints; solo forman conexión cuando una celda PATH vecina ofrece la cara recíproca. El endpoint guarda la celda PATH, la dirección axial y la coordenada exterior para que M5 pueda colocar el enemigo antes de recorrer la ruta. En campaña M10 se activan todos los endpoints PATH abiertos con ruta a la base: cada pulso definido por el grupo genera un enemigo en todos ellos simultáneamente. La muestra M5 instancia `GameBase` en `(0,0)`, sobre el PATH central de la pieza inicial; la ubicación sigue siendo provisional, no un compromiso de diseño final. Véase [ADR-0007](../decisiones/ADR-0007-grafo-logico-de-caminos.md).
 
 `PathGraph` mantiene una arista cuando ambas caras PATH ofrecen socket exacto o flexible complementario. Resuelve una ruta mínima por número de enlaces con BFS y desempate por orden de direcciones de `HexCoord`. La adyacencia conserva caminos alternativos en bifurcaciones y convergencias aunque cada spawn tenga una ruta cacheada escogida para el prototipo. Recalcula en inicio/confirmación de pieza; el modo debug `D` muestra candidatos, base y rutas cacheadas.
 
@@ -77,11 +79,11 @@ Los cliffs rellenan visualmente la diferencia con vecinos más bajos.
 
 La selección/click debe mapear correctamente al HexCoord aunque el sprite esté desplazado.
 
-En el preview M2, cada nivel desplaza temporalmente la cara superior 18 px hacia arriba. Los desniveles se dibujan como caras laterales sombreadas mediante dos triángulos construidos desde la arista superior y el desplazamiento vertical exacto. Cuando ambos vectores se proyectan en la misma dirección, se añade un grosor lateral visual mínimo para que el polígono no colapse; en la pieza aislada, una celda vecina ausente se trata como altura 0. Las caras superiores se ordenan por profundidad lógica (Y de base, con X como desempate), y muestran `h0/h1/h2` para depuración. Este offset y estos polígonos son placeholders visuales, no especificación de arte final. La escena principal incluye un contenedor `Entities` con Y-sort habilitado para los actores.
+En el preview M2, cada nivel desplaza temporalmente la cara superior 18 px hacia arriba. Los desniveles se dibujan como caras laterales sombreadas mediante dos triángulos construidos desde la arista superior y el desplazamiento vertical exacto. Cuando ambos vectores se proyectan en la misma dirección, se añade un grosor lateral visual mínimo para que el polígono no colapse; en la pieza aislada, una celda vecina ausente se trata como altura 0. Las caras superiores se ordenan por profundidad lógica (Y de base, con X como desempate), sin etiquetas de terreno ni coordenadas visibles. Este offset y estos polígonos son placeholders visuales, no especificación de arte final. La escena principal incluye un contenedor `Entities` con Y-sort habilitado para los actores.
 
-El hover solo detecta las caras superiores: PATH resalta en `#82BFE6`, GRASS en `#80E085` y MOUNTAIN en `#F5C25C`. En el preview aislado, el HUD muestra coordenadas locales; sobre el tablero M3 muestra las coordenadas axiales globales `(q,r)`, el terreno y la altura. Los cliffs no son superficies seleccionables. La interacción de M3 está pendiente de inspección manual en Godot.
+El hover solo detecta las caras superiores: PATH resalta en `#82BFE6`, GRASS en `#80E085` y MOUNTAIN en `#F5C25C`. En el preview aislado, el HUD muestra coordenadas locales; sobre el tablero M3 muestra las coordenadas axiales globales `(q,r)`, el terreno y la altura. Los cliffs no son superficies seleccionables. Desde M10 los clusters de terreno muestran un leve brillo animado para combos visuales de 3/5, sin cambiar sus stats.
 
-Estado del preview M3: el tablero inicial y las piezas confirmadas se dibujan desde `HexGrid`; el ghost se compone sobre esas celdas. Se distinguen visualmente los sockets PATH exactos y sus brazos laterales flexibles; el HUD informa coordenada axial global, terreno, altura, legalidad y cantidad de conexiones. El renderer permanece en polígonos placeholder.
+Estado del preview M3: el tablero inicial y las piezas confirmadas se dibujan desde `HexGrid`; el ghost se compone sobre esas celdas. Se distinguen visualmente los sockets PATH exactos y sus brazos laterales flexibles; el HUD informa coordenada axial global, terreno, altura, legalidad y cantidad de conexiones. El renderer permanece en polígonos placeholder. La base provisional en `(0,0)` cubre visualmente una cara hexagonal completa y reserva esa celda PATH.
 
 ## 7. Filosofía visual Urtuk-like
 - Grid estricta por debajo.
@@ -124,7 +126,7 @@ Toggle para mostrar:
 - ruta de cada spawn;
 - footprint de pieza.
 
-En el prototipo M4, `D` alterna el overlay de rutas cacheadas, candidatos spawn y marcador de base. Las coordenadas, terreno, altura y sockets permanecen en la vista de pieza; un panel HUD resume el número de nodos, endpoints y bifurcaciones. La visualización es provisional y no activa spawns.
+En el prototipo M4, `D` alterna el overlay de rutas cacheadas, candidatos spawn y marcador de base. El overlay no rotula hexes: coordenadas, terreno y altura se consultan al hacer hover y el panel HUD resume nodos, endpoints y bifurcaciones. La visualización es provisional; en M10 el director activa todos los endpoints alcanzables.
 
 ## 11. Navegación del mapa
 - `Camera2D` controla el tablero; `CanvasLayer` mantiene la interfaz fija.

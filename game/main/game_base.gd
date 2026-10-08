@@ -5,11 +5,15 @@ signal health_changed(current_health: int, maximum_health: int)
 signal defeated
 
 const BASE_COLOR: Color = Color(0.94, 0.76, 0.28)
-const BASE_OUTLINE: Color = Color(0.18, 0.15, 0.08)
+const BASE_TILE_COLOR: Color = Color(0.36, 0.29, 0.16)
+const BASE_OUTLINE: Color = Color(0.16, 0.13, 0.08)
 
 @export var base_data: BaseData
+@export_range(1.0, 200.0, 1.0) var footprint_radius: float = 52.0
 
 @onready var _health: HealthComponent = %Health
+
+var _is_hovered: bool = false
 
 func _ready() -> void:
 	_health.health_changed.connect(_on_health_changed)
@@ -33,19 +37,37 @@ func get_current_health() -> int:
 func get_maximum_health() -> int:
 	return _health.maximum_health
 
+func set_hovered(is_hovered: bool) -> void:
+	if _is_hovered == is_hovered:
+		return
+	_is_hovered = is_hovered
+	queue_redraw()
+
 func _draw() -> void:
-	draw_circle(Vector2(0.0, -5.0), 20.0, BASE_OUTLINE)
-	draw_circle(Vector2(0.0, -5.0), 15.0, BASE_COLOR)
-	draw_arc(Vector2(0.0, -5.0), 19.0, 0.0, TAU, 24, Color(1.0, 0.93, 0.62), 2.0, true)
-	draw_string(
-		ThemeDB.fallback_font,
-		Vector2(-6.0, 1.0),
-		"B",
-		HORIZONTAL_ALIGNMENT_CENTER,
-		12.0,
-		16,
-		BASE_OUTLINE
-	)
+	var footprint := _hex_corners(footprint_radius)
+	var closed_footprint := footprint.duplicate()
+	closed_footprint.append(footprint[0])
+	draw_colored_polygon(footprint, BASE_TILE_COLOR)
+	draw_polyline(closed_footprint, BASE_OUTLINE, 4.0, true)
+
+	var keep := _hex_corners(footprint_radius * 0.58)
+	var closed_keep := keep.duplicate()
+	closed_keep.append(keep[0])
+	draw_colored_polygon(keep, BASE_COLOR)
+	draw_polyline(closed_keep, Color(1.0, 0.92, 0.58), 2.5, true)
+	draw_circle(Vector2.ZERO, footprint_radius * 0.18, BASE_OUTLINE)
+	draw_arc(Vector2.ZERO, footprint_radius * 0.18, 0.0, TAU, 24, Color(1.0, 0.93, 0.62), 2.0, true)
+	if _is_hovered:
+		var hover_tint := Color(0.51, 0.75, 0.90, 0.34)
+		draw_colored_polygon(footprint, hover_tint)
+		draw_polyline(closed_footprint, Color(0.72, 0.87, 0.98), 5.0, true)
+
+func _hex_corners(radius: float) -> PackedVector2Array:
+	var corners := PackedVector2Array()
+	for corner_index in range(6):
+		var angle_radians: float = deg_to_rad(-90.0 + 60.0 * float(corner_index))
+		corners.append(Vector2(cos(angle_radians), sin(angle_radians)) * radius)
+	return corners
 
 func _on_health_changed(current_health: int, maximum_health: int) -> void:
 	health_changed.emit(current_health, maximum_health)

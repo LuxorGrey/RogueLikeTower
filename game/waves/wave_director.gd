@@ -73,8 +73,9 @@ func start_wave(
 	_map_origin = map_origin
 	_hex_radius = hex_radius
 	_pending_spawn_count = 0
+	var campaign_route_count: int = _get_reachable_routes().size() if campaign_data != null else 1
 	for group in wave_data.groups:
-		_pending_spawn_count += group.count
+		_pending_spawn_count += group.count * campaign_route_count
 	_wave_token += 1
 	_is_running = true
 	_is_spawning = true
@@ -91,16 +92,22 @@ func _spawn_wave_groups(wave_token: int) -> void:
 			await get_tree().create_timer(group.delay_before_group).timeout
 			if wave_token != _wave_token:
 				return
-		for enemy_index in range(group.count):
+		for pulse_index in range(group.count):
 			if wave_token != _wave_token:
 				return
-			var route := _select_route(group, enemy_index)
-			_pending_spawn_count = maxi(_pending_spawn_count - 1, 0)
-			_emit_population_changed()
-			if route == null or not _spawn_enemy(group.enemy_data, route):
-				_fail_wave("No se pudo generar un enemigo con una ruta válida.")
+			var routes: Array[PathRoute] = _get_spawn_routes(group, pulse_index)
+			if routes.is_empty():
+				_fail_wave("No hay salidas PATH alcanzables para generar enemigos.")
 				return
-			if enemy_index + 1 < group.count and group.spawn_interval > 0.0:
+			for route in routes:
+				if wave_token != _wave_token:
+					return
+				_pending_spawn_count = maxi(_pending_spawn_count - 1, 0)
+				_emit_population_changed()
+				if not _spawn_enemy(group.enemy_data, route):
+					_fail_wave("No se pudo generar un enemigo con una ruta válida.")
+					return
+			if pulse_index + 1 < group.count and group.spawn_interval > 0.0:
 				await get_tree().create_timer(group.spawn_interval).timeout
 				if wave_token != _wave_token:
 					return
@@ -110,15 +117,30 @@ func _spawn_wave_groups(wave_token: int) -> void:
 	_check_wave_completion()
 
 func _select_route(group: WaveEnemyGroupData, enemy_index: int) -> PathRoute:
-	var available_routes: Array[PathRoute] = []
-	for route in _path_graph.routes:
-		if route.is_reachable:
-			available_routes.append(route)
+	var available_routes: Array[PathRoute] = _get_reachable_routes()
 	if available_routes.is_empty():
 		return null
 	if group.spawn_endpoint_policy == WaveEnemyGroupData.SpawnEndpointPolicy.ROUND_ROBIN:
 		return available_routes[posmod(enemy_index, available_routes.size())]
 	return available_routes[0]
+
+func _get_spawn_routes(group: WaveEnemyGroupData, pulse_index: int) -> Array[PathRoute]:
+	if _campaign_data != null:
+		return _get_reachable_routes()
+	var routes: Array[PathRoute] = []
+	var route: PathRoute = _select_route(group, pulse_index)
+	if route != null:
+		routes.append(route)
+	return routes
+
+func _get_reachable_routes() -> Array[PathRoute]:
+	var available_routes: Array[PathRoute] = []
+	if _path_graph == null:
+		return available_routes
+	for route in _path_graph.routes:
+		if route != null and route.is_reachable:
+			available_routes.append(route)
+	return available_routes
 
 func _spawn_enemy(enemy_data: EnemyData, route: PathRoute) -> bool:
 	if route == null or not route.is_reachable or route.cells.is_empty():

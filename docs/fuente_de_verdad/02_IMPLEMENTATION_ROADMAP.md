@@ -128,11 +128,12 @@ El usuario pidió expresamente cerrar este roster antes de avanzar a M10/M11. Po
 - Director de oleadas.
 - Escalado provisional.
 - Ronda termina solo cuando no quedan enemigos pendientes/vivos.
-- Tras ronda: bloquear combate y abrir expansión.
+- Cada pulso de campaña genera enemigos simultáneamente en todos los endpoints PATH abiertos y alcanzables.
+- Tras ronda: ofrecer tres piezas distintas, bloquear el combate hasta seleccionar y colocar una, y rellenar huecos interiores con Grass/Montaña aleatorios.
 - Ronda 20 completa demo.
 - Resultado: run completa técnicamente.
 
-Contrato M10: la campaña contiene un `WaveData` validado por ronda y una sola ronda de campaña puede iniciarse por vez. Las rondas 17 y 19 contienen minijefe y la 20 un jefe Tier 2 genérico hasta elegir variante; estos hitos provienen de las reglas propias confirmadas en `docs/borradores_personales/02_monstruos.md`. Las estadísticas, composición normal y crecimiento de salud/daño/recompensa son placeholders configurables; no se copian valores ni habilidades de Rogue Tower. Cada oleada termina con cero spawns pendientes y cero enemigos vivos. Tras las rondas 1–19, `TERRAIN_EXPANSION` bloquea el combate hasta confirmar exactamente una pieza válida conectada; después se prepara la siguiente ronda. La ronda 20 pasa a `RUN_VICTORY`. Los fixtures M7/M8 quedan etiquetados `DEBUG`, sin avance de campaña, pagos ni daño a base. Capas Shield/Armor/Health, cartas y meta-progresión no forman parte de M10.
+Contrato M10: la campaña contiene un `WaveData` validado por ronda y una sola ronda de campaña puede iniciarse por vez. Las rondas 17 y 19 contienen minijefe y la 20 un jefe Tier 2 genérico hasta elegir variante; estos hitos provienen de las reglas propias confirmadas en `docs/borradores_personales/02_monstruos.md`. Las estadísticas, composición normal y crecimiento de salud/daño/recompensa son placeholders configurables; no se copian valores ni habilidades de Rogue Tower. En cada pulso de campaña se genera simultáneamente un enemigo por cada endpoint PATH abierto y alcanzable; `WaveEnemyGroupData.count` representa pulsos por endpoint y el contador pendiente refleja el total de rutas. Cada oleada termina con cero spawns pendientes y cero enemigos vivos. Tras las rondas 1–19, `TERRAIN_EXPANSION` ofrece tres piezas distintas y bloquea el combate hasta elegir una y confirmar exactamente una colocación válida conectada; `Esc` durante esa colocación vuelve a la oferta existente. Tras confirmar, los huecos encerrados del tablero se rellenan al azar con Grass/Montaña, preservando aberturas PATH de spawn, y después se prepara la siguiente ronda. La ronda 20 pasa a `RUN_VICTORY`. Los fixtures M7/M8 quedan etiquetados `DEBUG`, sin avance de campaña, pagos ni daño a base. Esta oferta selecciona piezas de terreno; las cartas de mejoras `CardData` siguen en M11. Capas Shield/Armor/Health y meta-progresión no forman parte de M10.
 
 ## M11 — Cards
 - `CardData`.

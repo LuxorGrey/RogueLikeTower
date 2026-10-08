@@ -10,7 +10,7 @@ La referencia sistémica principal es Rogue Tower, reducida a un scope de demo p
 - Género: Tower Defense + Roguelike.
 - Demo: **20 rondas**.
 - Grid: hexagonal.
-- Expansión del mapa: tras limpiar las rondas 1–19. Para continuar se confirma una pieza válida de siete hexágonos; limpiar la ronda 20 completa la demo.
+- Expansión del mapa: tras limpiar las rondas 1–19 se ofrecen tres piezas distintas de siete hexágonos como cards visuales con solo el nombre y una vista de la pieza. Al elegir una, las tres permanecen en un inventario inferior para poder cambiar la selección antes de colocar; `Esc` vuelve a la oferta centrada con las mismas opciones. Al confirmar una pieza legal desaparece el inventario. Limpiar la ronda 20 completa la demo.
 - El jugador coloca una pieza predefinida compuesta por **7 hexágonos**.
 - La pieza puede rotarse en las 6 orientaciones hexagonales.
 - Si contiene camino, sus conexiones deben ser válidas con el mapa existente.
@@ -20,6 +20,9 @@ La referencia sistémica principal es Rogue Tower, reducida a un scope de demo p
   - Camino: altura 0, transitable por enemigos, no construible.
   - Grass: construible; normalmente altura 1, pudiendo existir variantes elevadas según definición de pieza.
   - Montaña: altura 2, construible y con ventaja de altura.
+- La base ocupa la huella visual completa de un hexágono y reserva su celda axial.
+- Tras una expansión, los huecos completamente encerrados dentro de la envolvente axial del mapa se rellenan al azar con Grass o Montaña. Una abertura PATH que funcione como salida/spawn nunca se rellena.
+- Los conjuntos conectados de Grass o Montaña brillan suavemente desde tres hexágonos; el resplandor es algo más intenso desde cinco. En esta fase es únicamente señal visual de combo, sin bonus de gameplay.
 - Enemigos: el diseño confirmado prevé escudo, armadura y salud en ese orden de agotamiento; Bleed detiene la regeneración de salud, Burn la de armadura y Poison la de escudo. La capa de escudo y la transferencia del daño sobrante aún no están implementadas/decididas en el prototipo.
 - La demo incluye minijefes en las rondas 17 y 19 y un jefe fijo de Tier 2 en la ronda 20. Su variante, habilidades y estadísticas finales siguen abiertas.
 - Torres especializadas contra diferentes defensas/tipos de enemigo.
@@ -36,13 +39,13 @@ La referencia sistémica principal es Rogue Tower, reducida a un scope de demo p
 1. Comienza run.
 2. Cargar desbloqueos y mejoras permanentes.
 3. Preparación de ronda.
-4. Oleada: aparecen enemigos y recorren la red de caminos hacia el objetivo.
+4. Oleada: en cada pulso configurado aparecen simultáneamente enemigos en todos los finales PATH abiertos que tengan ruta a la base; el grupo conserva su número de pulsos por endpoint.
 5. Jugador construye/mejora torres y administra recursos.
 6. Resolver victoria/derrota de ronda.
 7. Si sigue vivo: recompensa de ronda.
-8. Fase de expansión: ofrecer/seleccionar pieza de 7 hexágonos.
-9. Rotar y colocar pieza legalmente.
-10. Resolver nuevas conexiones/rutas/spawns.
+8. Fase de expansión: ofrecer tres cards visuales de piezas distintas de siete hexágonos; mostrar solo título y vista del terreno, conservar las tres en el inventario inferior mientras se coloca y retirarlas tras una colocación válida.
+9. Rotar y colocar la pieza elegida legalmente; `Esc` vuelve a la misma oferta.
+10. Cerrar con Grass/Montaña los huecos interiores, resolver nuevas conexiones/rutas y activar todas las salidas PATH abiertas.
 11. Fase de carta/mejora cuando corresponda.
 12. Siguiente ronda.
 13. Ronda 20 superada = demo completada.
@@ -91,12 +94,12 @@ No inventar como definitivas:
 - Roster final de enemigos.
 - Lista final de status.
 - Fórmula exacta de altura.
-- Número de cartas ofrecidas.
+- Número de cartas de mejora ofrecidas en M11; la oferta de expansión de terreno es de tres piezas.
 - Frecuencia exacta de cartas.
 - Economía/balance numérico final.
 - Número exacto de piezas de terreno.
 - Variante, habilidades y balance exactos de los jefes/minijefes.
-- Reglas definitivas para múltiples entradas.
+- Balance definitivo para múltiples entradas; en la demo se usan todos los finales PATH abiertos y se spawnea por ellos simultáneamente.
 - Arte/temática final.
 
 Para el prototipo usar valores temporales centralizados y fáciles de sustituir.
