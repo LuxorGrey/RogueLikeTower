@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://game/main/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://game/board/terrain_piece_preview.gd" id="2_preview"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://game/combat/damage_service.gd" id="6_damage_service"]
 [ext_resource type="Script" path="res://game/economy/run_economy_service.gd" id="7_run_economy"]
 [ext_resource type="Script" path="res://game/board/terrain_piece_card_preview.gd" id="8_card_preview"]
+[ext_resource type="Script" path="res://game/cards/run_card_service.gd" id="9_run_card_service"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -47,6 +48,10 @@ script = ExtResource("6_damage_service")
 [node name="RunEconomyService" type="Node" parent="."]
 unique_name_in_owner = true
 script = ExtResource("7_run_economy")
+
+[node name="RunCardService" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("9_run_card_service")
 
 [node name="HUD" type="CanvasLayer" parent="."]
 unique_name_in_owner = true

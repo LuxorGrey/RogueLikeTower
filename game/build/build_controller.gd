@@ -15,6 +15,7 @@ var _hex_radius: float = 52.0
 var _tower_data: TowerData
 var _damage_service: Node
 var _run_economy: Node
+var _run_card_service: Node
 var _is_build_mode: bool = false
 var _towers_by_coord: Dictionary[Vector2i, Tower] = {}
 
@@ -24,7 +25,8 @@ func configure(
 	map_origin: Vector2,
 	hex_radius: float,
 	damage_service: Node,
-	run_economy: Node = null
+	run_economy: Node = null,
+	run_card_service: Node = null
 ) -> bool:
 	if board_grid == null or entities == null or damage_service == null or hex_radius <= 0.0:
 		last_error = "BuildController requiere grid, entidades, DamageService y radio positivos."
@@ -35,6 +37,7 @@ func configure(
 	_hex_radius = hex_radius
 	_damage_service = damage_service
 	_run_economy = run_economy
+	_run_card_service = run_card_service
 	return true
 
 func can_build_in_current_phase() -> bool:
@@ -110,6 +113,8 @@ func get_preview_range_pixels(coord: Vector2i) -> float:
 		_tower_data.range_hexes
 		+ cell.elevation * _tower_data.height_range_bonus_per_level
 	)
+	if _run_card_service != null and is_instance_valid(_run_card_service):
+		range_hexes += float(_run_card_service.call("get_tower_range_add", _tower_data.id))
 	var neighbor_distance: float = HexMath.axial_to_world(HexCoord.new(1, 0), _hex_radius).length()
 	return range_hexes * neighbor_distance
 
@@ -122,7 +127,7 @@ func place_tower(coord: Vector2i) -> bool:
 	if tower == null:
 		last_error = "La escena de TowerData no crea un nodo Tower."
 		return false
-	if not tower.configure(_tower_data, coord, cell.elevation, _map_origin, _hex_radius, _damage_service, _run_economy):
+	if not tower.configure(_tower_data, coord, cell.elevation, _map_origin, _hex_radius, _damage_service, _run_economy, _run_card_service):
 		last_error = tower.last_error
 		tower.free()
 		return false

@@ -24,6 +24,7 @@ var last_error: String = ""
 var _tower_data: TowerData
 var _damage_service: Node
 var _run_economy: Node
+var _run_card_service: Node
 var _hex_radius: float = 52.0
 var _is_selected: bool = false
 var _current_target: Enemy
@@ -43,7 +44,8 @@ func configure(
 	map_origin: Vector2,
 	hex_radius: float,
 	damage_service: Node,
-	run_economy: Node = null
+	run_economy: Node = null,
+	run_card_service: Node = null
 ) -> bool:
 	last_error = ""
 	if tower_data == null or damage_service == null or hex_radius <= 0.0 or cell_elevation < 0 or cell_elevation > 2:
@@ -56,6 +58,9 @@ func configure(
 	_tower_data = tower_data
 	_damage_service = damage_service
 	_run_economy = run_economy
+	_run_card_service = run_card_service
+	if _run_card_service != null and _run_card_service.has_signal("modifiers_changed"):
+		_run_card_service.connect(&"modifiers_changed", _on_run_card_modifiers_changed)
 	cell_coord = coord
 	elevation = cell_elevation
 	_hex_radius = hex_radius
@@ -66,6 +71,11 @@ func configure(
 	) - Vector2(0.0, float(cell_elevation) * ELEVATION_PIXEL_OFFSET)
 	queue_redraw()
 	return true
+
+func _on_run_card_modifiers_changed() -> void:
+	_scan_timer = 0.0
+	queue_redraw()
+	stats_changed.emit(level)
 
 func set_selected(is_selected: bool) -> void:
 	_is_selected = is_selected
@@ -98,7 +108,7 @@ func get_next_upgrade_cost() -> int:
 	return _tower_data.get_upgrade_cost(level)
 
 func get_mana_cost_per_attack() -> float:
-	return _tower_data.mana_cost_per_attack if _tower_data != null else 0.0
+	return get_current_mana_cost()
 
 func is_mana_blocked() -> bool:
 	return _is_mana_blocked
@@ -109,7 +119,19 @@ func get_current_target() -> Enemy:
 func get_current_damage() -> int:
 	if _tower_data == null:
 		return 0
-	return _tower_data.base_damage + (level - 1) * _tower_data.upgrade_damage_per_level
+	var damage: float = float(_tower_data.base_damage + (level - 1) * _tower_data.upgrade_damage_per_level)
+	if _run_card_service != null and is_instance_valid(_run_card_service):
+		damage += float(_run_card_service.call("get_tower_damage_add", _tower_data.id, _tower_data.damage_tags))
+		damage *= float(_run_card_service.call("get_tower_damage_multiplier", _tower_data.id, _tower_data.damage_tags))
+	return maxi(roundi(damage), 0)
+
+func get_current_mana_cost() -> float:
+	if _tower_data == null:
+		return 0.0
+	var mana_cost: float = _tower_data.mana_cost_per_attack
+	if _run_card_service != null and is_instance_valid(_run_card_service):
+		mana_cost *= float(_run_card_service.call("get_tower_mana_cost_multiplier", _tower_data.id))
+	return maxf(mana_cost, 0.0)
 
 func create_damage_packet() -> RefCounted:
 	var packet: RefCounted = DAMAGE_PACKET_SCRIPT.new()
@@ -125,22 +147,49 @@ func create_damage_packet() -> RefCounted:
 	packet.set("health_multiplier", health_multiplier)
 	packet.set("regen_counter_strength", _tower_data.regen_counter_strength)
 	packet.set("regen_counter_duration", _tower_data.regen_counter_duration)
-	packet.set("status_payloads", _tower_data.status_effects.duplicate())
+	var status_payloads: Array[Resource] = []
+	for status_effect in _tower_data.status_effects:
+		if status_effect == null:
+			continue
+		var runtime_effect: Resource = status_effect.duplicate(true)
+		if _run_card_service != null and is_instance_valid(_run_card_service):
+			var duration_multiplier: float = float(_run_card_service.call(
+				"get_status_duration_multiplier",
+				_tower_data.id,
+				StringName(runtime_effect.get("id"))
+			))
+			runtime_effect.set("duration", minf(float(runtime_effect.get("duration")) * duration_multiplier, 60.0))
+		status_payloads.append(runtime_effect)
+	packet.set("status_payloads", status_payloads)
 	return packet
 
 func get_current_attack_rate() -> float:
 	if _tower_data == null:
 		return 0.0
-	return _tower_data.attack_rate + (level - 1) * _tower_data.upgrade_attack_rate_per_level
+	var attack_rate: float = _tower_data.attack_rate + (level - 1) * _tower_data.upgrade_attack_rate_per_level
+	if _run_card_service != null and is_instance_valid(_run_card_service):
+		attack_rate *= float(_run_card_service.call("get_tower_attack_rate_multiplier", _tower_data.id))
+	return maxf(attack_rate, 0.0)
 
 func get_current_range_hexes() -> float:
 	if _tower_data == null:
 		return 0.0
-	return (
+	var range_hexes: float = (
 		_tower_data.range_hexes
 		+ (level - 1) * _tower_data.upgrade_range_per_level
 		+ elevation * _tower_data.height_range_bonus_per_level
 	)
+	if _run_card_service != null and is_instance_valid(_run_card_service):
+		range_hexes += float(_run_card_service.call("get_tower_range_add", _tower_data.id))
+	return maxf(range_hexes, 0.0)
+
+func get_current_area_radius_hexes() -> float:
+	if _tower_data == null:
+		return 0.0
+	var radius: float = _tower_data.attack_area_radius_hexes
+	if _run_card_service != null and is_instance_valid(_run_card_service):
+		radius += float(_run_card_service.call("get_tower_area_radius_add", _tower_data.id))
+	return maxf(radius, 0.0)
 
 func get_current_range_pixels() -> float:
 	var neighbor_distance: float = HexMath.axial_to_world(HexCoord.new(1, 0), _hex_radius).length()
@@ -153,14 +202,15 @@ func get_summary() -> String:
 	if _tower_data == null:
 		return "Torre sin configurar."
 	var mana_summary: String = ""
-	if _tower_data.mana_cost_per_attack > 0.0:
-		mana_summary = " · %.1f maná/ataque" % _tower_data.mana_cost_per_attack
-	return "%s · N%d/%d · daño %d · alcance %.1f hex · %s · %s%s" % [
+	if get_current_mana_cost() > 0.0:
+		mana_summary = " · %.1f maná/ataque" % get_current_mana_cost()
+	return "%s · N%d/%d · daño %d · alcance %.1f hex · cadencia %.2f/s · %s · %s%s" % [
 		_tower_data.display_name,
 		level,
 		_tower_data.max_level,
 		get_current_damage(),
 		get_current_range_hexes(),
+		get_current_attack_rate(),
 		get_attack_pattern_name(),
 		get_damage_tag_name(_tower_data.damage_tags),
 		mana_summary,
@@ -173,7 +223,7 @@ func get_attack_pattern_name() -> String:
 		TowerData.AttackPattern.SINGLE_TARGET:
 			return "objetivo único"
 		TowerData.AttackPattern.AREA:
-			return "área"
+			return "área %.2f hex" % get_current_area_radius_hexes()
 		TowerData.AttackPattern.CHAIN:
 			return "hasta %d objetivos" % _tower_data.max_targets
 		TowerData.AttackPattern.CONE:
@@ -274,8 +324,9 @@ func _is_target_in_range(target: Enemy) -> bool:
 func _fire_at_target() -> void:
 	if _damage_service == null or not _is_target_in_range(_current_target):
 		return
-	if _tower_data.mana_cost_per_attack > 0.0 and _run_economy != null:
-		if not bool(_run_economy.call("try_spend_mana", _tower_data.mana_cost_per_attack)):
+	var mana_cost: float = get_current_mana_cost()
+	if mana_cost > 0.0 and _run_economy != null:
+		if not bool(_run_economy.call("try_spend_mana", mana_cost)):
 			_is_mana_blocked = true
 			_attack_cooldown = 0.25
 			return
@@ -321,7 +372,7 @@ func _get_attack_targets(primary_target: Enemy) -> Array[Enemy]:
 		TowerData.AttackPattern.SINGLE_TARGET:
 			return targets
 		TowerData.AttackPattern.AREA:
-			var radius: float = _tower_data.attack_area_radius_hexes * _hex_neighbor_distance()
+			var radius: float = get_current_area_radius_hexes() * _hex_neighbor_distance()
 			var radius_squared: float = radius * radius
 			for node in get_tree().get_nodes_in_group(&"enemies"):
 				var candidate := node as Enemy

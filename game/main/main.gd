@@ -14,6 +14,7 @@ const DEMO_CAMPAIGN: Resource = preload("res://data/waves/demo_campaign.tres")
 const M7_DAMAGE_TEST_WAVE: WaveData = preload("res://data/waves/m7_damage_test.tres")
 const M8_STATUS_TEST_WAVE: WaveData = preload("res://data/waves/m8_status_test.tres")
 const RUN_ECONOMY_DATA: Resource = preload("res://data/run/run_economy_m9.tres")
+const DEMO_CARD_POOL: Resource = preload("res://data/cards/demo_card_pool.tres")
 const BALLISTA: TowerData = preload("res://data/towers/ballista.tres")
 const MORTAR: TowerData = preload("res://data/towers/mortar.tres")
 const TESLA_COIL: TowerData = preload("res://data/towers/tesla_coil.tres")
@@ -55,6 +56,14 @@ var _has_hovered_cell: bool = false
 var _terrain_rng := RandomNumberGenerator.new()
 var _offered_terrain_pieces: Array[TerrainPieceData] = []
 var _selected_expansion_piece: TerrainPieceData
+var _pending_expansion_round: int = 0
+var _pending_expansion_reward: int = 0
+var _upgrade_card_buttons: Array[Button] = []
+var _upgrade_card_titles: Array[Label] = []
+var _upgrade_card_descriptions: Array[Label] = []
+var _upgrade_card_rarities: Array[Label] = []
+var _upgrade_card_panel: PanelContainer
+var _upgrade_card_heading: Label
 
 @onready var _piece_preview: TerrainPiecePreview = %PiecePreview
 @onready var _piece_status: Label = %PieceStatus
@@ -114,6 +123,7 @@ var _selected_expansion_piece: TerrainPieceData
 @onready var _wave_selector: OptionButton = %WaveSelector
 @onready var _damage_service: Node = %DamageService
 @onready var _run_economy: Node = %RunEconomyService
+@onready var _run_card_service: Node = %RunCardService
 
 var _reward_transition_token: int = 0
 
@@ -127,6 +137,9 @@ func _ready() -> void:
 	for index in _terrain_card_buttons.size():
 		_terrain_card_buttons[index].pressed.connect(_on_terrain_card_selected.bind(index))
 		_style_terrain_card_button(_terrain_card_buttons[index])
+	_create_upgrade_card_panel()
+	for index in _upgrade_card_buttons.size():
+		_upgrade_card_buttons[index].pressed.connect(_on_upgrade_card_selected.bind(index))
 	_start_wave_button.pressed.connect(_start_selected_wave)
 	_wave_selector.item_selected.connect(_on_wave_profile_selected)
 	for index in _tower_shortcut_buttons.size():
@@ -157,8 +170,15 @@ func _ready() -> void:
 		_piece_preview.global_position,
 		HEX_RADIUS,
 		_damage_service,
-		_run_economy
+		_run_economy,
+		_run_card_service
 	)
+	var unlocked_content_ids: Array[StringName] = []
+	for tower_profile in TOWER_PROFILES:
+		unlocked_content_ids.append(StringName("tower:%s" % tower_profile.id))
+	if not bool(_run_card_service.call("configure", DEMO_CARD_POOL, unlocked_content_ids)):
+		push_error("No se pudo configurar el pool de cartas M11: %s" % _run_card_service.get("last_error"))
+	_run_economy.call("set_run_card_service", _run_card_service)
 	var campaign_errors: PackedStringArray = DEMO_CAMPAIGN.call("validate")
 	if not campaign_errors.is_empty():
 		_campaign_is_valid = false
@@ -204,6 +224,7 @@ func _ready() -> void:
 	_piece_selector.select(0)
 	_on_piece_selected(0)
 	_terrain_card_panel.hide()
+	_upgrade_card_panel.hide()
 
 func _process(_delta: float) -> void:
 	_combat_debug_timer -= _delta
@@ -331,6 +352,7 @@ func _is_mouse_over_hud(mouse_position: Vector2) -> bool:
 		or (_tower_toolbar.visible and _tower_toolbar.get_global_rect().has_point(mouse_position))
 		or (_terrain_panel.visible and _terrain_panel.get_global_rect().has_point(mouse_position))
 		or (_terrain_card_panel.visible and _terrain_card_panel.get_global_rect().has_point(mouse_position))
+		or (_upgrade_card_panel != null and _upgrade_card_panel.visible and _upgrade_card_panel.get_global_rect().has_point(mouse_position))
 	)
 
 func _toggle_terrain_panel() -> void:
@@ -387,6 +409,18 @@ func _on_piece_selected(index: int) -> void:
 	_refresh_placement()
 
 func _refresh_placement() -> void:
+	if RunManager.phase == RunManager.Phase.CARD_OFFER:
+		_latest_placement = null
+		_piece_preview.set_placement_preview(null, _anchor_coord, _rotation_steps, false, false)
+		_piece_selector.disabled = true
+		_rotate_left.disabled = true
+		_rotate_right.disabled = true
+		_cancel_button.disabled = true
+		_confirm_button.disabled = true
+		_piece_status.text = "Expansión colocada · mejora pendiente"
+		_rotation_status.text = "Orientación: —"
+		_placement_status.text = "Elige una carta de mejora antes de la siguiente ronda."
+		return
 	var can_edit_terrain: bool = _placement_enabled and not _build_controller.is_build_mode()
 	var is_campaign_card_placement: bool = (
 		_awaiting_campaign_expansion
@@ -483,22 +517,16 @@ func _confirm_placement() -> void:
 	_cancel_placement()
 	if confirmed_campaign_expansion:
 		_placement_enabled = false
-		_campaign_round_number += 1
-		_selected_wave = _get_campaign_round(_campaign_round_number)
-		_selected_wave_is_debug = false
-		if _selected_wave == null:
-			_wave_status.text = "Error: no existe la ronda %d de la campaña." % _campaign_round_number
-			push_error(_wave_status.text)
-			return
-		_wave_selector.select(_campaign_round_number - 1)
-		_set_campaign_wave_name()
-		RunManager.transition_to(RunManager.Phase.ROUND_PREP)
-		_wave_status.text = "Preparación · ronda %d/20 · %d enemigos" % [
-			_campaign_round_number,
-			_get_wave_enemy_count(_selected_wave),
-		]
-		_refresh_placement()
-		_refresh_tower_controls()
+		if bool(_run_card_service.call("should_offer_after", _pending_expansion_round)):
+			var upgrade_cards: Array[Resource] = _run_card_service.call("create_offer", _pending_expansion_round)
+			if upgrade_cards.size() == _upgrade_card_buttons.size():
+				_present_upgrade_card_offer(_pending_expansion_round, upgrade_cards)
+				_refresh_placement()
+				_refresh_tower_controls()
+				return
+			push_error("No se pudo crear oferta M11: %s" % _run_card_service.get("last_error"))
+		_prepare_next_campaign_round()
+		return
 
 func _create_auto_fill_cell(coord: Vector2i) -> HexCell:
 	var fill_mountain: bool = _terrain_rng.randi_range(0, 1) == 1
@@ -516,6 +544,8 @@ func _cancel_placement() -> void:
 	_refresh_placement()
 
 func _cancel_active_tool() -> void:
+	if RunManager.phase == RunManager.Phase.CARD_OFFER:
+		return
 	if _terrain_card_panel.visible and _selected_expansion_piece == null:
 		return
 	if (
@@ -537,6 +567,8 @@ func _cancel_active_tool() -> void:
 	_cancel_placement()
 
 func _handle_board_click() -> void:
+	if RunManager.phase == RunManager.Phase.CARD_OFFER:
+		return
 	if _build_controller.is_build_mode():
 		if not _has_hovered_cell:
 			_build_status.text = "Coloca el cursor sobre una casilla existente."
@@ -725,7 +757,10 @@ func _refresh_tower_controls() -> void:
 	for index in _tower_shortcut_buttons.size():
 		var shortcut_button: Button = _tower_shortcut_buttons[index]
 		var tower_data: TowerData = TOWER_PROFILES[index]
-		var mana_suffix: String = " · %.1f maná/ataque" % tower_data.mana_cost_per_attack if tower_data.mana_cost_per_attack > 0.0 else ""
+		var effective_mana_cost: float = tower_data.mana_cost_per_attack
+		if effective_mana_cost > 0.0 and _run_card_service != null:
+			effective_mana_cost *= float(_run_card_service.call("get_tower_mana_cost_multiplier", tower_data.id))
+		var mana_suffix: String = " · %.1f maná/ataque" % effective_mana_cost if effective_mana_cost > 0.0 else ""
 		shortcut_button.text = "%d · %s\n%d oro" % [
 			index + 1,
 			TOWER_SHORT_NAMES[index],
@@ -774,7 +809,10 @@ func _tower_attack_description(tower_data: TowerData) -> String:
 		TowerData.AttackPattern.SINGLE_TARGET:
 			return "objetivo único"
 		TowerData.AttackPattern.AREA:
-			return "área %.1f hex" % tower_data.attack_area_radius_hexes
+			var effective_radius: float = tower_data.attack_area_radius_hexes
+			if _run_card_service != null:
+				effective_radius += float(_run_card_service.call("get_tower_area_radius_add", tower_data.id))
+			return "área %.1f hex" % effective_radius
 		TowerData.AttackPattern.CHAIN:
 			return "hasta %d blancos" % tower_data.max_targets
 		TowerData.AttackPattern.CONE:
@@ -785,7 +823,7 @@ func _tower_attack_description(tower_data: TowerData) -> String:
 			return "ataque no configurado"
 
 func _start_selected_wave() -> void:
-	if not _path_graph.is_valid or not _can_start_selected_wave():
+	if RunManager.phase == RunManager.Phase.CARD_OFFER or not _path_graph.is_valid or not _can_start_selected_wave():
 		return
 	if _selected_wave_is_debug:
 		_debug_return_phase = RunManager.phase
@@ -795,6 +833,7 @@ func _start_selected_wave() -> void:
 	elif _selected_wave == null or _selected_wave.round_number != _campaign_round_number:
 		return
 	_terrain_card_panel.hide()
+	_upgrade_card_panel.hide()
 	if _build_controller.is_build_mode():
 		_build_controller.cancel_build_mode()
 	_cancel_placement()
@@ -866,13 +905,9 @@ func _on_wave_completed(round_number: int) -> void:
 		else:
 			_placement_enabled = false
 			_awaiting_campaign_expansion = true
-			RunManager.transition_to(RunManager.Phase.TERRAIN_EXPANSION)
-			_wave_status.text = "Ronda %d/20 completada · +%d oro · elige una de tres piezas para desbloquear la ronda %d" % [
-				round_number,
-				round_reward,
-				round_number + 1,
-			]
-			_present_terrain_card_offer()
+			_pending_expansion_round = round_number
+			_pending_expansion_reward = round_reward
+			_begin_campaign_terrain_expansion(round_number, round_reward)
 	_refresh_placement()
 	_refresh_tower_controls()
 
@@ -1100,6 +1135,199 @@ func _present_terrain_card_offer() -> void:
 	_start_wave_button.disabled = true
 	_start_wave_button.text = "Elige terreno para continuar"
 	_refresh_tower_controls()
+
+func _begin_campaign_terrain_expansion(round_number: int, round_reward: int) -> void:
+	_upgrade_card_panel.hide()
+	_placement_enabled = false
+	_awaiting_campaign_expansion = true
+	RunManager.transition_to(RunManager.Phase.TERRAIN_EXPANSION)
+	_wave_status.text = "Ronda %d/20 completada · +%d oro · elige una de tres piezas para desbloquear la ronda %d" % [
+		round_number,
+		round_reward,
+		round_number + 1,
+	]
+	_present_terrain_card_offer()
+
+func _present_upgrade_card_offer(round_number: int, cards: Array[Resource]) -> void:
+	if cards.size() != _upgrade_card_buttons.size():
+		push_error("La oferta M11 debe coincidir con el número de cards visibles.")
+		return
+	if _build_controller.is_build_mode():
+		_build_controller.cancel_build_mode()
+	_upgrade_card_heading.text = "MEJORAS DE RUN · RONDA %02d" % round_number
+	for index in _upgrade_card_buttons.size():
+		var card: Resource = cards[index]
+		_upgrade_card_titles[index].text = String(card.get("display_name"))
+		_upgrade_card_descriptions[index].text = String(card.get("description"))
+		_upgrade_card_rarities[index].text = _card_rarity_name(int(card.get("rarity")))
+		_upgrade_card_buttons[index].tooltip_text = String(card.get("description"))
+		_style_upgrade_card_button(_upgrade_card_buttons[index], int(card.get("rarity")))
+	_upgrade_card_panel.show()
+	_terrain_card_panel.hide()
+	_placement_enabled = false
+	_selected_expansion_piece = null
+	_selected_piece = null
+	_latest_placement = null
+	_piece_selector.select(0)
+	_refresh_placement()
+	RunManager.transition_to(RunManager.Phase.CARD_OFFER)
+	_wave_status.text = "Ronda %d/20 completada · +%d oro · elige una mejora para la run" % [
+		round_number,
+		_pending_expansion_reward,
+	]
+	_start_wave_button.disabled = true
+	_start_wave_button.text = "Elige una carta de mejora"
+	_refresh_tower_controls()
+
+func _on_upgrade_card_selected(index: int) -> void:
+	if RunManager.phase != RunManager.Phase.CARD_OFFER:
+		return
+	if not bool(_run_card_service.call("select_card", index)):
+		push_error("No se pudo seleccionar la carta: %s" % _run_card_service.get("last_error"))
+		return
+	_upgrade_card_panel.hide()
+	_prepare_next_campaign_round()
+	_refresh_tower_controls()
+
+func _prepare_next_campaign_round() -> void:
+	_campaign_round_number += 1
+	_selected_wave = _get_campaign_round(_campaign_round_number)
+	_selected_wave_is_debug = false
+	if _selected_wave == null:
+		_wave_status.text = "Error: no existe la ronda %d de la campaña." % _campaign_round_number
+		push_error(_wave_status.text)
+		return
+	_wave_selector.select(_campaign_round_number - 1)
+	_set_campaign_wave_name()
+	RunManager.transition_to(RunManager.Phase.ROUND_PREP)
+	_wave_status.text = "Preparación · ronda %d/20 · %d enemigos" % [
+		_campaign_round_number,
+		_get_wave_enemy_count(_selected_wave),
+	]
+	_start_wave_button.text = "▶ Iniciar ronda %d/20" % _campaign_round_number
+	_refresh_placement()
+	_refresh_tower_controls()
+
+func _card_rarity_name(rarity: int) -> String:
+	match rarity:
+		1:
+			return "POCO COMÚN"
+		2:
+			return "RARA"
+		_:
+			return "COMÚN"
+
+func _style_upgrade_card_button(button: Button, rarity: int) -> void:
+	var accent: Color = Color("8bb89f")
+	if rarity == 1:
+		accent = Color("84b8d5")
+	elif rarity == 2:
+		accent = Color("d1ab62")
+	var normal_style := StyleBoxFlat.new()
+	normal_style.bg_color = Color("202b34")
+	normal_style.border_color = accent.darkened(0.18)
+	normal_style.set_border_width_all(2)
+	normal_style.set_corner_radius_all(10)
+	normal_style.content_margin_left = 14.0
+	normal_style.content_margin_right = 14.0
+	normal_style.content_margin_top = 12.0
+	normal_style.content_margin_bottom = 12.0
+	var hover_style: StyleBoxFlat = normal_style.duplicate() as StyleBoxFlat
+	hover_style.bg_color = Color("2a3a45")
+	hover_style.border_color = accent.lightened(0.1)
+	var pressed_style: StyleBoxFlat = hover_style.duplicate() as StyleBoxFlat
+	pressed_style.bg_color = Color("344b56")
+	button.add_theme_stylebox_override("normal", normal_style)
+	button.add_theme_stylebox_override("hover", hover_style)
+	button.add_theme_stylebox_override("pressed", pressed_style)
+	button.add_theme_stylebox_override("focus", hover_style)
+
+func _create_upgrade_card_panel() -> void:
+	_upgrade_card_panel = PanelContainer.new()
+	_upgrade_card_panel.name = "UpgradeCardPanelRuntime"
+	_upgrade_card_panel.anchor_left = 0.5
+	_upgrade_card_panel.anchor_right = 0.5
+	_upgrade_card_panel.anchor_top = 0.5
+	_upgrade_card_panel.anchor_bottom = 0.5
+	_upgrade_card_panel.offset_left = -500.0
+	_upgrade_card_panel.offset_top = -195.0
+	_upgrade_card_panel.offset_right = 500.0
+	_upgrade_card_panel.offset_bottom = 195.0
+	_upgrade_card_panel.custom_minimum_size = Vector2(1000.0, 390.0)
+	_upgrade_card_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_upgrade_card_panel.z_index = 20
+	_upgrade_card_panel.hide()
+	_hud.add_child(_upgrade_card_panel)
+	var background := StyleBoxFlat.new()
+	background.bg_color = Color("121a20")
+	background.border_color = Color("556a72")
+	background.set_border_width_all(2)
+	background.set_corner_radius_all(12)
+	background.content_margin_left = 18.0
+	background.content_margin_right = 18.0
+	background.content_margin_top = 14.0
+	background.content_margin_bottom = 14.0
+	_upgrade_card_panel.add_theme_stylebox_override("panel", background)
+	var content := VBoxContainer.new()
+	content.add_theme_constant_override("separation", 10)
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_upgrade_card_panel.add_child(content)
+	_upgrade_card_heading = Label.new()
+	_upgrade_card_heading.text = "MEJORAS DE RUN"
+	_upgrade_card_heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_upgrade_card_heading.add_theme_font_size_override("font_size", 21)
+	content.add_child(_upgrade_card_heading)
+	var subtitle := Label.new()
+	subtitle.text = "Elige una carta. Sus efectos se mantienen durante esta run."
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.add_theme_font_size_override("font_size", 14)
+	subtitle.add_theme_color_override("font_color", Color("aebbc0"))
+	content.add_child(subtitle)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content.add_child(row)
+	var offer_card_count: int = maxi(int(DEMO_CARD_POOL.get("offer_size")), 1)
+	for index in offer_card_count:
+		var card_button := Button.new()
+		card_button.name = "UpgradeCard%d" % (index + 1)
+		card_button.custom_minimum_size = Vector2(300.0, 260.0)
+		card_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card_button.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		card_button.text = ""
+		card_button.mouse_filter = Control.MOUSE_FILTER_STOP
+		row.add_child(card_button)
+		var card_content := VBoxContainer.new()
+		card_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		card_content.add_theme_constant_override("separation", 12)
+		card_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card_button.add_child(card_content)
+		var rarity_label := Label.new()
+		rarity_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		rarity_label.add_theme_font_size_override("font_size", 12)
+		rarity_label.add_theme_color_override("font_color", Color("aac1c6"))
+		rarity_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card_content.add_child(rarity_label)
+		var title_label := Label.new()
+		title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		title_label.add_theme_font_size_override("font_size", 20)
+		title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card_content.add_child(title_label)
+		var description_label := Label.new()
+		description_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		description_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		description_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		description_label.add_theme_font_size_override("font_size", 15)
+		description_label.add_theme_color_override("font_color", Color("d3dcdf"))
+		description_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card_content.add_child(description_label)
+		_upgrade_card_buttons.append(card_button)
+		_upgrade_card_titles.append(title_label)
+		_upgrade_card_descriptions.append(description_label)
+		_upgrade_card_rarities.append(rarity_label)
 
 func _on_terrain_card_selected(index: int) -> void:
 	if (

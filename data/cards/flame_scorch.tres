@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://game/cards/card_data.gd" id="1_card"]
+[ext_resource type="Script" path="res://game/cards/card_modifier_operation.gd" id="2_operation"]
+
+[sub_resource type="Resource" id="CardModifierOperation_flame_burn"]
+script = ExtResource("2_operation")
+type = 6
+affected_tower_id = &"flame_thrower_demo"
+affected_status_id = &"burn"
+value = 1.2
+
+[resource]
+script = ExtResource("1_card")
+id = &"flame_scorch"
+display_name = "Quemadura persistente"
+description = "Burn de Flame Thrower dura un 20 % más."
+rarity = 1
+unlock_requirement = &"tower:flame_thrower_demo"
+tags = Array[StringName]([&"tower", &"status", &"burn"])
+modifier_operations = Array[Resource]([SubResource("CardModifierOperation_flame_burn")])
+offer_weight = 0.9
+max_per_run = 1

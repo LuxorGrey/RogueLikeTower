@@ -67,15 +67,7 @@ Quedan reservadas para expansión del pool de contenido: `mountain_reward`, `lon
 
 Cada pieza = 7 celdas conectadas, con coordenadas locales y sockets PATH configurables en `.tres`. Los sockets laterales opcionales se derivan de las salidas externas según [05_HEX_GRID_AND_TERRAIN.md](05_HEX_GRID_AND_TERRAIN.md). Todas las composiciones y pesos iniciales son temporales; la plantilla inicial del tablero está separada del pool de piezas.
 
-## Cartas
-Ejemplos de sistema:
-- +mana max.
-- +mana regen.
-- +damage a familia.
-- +range.
-- +Burn duration.
-- +Slow potency.
-- +anti-regen.
-- +economy.
+## Cartas M11 de demo
+El pool inicial contiene 12 placeholders configurados en `data/cards/demo_card_pool.tres`: Disparo calibrado (Ballista +2 daño), Explosión amplia (Mortar +0,25 hex de área), Bobina sobrecargada (Tesla Coil +15 % cadencia), Alcance glacial (Frost Keep +0,5 hex), Quemadura persistente (Burn +20 % duración), Mezcla virulenta (Poison +20 % duración), Dientes afilados (Bleed de Shredder +20 % duración), Cañones largos (+0,25 hex de alcance global), Calibración de precisión (+10 % daño global), Depósito de maná (+20 capacidad), Flujo constante (+0,5 maná/s) y Circuitos eficientes (−15 % coste de maná global).
 
-Los valores concretos deben vivir en `.tres`.
+La oferta provisional muestra tres cartas después de colocar terreno al limpiar 3/6/9/12/15/18. Las cartas elegidas tienen máximo de una copia por run; las que no se eligen pueden aparecer en ofertas futuras. IDs, rarezas, pesos y cifras viven en `.tres` y son placeholders de balance, no cifras aprobadas ni copiadas de juegos de referencia. M12 conectará `unlock_requirement` a desbloqueos persistentes; en esta primera demo, los siete perfiles jugables actuales se consideran desbloqueados.

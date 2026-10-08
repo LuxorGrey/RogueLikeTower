@@ -196,24 +196,34 @@ M10 implementa `WaveCampaignData` con 20 `WaveData` ordenados y validación de r
 ## RunEconomyData / RunEconomyService
 `RunEconomyData` es una configuración Resource de una run: `starting_gold`, `starting_mana`, `maximum_mana` y `mana_regen_per_second`. `RunEconomyService` es un Node hijo de `Main`, no Autoload: es dueño de los saldos runtime de esa escena, valida compras/gastos, limita el maná a la capacidad y emite `gold_changed`/`mana_changed`. La UI escucha esas señales, pero no modifica los saldos directamente. El oro de construcción se reinicia con el perfil de arranque de la run y no es `MetaProgression.meta_currency`; M12 será dueño de la moneda permanente y del guardado. Las cifras actuales (150 oro, 30/100 maná y 1.5 maná/s) son provisionales.
 
+## CardModifierOperation
+```text
+type
+affected_tower_id: optional
+affected_damage_tags: optional bitmask
+affected_status_id: optional
+value
+```
+
+Tipos implementados: daño plano o multiplicador de torre, alcance, cadencia, radio de área, multiplicador de coste de maná, multiplicador de duración de estado, maná máximo y regeneración de maná.
+
 ## CardData
 ```text
 id
 display_name
 description
 rarity
-unlock_requirement
-tags
-modifier_operations[]
+unlock_requirement: optional content ID
+tags[]
+modifier_operations: Array[CardModifierOperation]
+offer_weight
+max_per_run
 ```
 
-Ejemplos de operaciones:
-- tower_damage_mult(tag, value)
-- tower_range_add(tag, value)
-- status_duration_mult(status, value)
-- mana_max_add(value)
-- mana_regen_add(value)
-- unlock_run_modifier(...)
+Una carta describe una elección permanente solo durante la run; sus operaciones no modifican el `TowerData` ni otros `.tres` compartidos. Las operaciones aditivas se suman y los multiplicadores se combinan multiplicando. `unlock_requirement` vacío indica una carta global; los IDs de torre usan `tower:<TowerData.id>`.
+
+## CardPoolData / RunCardService
+`CardPoolData` mantiene cartas, tamaño de oferta, primera ronda e intervalo. `RunCardService` filtra por unlocks de la run, peso y límite de copias; construye una oferta sin duplicados y agrega los modificadores de cartas elegidas. El calendario y la cantidad actuales son placeholders configurables, no reglas definitivas. `RunCardService` es local a `Main`; M12 podrá alimentar sus unlocks desde meta-progresión.
 
 ## PermanentUpgradeData
 ```text

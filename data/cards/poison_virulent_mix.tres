@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://game/cards/card_data.gd" id="1_card"]
+[ext_resource type="Script" path="res://game/cards/card_modifier_operation.gd" id="2_operation"]
+
+[sub_resource type="Resource" id="CardModifierOperation_poison_duration"]
+script = ExtResource("2_operation")
+type = 6
+affected_tower_id = &"poison_sprayer_demo"
+affected_status_id = &"poison"
+value = 1.2
+
+[resource]
+script = ExtResource("1_card")
+id = &"poison_virulent_mix"
+display_name = "Mezcla virulenta"
+description = "Poison de Poison Sprayer dura un 20 % más."
+rarity = 1
+unlock_requirement = &"tower:poison_sprayer_demo"
+tags = Array[StringName]([&"tower", &"status", &"poison"])
+modifier_operations = Array[Resource]([SubResource("CardModifierOperation_poison_duration")])
+offer_weight = 0.9
+max_per_run = 1

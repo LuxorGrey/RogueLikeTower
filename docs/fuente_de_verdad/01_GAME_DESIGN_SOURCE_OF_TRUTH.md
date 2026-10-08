@@ -54,6 +54,9 @@ La referencia sistémica principal es Rogue Tower, reducida a un scope de demo p
 16. Comprar mejoras/desbloqueos.
 17. Nueva run.
 
+## Cartas de mejora durante la run
+Las cartas `CardData` son distintas de las cards visuales que ofrecen piezas de terreno. En las rondas que configure el pool, el jugador elige una mejora después de colocar la expansión de esa ronda y antes de iniciar la siguiente. Las cartas pueden modificar estadísticas de torres, estados o maná; el efecto dura solo en la run actual. La primera oferta de M11 contiene tres opciones y aparece tras las rondas 3, 6, 9, 12, 15 y 18 como calendario provisional de demo. Tanto calendario como número de opciones son datos configurables, no decisiones de balance final.
+
 ## Reglas de combate confirmadas y pendientes de implementación
 - Los enemigos tendrán capas de escudo → armadura → salud.
 - La torre aplica daño base por el multiplicador de la capa activa. Falta decidir si el excedente al vaciar una capa pasa a la siguiente.
@@ -94,8 +97,8 @@ No inventar como definitivas:
 - Roster final de enemigos.
 - Lista final de status.
 - Fórmula exacta de altura.
-- Número de cartas de mejora ofrecidas en M11; la oferta de expansión de terreno es de tres piezas.
-- Frecuencia exacta de cartas.
+- Número final de cartas de mejora ofrecidas; M11 usa tres opciones como valor provisional y la oferta de expansión sigue siendo tres piezas.
+- Frecuencia final de cartas; el calendario de prototipo de M11 sigue siendo provisional.
 - Economía/balance numérico final.
 - Número exacto de piezas de terreno.
 - Variante, habilidades y balance exactos de los jefes/minijefes.

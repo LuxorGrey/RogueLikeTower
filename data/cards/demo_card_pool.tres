@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="CardPoolData" load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://data/cards/card_pool_data.gd" id="1_pool"]
+[ext_resource type="Resource" path="res://data/cards/ballista_calibrated_shot.tres" id="2_ballista"]
+[ext_resource type="Resource" path="res://data/cards/mortar_wider_blast.tres" id="3_mortar"]
+[ext_resource type="Resource" path="res://data/cards/tesla_overcharge.tres" id="4_tesla"]
+[ext_resource type="Resource" path="res://data/cards/frost_long_reach.tres" id="5_frost"]
+[ext_resource type="Resource" path="res://data/cards/flame_scorch.tres" id="6_flame"]
+[ext_resource type="Resource" path="res://data/cards/poison_virulent_mix.tres" id="7_poison"]
+[ext_resource type="Resource" path="res://data/cards/shredder_sharp_teeth.tres" id="8_shredder"]
+[ext_resource type="Resource" path="res://data/cards/long_barrels.tres" id="9_range"]
+[ext_resource type="Resource" path="res://data/cards/precision_calibration.tres" id="10_damage"]
+[ext_resource type="Resource" path="res://data/cards/mana_reservoir.tres" id="11_mana_max"]
+[ext_resource type="Resource" path="res://data/cards/mana_flow.tres" id="12_mana_regen"]
+[ext_resource type="Resource" path="res://data/cards/efficient_circuits.tres" id="13_efficiency"]
+
+[resource]
+script = ExtResource("1_pool")
+cards = Array[Resource]([ExtResource("2_ballista"), ExtResource("3_mortar"), ExtResource("4_tesla"), ExtResource("5_frost"), ExtResource("6_flame"), ExtResource("7_poison"), ExtResource("8_shredder"), ExtResource("9_range"), ExtResource("10_damage"), ExtResource("11_mana_max"), ExtResource("12_mana_regen"), ExtResource("13_efficiency")])
+offer_size = 3
+first_offer_round = 3
+offer_interval = 3

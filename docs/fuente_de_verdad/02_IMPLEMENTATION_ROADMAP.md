@@ -133,16 +133,17 @@ El usuario pidió expresamente cerrar este roster antes de avanzar a M10/M11. Po
 - Ronda 20 completa demo.
 - Resultado: run completa técnicamente.
 
-Contrato M10: la campaña contiene un `WaveData` validado por ronda y una sola ronda de campaña puede iniciarse por vez. Las rondas 17 y 19 contienen minijefe y la 20 un jefe Tier 2 genérico hasta elegir variante; estos hitos provienen de las reglas propias confirmadas en `docs/borradores_personales/02_monstruos.md`. Las estadísticas, composición normal y crecimiento de salud/daño/recompensa son placeholders configurables; no se copian valores ni habilidades de Rogue Tower. En cada pulso de campaña se genera simultáneamente un enemigo por cada endpoint PATH abierto y alcanzable; `WaveEnemyGroupData.count` representa pulsos por endpoint y el contador pendiente refleja el total de rutas. Cada oleada termina con cero spawns pendientes y cero enemigos vivos. Tras las rondas 1–19, `TERRAIN_EXPANSION` ofrece tres piezas distintas y bloquea el combate hasta elegir una y confirmar exactamente una colocación válida conectada; `Esc` durante esa colocación vuelve a la oferta existente. Tras confirmar, los huecos encerrados del tablero se rellenan al azar con Grass/Montaña, preservando aberturas PATH de spawn, y después se prepara la siguiente ronda. La ronda 20 pasa a `RUN_VICTORY`. Los fixtures M7/M8 quedan etiquetados `DEBUG`, sin avance de campaña, pagos ni daño a base. Esta oferta selecciona piezas de terreno; las cartas de mejoras `CardData` siguen en M11. Capas Shield/Armor/Health y meta-progresión no forman parte de M10.
+Contrato M10: la campaña contiene un `WaveData` validado por ronda y una sola ronda de campaña puede iniciarse por vez. Las rondas 17 y 19 contienen minijefe y la 20 un jefe Tier 2 genérico hasta elegir variante; estos hitos provienen de las reglas propias confirmadas en `docs/borradores_personales/02_monstruos.md`. Las estadísticas, composición normal y crecimiento de salud/daño/recompensa son placeholders configurables; no se copian valores ni habilidades de Rogue Tower. En cada pulso de campaña se genera simultáneamente un enemigo por cada endpoint PATH abierto y alcanzable; `WaveEnemyGroupData.count` representa pulsos por endpoint y el contador pendiente refleja el total de rutas. Cada oleada termina con cero spawns pendientes y cero enemigos vivos. Tras las rondas 1–19, `TERRAIN_EXPANSION` ofrece tres piezas distintas y bloquea el combate hasta elegir una y confirmar exactamente una colocación válida conectada; `Esc` durante esa colocación vuelve a la oferta existente. Tras confirmar, los huecos encerrados del tablero se rellenan al azar con Grass/Montaña, preservando aberturas PATH de spawn, y después se prepara la siguiente ronda, salvo que M11 solicite primero una elección de mejora. La ronda 20 pasa a `RUN_VICTORY`. Los fixtures M7/M8 quedan etiquetados `DEBUG`, sin avance de campaña, pagos ni daño a base. Esta oferta selecciona piezas de terreno; las cartas de mejoras `CardData` siguen en M11. Capas Shield/Armor/Health y meta-progresión no forman parte de M10.
 
 ## M11 — Cards
-- `CardData`.
-- Offer UI.
-- Selección.
-- Modificadores de torre/globales/maná.
-- Pool filtrada por desbloqueos.
-- Primer set pequeño de cartas.
-- Resultado: builds diferentes por run.
+- `CardModifierOperation`, `CardData`, `CardPoolData` y `RunCardService` mantienen definición de contenido, calendario/oferta y selección separados.
+- En las rondas configuradas, presentar tres cartas de mejora distintas después de colocar la expansión de terreno y antes de habilitar la ronda siguiente. Una elección obligatoria conserva la fase en `CARD_OFFER` hasta seleccionar.
+- Pool con filtro `unlock_requirement`, peso de oferta, `max_per_run` y selección sin reemplazo dentro de cada oferta.
+- Aplicar operaciones runtime sin mutar `.tres`: daño plano/multiplicador, alcance, cadencia, radio de área, coste de maná, duración de estados, capacidad y regeneración de maná.
+- El servicio se inyecta en torres y economía de la escena; los efectos modifican también torres ya colocadas y el preview correspondiente.
+- Primer pool de 12 cartas placeholder; siete se vinculan a los desbloqueos actuales del roster, las demás son globales/maná.
+- Calendario provisional centralizado en `data/cards/demo_card_pool.tres`: primera oferta al limpiar ronda 3, después cada 3 rondas (3, 6, 9, 12, 15, 18). No cierra la frecuencia ni el balance finales.
+- Resultado: elecciones que producen builds diferentes dentro de la run. La persistencia y desbloqueos entre runs siguen siendo M12.
 
 ## M12 — Meta-progression
 - Moneda permanente.

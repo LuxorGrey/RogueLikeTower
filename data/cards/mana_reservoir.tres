@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://game/cards/card_data.gd" id="1_card"]
+[ext_resource type="Script" path="res://game/cards/card_modifier_operation.gd" id="2_operation"]
+
+[sub_resource type="Resource" id="CardModifierOperation_mana_max"]
+script = ExtResource("2_operation")
+type = 7
+value = 20.0
+
+[resource]
+script = ExtResource("1_card")
+id = &"mana_reservoir"
+display_name = "Depósito de maná"
+description = "Aumenta en 20 la capacidad máxima de maná."
+rarity = 0
+tags = Array[StringName]([&"mana", &"capacity"])
+modifier_operations = Array[Resource]([SubResource("CardModifierOperation_mana_max")])
+offer_weight = 1.0
+max_per_run = 1
