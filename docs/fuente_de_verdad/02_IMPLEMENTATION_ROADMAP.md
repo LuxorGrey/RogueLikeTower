@@ -54,6 +54,8 @@ Codex debe ejecutar estos milestones en orden. **No saltar al contenido final.**
 - Visualización debug de rutas.
 - Resultado: varias rutas válidas sobre mapa dinámico.
 
+Contrato técnico del prototipo: grafo axial propio y BFS determinista sin costes; aplica las ofertas exactas/flexibles de [ADR-0006](../decisiones/ADR-0006-sockets-laterales-flexibles-de-camino.md). La base actual `(0,0)` es provisional y se documenta en [ADR-0007](../decisiones/ADR-0007-grafo-logico-de-caminos.md). M4 solo expone candidatos; M5 añade a `WaveDirector` una política configurable por grupo y usa `FIRST_SORTED` en la demo.
+
 ## M5 — Enemigo básico + objetivo
 - Base/objetivo con vida.
 - Enemy scene.
@@ -62,6 +64,8 @@ Codex debe ejecutar estos milestones en orden. **No saltar al contenido final.**
 - Llegada a base causa daño.
 - Vida y muerte.
 - Resultado: primera oleada funcional.
+
+Contrato del prototipo: la base temporal se dibuja sobre PATH `(0,0)` y los enemigos consumen `PathRoute` de M4; `WaveDirector` inicia una sola oleada de demostración desde el primer endpoint ordenado. La muestra usa 3 enemigos, 20 de vida, velocidad 90 px/s y 10 de daño a base, con una base de 50 de vida. Son valores y política de spawn provisionales editables como Resources, no balance confirmado. La colocación de terreno queda bloqueada durante combate; al completar se habilita expansión, sin iniciar otra ronda (eso corresponde a M10). Las decisiones están en [ADR-0008](../decisiones/ADR-0008-primera-oleada-y-movimiento-de-enemigos.md).
 
 ## M6 — Torres
 - Build mode.

@@ -17,7 +17,7 @@ El diseño base establece que cada expansión usa una pieza compuesta por siete 
 
 ## Alcance y estado de implementación
 
-La plantilla inicial se presenta con el renderer placeholder definido en ADR-0003. M3 conserva este Resource como tablero semilla y añadió cinco Resources expansivos con sockets de camino, validador, preview y confirmación/cancelación. La ruta global spawn-base sigue pendiente de M4 porque requiere `PathGraph`; la interacción M3 está pendiente de inspección en Godot.
+La plantilla inicial se presenta con el renderer placeholder definido en ADR-0003. M3 conserva este Resource como tablero semilla y añadió cinco Resources expansivos con sockets de camino, validador, preview y confirmación/cancelación. M4 implementa `PathGraph` y ancla provisionalmente la base en el PATH central `(0,0)`; el objetivo real reemplazará esta coordenada al implementarse M5. La interacción M3 y el overlay M4 siguen pendientes de inspección en Godot.
 
 ## Referencias
 

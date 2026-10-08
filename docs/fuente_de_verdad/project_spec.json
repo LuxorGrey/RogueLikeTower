@@ -19,6 +19,30 @@
     [-1, 0]
   ],
   "starting_piece_open_path_neighbor_axial": [0, -2],
+  "m4_path_graph": {
+    "algorithm": "deterministic_breadth_first_search",
+    "base_coord_axial_provisional": [0, 0],
+    "spawn_endpoint_source": "unmatched_external_explicit_path_edges",
+    "connection_sockets": [
+      "path_edges",
+      "flexible_path_edges"
+    ],
+    "rebuild": "initialization_and_confirmed_piece_placement",
+    "debug_toggle_key": "D"
+  },
+  "m5_first_wave_prototype": {
+    "base_coord_axial_provisional": [0, 0],
+    "base_max_health_provisional": 50,
+    "enemy_id": "basic_raider",
+    "enemy_max_health_provisional": 20,
+    "enemy_move_speed_px_per_second_provisional": 90,
+    "enemy_base_damage_provisional": 10,
+    "enemy_count_provisional": 3,
+    "spawn_interval_seconds_provisional": 1.0,
+    "spawn_endpoint_policy_provisional": "FIRST_SORTED",
+    "blocking_terrain_placement_during_combat": true,
+    "automatic_next_round": false
+  },
   "terrain_piece_rotation_step_degrees": 60,
   "terrain_piece_rotation_positions": 6,
   "terrain_piece_initial_content_ids": [

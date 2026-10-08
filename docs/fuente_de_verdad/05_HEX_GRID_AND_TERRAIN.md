@@ -39,7 +39,7 @@ Contrato ejecutado por M3, registrado en [ADR-0004](../decisiones/ADR-0004-contr
 - Las salidas explícitas sin pareja siguen siendo errores si enfrentan una celda existente; una salida flexible es opcional y puede quedar abierta o mirar a terreno que no sea PATH. `requires_path_connection` exige al menos una salida externa explícita y que durante la colocación una conexión compatible llegue a un PATH existente.
 - El `HexGrid` confirma las siete celdas de forma atómica después de validar. El Resource original no se modifica; las celdas rotadas son copias y reciben un `piece_instance_id`.
 - M3 muestra un fantasma verde cuando la colocación es legal y rojo cuando no lo es. El cursor se ajusta a coordenadas axiales; clic izquierdo o el botón del HUD confirma, `Esc`, clic derecho o Cancelar abandona el preview. Q/E y los botones giran 60°.
-- La verificación de ruta completa spawn-base (regla 5) se pospone hasta M4; aún no existe `PathGraph`. El control visual de celdas construibles inaccesibles sigue siendo revisión de desarrollo.
+- M4 implementa la verificación global mediante `PathGraph`: antes de confirmar una pieza se deriva el snapshot PATH candidato y se rechaza si falta la base, no queda ningún endpoint spawn, una salida exacta no encuentra socket complementario o una celda PATH/spawn no tiene ruta a la base. El hover del ghost no reconstruye el grafo; se evalúa al confirmar. El control visual de celdas construibles inaccesibles sigue siendo revisión de desarrollo.
 
 ## 4. Bifurcaciones y convergencias
 El grafo permite grado > 2.
@@ -56,6 +56,10 @@ No asumir que cada endpoint es siempre un spawn.
 `PathGraph` expone endpoints; `WaveDirector` decide cuáles están activos según ronda/reglas.
 
 Esto permite que ampliar terreno "haga que puedan venir desde más sitios" sin obligar a activar todos inmediatamente.
+
+En M4, cada salida exacta `path_edges` que queda abierta hacia una coordenada fuera del tablero se presenta como candidato spawn. Las aperturas exclusivamente flexibles no son endpoints; solo forman conexión cuando una celda PATH vecina ofrece la cara recíproca. El endpoint guarda la celda PATH, la dirección axial y la coordenada exterior para que M5 pueda colocar el enemigo antes de recorrer la ruta. La muestra M5 instancia `GameBase` en `(0,0)`, sobre el PATH central de la pieza inicial; la ubicación sigue siendo provisional, no un compromiso de diseño final. Véase [ADR-0007](../decisiones/ADR-0007-grafo-logico-de-caminos.md).
+
+`PathGraph` mantiene una arista cuando ambas caras PATH ofrecen socket exacto o flexible complementario. Resuelve una ruta mínima por número de enlaces con BFS y desempate por orden de direcciones de `HexCoord`. La adyacencia conserva caminos alternativos en bifurcaciones y convergencias aunque cada spawn tenga una ruta cacheada escogida para el prototipo. Recalcula en inicio/confirmación de pieza; el modo debug `D` muestra candidatos, base y rutas cacheadas.
 
 ## 6. Elevación
 Altura lógica:
@@ -120,9 +124,15 @@ Toggle para mostrar:
 - ruta de cada spawn;
 - footprint de pieza.
 
+En el prototipo M4, `D` alterna el overlay de rutas cacheadas, candidatos spawn y marcador de base. Las coordenadas, terreno, altura y sockets permanecen en la vista de pieza; un panel HUD resume el número de nodos, endpoints y bifurcaciones. La visualización es provisional y no activa spawns.
+
 ## 11. Navegación del mapa
 - `Camera2D` controla el tablero; `CanvasLayer` mantiene la interfaz fija.
 - Botón central del ratón + arrastre desplaza el mapa. La velocidad compensa el zoom actual.
 - Rueda del ratón acerca o aleja alrededor del cursor, dentro del rango provisional `0.45×`–`2.5×`.
 - `H` muestra u oculta el HUD. `R` devuelve el zoom a `1×` y centra la cámara sobre el tablero colocado.
 - Estos controles y límites son decisiones provisionales de interfaz, registradas en [ADR-0005](../decisiones/ADR-0005-navegacion-de-mapa.md).
+
+## Integración M5
+
+La escena de muestra instancia `GameBase` en la celda PATH provisional `(0,0)`. El enemigo aparece en la coordenada exterior del endpoint seleccionado, avanza por los centros de `PathRoute.cells` y alcanza el objetivo; la llegada aplica `EnemyData.base_damage`. La base puede agotarse y emitir derrota. La ubicación de la base y sus valores son provisionales; no cambian la autoridad axial del tablero.

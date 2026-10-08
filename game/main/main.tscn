@@ -1,7 +1,9 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://game/main/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://game/board/terrain_piece_preview.gd" id="2_preview"]
+[ext_resource type="PackedScene" path="res://game/main/game_base.tscn" id="3_base_scene"]
+[ext_resource type="Script" path="res://game/waves/wave_director.gd" id="4_wave_director"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -20,7 +22,15 @@ position = Vector2(720, 500)
 script = ExtResource("2_preview")
 
 [node name="Entities" type="Node2D" parent="Board"]
+unique_name_in_owner = true
 y_sort_enabled = true
+
+[node name="GameBase" parent="Board/Entities" instance=ExtResource("3_base_scene")]
+unique_name_in_owner = true
+
+[node name="WaveDirector" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("4_wave_director")
 
 [node name="HUD" type="CanvasLayer" parent="."]
 unique_name_in_owner = true
@@ -29,8 +39,8 @@ unique_name_in_owner = true
 unique_name_in_owner = true
 offset_left = 24.0
 offset_top = 24.0
-offset_right = 560.0
-offset_bottom = 474.0
+offset_right = 620.0
+offset_bottom = 655.0
 
 [node name="Margin" type="MarginContainer" parent="HUD/Panel"]
 layout_mode = 2
@@ -46,7 +56,23 @@ theme_override_constants/separation = 8
 [node name="Title" type="Label" parent="HUD/Panel/Margin/Content"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 21
-text = "ROGUE TOWER · EXPANSIÓN DE TERRENO M3"
+text = "ROGUE TOWER · TERRENO Y PRIMERA OLEADA M5"
+
+[node name="BaseStatus" type="Label" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Base · preparando vida..."
+
+[node name="WaveStatus" type="Label" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+text = "Oleada 1 lista"
+
+[node name="StartWave" type="Button" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Iniciar oleada 1 de prueba"
 
 [node name="PieceStatus" type="Label" parent="HUD/Panel/Margin/Content"]
 unique_name_in_owner = true
@@ -71,7 +97,13 @@ text = "Orientación: 0° · posición 1/6"
 [node name="HoverStatus" type="Label" parent="HUD/Panel/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Casilla local (q,r): — · hover sobre cara superior"
+text = "Casilla global (q,r): — · hover sobre cara superior"
+
+[node name="PathStatus" type="Label" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "PATH: preparando grafo..."
 
 [node name="Legend" type="HBoxContainer" parent="HUD/Panel/Margin/Content"]
 layout_mode = 2
@@ -123,9 +155,9 @@ text = "Cancelar"
 [node name="Hint" type="Label" parent="HUD/Panel/Margin/Content"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "Mueve el cursor para posicionar · verde válido / rojo inválido · Q / E gira · clic confirma · Esc o clic derecho cancela"
+text = "Mueve el cursor · verde válido / rojo inválido · Q / E gira · clic confirma · Esc o clic derecho cancela"
 
 [node name="CameraHint" type="Label" parent="HUD/Panel/Margin/Content"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "Mapa: rueda = zoom · botón central + arrastrar = mover · H = mostrar/ocultar interfaz · R = recentrar"
+text = "Mapa: rueda = zoom · botón central + arrastrar = mover · H = interfaz · R = recentrar · D = rutas"

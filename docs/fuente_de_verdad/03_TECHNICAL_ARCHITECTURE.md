@@ -81,7 +81,8 @@ Main (Node2D)
 │   ├── TerrainCliffs
 │   ├── Decorations
 │   ├── Entities (Y-sort)
-│   │   ├── Towers
+│   │   ├── GameBase
+│   │   ├── Towers (futuro)
 │   │   └── Enemies
 │   ├── Projectiles
 │   └── Effects
@@ -138,7 +139,11 @@ Esto permite editar contenido desde Inspector sin cambiar scripts.
 ## Pathfinding
 El mapa es discreto. No usar NavigationRegion2D como fuente primaria para el camino de enemigos. Mantener un **grafo lógico de celdas Path** y resolver rutas en ese grafo. Es más determinista para bifurcaciones, convergencias y colocación dinámica.
 
-AStar2D puede usarse como implementación interna, pero los IDs representan HexCoord.
+M4 implementa `PathGraph` como `RefCounted` y usa BFS propio porque todos los enlaces actuales tienen coste uniforme. Cada nodo representa el `HexCoord` axial de una celda PATH; una arista exige sockets complementarios recíprocos en `path_edges | flexible_path_edges`. Un socket flexible sin pareja no crea una arista. Las salidas exactas abiertas fuera del tablero son candidatos de spawn, mientras que la coordenada de base actual `(0,0)` es provisional. `PathGraph` produce una `PathRoute` determinista por candidato y preserva las bifurcaciones/convergencias en su adyacencia; no activa oleadas ni selecciona los spawns activos.
+
+La escena reconstruye el snapshot del grafo al iniciar y al confirmar una pieza; no lo recalcula al mover el cursor ni por frame. Antes de insertar la pieza se valida el grafo candidato para impedir una base ausente, salidas sin pareja, spawns sin retorno o nodos PATH aislados. El overlay debug lo dibuja `TerrainPiecePreview` al pulsar `D`; el grafo sigue siendo la autoridad lógica y el preview solo lo representa. La decisión y las provisionalidades están en [ADR-0007](../decisiones/ADR-0007-grafo-logico-de-caminos.md).
+
+AStar2D podría sustituir BFS si las rutas adquieren costes diferentes; si se usa, los IDs deben representar HexCoord. No incorporar NavigationRegion2D al modelo lógico.
 
 ## Rendering
 No hacer que la lógica dependa de TileMapLayer. `HexGrid` es la autoridad.
@@ -147,9 +152,11 @@ TileMapLayer puede utilizarse como renderer/optimización más adelante, pero pa
 
 El preview M2 actual dibuja polígonos vectoriales temporales desde `TerrainPieceCellData`: aplica offset por elevación, genera caras laterales en desniveles, ordena las caras superiores por profundidad lógica y detecta hover sobre esas caras. No depende de sprites finales. La escena principal incluye un contenedor `Entities` con Y-sort habilitado para actores.
 
-En M3, `HexGrid` es autoridad para las celdas confirmadas; `TerrainPlacementValidator` es un `RefCounted` puro que evalúa la candidata y devuelve `TerrainPlacementResult`; `Main` orquesta selección/confirmación y `TerrainPiecePreview` dibuja tablero y ghost, sin cambiar la autoridad lógica. Las conexiones internas usan los bordes PATH explícitos; las conexiones entre piezas también aceptan las aperturas laterales flexibles derivadas en cada salida de borde, según [ADR-0006](../decisiones/ADR-0006-sockets-laterales-flexibles-de-camino.md). `PathGraph` debe tratar ambas máscaras como ofertas de conexión y solo unir caras PATH complementarias; la conectividad global se incorpora en M4.
+En M3, `HexGrid` es autoridad para las celdas confirmadas; `TerrainPlacementValidator` es un `RefCounted` puro que evalúa la candidata y devuelve `TerrainPlacementResult`; `Main` orquesta selección/confirmación y `TerrainPiecePreview` dibuja tablero y ghost, sin cambiar la autoridad lógica. Las conexiones internas usan los bordes PATH explícitos; las conexiones entre piezas también aceptan las aperturas laterales flexibles derivadas en cada salida de borde, según [ADR-0006](../decisiones/ADR-0006-sockets-laterales-flexibles-de-camino.md). M4 ya incorpora la conectividad global mediante el snapshot `PathGraph` descrito arriba.
 
 La navegación del mapa la controla un `Camera2D` en `Main`: el HUD vive en `CanvasLayer` y no se desplaza ni escala con la cámara. Mover la cámara mantiene el mapa dentro del mundo lógico; el zoom con rueda se centra en el cursor.
+
+M5 añade `GameBase` y `WaveDirector` a la escena principal. `GameBase` posee un `HealthComponent`; `Enemy` compone su propio `HealthComponent` y `PathFollowerComponent`. `WaveDirector` recibe la oleada, el snapshot M4, la base y el contenedor Y-sort; crea enemigos desde sus Resources y escucha sus señales de llegada o muerte. La UI de `Main` presenta vida, recuento y estado, y traduce las señales de oleada a fases de `RunManager`. Durante `COMBAT` se bloquean las entradas de colocación. Es una integración local para M5; la economía, torres, pipeline de daño y progresión de rondas siguen fuera de alcance.
 
 ## Save
 Guardar solo datos estables:

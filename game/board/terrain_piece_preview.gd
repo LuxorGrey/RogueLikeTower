@@ -17,6 +17,12 @@ const GRASS_HOVER_COLOR: Color = Color(0.50, 0.88, 0.52)
 const MOUNTAIN_HOVER_COLOR: Color = Color(0.96, 0.76, 0.36)
 const CLIFF_DARKEN_FACTOR: float = 0.38
 const CLIFF_MIN_SCREEN_DEPTH: float = 6.0
+const ROUTE_DEBUG_COLORS: Array[Color] = [
+	Color(0.25, 0.78, 1.0, 0.92),
+	Color(1.0, 0.76, 0.25, 0.92),
+	Color(0.92, 0.42, 0.86, 0.92),
+	Color(0.48, 0.94, 0.52, 0.92),
+]
 
 var _piece_data: TerrainPieceData
 var _rotation_steps: int = 0
@@ -29,6 +35,8 @@ var _placement_is_valid: bool = false
 var _board_display_cells: Array[TerrainPieceCellData] = []
 var _ghost_coords: Dictionary[Vector2i, bool] = {}
 var _hovered_cell: TerrainPieceCellData
+var _path_graph: PathGraph
+var _path_debug_visible: bool = false
 
 func set_piece(piece_data: TerrainPieceData) -> void:
 	_piece_data = piece_data
@@ -41,6 +49,14 @@ func set_board_cells(board_cells: Dictionary[Vector2i, HexCell]) -> void:
 	_board_cells = board_cells
 	_rebuild_display_cells()
 	_refresh_hovered_cell()
+	queue_redraw()
+
+func set_path_graph(path_graph: PathGraph) -> void:
+	_path_graph = path_graph
+	queue_redraw()
+
+func set_path_debug_visible(debug_enabled: bool) -> void:
+	_path_debug_visible = debug_enabled
 	queue_redraw()
 
 func set_placement_preview(
@@ -81,6 +97,38 @@ func _draw() -> void:
 	_draw_cliffs(cells, cells_by_coord)
 	for cell in cells:
 		_draw_cell_top(cell, _ghost_coords.has(cell.local_coord))
+	if _board_mode and _path_debug_visible and _path_graph != null:
+		_draw_path_debug_overlay()
+
+func _draw_path_debug_overlay() -> void:
+	for route_index in range(_path_graph.routes.size()):
+		var route: PathRoute = _path_graph.routes[route_index]
+		var route_color: Color = ROUTE_DEBUG_COLORS[
+			route_index % ROUTE_DEBUG_COLORS.size()
+		]
+		if not route.is_reachable:
+			route_color = Color(1.0, 0.22, 0.20, 0.95)
+		var route_points := PackedVector2Array()
+		for coord in route.cells:
+			route_points.append(_top_center(coord, 0))
+		if route_points.size() >= 2:
+			draw_polyline(route_points, Color(0.04, 0.05, 0.06, 0.86), 8.0, true)
+			draw_polyline(route_points, route_color, 4.0, true)
+
+		var endpoint: PathEndpoint = route.spawn_endpoint
+		if endpoint == null:
+			continue
+		var path_center: Vector2 = _top_center(endpoint.cell_coord, 0)
+		var spawn_center: Vector2 = _top_center(endpoint.outside_coord, 0)
+		draw_line(path_center, spawn_center, Color(0.04, 0.05, 0.06, 0.86), 7.0, true)
+		draw_line(path_center, spawn_center, route_color, 3.5, true)
+		draw_circle(spawn_center, 7.0, route_color)
+		draw_arc(spawn_center, 9.0, 0.0, TAU, 20, Color(0.03, 0.04, 0.05), 2.0, true)
+
+	if _path_graph.base_endpoint != null:
+		var base_center: Vector2 = _top_center(_path_graph.base_endpoint.cell_coord, 0)
+		draw_circle(base_center, 12.0, Color(0.04, 0.05, 0.06, 0.92))
+		draw_circle(base_center, 8.0, Color(1.0, 0.85, 0.28, 1.0))
 
 func _draw_cliffs(
 	cells: Array[TerrainPieceCellData],

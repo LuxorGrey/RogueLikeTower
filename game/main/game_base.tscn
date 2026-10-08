@@ -1,0 +1,13 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://game/main/game_base.gd" id="1_base"]
+[ext_resource type="Resource" path="res://data/base/base_data.tres" id="2_base_data"]
+[ext_resource type="Script" path="res://game/combat/health_component.gd" id="3_health"]
+
+[node name="GameBase" type="Node2D"]
+script = ExtResource("1_base")
+base_data = ExtResource("2_base_data")
+
+[node name="Health" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("3_health")

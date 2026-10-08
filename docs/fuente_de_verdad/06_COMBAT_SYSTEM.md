@@ -88,4 +88,8 @@ El enemigo conoce:
 - índice;
 - progress normalizado.
 
-Si cambia el mapa solo entre rondas, no hace falta recalcular rutas con enemigos vivos. Esto simplifica enormemente el sistema.
+M5 consume la secuencia axial `PathRoute` cacheada por M4 para inicializar el camino del enemigo y conserva sus propios waypoints, índice y progreso. Si cambia el mapa solo entre rondas, no hace falta recalcular rutas con enemigos vivos. `WaveDirector` escoge candidatos spawn según la política de cada grupo; la muestra usa `FIRST_SORTED`, mientras que la configuración final por ronda sigue abierta. M4 expone candidatos y no decide esa política.
+
+La primera integración M5 implementa `HealthComponent`, `GameBase`, `Enemy`, `PathFollowerComponent` y `WaveDirector`. El enemigo se mueve continuamente entre centros de hex, inicia en la coordenada exterior del endpoint y aplica su daño configurado al llegar; el director retira enemigos llegados o derrotados y termina la oleada al concluir los spawns y quedar cero enemigos activos. La UI bloquea la colocación durante `COMBAT`; una base agotada cambia a `RUN_DEFEAT`, y una oleada superada habilita `TERRAIN_EXPANSION`.
+
+El contenido de M5 es solo una prueba funcional: una base de 50 HP, un enemigo de 20 HP, velocidad 90 px/s, daño de llegada 10, tres enemigos con intervalo de 1 s y política `FIRST_SORTED`. Cada valor es provisional y está editable en Resources. Sin torres (M6), la muestra termina con los enemigos filtrándose a la base; no representa todavía una partida balanceada. Armor, regeneración, recompensas y pipeline de daño se mantienen en sus milestones posteriores.

@@ -76,6 +76,13 @@ Rotación:
 ## TerrainPlacementResult / TerrainPlacementValidator
 El validador de M3 recibe la pieza, el pivote axial, la rotación y las celdas actuales del `HexGrid`. Devuelve legalidad, errores, celdas instanciadas, si toca el tablero y cuántas conexiones compatibles tiene. Comprueba solapamiento, contacto por borde, sockets PATH explícitos/flexibles y una conexión a PATH existente cuando la pieza la requiere. Las conexiones internas usan exclusivamente `path_edges`; para conectar dos piezas se acepta una pareja complementaria en la unión de `path_edges` y `flexible_path_edges`. Una salida explícita no puede apuntar a terreno que no sea PATH. No busca rutas globales spawn-base; eso corresponde a `PathGraph` de M4.
 
+## PathEndpoint / PathRoute / PathGraph
+`PathEndpoint` identifica su rol (`SPAWN` o `BASE`), la celda PATH axial, la dirección de borde y la coordenada externa para un spawn. `PathRoute` contiene un candidato spawn, el objetivo base y la secuencia ordenada de celdas PATH que une ambos; M4 cachea una ruta mínima por candidato.
+
+`PathGraph.rebuild(board_cells, base_coord)` deriva `nodes` y `adjacency` desde las celdas PATH. Solo crea adyacencia si ambos lados ofrecen un socket recíproco mediante `path_edges | flexible_path_edges`. Identifica como candidatos spawn las salidas `path_edges` que apuntan fuera del mapa; no convierte sockets solo flexibles en endpoints. `find_route(start, goal)` usa BFS de coste unitario con desempate estable por orden de las direcciones axiales; `get_branch_count()` cuenta nodos PATH con al menos tres vecinos conectados. El snapshot expone `spawn_endpoints`, `base_endpoint`, `routes`, `errors` e `is_valid`.
+
+Un snapshot válido necesita que la base esté sobre PATH, que haya al menos un candidato spawn, que cada spawn tenga ruta a la base y que todos los nodos PATH pertenezcan a la red de la base. La coordenada base provisional `(0,0)` pertenece a la muestra M4/M5; `GameBase` se instancia allí en M5, pero la ubicación final del objetivo sigue abierta. `Main` reconstruye al iniciar y al confirmar expansión, no en cada frame. `TerrainPiecePreview` representa las rutas/endpoints como debug y no modifica el grafo. El algoritmo y sus límites están registrados en [ADR-0007](../decisiones/ADR-0007-grafo-logico-de-caminos.md).
+
 ## TowerData : Resource
 ```text
 id
@@ -109,6 +116,12 @@ defense_tags
 status_resistances
 scene
 ```
+
+M5 implementa de momento `id`, `display_name`, `max_health`, `move_speed`, `base_damage` y `scene` en `data/enemies/enemy_data.gd`. Armor, regeneración, recompensa, tags y resistencias se incorporarán en sus milestones; no se fingen como estadísticas ya funcionales. La escena de muestra y sus valores están en `data/enemies/basic_enemy.tres` y son provisionales.
+
+## BaseData / HealthComponent
+
+`BaseData` configura el ID, nombre y vida máxima de la base. `HealthComponent` inicializa vida, aplica daño/curación acotados y emite `health_changed` y `health_depleted`; en M5 lo consumen `GameBase` y `Enemy`. El objetivo inicial `(0,0)` sigue siendo una decisión provisional del prototipo. `data/base/base_data.tres` define 50 de vida provisional.
 
 ## DamagePacket
 ```text
@@ -145,6 +158,10 @@ groups[]
   delay_before_group
 round_reward
 ```
+
+M5 implementa `WaveData` y `WaveEnemyGroupData` como Resources validados: datos de enemigo, cantidad, intervalo, política de endpoint y demora de grupo. La oleada de demostración `data/waves/round_01.tres` genera tres enemigos con intervalo de 1 segundo. `FIRST_SORTED` selecciona siempre el primer `PathRoute` válido en orden determinista; `ROUND_ROBIN` también está disponible. Esta selección se limita a la muestra M5 y no confirma una política de balance para las rondas definitivas.
+
+`PathFollowerComponent` conserva waypoints mundiales derivados de las coordenadas axiales de `PathRoute`, índice del waypoint y progreso normalizado del tramo. El movimiento ocurre en `_physics_process`; el mapa no cambia mientras la oleada está activa.
 
 ## CardData
 ```text

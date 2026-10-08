@@ -5,7 +5,7 @@
 
 ## Contexto
 
-M3 necesita ampliar el tablero con piezas de siete celdas, conservar los datos del terreno al girar y prevenir empalmes ambiguos de PATH. M4 todavía no implementa el grafo que permite verificar rutas completas desde spawn hasta base.
+M3 necesita ampliar el tablero con piezas de siete celdas, conservar los datos del terreno al girar y prevenir empalmes ambiguos de PATH. M4 añade una validación del snapshot global PATH antes de confirmar una expansión; su algoritmo y la coordenada provisional de base están en ADR-0007.
 
 ## Decisión
 
@@ -15,13 +15,13 @@ M3 necesita ampliar el tablero con piezas de siete celdas, conservar los datos d
 - `TerrainPlacementValidator` calcula la legalidad sin modificar el tablero ni el Resource. Se rechazan solapamientos, falta de contacto, bordes PATH explícitos incompatibles, salidas explícitas hacia terreno que no sea PATH y piezas que no enlacen con PATH existente cuando lo requieren. Una oferta flexible no usada no invalida la colocación.
 - Tras confirmar una evaluación legal, `HexGrid.add_cells` inserta todas las celdas de la pieza en una única operación, asignándoles un `piece_instance_id`.
 - La pieza inicial es una semilla especial que no requiere conexión entrante y expone una salida inicial hacia `(0,-2)`.
-- La conectividad global spawn-base no se intenta inferir en M3; queda a cargo de `PathGraph` y M4.
+- La conectividad global spawn-base corresponde a `PathGraph` de M4 y se valida sobre las celdas existentes más la pieza candidata antes de insertarla en `HexGrid`.
 - El preview combina tablero confirmado y fantasma; verde indica colocación legal y rojo indica que la evaluación actual tiene errores. La UI solo confirma una evaluación legal.
 
 ## Consecuencias
 
 - Pueden coexistir adyacencias visuales entre dos celdas PATH sin conexión lógica cuando ninguno ofrezca un borde exacto ni flexible. Esto mantiene explícita la topología.
-- El usuario puede construir una pieza legal localmente que todavía no preserve todas las rutas globales; M4 debe volver a validar el grafo antes de habilitar una expansión jugable.
+- La legalidad local de `TerrainPlacementValidator` no basta para confirmar una pieza: `Main` exige que el snapshot `PathGraph` resultante conserve rutas válidas hacia la base provisional.
 - Las cinco piezas iniciales (`straight`, `gentle_turn`, `hard_turn`, `fork`, `convergence`) son composiciones y contenido provisionales, no decisiones de balance ni arte final.
 
 ## Fuentes

@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="BaseData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/base/base_data.gd" id="1_base_data"]
+
+[resource]
+script = ExtResource("1_base_data")
+id = &"provisional_base"
+display_name = "Base provisional"
+max_health = 50

@@ -18,14 +18,21 @@
 - El ghost legal se muestra verde; el ilegal, rojo con el motivo en HUD. Solo la colocación legal confirma.
 - Confirmar inserta las siete celdas en el tablero; Cancelar, Esc y clic derecho no alteran el tablero.
 - La plantilla inicial admite su socket de salida al exterior sin exigir una conexión entrante.
-- La verificación de ruta completa spawn-base pertenece a M4, cuando exista `PathGraph`.
+- La verificación de ruta global spawn-base se realiza con el snapshot M4 de `PathGraph` antes de confirmar una pieza.
 
 ## Paths
-- Una recta produce ruta válida.
-- Una bifurcación produce más de una opción.
-- Una convergencia vuelve a una ruta común.
-- Ningún spawn activo puede iniciar ronda sin ruta a base.
-- La ruta es determinista para una seed/estado dado.
+- Solo se crea arista entre PATH adyacentes si ambos sockets ofrecen caras recíprocas en la unión de máscaras exactas/flexibles.
+- Un socket exacto abierto fuera del mapa produce endpoint spawn; una oferta flexible sola no produce endpoint.
+- Una salida exacta hacia no-PATH o hacia PATH sin socket complementario invalida el snapshot.
+- La base provisional del prototipo está en PATH `(0,0)`; una base ausente invalida el grafo.
+- Cada endpoint spawn y cada nodo PATH tiene una ruta a la base; los caminos huérfanos invalidan la colocación candidata.
+- Una recta produce ruta válida, bifurcación conserva nodo de grado 3 o mayor y convergencia vuelve a compartir nodos.
+- BFS devuelve una ruta mínima por número de enlaces; repetir sobre el mismo estado produce la misma secuencia usando el orden de direcciones como desempate.
+- El snapshot se reconstruye al iniciar y al confirmar una pieza, no al mover el ghost ni cada frame.
+- No se confirma una pieza que dejaría un endpoint o subred PATH sin ruta a base.
+- `D` alterna el overlay con rutas por spawn, candidatos de spawn y marcador de base.
+- Ningún spawn activo puede iniciar ronda sin ruta a base; `WaveDirector` selecciona únicamente entre rutas válidas según la política configurada en el grupo.
+- Smoke M4: siete escenarios automatizados cubren ruta inicial, pareja exacta-flexible, flexible sin endpoint, salida inválida hacia GRASS, socket exacto sin pareja, PATH desconectado y bifurcación/convergencia con BFS determinista.
 
 ## Elevation
 - Path = 0.
@@ -46,6 +53,13 @@
 - `R` centra la cámara sobre las celdas colocadas y restablece zoom `1×`.
 
 ## Combat
+- La base inicializa vida desde `BaseData`, recibe daño y emite derrota al llegar a 0.
+- Enemy acepta `EnemyData` y `PathRoute`, comienza fuera del endpoint y recorre los centros axiales hasta base.
+- La muerte de un enemigo detiene su movimiento y lo retira una sola vez.
+- La primera oleada genera todos los enemigos configurados y solo termina tras completar los spawns y quedar cero enemigos vivos.
+- Cada llegada daña la base por `EnemyData.base_damage`; el HUD refleja vida y enemigos en ruta.
+- Durante `COMBAT` no se puede colocar terreno; derrota bloquea la expansión y victoria de la muestra habilita `TERRAIN_EXPANSION`.
+- Smoke M5: la oleada provisional de tres enemigos termina con base en 20/50 HP, cero enemigos activos, y se cubren las rutas, la muerte de enemigo y la derrota de base.
 - Enemy llega a base y causa daño.
 - Tower adquiere target y lo daña.
 - Armor/health/regen alteran el resultado.
