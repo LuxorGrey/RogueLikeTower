@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="PermanentUpgradeData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://game/progression/permanent_upgrade_data.gd" id="1_upgrade"]
+[ext_resource type="Script" path="res://game/progression/permanent_upgrade_operation.gd" id="2_operation"]
+
+[sub_resource type="Resource" id="PermanentUpgradeOperation_1"]
+script = ExtResource("2_operation")
+effect_type = 5
+unlocked_content_id = &"meta:card_archive"
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"card_archive"
+display_name = "Archivo de cartas"
+description = "Añade dos cartas globales al pool de ofertas de run."
+max_level = 1
+cost_by_level = Array[int]([25])
+operations_by_level = Array[ExtResource("2_operation")]([SubResource("PermanentUpgradeOperation_1")])

@@ -18,7 +18,7 @@ var _run_card_service: Node
 func _ready() -> void:
 	set_process(false)
 
-func configure(economy_data: Resource) -> bool:
+func configure(economy_data: Resource, permanent_bonuses: Dictionary = {}) -> bool:
 	last_error = ""
 	if economy_data == null or not economy_data.has_method("validate"):
 		last_error = "RunEconomyService requiere RunEconomyData válido."
@@ -27,10 +27,17 @@ func configure(economy_data: Resource) -> bool:
 	if not errors.is_empty():
 		last_error = "; ".join(errors)
 		return false
-	_gold = int(economy_data.get("starting_gold"))
-	_maximum_mana = float(economy_data.get("maximum_mana"))
-	_mana = float(economy_data.get("starting_mana"))
-	_mana_regen_per_second = float(economy_data.get("mana_regen_per_second"))
+	_gold = maxi(int(economy_data.get("starting_gold")) + int(permanent_bonuses.get("starting_gold", 0)), 0)
+	_maximum_mana = maxf(float(economy_data.get("maximum_mana")) + float(permanent_bonuses.get("maximum_mana", 0.0)), 1.0)
+	_mana = clampf(
+		float(economy_data.get("starting_mana")) + float(permanent_bonuses.get("starting_mana", 0.0)),
+		0.0,
+		_maximum_mana
+	)
+	_mana_regen_per_second = maxf(
+		float(economy_data.get("mana_regen_per_second")) + float(permanent_bonuses.get("mana_regen_per_second", 0.0)),
+		0.0
+	)
 	_mana_signal_timer = 0.0
 	_is_configured = true
 	set_process(true)

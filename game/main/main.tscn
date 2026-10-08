@@ -131,20 +131,59 @@ theme_override_font_sizes/font_size = 13
 autowrap_mode = 2
 text = "Objetivo: —"
 
-[node name="TowerActions" type="HBoxContainer" parent="HUD/Panel/Margin/Content"]
+[node name="TowerActions" type="VBoxContainer" parent="HUD/Panel/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="TowerTargetingMode" type="OptionButton" parent="HUD/Panel/Margin/Content/TowerActions"]
+[node name="PriorityRow" type="HBoxContainer" parent="HUD/Panel/Margin/Content/TowerActions"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TowerPriority1" type="OptionButton" parent="HUD/Panel/Margin/Content/TowerActions/PriorityRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+text = "Prioridad 1"
 
-[node name="UpgradeTower" type="Button" parent="HUD/Panel/Margin/Content/TowerActions"]
+[node name="TowerPriority2" type="OptionButton" parent="HUD/Panel/Margin/Content/TowerActions/PriorityRow"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Mejorar"
+size_flags_horizontal = 3
+text = "Prioridad 2"
+
+[node name="TowerPriority3" type="OptionButton" parent="HUD/Panel/Margin/Content/TowerActions/PriorityRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Prioridad 3"
+
+[node name="UpgradeRow" type="HBoxContainer" parent="HUD/Panel/Margin/Content/TowerActions"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="UpgradeHealth" type="Button" parent="HUD/Panel/Margin/Content/TowerActions/UpgradeRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "+ Vida"
+
+[node name="UpgradeArmor" type="Button" parent="HUD/Panel/Margin/Content/TowerActions/UpgradeRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "+ Armadura"
+
+[node name="UpgradeShield" type="Button" parent="HUD/Panel/Margin/Content/TowerActions/UpgradeRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "+ Escudo"
+
+[node name="DemolishTower" type="Button" parent="HUD/Panel/Margin/Content/TowerActions/UpgradeRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Demoler"
 
 [node name="BuildStatus" type="Label" parent="HUD/Panel/Margin/Content"]
 unique_name_in_owner = true

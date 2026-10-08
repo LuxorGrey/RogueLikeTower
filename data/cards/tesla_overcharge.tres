@@ -5,18 +5,18 @@
 
 [sub_resource type="Resource" id="CardModifierOperation_tesla_rate"]
 script = ExtResource("2_operation")
-type = 3
+type = 9
 affected_tower_id = &"tesla_coil_demo"
-value = 1.15
+value = 0.15
 
 [resource]
 script = ExtResource("1_card")
 id = &"tesla_overcharge"
 display_name = "Bobina sobrecargada"
-description = "Tesla Coil ataca un 15 % más rápido."
+description = "Tesla Coil gana un 15 % de probabilidad crítica."
 rarity = 1
 unlock_requirement = &"tower:tesla_coil_demo"
-tags = Array[StringName]([&"tower", &"attack_rate"])
+tags = Array[StringName]([&"tower", &"critical"])
 modifier_operations = Array[Resource]([SubResource("CardModifierOperation_tesla_rate")])
 offer_weight = 0.9
 max_per_run = 1

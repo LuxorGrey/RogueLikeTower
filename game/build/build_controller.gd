@@ -5,6 +5,7 @@ signal build_mode_changed(is_active: bool)
 signal tower_built(tower: Tower, coord: Vector2i)
 signal tower_selected(tower: Tower, coord: Vector2i)
 signal tower_upgraded(tower: Tower, new_level: int)
+signal tower_demolished(tower_data: TowerData, next_build_cost: int)
 
 var last_error: String = ""
 var selected_tower: Tower
@@ -16,6 +17,7 @@ var _tower_data: TowerData
 var _damage_service: Node
 var _run_economy: Node
 var _run_card_service: Node
+var _meta_progression: Node
 var _is_build_mode: bool = false
 var _towers_by_coord: Dictionary[Vector2i, Tower] = {}
 
@@ -26,7 +28,8 @@ func configure(
 	hex_radius: float,
 	damage_service: Node,
 	run_economy: Node = null,
-	run_card_service: Node = null
+	run_card_service: Node = null,
+	meta_progression: Node = null
 ) -> bool:
 	if board_grid == null or entities == null or damage_service == null or hex_radius <= 0.0:
 		last_error = "BuildController requiere grid, entidades, DamageService y radio positivos."
@@ -38,6 +41,7 @@ func configure(
 	_damage_service = damage_service
 	_run_economy = run_economy
 	_run_card_service = run_card_service
+	_meta_progression = meta_progression
 	return true
 
 func can_build_in_current_phase() -> bool:
@@ -54,6 +58,9 @@ func begin_build(tower_data: TowerData) -> bool:
 		return false
 	if tower_data == null:
 		last_error = "Selecciona datos de torre antes de construir."
+		return false
+	if _meta_progression != null and not bool(_meta_progression.call("is_tower_unlocked", tower_data)):
+		last_error = "La torre está bloqueada. Desbloquéala en la tienda entre runs."
 		return false
 	var errors := tower_data.validate()
 	if not errors.is_empty():
@@ -81,11 +88,29 @@ func get_active_tower_data() -> TowerData:
 func get_tower_at(coord: Vector2i) -> Tower:
 	return _towers_by_coord.get(coord) as Tower
 
+func get_tower_count(tower_data: TowerData) -> int:
+	if tower_data == null:
+		return 0
+	var count: int = 0
+	for tower_variant in _towers_by_coord.values():
+		var tower := tower_variant as Tower
+		if tower != null and is_instance_valid(tower) and tower.get_tower_data() != null:
+			if tower.get_tower_data().id == tower_data.id:
+				count += 1
+	return count
+
+func get_current_build_cost(tower_data: TowerData) -> int:
+	if tower_data == null:
+		return -1
+	return tower_data.build_cost + get_tower_count(tower_data) * tower_data.build_cost_increment
+
 func get_placement_error(coord: Vector2i) -> String:
 	if not _is_build_mode or _tower_data == null:
 		return "Activa el modo de construcción."
 	if not can_build_in_current_phase():
 		return "La fase actual no permite construir torres."
+	if _meta_progression != null and not bool(_meta_progression.call("is_tower_unlocked", _tower_data)):
+		return "La torre está bloqueada. Desbloquéala en la tienda entre runs."
 	if _board_grid == null or not _board_grid.cells.has(coord):
 		return "No hay una casilla de terreno bajo el cursor."
 	var cell: HexCell = _board_grid.cells[coord]
@@ -98,10 +123,11 @@ func get_placement_error(coord: Vector2i) -> String:
 			_tower_data.display_name,
 			_terrain_name(cell.terrain_type),
 		]
-	if _run_economy != null and not bool(_run_economy.call("can_afford_gold", _tower_data.build_cost)):
+	var build_cost: int = get_current_build_cost(_tower_data)
+	if _run_economy != null and not bool(_run_economy.call("can_afford_gold", build_cost)):
 		return "Oro insuficiente: %d disponibles · %d necesarios." % [
 			int(_run_economy.call("get_gold")),
-			_tower_data.build_cost,
+			build_cost,
 		]
 	return ""
 
@@ -127,11 +153,12 @@ func place_tower(coord: Vector2i) -> bool:
 	if tower == null:
 		last_error = "La escena de TowerData no crea un nodo Tower."
 		return false
-	if not tower.configure(_tower_data, coord, cell.elevation, _map_origin, _hex_radius, _damage_service, _run_economy, _run_card_service):
+	if not tower.configure(_tower_data, coord, cell.elevation, _map_origin, _hex_radius, _damage_service, _run_economy, _run_card_service, _meta_progression, _board_grid):
 		last_error = tower.last_error
 		tower.free()
 		return false
-	if _run_economy != null and not bool(_run_economy.call("try_spend_gold", _tower_data.build_cost, &"tower_build")):
+	var build_cost: int = get_current_build_cost(_tower_data)
+	if _run_economy != null and not bool(_run_economy.call("try_spend_gold", build_cost, &"tower_build")):
 		last_error = "No se pudo completar la compra: oro insuficiente."
 		tower.free()
 		return false
@@ -156,7 +183,7 @@ func select_tower_at(coord: Vector2i) -> bool:
 func clear_selection() -> void:
 	_deselect_tower()
 
-func upgrade_selected_tower() -> bool:
+func upgrade_selected_tower(hit_point_layer: int = Enemy.HitPointLayer.HEALTH) -> bool:
 	last_error = ""
 	if not can_build_in_current_phase():
 		last_error = "La fase actual no permite mejorar torres."
@@ -177,7 +204,7 @@ func upgrade_selected_tower() -> bool:
 	if _run_economy != null and not bool(_run_economy.call("try_spend_gold", upgrade_cost, &"tower_upgrade")):
 		last_error = "No se pudo completar la mejora: oro insuficiente."
 		return false
-	if not selected_tower.upgrade():
+	if not selected_tower.upgrade(hit_point_layer):
 		if _run_economy != null:
 			_run_economy.call("add_gold", upgrade_cost, &"upgrade_refund")
 		last_error = "La torre ya está en su nivel máximo."
@@ -185,10 +212,41 @@ func upgrade_selected_tower() -> bool:
 	tower_upgraded.emit(selected_tower, selected_tower.level)
 	return true
 
+func demolish_selected_tower() -> bool:
+	last_error = ""
+	if not can_build_in_current_phase():
+		last_error = "No se pueden demoler torres en esta fase."
+		return false
+	if selected_tower == null or not is_instance_valid(selected_tower):
+		last_error = "Selecciona una torre antes de demolerla."
+		return false
+	var tower: Tower = selected_tower
+	var coord: Vector2i = tower.cell_coord
+	var tower_data: TowerData = tower.get_tower_data()
+	if _board_grid != null and _board_grid.cells.has(coord):
+		var cell: HexCell = _board_grid.cells[coord]
+		if cell != null:
+			cell.occupied = false
+			cell.tower_id = &""
+	_towers_by_coord.erase(coord)
+	tower.set_selected(false)
+	selected_tower = null
+	tower.queue_free()
+	tower_demolished.emit(tower_data, get_current_build_cost(tower_data))
+	return true
+
 func set_selected_targeting_mode(mode: int) -> bool:
 	if not can_build_in_current_phase() or selected_tower == null or not is_instance_valid(selected_tower):
 		return false
-	if not selected_tower.set_targeting_mode(mode):
+	if not selected_tower.set_targeting_priority(0, mode):
+		return false
+	tower_selected.emit(selected_tower, selected_tower.cell_coord)
+	return true
+
+func set_selected_targeting_priority(slot: int, mode: int) -> bool:
+	if not can_build_in_current_phase() or selected_tower == null or not is_instance_valid(selected_tower):
+		return false
+	if not selected_tower.set_targeting_priority(slot, mode):
 		return false
 	tower_selected.emit(selected_tower, selected_tower.cell_coord)
 	return true

@@ -11,6 +11,8 @@ enum OperationType {
 	STATUS_DURATION_MULTIPLIER,
 	MANA_MAX_ADD,
 	MANA_REGEN_ADD,
+	TOWER_CRIT_CHANCE_ADD,
+	TOWER_HIT_POINT_MULTIPLIER_ADD,
 }
 
 signal card_selected(card: Resource)
@@ -26,7 +28,12 @@ var _selected_counts: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 var _is_configured: bool = false
 
-func configure(card_pool: Resource, unlocked_content_ids: Array[StringName]) -> bool:
+func configure(
+	card_pool: Resource,
+	unlocked_content_ids: Array[StringName],
+	run_seed: int = 0,
+	use_run_seed: bool = false
+) -> bool:
 	last_error = ""
 	if card_pool == null or not card_pool.has_method("validate"):
 		last_error = "RunCardService requiere un CardPoolData válido."
@@ -43,7 +50,10 @@ func configure(card_pool: Resource, unlocked_content_ids: Array[StringName]) -> 
 	_selected_cards.clear()
 	_active_operations.clear()
 	_selected_counts.clear()
-	_rng.randomize()
+	if use_run_seed:
+		_rng.seed = run_seed
+	else:
+		_rng.randomize()
 	_is_configured = true
 	return true
 
@@ -116,6 +126,20 @@ func get_tower_area_radius_add(tower_id: StringName) -> float:
 
 func get_tower_mana_cost_multiplier(tower_id: StringName) -> float:
 	return _multiply_matching_operations(OperationType.TOWER_MANA_COST_MULTIPLIER, tower_id)
+
+func get_tower_hit_point_multiplier_add(tower_id: StringName, layer: int) -> float:
+	var total: float = 0.0
+	for operation in _active_operations:
+		if int(operation.get("type")) != OperationType.TOWER_HIT_POINT_MULTIPLIER_ADD:
+			continue
+		if int(operation.get("affected_hit_point_layer")) != layer:
+			continue
+		if _operation_matches(operation, tower_id, 0, &""):
+			total += float(operation.get("value"))
+	return total
+
+func get_tower_crit_chance_add(tower_id: StringName) -> float:
+	return _sum_matching_operations(OperationType.TOWER_CRIT_CHANCE_ADD, tower_id)
 
 func get_status_duration_multiplier(tower_id: StringName, status_id: StringName) -> float:
 	return _multiply_matching_operations(

@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="PermanentUpgradeData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://game/progression/permanent_upgrade_data.gd" id="1_upgrade"]
+[ext_resource type="Script" path="res://game/progression/permanent_upgrade_operation.gd" id="2_operation"]
+
+[sub_resource type="Resource" id="PermanentUpgradeOperation_1"]
+script = ExtResource("2_operation")
+effect_type = 0
+value = 20.0
+
+[sub_resource type="Resource" id="PermanentUpgradeOperation_2"]
+script = ExtResource("2_operation")
+effect_type = 0
+value = 20.0
+
+[sub_resource type="Resource" id="PermanentUpgradeOperation_3"]
+script = ExtResource("2_operation")
+effect_type = 0
+value = 20.0
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"starting_coffers"
+display_name = "Fondo de campaña"
+description = "+20 de oro inicial por nivel en cada nueva run."
+max_level = 3
+cost_by_level = Array[int]([10, 20, 35])
+operations_by_level = Array[ExtResource("2_operation")]([SubResource("PermanentUpgradeOperation_1"), SubResource("PermanentUpgradeOperation_2"), SubResource("PermanentUpgradeOperation_3")])

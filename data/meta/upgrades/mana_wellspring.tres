@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="PermanentUpgradeData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://game/progression/permanent_upgrade_data.gd" id="1_upgrade"]
+[ext_resource type="Script" path="res://game/progression/permanent_upgrade_operation.gd" id="2_operation"]
+
+[sub_resource type="Resource" id="PermanentUpgradeOperation_1"]
+script = ExtResource("2_operation")
+effect_type = 3
+value = 0.25
+
+[sub_resource type="Resource" id="PermanentUpgradeOperation_2"]
+script = ExtResource("2_operation")
+effect_type = 3
+value = 0.25
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"mana_wellspring"
+display_name = "Manantial"
+description = "+0,25 de regeneración de maná por segundo por nivel en cada nueva run."
+max_level = 2
+cost_by_level = Array[int]([15, 30])
+operations_by_level = Array[ExtResource("2_operation")]([SubResource("PermanentUpgradeOperation_1"), SubResource("PermanentUpgradeOperation_2")])

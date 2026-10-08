@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CardPoolData" load_steps=14 format=3]
+[gd_resource type="Resource" script_class="CardPoolData" load_steps=20 format=3]
 
 [ext_resource type="Script" path="res://data/cards/card_pool_data.gd" id="1_pool"]
 [ext_resource type="Resource" path="res://data/cards/ballista_calibrated_shot.tres" id="2_ballista"]
@@ -13,10 +13,16 @@
 [ext_resource type="Resource" path="res://data/cards/mana_reservoir.tres" id="11_mana_max"]
 [ext_resource type="Resource" path="res://data/cards/mana_flow.tres" id="12_mana_regen"]
 [ext_resource type="Resource" path="res://data/cards/efficient_circuits.tres" id="13_efficiency"]
+[ext_resource type="Resource" path="res://data/cards/archive_burnished_blades.tres" id="14_archive_damage"]
+[ext_resource type="Resource" path="res://data/cards/archive_mana_channel.tres" id="15_archive_mana"]
+[ext_resource type="Resource" path="res://data/cards/quantity_over_quality.tres" id="16_critical"]
+[ext_resource type="Resource" path="res://data/cards/monster_studies_health.tres" id="17_health"]
+[ext_resource type="Resource" path="res://data/cards/monster_studies_armor.tres" id="18_armor"]
+[ext_resource type="Resource" path="res://data/cards/monster_studies_shield.tres" id="19_shield"]
 
 [resource]
 script = ExtResource("1_pool")
-cards = Array[Resource]([ExtResource("2_ballista"), ExtResource("3_mortar"), ExtResource("4_tesla"), ExtResource("5_frost"), ExtResource("6_flame"), ExtResource("7_poison"), ExtResource("8_shredder"), ExtResource("9_range"), ExtResource("10_damage"), ExtResource("11_mana_max"), ExtResource("12_mana_regen"), ExtResource("13_efficiency")])
+cards = Array[Resource]([ExtResource("2_ballista"), ExtResource("3_mortar"), ExtResource("4_tesla"), ExtResource("5_frost"), ExtResource("6_flame"), ExtResource("7_poison"), ExtResource("8_shredder"), ExtResource("9_range"), ExtResource("10_damage"), ExtResource("11_mana_max"), ExtResource("12_mana_regen"), ExtResource("13_efficiency"), ExtResource("14_archive_damage"), ExtResource("15_archive_mana"), ExtResource("16_critical"), ExtResource("17_health"), ExtResource("18_armor"), ExtResource("19_shield")])
 offer_size = 3
 first_offer_round = 3
 offer_interval = 3

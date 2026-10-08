@@ -13,3 +13,6 @@ stack_rule = 1
 speed_multiplier = 1.0
 damage_per_tick = 2.0
 damage_tags = 2
+health_layer_multiplier = 0.5
+armor_layer_multiplier = 1.0
+shield_layer_multiplier = 0.5

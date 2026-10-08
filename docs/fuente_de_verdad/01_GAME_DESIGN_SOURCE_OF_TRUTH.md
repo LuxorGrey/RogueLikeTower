@@ -59,8 +59,10 @@ Las cartas `CardData` son distintas de las cards visuales que ofrecen piezas de 
 
 ## Reglas de combate confirmadas y pendientes de implementación
 - Los enemigos tendrán capas de escudo → armadura → salud.
-- La torre aplica daño base por el multiplicador de la capa activa. Falta decidir si el excedente al vaciar una capa pasa a la siguiente.
-- Bleed contrarresta regeneración de salud, Burn la de armadura y Poison la de escudo. Se conservan los comportamientos actuales de los estados hasta implementar las capas faltantes.
+- La torre aplica daño base por el multiplicador de la capa activa. Sigue sin decidirse si el excedente al vaciar una capa pasa a la siguiente; el código lo descarta provisionalmente y no se considera regla confirmada.
+- Bleed contrarresta regeneración de salud, Burn la de armadura y Poison la de escudo. Las tres capas y sus counters están implementados como M12A; el resto de los comportamientos de estados se conserva salvo los cambios registrados en ADR-0023.
+- Cada nivel de torre añade +1 de daño base y +1 a un multiplicador de capa elegido; el XP de mantener un objetivo en rango añade el mismo incremento según el HP actual de ese enemigo. Elevación añade +1 daño y +0.5 de rango por nivel. Estos valores y la tabla H/A/S/RPM/maná/precio que pegó el usuario son el perfil inicial de la demo y siguen configurables.
+- Se pueden escoger hasta tres prioridades de target; críticos avanzan por bandas ×2/×3/×4 hasta 150%; precios de construcción crecen por cantidad del mismo tipo y Frost Keep acelera por PATH cubierto. Ver [ADR-0023](../decisiones/ADR-0023-reglas-de-torres-y-capas-de-vida.md); esta fuente conserva abierta la regla de overkill.
 - La demo coloca minijefes en las rondas 17 y 19 y un jefe Tier 2 fijo en la 20. No se ha elegido una de las tres variantes de referencia.
 - Las cifras y apariencias de los enemigos de M10 son placeholders internos. Las tablas de Rogue Tower Wiki en `docs/borradores_personales/02_monstruos.md` son referencia comunitaria, no balance propio ni catálogo aprobado.
 

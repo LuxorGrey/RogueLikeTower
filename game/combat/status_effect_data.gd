@@ -18,6 +18,9 @@ const ALL_DAMAGE_TAGS: int = DAMAGE_TAG_PHYSICAL | DAMAGE_TAG_FIRE | DAMAGE_TAG_
 @export_range(0.05, 1.0, 0.05) var speed_multiplier: float = 1.0
 @export_range(0.0, 10000.0, 0.1) var damage_per_tick: float = 0.0
 @export_flags("Físico", "Fuego", "Arcano", "Veneno") var damage_tags: int = DAMAGE_TAG_PHYSICAL
+@export_range(0.0, 100.0, 0.05) var health_layer_multiplier: float = 1.0
+@export_range(0.0, 100.0, 0.05) var armor_layer_multiplier: float = 1.0
+@export_range(0.0, 100.0, 0.05) var shield_layer_multiplier: float = 1.0
 
 func validate() -> PackedStringArray:
 	var errors := PackedStringArray()
@@ -41,6 +44,12 @@ func validate() -> PackedStringArray:
 		errors.append("Un estado con daño periódico requiere un intervalo de tick positivo.")
 	if damage_per_tick > 0.0 and (damage_tags <= 0 or (damage_tags & ~ALL_DAMAGE_TAGS) != 0):
 		errors.append("El daño periódico requiere tags de daño válidos.")
+	if (
+		health_layer_multiplier < 0.0 or health_layer_multiplier > 100.0
+		or armor_layer_multiplier < 0.0 or armor_layer_multiplier > 100.0
+		or shield_layer_multiplier < 0.0 or shield_layer_multiplier > 100.0
+	):
+		errors.append("Los multiplicadores de daño periódico por capa deben estar entre 0 y 100.")
 	if is_equal_approx(speed_multiplier, 1.0) and damage_per_tick <= 0.0:
 		errors.append("El estado no modifica velocidad ni causa daño periódico.")
 	return errors

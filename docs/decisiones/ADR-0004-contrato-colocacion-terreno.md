@@ -1,6 +1,6 @@
 # ADR-0004: contrato de colocación de piezas de terreno
 
-- Estado: Aceptada para M3; la reciprocidad exacta entre piezas quedó ampliada por ADR-0006. La reciprocidad exacta dentro de una pieza sigue vigente.
+- Estado: Aceptada para M3; la reciprocidad exacta entre piezas quedó ampliada por ADR-0006. La semilla especial de siete celdas se conserva como antecedente M3; ADR-0025 define el tablero de campaña actual. La reciprocidad exacta dentro de una pieza sigue vigente.
 - Fecha: 2026-10-07.
 
 ## Contexto
@@ -14,7 +14,7 @@ M3 necesita ampliar el tablero con piezas de siete celdas, conservar los datos d
 - Una pieza expansiva debe tener al menos un socket explícito hacia fuera y al colocarla debe unirlo con PATH del tablero mediante una cara explícita o flexible complementaria. Las aperturas laterales flexibles se describen en ADR-0006; las que queden abiertas pueden servir para expansión posterior.
 - `TerrainPlacementValidator` calcula la legalidad sin modificar el tablero ni el Resource. Se rechazan solapamientos, falta de contacto, bordes PATH explícitos incompatibles, salidas explícitas hacia terreno que no sea PATH y piezas que no enlacen con PATH existente cuando lo requieren. Una oferta flexible no usada no invalida la colocación.
 - Tras confirmar una evaluación legal, `HexGrid.add_cells` inserta todas las celdas de la pieza en una única operación, asignándoles un `piece_instance_id`.
-- La pieza inicial es una semilla especial que no requiere conexión entrante y expone una salida inicial hacia `(0,-2)`.
+- La semilla M3 de siete celdas no requería conexión entrante y exponía una salida hacia `(0,-2)`. Ese tablero queda sustituido para la campaña por el tablero de 19 celdas y la ruta de cuatro PATH de ADR-0025.
 - La conectividad global spawn-base corresponde a `PathGraph` de M4 y se valida sobre las celdas existentes más la pieza candidata antes de insertarla en `HexGrid`.
 - El preview combina tablero confirmado y fantasma; verde indica colocación legal y rojo indica que la evaluación actual tiene errores. La UI solo confirma una evaluación legal.
 

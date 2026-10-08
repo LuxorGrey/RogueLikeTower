@@ -18,7 +18,17 @@
     [-1, 1],
     [-1, 0]
   ],
-  "starting_piece_open_path_neighbor_axial": [0, -2],
+  "starting_board": {
+    "resource": "data/terrain/starting_board.tres",
+    "cell_count": 19,
+    "axial_radius": 2,
+    "base_coord_axial": [0, 0],
+    "minimum_spawn_route_cells": 4,
+    "path_cells_axial": [[0, 0], [1, 0], [2, -1], [2, -2]],
+    "spawn_outside_coord_axial": [3, -2],
+    "orientation_per_run": "advance_one_axial_rotation_step_of_60_degrees; six_step_cycle_from_persistent_run_count",
+    "rotated_data": ["cell_coordinates_about_base", "path_edges", "flexible_path_edges"]
+  },
   "m4_path_graph": {
     "algorithm": "deterministic_breadth_first_search",
     "base_coord_axial_provisional": [0, 0],
@@ -28,9 +38,12 @@
       "flexible_path_edges"
     ],
     "rebuild": "initialization_and_confirmed_piece_placement",
-    "debug_toggle_key": "D"
+    "debug_toggle_key": "D",
+    "reachable_spawn_marker": "always_visible_red_amber_portal_with_inward_arrow_and_SPAWN_label",
+    "spawn_marker_data_source": "reachable_PathGraph_routes"
   },
   "m5_first_wave_prototype": {
+    "status": "historical_m5_fixture; campaign_start_uses_starting_board",
     "base_coord_axial_provisional": [0, 0],
     "base_max_health_provisional": 50,
     "enemy_id": "basic_raider",
@@ -117,9 +130,12 @@
   },
   "support_buildings": false,
   "enemy_core_stats": [
-    "health",
+    "shield",
     "armor",
-    "regeneration"
+    "health",
+    "shield_regeneration",
+    "armor_regeneration",
+    "health_regeneration"
   ],
   "m7_damage_model": {
     "damage_service_scope": "Main_scene_local; injected_into_towers",
@@ -189,7 +205,7 @@
     "profiles": [
       {"id": "ballista_demo", "working_name": "Ballesta", "parallel": "Rogue Tower Ballista", "role": "single_target_generalist", "attack_pattern": "SINGLE_TARGET"},
       {"id": "mortar_demo", "working_name": "Mortero", "parallel": "Rogue Tower Mortar", "role": "long_range_slow_area_anti_armor", "attack_pattern": "AREA"},
-      {"id": "tesla_coil_demo", "working_name": "Bobina Tesla", "parallel": "Rogue Tower Tesla Coil", "role": "multi_target_mana_attack", "attack_pattern": "CHAIN"},
+      {"id": "tesla_coil_demo", "working_name": "Bobina Tesla", "parallel": "Rogue Tower Tesla Coil", "role": "all_targets_in_range_mana_attack", "attack_pattern": "ALL_IN_RANGE"},
       {"id": "frost_keep_demo", "working_name": "Guardafría", "parallel": "Rogue Tower Frost Keep", "role": "mana_slow", "attack_pattern": "AREA"},
       {"id": "flame_thrower_demo", "working_name": "Lanzallamas", "parallel": "Rogue Tower Flame Thrower", "role": "fire_burn_status", "attack_pattern": "CONE"},
       {"id": "poison_sprayer_demo", "working_name": "Pulverizador venenoso", "parallel": "Rogue Tower Poison Sprayer", "role": "poison_damage_over_time", "attack_pattern": "CONE"},
@@ -197,10 +213,56 @@
     ],
     "main_hotkeys": ["1", "2", "3", "4", "5", "6", "7"],
     "diagnostic_hotkeys": {"8": "armor_piercing_bolt_m7_test", "9": "sapping_bolt_m7_test", "0": "status_probe_m8_test"},
-    "build_costs_provisional": {"ballista_demo": 30, "mortar_demo": 80, "tesla_coil_demo": 70, "frost_keep_demo": 50, "flame_thrower_demo": 65, "poison_sprayer_demo": 65, "shredder_demo": 100},
-    "mana_cost_per_attack_provisional": {"tesla_coil_demo": 5.0, "frost_keep_demo": 0.65, "flame_thrower_demo": 1.0, "poison_sprayer_demo": 1.0},
+    "tower_profiles_provisional": {
+      "ballista_demo": {"damage": 10, "health_armor_shield": [10, 5, 5], "range": 5, "rpm": 20, "mana": "0/attack", "build_cost": 10, "same_type_increment": 15},
+      "mortar_demo": {"damage": 20, "health_armor_shield": [10, 15, 5], "range": 10, "rpm": 10, "mana": "0/attack", "build_cost": 200, "same_type_increment": 75},
+      "tesla_coil_demo": {"damage": 10, "health_armor_shield": [6, 3, 10], "range": 1.5, "rpm": 30, "mana": "5/attack; scales with base damage", "build_cost": 200, "same_type_increment": 75},
+      "frost_keep_demo": {"damage": 6, "health_armor_shield": [10, 5, 5], "range": 2, "rpm": "180 + 18 per covered PATH cell", "mana": "2/second", "build_cost": 250, "same_type_increment": 100},
+      "flame_thrower_demo": {"damage": 5, "health_armor_shield": [6, 9, 3], "range": 4, "rpm": 60, "mana": "1/attack; scales with base damage", "build_cost": 300, "same_type_increment": 75},
+      "poison_sprayer_demo": {"damage": 5, "health_armor_shield": [6, 3, 9], "range": 4, "rpm": 60, "mana": "1/attack; scales with base damage", "build_cost": 300, "same_type_increment": 75},
+      "shredder_demo": {"damage": 10, "health_armor_shield": [20, 10, 10], "range": 5, "rpm": 5, "mana": "0/attack", "build_cost": 500, "same_type_increment": 100}
+    },
     "poison_damage_tag": 8,
-    "enemy_shield_model": false,
+    "enemy_shield_model": true,
+    "tower_rules": "ADR-0023: damage/current HP layer; +1 base damage and selected H/A/S multiplier per level; 3 targeting criteria; critical bands; same-type cost scaling; Frost RPM per PATH coverage",
+    "balance_confirmed": false
+  },
+  "m12a_tower_and_hit_point_rules": {
+    "active_hit_point_order": ["SHIELD", "ARMOR", "HEALTH"],
+    "damage_formula": "floor(raw_damage * critical_multiplier * active_layer_multiplier * enemy_damage_tag_multiplier)",
+    "damage_cap": "current_hp_of_active_layer",
+    "overflow_policy_provisional": "discard_after_active_layer_is_depleted",
+    "hit_point_bar_segments": ["SHIELD", "ARMOR", "HEALTH"],
+    "status_regeneration_counters": {"bleed": "HEALTH", "burn": "ARMOR", "poison": "SHIELD"},
+    "status_adds_hidden_damage_vulnerability": false,
+    "tower_level_gains": {"base_damage": 1, "selected_or_target_active_layer_multiplier": 1},
+    "targeting_xp_formula_provisional": "0.5 + 1 / (2 * tower_range_hexes) per second while target remains in range",
+    "target_priority_criteria_max": 3,
+    "critical_chance_max": 1.5,
+    "critical_multipliers": [2, 3, 4],
+    "tesla_targets": "all_moving_enemies_within_circular_range",
+    "tower_upgrade_costs_provisional": {
+      "ballista_mortar": [10, 20],
+      "tesla_frost_keep": [20, 40],
+      "flame_poison_shredder": [30, 60]
+    },
+    "run_card_pool_count": 18,
+    "global_hit_point_multiplier_cards": ["monster_studies_health", "monster_studies_armor", "monster_studies_shield"],
+    "source_decision": "ADR-0023",
+    "balance_confirmed": false
+  },
+  "m12_meta_progression": {
+    "service": "MetaProgression autoload; run economy remains scene-local",
+    "save_path": "user://rogue_tower_meta.json",
+    "save_version": 1,
+    "save_payload": ["meta_currency", "unlocked_towers", "permanent_upgrade_levels", "settings", "run_counters", "last_run_summary"],
+    "save_recovery": "temporary write + .bak + atomic rename; legacy version 0/missing version migrates to 1 when schema is valid; malformed/future versions preserved and purchases locked",
+    "starting_unlocked_towers_provisional": ["tower:ballista_demo"],
+    "run_reward_formula_provisional": "min(1000, 5 + 5 * completed_rounds + (victory ? 30 : 0))",
+    "permanent_effects": ["starting_gold", "starting_mana", "maximum_mana", "mana_regen_per_second", "tower_damage_multiplier", "card_content_unlock"],
+    "meta_shop": "shown after RUN_VICTORY or RUN_DEFEAT; purchases persist; new run reloads Main",
+    "base_card_pool_count": 12,
+    "card_archive_unlocks": ["archive_burnished_blades", "archive_mana_channel"],
     "balance_confirmed": false
   },
   "run_phases": [

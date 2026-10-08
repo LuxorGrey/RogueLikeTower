@@ -6,7 +6,7 @@
 ## Decisiones
 
 1. `WaveCampaignData` mantiene exactamente veinte `WaveData` consecutivos, valida que la ronda 17 y 19 sean encuentros de minijefe y la 20 un jefe Tier 2. Las reglas de calendario se promueven a la fuente de verdad; la variante del jefe, sus habilidades y las estadísticas definitivas permanecen abiertas.
-2. La campaña usa datos propios placeholder: Asaltante básico existente, Asaltante acorazado, Regenerador, Minijefe genérico y Jefe Tier 2 genérico. No se importan nombres, cifras, habilidades ni capas de la wiki comunitaria. El jefe de la ronda 20 no elige entre las tres variantes pendientes. Color y radio son representación vectorial temporal.
+2. La campaña usa datos propios placeholder: Asaltante básico, Asaltante acorazado, Regenerador, Minijefe genérico y Jefe Tier 2 genérico. La cifra de vida del Asaltante básico de esta decisión queda sustituida por ADR-0024 para que la Ballista inicial lo elimine de un impacto. Los demás perfiles no importan estadísticas o habilidades de la wiki comunitaria. El jefe de la ronda 20 no elige entre las tres variantes pendientes. Color y radio son representación vectorial temporal.
 3. `WaveCampaignData` configura crecimiento por ronda para vida máxima (+5% por ronda posterior a la primera), daño a base (+2.5%) y recompensa por baja (+2%). Son valores experimentales, editables y no balance aprobado.
 4. Antes de configurar cada enemigo de campaña, el director duplica su `EnemyData` y escala la copia runtime. No modifica Resources compartidos. La composición, intervalos y bonus de limpieza viven en `round_01.tres`–`round_20.tres`.
 5. El director cuenta `pending_spawn_count` y enemigos vivos por separado. Solo termina cuando no quedan grupos/spawns pendientes, el generador se detuvo y no hay enemigos vivos. El bonus de ronda se emite una vez tras ese punto.
@@ -18,13 +18,13 @@
 
 | Perfil | HP base | Velocidad | Daño a base | Armadura | Regen HP/s | Oro por baja |
 |---|---:|---:|---:|---:|---:|---:|
-| Asaltante básico | 20 | 90 | 10 | 0 | 0 | 5 |
+| Asaltante básico | 100 | 90 | 10 | 0 | 0 | 5 |
 | Asaltante acorazado | 46 | 76 | 12 | 5 | 0 | 7 |
 | Regenerador | 58 | 70 | 10 | 1 | 3 | 8 |
 | Minijefe placeholder | 320 | 42 | 24 | 12 | 1 | 60 |
 | Jefe Tier 2 placeholder | 1600 | 26 | 50 | 45 | 5 | 200 |
 
-Todos los valores de la tabla se escalan por ronda donde aplique y pueden cambiarse en `.tres`. No se obtuvieron de la tabla de Rogue Tower.
+Todos los valores de la tabla se escalan por ronda donde aplique y pueden cambiarse en `.tres`. Las estadísticas salvo la salud del Asaltante básico no se obtuvieron de la tabla de Rogue Tower.
 
 ## Consecuencias y aceptación
 

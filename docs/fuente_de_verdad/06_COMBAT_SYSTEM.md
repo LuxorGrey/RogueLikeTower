@@ -4,12 +4,7 @@
 Conservar la lectura estratégica de Rogue Tower: enemigos con defensas distintas y torres que funcionan mejor/peor según el objetivo.
 
 ## Enemy survivability
-Cada enemigo tiene como mínimo:
-- Health.
-- Armor.
-- Regeneration.
-
-El diseño confirmado añade capas en orden **Shield → Armor → Health** y una fórmula de daño base por multiplicador de la capa activa. El prototipo aún no implementa Shield ni ha decidido si el exceso al vaciar una capa pasa a la siguiente. Bleed contrarresta regeneración de salud, Burn la de armadura y Poison la de escudo; no se importan DoT, habilidades o cifras de las tablas comunitarias. Ver [ADR-0016](../decisiones/ADR-0016-campana-de-veinte-rondas.md) y `docs/borradores_personales/02_monstruos.md`.
+Cada enemigo tiene Health y puede tener Armor y Shield. Se consumen en orden **Shield → Armor → Health**. La barra sobre el enemigo muestra segmentos coloreados para las tres capas y el HUD informa valores actuales/máximos. Bleed contrarresta regeneración de Health, Burn la de Armor y Poison la de Shield. Ver [ADR-0023](../decisiones/ADR-0023-reglas-de-torres-y-capas-de-vida.md).
 
 No copiar números de Rogue Tower. Crear sistema propio configurable.
 
@@ -17,7 +12,7 @@ No copiar números de Rogue Tower. Crear sistema propio configurable.
 Centralizar el cálculo:
 1. torre crea `DamagePacket`;
 2. aplicar modificadores de run;
-3. resolver counter/perfil contra armor/health;
+3. resolver crítico, tag y multiplicador para la capa activa Shield/Armor/Health;
 4. aplicar daño;
 5. aplicar status;
 6. emitir eventos;
@@ -39,11 +34,7 @@ Los multiplicadores concretos son balance, no arquitectura.
 Regeneración por segundo o tick. Debe poder ser reducida/contrarrestada por efectos o torres si se define una build anti-regen.
 
 ## Targeting
-Mínimo:
-- first/progress;
-- last;
-- highest health;
-- highest armor.
+Cada torre puede combinar hasta tres criterios únicos: progreso, vida/armadura/escudo altos o bajos, menor HP de la capa activa y velocidad rápida/lenta. El segundo criterio se usa solo si empata el primero; el tercero si ambos empatan.
 
 No implementar 15 modos antes de necesitarlos.
 
@@ -54,7 +45,7 @@ height_delta = tower_elevation - target_elevation
 ```
 Debe existir una función única que traduzca `height_delta` a bonus.
 
-La fórmula final sigue abierta. Para prototipo usar bonus configurable y documentado, por ejemplo rango adicional o multiplicador moderado. No fijarlo como balance definitivo.
+Regla de demo: cada nivel de elevación suma +1 al daño base y +0.5 hex al alcance. Son valores configurables y provisionales.
 
 ## Status framework
 Catálogo reducido inicial:
@@ -77,15 +68,15 @@ El framework debe soportar:
 
 Reglas runtime: `REFRESH` conserva una acumulación; `ADD_STACKS` incrementa hasta `max_stacks`. En ambos casos la aplicación renueva la duración completa y conserva la fase del próximo tick. Una reaplicación del mismo ID usa los datos y el origen de la aplicación más reciente. Cada enemigo tiene sus propios contadores aunque varios compartan el mismo Resource. Los multiplicadores de velocidad se combinan por mínimo; `1.0` significa velocidad normal. Un estado desaparece al llegar su duración a cero y todos se limpian cuando el enemigo muere o llega a la base. Los ticks aplicados antes de que expire el tiempo restante se resuelven; no hay daño periódico después de la expiración.
 
-La muestra de M8 contiene Slow (`0.55×`, dura 2.5 s y refresca), Burn (2 de daño de Fuego por segundo, dura 5 s y acumula hasta 3) y Bleed (1.5 de daño Físico cada 0.75 s, dura 1.5 s y acumula hasta 4). La Sonda ataca cada 2 s para dejar visible el hueco de expiración de Bleed, mientras Slow se refresca y Burn alcanza el máximo de stacks. No se implementan resistencias de estados: el diseño no ofrece todavía resistencias configurables y el roadmap las deja condicionales. La torre `Sonda de estados M8` y el enemigo lento de 180 HP son solo fixtures de depuración, no balance ni catálogo final. ADR-0012 detalla estas elecciones; `10_ACCEPTANCE_TESTS.md` define los criterios de aceptación manual.
+La muestra de M8 contiene Slow (`0.5×`, provisional para Frost), Burn y Bleed; la Sonda sigue siendo fixture de depuración. Bleed cancela regeneración de Health, Burn la de Armor y Poison la de Shield. Los DoT usan sus multiplicadores de capa y el pipeline central. No se implementan resistencias de estado. ADR-0012/0023 detallan reglas y provisionalidades; `10_ACCEPTANCE_TESTS.md` define la aceptación manual.
 
 ## M9.5 — Roster de siete torres
 
 La demo incorpora Ballista, Mortar, Tesla Coil, Frost Keep, Flame Thrower, Poison Sprayer y Shredder antes de las cartas. Los perfiles viven en `TowerData`; los atajos `1–7` muestran nombre, color placeholder y coste. `8`, `9` y `0` retienen Perforadora, Drenadora y Sonda para diagnóstico M7/M8.
 
-Los patrones disponibles son objetivo único, área centrada en el objetivo, cadena limitada y cono. Shredder lanza una hoja visual hasta la posición actual del objetivo y desde allí sigue sus waypoints restantes hacia la base; comprueba cada segmento de la ruta, impacta cada enemigo una sola vez y pierde 1 de daño base por enemigo atravesado. No causa daño directo: convierte todo el daño base restante en un presupuesto bruto de Bleed para ese enemigo y lo reparte entre los ticks de la duración configurada. Cada tick vuelve a `DamageService` y queda sujeto a armadura y multiplicadores por tag; la hoja desaparece al llegar al final del camino o quedarse sin daño. No conserva una rama al encontrar bifurcaciones: sigue la ruta del objetivo inicial. [ADR-0015](../decisiones/ADR-0015-shredder-bleed-y-recorrido.md) corrige y reemplaza la descripción anterior del waypoint más cercano de ADR-0014. El Mortar resuelve el impacto como hitscan/AoE, no como proyectil balístico.
+Los patrones disponibles son objetivo único, área, cadena, cono, hoja por PATH y todos-en-alcance. Ballista dispara un proyectil; Mortar lanza una granada a la posición seleccionada y explota con daño de área al aterrizar; Tesla descarga sobre todos los enemigos en alcance circular. Shredder lanza una hoja por la ruta actual del objetivo, hace impacto directo y añade Bleed por el 100% del daño base restante, y pierde 1 de daño base por enemigo atravesado. Frost Keep usa un área cuadrada; su cadencia sube con PATH cubierto. Flame/Poison afectan un cono y convierten el 100% del daño base en Burn/Poison. Los estados detienen la regeneración de su capa y aplican multiplicadores H/A/S; no crean una vulnerabilidad adicional oculta. Los detalles de datos están en [11_INITIAL_CONTENT_PLACEHOLDERS.md](11_INITIAL_CONTENT_PLACEHOLDERS.md) y ADR-0023; parámetros no indicados por el usuario siguen siendo provisionales.
 
-Poison es el tag 8 de daño; `EnemyData.poison_damage_multiplier` participa junto con los otros multiplicadores por tag y el `DamageService` central. Los valores iniciales de Poison/Bleed, costes, cadencias, radios y conos son provisionales configurables. Los escudos de la tabla comunitaria no se implementan: el modelo actual solo define vida, armadura y regeneración. Ver [ADR-0014](../decisiones/ADR-0014-roster-jugable-de-siete-torres.md) y [11_INITIAL_CONTENT_PLACEHOLDERS.md](11_INITIAL_CONTENT_PLACEHOLDERS.md).
+Poison es el tag 8 de daño; `EnemyData.poison_damage_multiplier` participa junto con los otros multiplicadores por tag. Shield se implementa en M12A y ocupa la capa superior del enemigo. Los multiplicadores por capa de los siete perfiles parten de la tabla del usuario; otros valores siguen provisionales. Ver [ADR-0014](../decisiones/ADR-0014-roster-jugable-de-siete-torres.md), [ADR-0023](../decisiones/ADR-0023-reglas-de-torres-y-capas-de-vida.md) y [11_INITIAL_CONTENT_PLACEHOLDERS.md](11_INITIAL_CONTENT_PLACEHOLDERS.md).
 
 ## Torre
 Estados:
@@ -119,7 +110,7 @@ M6 añade el primer ciclo defensivo con una torre `Basic Bolt`: se puede colocar
 
 La altura de la torre suma provisionalmente `height_range_bonus_per_level` al alcance por nivel de elevación. Los valores iniciales de Basic Bolt son 10 de daño, 1 ataque/s, 3 hexes de alcance, +5 daño y +0.25 hex por nivel hasta nivel 3; cada nivel de elevación también agrega +0.25 hex. Son datos configurables para validar el sistema, no balance final. M9 añade costes configurables de construcción/mejora; desde M7 el armor mitiga según el paquete de daño.
 
-## M7 — Pipeline actual
+## M7 — Pipeline histórico (sustituido por M12A)
 
 `DamageService` es dueño de la fórmula de combate entre una torre y un enemigo. `Tower` arma un `DamagePacket` a partir de su `TowerData` y no calcula mitigación ni vida por su cuenta. La instancia de servicio pertenece a `Main` y se inyecta a `BuildController`/torres para que no haya un Autoload global con estado de combate.
 
@@ -146,8 +137,12 @@ Antes de ejecutar el paquete de daño, una torre con coste de maná solicita el 
 
 `WaveDirector` paga `EnemyData.kill_reward` exactamente una vez cuando el enemigo muere, incluidos kills de DoT. Un enemigo que llega a la base no cobra. `WaveData.round_reward` se paga cuando terminaron todos los spawns y no queda ningún enemigo activo; una derrota no da el bonus de limpieza, pero tampoco revierte pagos por bajas ya efectuadas. La UI pasa por `ROUND_REWARD` durante 0.8 s y después habilita `TERRAIN_EXPANSION`. Si el calendario M11 lo indica, al colocar el terreno se abre `CARD_OFFER` y la próxima ronda no pasa a `ROUND_PREP` hasta seleccionar una carta.
 
-La primera configuración arranca con 150 oro, 30/100 maná y regen 1.5/s; costes y recompensas en los `.tres` son cifras provisionales editables, no balance confirmado. El oro de run es distinto a la moneda meta que M12 persistirá. Sin economía inyectada, los callers antiguos de `Tower`/`BuildController` mantienen compatibilidad para smokes previos; `Main` siempre inyecta el servicio configurado. Ver ADR-0013 y el procedimiento manual M9 en `10_ACCEPTANCE_TESTS.md`.
+La primera configuración arranca con 150 oro, 30/100 maná y regen 1.5/s; costes y recompensas en los `.tres` son cifras provisionales editables, no balance confirmado. El oro de run es distinto a la moneda meta que M12 conserva entre runs. Sin economía inyectada, los callers antiguos de `Tower`/`BuildController` mantienen compatibilidad para smokes previos; `Main` siempre inyecta el servicio configurado. Ver ADR-0013 y el procedimiento manual M9 en `10_ACCEPTANCE_TESTS.md`.
 
 ## M11 — Modificadores de carta
 
-`Main` configura un `RunCardService` local desde `CardPoolData` y lo inyecta a `BuildController`, las torres nuevas y `RunEconomyService`. Las torres consultan los efectos activos al calcular daño, cadencia, alcance, área, coste de ataque y payloads de estado; los payloads `StatusEffectData` se duplican por impacto antes de ajustar duración, por lo que no se altera el `.tres`. Las torres ya construidas reciben cambios porque consultan el mismo servicio runtime. La economía consulta bonus de maná máximo y regeneración, limita el saldo efectivo a la capacidad y emite el máximo actualizado al seleccionar una carta. Las sumas y multiplicadores se agregan en `RunCardService`; `DamageService` conserva su responsabilidad sobre mitigación y aplicación de daño. Los valores de las 12 cartas y la oferta en rondas 3/6/9/12/15/18 son provisionales; ADR-0021 registra la decisión de implementación.
+`Main` configura un `RunCardService` local desde `CardPoolData` y lo inyecta a `BuildController`, las torres nuevas y `RunEconomyService`. Las torres consultan efectos runtime de daño, alcance, área, coste, crítico, multiplicadores H/A/E y payloads de estado; la cadencia permanece fija salvo la cobertura PATH de Frost Keep. Los payloads se duplican antes de ajustar duración. La economía consulta bonus de maná máximo/regeneración. El pool actual contiene 12 cartas base, dos de Archivo M12, una de crítico y tres de multiplicador H/A/E; calendarios y cifras son provisionales. ADR-0021/0022/0023 registran las decisiones.
+
+## M12A — Stats de torre y capas de HP
+
+`TowerData` contiene valores base/H/A/S/RPM/rango/maná/precio. El precio escala por cantidad del mismo perfil; demoler baja el conteo sin reembolso provisional. Daño por golpe usa el multiplicador de la capa actual y se limita a su HP; no hay overflow de una capa a otra en el mismo hit. Los críticos usan chance en bandas 0–150% y multiplicadores ×2/×3/×4. Upgrades comprados o XP acumulada añaden +1 de daño base y +1 al multiplicador de una sola capa. XP solo se acumula mientras la torre sostiene un objetivo en alcance y va a la capa activa de ese enemigo. Tres selectores de prioridad comparan hasta tres criterios no repetidos. Enemy dibuja Shield azul, Armor beige y Health verde en proporción a sus máximos combinados. Bleed/Burn/Poison bloquean regeneración de Health/Armor/Shield, respectivamente, y cartas globales pueden sumar +1 al multiplicador de una capa elegida. La barra y los stats pueden comprobarse en DEBUG `capas escudo/armadura/vida`; no modifica la campaña. Datos y provisionalidades: [ADR-0023](../decisiones/ADR-0023-reglas-de-torres-y-capas-de-vida.md).

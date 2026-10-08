@@ -9,7 +9,11 @@ var routes: Array[PathRoute] = []
 var errors: PackedStringArray = PackedStringArray()
 var is_valid: bool = false
 
-func rebuild(board_cells: Dictionary[Vector2i, HexCell], base_coord: Vector2i) -> void:
+func rebuild(
+	board_cells: Dictionary[Vector2i, HexCell],
+	base_coord: Vector2i,
+	minimum_spawn_route_cells: int = 1
+) -> void:
 	nodes.clear()
 	adjacency.clear()
 	spawn_endpoints.clear()
@@ -31,6 +35,9 @@ func rebuild(board_cells: Dictionary[Vector2i, HexCell], base_coord: Vector2i) -
 
 	if nodes.is_empty():
 		errors.append("El tablero no contiene celdas PATH.")
+		return
+	if minimum_spawn_route_cells < 1:
+		errors.append("La ruta mínima de spawn debe contener al menos una celda PATH.")
 		return
 
 	if not path_cells.has(base_coord):
@@ -68,6 +75,12 @@ func rebuild(board_cells: Dictionary[Vector2i, HexCell], base_coord: Vector2i) -
 			errors.append("El endpoint spawn %s (dirección %d) no tiene ruta a la base." % [
 			endpoint.cell_coord,
 			endpoint.edge_direction,
+		])
+		elif route.cells.size() < minimum_spawn_route_cells:
+			errors.append("La ruta del spawn %s hasta la base tiene %d celdas PATH; el mínimo es %d." % [
+			endpoint.cell_coord,
+			route.cells.size(),
+			minimum_spawn_route_cells,
 		])
 
 	is_valid = errors.is_empty()

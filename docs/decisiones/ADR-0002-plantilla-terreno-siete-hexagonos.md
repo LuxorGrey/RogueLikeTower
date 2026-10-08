@@ -1,6 +1,6 @@
 # ADR-0002: plantilla inicial de terreno de siete hexágonos
 
-- Estado: Aceptada para la plantilla inicial.
+- Estado: Aceptada para la forma de las losetas de siete celdas; su uso como tablero de campaña queda sustituido por ADR-0025.
 - Fecha: 2026-10-07.
 
 ## Contexto
@@ -9,7 +9,7 @@ El diseño base establece que cada expansión usa una pieza compuesta por siete 
 
 ## Decisión
 
-- La plantilla inicial tiene exactamente esas siete coordenadas locales, con `(0,0)` como pivote.
+- La plantilla de loseta de siete celdas tiene exactamente esas coordenadas locales, con `(0,0)` como pivote.
 - Cada celda guarda su propio terreno: PATH, GRASS o MOUNTAIN. La primera muestra usa 2 PATH, 3 GRASS y 2 MOUNTAIN para que los tres colores aparezcan; esa distribución es provisional y editable en el Resource.
 - La vista debug usa PATH `#59666E`, GRASS `#479157` y MOUNTAIN `#A1947A`, además de etiquetas P/G/M para que el tipo no dependa solo del color. Las etiquetas de montaña usan tinta oscura para conservar contraste. No se importa ni distribuye arte de terceros.
 - El giro ocurre en seis pasos de 60° alrededor del origen. Las coordenadas y los bits de conexiones de camino giran juntos; el Resource original no se modifica.
@@ -17,7 +17,7 @@ El diseño base establece que cada expansión usa una pieza compuesta por siete 
 
 ## Alcance y estado de implementación
 
-La plantilla inicial se presenta con el renderer placeholder definido en ADR-0003. M3 conserva este Resource como tablero semilla y añadió cinco Resources expansivos con sockets de camino, validador, preview y confirmación/cancelación. M4 implementa `PathGraph` y ancla provisionalmente la base en el PATH central `(0,0)`; el objetivo real reemplazará esta coordenada al implementarse M5. La interacción M3 y el overlay M4 siguen pendientes de inspección en Godot.
+M3 usó esta plantilla como tablero semilla; ADR-0025 sustituye ese uso por `StartingBoardData` de 19 celdas y mantiene las siete coordenadas como forma estándar de losetas. M3 también añadió cinco Resources expansivos con sockets de camino, validador, preview y confirmación/cancelación. M4 implementa `PathGraph` y ancla provisionalmente la base en PATH `(0,0)`. La interacción M3 y el overlay M4 siguen pendientes de inspección en Godot.
 
 ## Referencias
 

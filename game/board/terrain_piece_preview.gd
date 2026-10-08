@@ -15,6 +15,9 @@ const GRASS_HOVER_COLOR: Color = Color(0.50, 0.88, 0.52)
 const MOUNTAIN_HOVER_COLOR: Color = Color(0.96, 0.76, 0.36)
 const CLIFF_DARKEN_FACTOR: float = 0.38
 const CLIFF_MIN_SCREEN_DEPTH: float = 6.0
+const SPAWN_MARKER_DARK: Color = Color(0.035, 0.05, 0.06, 0.96)
+const SPAWN_MARKER_COLOR: Color = Color(0.94, 0.27, 0.18, 1.0)
+const SPAWN_MARKER_HIGHLIGHT: Color = Color(1.0, 0.79, 0.3, 1.0)
 const ROUTE_DEBUG_COLORS: Array[Color] = [
 	Color(0.25, 0.78, 1.0, 0.92),
 	Color(1.0, 0.76, 0.25, 0.92),
@@ -120,8 +123,10 @@ func _draw() -> void:
 	_draw_cliffs(cells, cells_by_coord)
 	for cell in cells:
 		_draw_cell_top(cell, _ghost_coords.has(cell.local_coord))
-	if _board_mode and _path_debug_visible and _path_graph != null:
-		_draw_path_debug_overlay()
+	if _board_mode and _path_graph != null:
+		if _path_debug_visible:
+			_draw_path_debug_overlay()
+		_draw_spawn_markers()
 	if _tower_build_preview_active:
 		_draw_tower_build_preview()
 
@@ -154,20 +159,52 @@ func _draw_path_debug_overlay() -> void:
 			draw_polyline(route_points, Color(0.04, 0.05, 0.06, 0.86), 8.0, true)
 			draw_polyline(route_points, route_color, 4.0, true)
 
-		var endpoint: PathEndpoint = route.spawn_endpoint
-		if endpoint == null:
-			continue
-		var path_center: Vector2 = _top_center(endpoint.cell_coord, 0)
-		var spawn_center: Vector2 = _top_center(endpoint.outside_coord, 0)
-		draw_line(path_center, spawn_center, Color(0.04, 0.05, 0.06, 0.86), 7.0, true)
-		draw_line(path_center, spawn_center, route_color, 3.5, true)
-		draw_circle(spawn_center, 7.0, route_color)
-		draw_arc(spawn_center, 9.0, 0.0, TAU, 20, Color(0.03, 0.04, 0.05), 2.0, true)
-
 	if _path_graph.base_endpoint != null:
 		var base_center: Vector2 = _top_center(_path_graph.base_endpoint.cell_coord, 0)
 		draw_circle(base_center, 12.0, Color(0.04, 0.05, 0.06, 0.92))
 		draw_circle(base_center, 8.0, Color(1.0, 0.85, 0.28, 1.0))
+
+func _draw_spawn_markers() -> void:
+	for route in _path_graph.routes:
+		if not route.is_reachable or route.spawn_endpoint == null:
+			continue
+		var endpoint: PathEndpoint = route.spawn_endpoint
+		var spawn_center: Vector2 = _top_center(endpoint.outside_coord, 0)
+		var path_center: Vector2 = _top_center(endpoint.cell_coord, 0)
+		var inward_direction: Vector2 = (path_center - spawn_center).normalized()
+		var path_corners: PackedVector2Array = _hex_corners(path_center)
+		var edge_start: int = posmod(endpoint.edge_direction + 1, 6)
+		var edge_end: int = posmod(endpoint.edge_direction + 2, 6)
+		var path_edge_midpoint: Vector2 = (path_corners[edge_start] + path_corners[edge_end]) * 0.5
+
+		# Deja la cara PATH despejada y hace visible el punto exterior donde nace el enemigo.
+		draw_line(path_edge_midpoint, spawn_center, SPAWN_MARKER_DARK, 8.0, true)
+		draw_line(path_edge_midpoint, spawn_center, SPAWN_MARKER_COLOR, 4.5, true)
+		draw_circle(spawn_center, 15.0, SPAWN_MARKER_DARK)
+		draw_circle(spawn_center, 11.0, SPAWN_MARKER_COLOR)
+		draw_arc(spawn_center, 12.5, 0.0, TAU, 24, SPAWN_MARKER_HIGHLIGHT, 2.0, true)
+
+		var arrow_tip: Vector2 = spawn_center + inward_direction * 7.0
+		var arrow_back: Vector2 = spawn_center - inward_direction * 5.0
+		var arrow_side: Vector2 = inward_direction.orthogonal() * 4.0
+		draw_colored_polygon(PackedVector2Array([
+			arrow_tip,
+			arrow_back + arrow_side,
+			arrow_back - arrow_side,
+		]), SPAWN_MARKER_HIGHLIGHT)
+
+		var label_rect := Rect2(spawn_center + Vector2(14.0, -10.0), Vector2(64.0, 20.0))
+		draw_rect(label_rect, SPAWN_MARKER_DARK, true)
+		draw_rect(label_rect, SPAWN_MARKER_HIGHLIGHT, false, 1.0)
+		draw_string(
+			ThemeDB.fallback_font,
+			label_rect.position + Vector2(5.0, 14.0),
+			"SPAWN",
+			HORIZONTAL_ALIGNMENT_LEFT,
+			-1.0,
+			11,
+			SPAWN_MARKER_HIGHLIGHT
+		)
 
 func _draw_cliffs(
 	cells: Array[TerrainPieceCellData],

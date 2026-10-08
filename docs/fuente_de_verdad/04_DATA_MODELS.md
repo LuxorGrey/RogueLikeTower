@@ -51,7 +51,7 @@ flexible_path_edges: bitmask[6] derivada de las salidas externas
 visual_variant: StringName
 ```
 
-Cada pieza contiene exactamente 7 celdas. La huella inicial es el centro axial `(0,0)` más sus seis vecinos; las coordenadas exactas y la vista de colores están en [05_HEX_GRID_AND_TERRAIN.md](05_HEX_GRID_AND_TERRAIN.md). Cada celda conserva su tipo de terreno al rotar. La primera mezcla y la paleta de colores son placeholders editables, no balance ni arte final.
+Cada pieza de terreno contiene exactamente 7 celdas. La forma hexagonal centrada en `(0,0)` más sus seis vecinos es la plantilla de losetas; el tablero de inicio de 19 celdas es un Resource aparte. Las coordenadas exactas y la vista de colores están en [05_HEX_GRID_AND_TERRAIN.md](05_HEX_GRID_AND_TERRAIN.md). Cada celda conserva su tipo de terreno al rotar. La mezcla y paleta son placeholders editables, no balance ni arte final.
 
 Validación vigente del Resource: ID y nombre no vacíos; peso no negativo; coordenadas únicas y conectadas; pivote `(0,0)`; tipos/elevaciones permitidos; PATH a altura 0, MOUNTAIN a altura 2; solo PATH declara `path_edges`; y toda conexión interna PATH es recíproca y llega a otra celda PATH. `requires_path_connection` exige al menos un socket PATH hacia fuera de la huella. `flexible_path_edges` se deriva al rotar la pieza a partir de las salidas externas y abre las dos caras laterales contiguas que también queden fuera de la huella; no se configura en el `.tres`. Las reglas completas de enlace están en [05_HEX_GRID_AND_TERRAIN.md](05_HEX_GRID_AND_TERRAIN.md).
 
@@ -65,7 +65,18 @@ tags
 requires_path_connection: bool
 ```
 
-`weight` y `tags` quedan disponibles para el pool de contenido; M3 no selecciona piezas al azar. La pieza inicial desactiva `requires_path_connection` porque crea el tablero semilla; las piezas expansivas lo activan.
+`weight` y `tags` quedan disponibles para el pool de contenido; M3 no selecciona piezas al azar. Las piezas expansivas activan `requires_path_connection`. El tablero semilla ya no se construye con `TerrainPieceData`.
+
+## StartingBoardData : Resource
+```text
+id
+display_name
+base_coord: Vector2i
+minimum_spawn_route_cells: int
+cells: Array[TerrainPieceCellData] # exactamente 19 en la campaña
+```
+
+`data/terrain/starting_board.tres` define el hexágono axial de radio 2, la celda de base y el camino inicial. Valida coordenadas únicas, elevaciones/terrenos válidos y conectividad de la huella. `Main` instancia sus datos en `HexCell`; la ruta se valida con `PathGraph`, que exige como mínimo cuatro celdas PATH desde cada endpoint activo hasta la base durante la campaña.
 
 Rotación:
 - rotar coordenadas locales alrededor del origen.
@@ -79,15 +90,17 @@ El validador de M3 recibe la pieza, el pivote axial, la rotación y las celdas a
 ## PathEndpoint / PathRoute / PathGraph
 `PathEndpoint` identifica su rol (`SPAWN` o `BASE`), la celda PATH axial, la dirección de borde y la coordenada externa para un spawn. `PathRoute` contiene un candidato spawn, el objetivo base y la secuencia ordenada de celdas PATH que une ambos; M4 cachea una ruta mínima por candidato.
 
-`PathGraph.rebuild(board_cells, base_coord)` deriva `nodes` y `adjacency` desde las celdas PATH. Solo crea adyacencia si ambos lados ofrecen un socket recíproco mediante `path_edges | flexible_path_edges`. Identifica como candidatos spawn las salidas `path_edges` que apuntan fuera del mapa; no convierte sockets solo flexibles en endpoints. `find_route(start, goal)` usa BFS de coste unitario con desempate estable por orden de las direcciones axiales; `get_branch_count()` cuenta nodos PATH con al menos tres vecinos conectados. El snapshot expone `spawn_endpoints`, `base_endpoint`, `routes`, `errors` e `is_valid`.
+`PathGraph.rebuild(board_cells, base_coord, minimum_spawn_route_cells = 1)` deriva `nodes` y `adjacency` desde las celdas PATH. Solo crea adyacencia si ambos lados ofrecen un socket recíproco mediante `path_edges | flexible_path_edges`. Identifica como candidatos spawn las salidas `path_edges` que apuntan fuera del mapa; no convierte sockets solo flexibles en endpoints. `find_route(start, goal)` usa BFS de coste unitario con desempate estable por orden de las direcciones axiales; `get_branch_count()` cuenta nodos PATH con al menos tres vecinos conectados. El snapshot expone `spawn_endpoints`, `base_endpoint`, `routes`, `errors` e `is_valid`.
 
-Un snapshot válido necesita que la base esté sobre PATH, que haya al menos un candidato spawn, que cada spawn tenga ruta a la base y que todos los nodos PATH pertenezcan a la red de la base. La coordenada base provisional `(0,0)` pertenece a la muestra M4/M5; `GameBase` se instancia allí en M5, pero la ubicación final del objetivo sigue abierta. `Main` reconstruye al iniciar y al confirmar expansión, no en cada frame. `TerrainPiecePreview` representa las rutas/endpoints como debug y no modifica el grafo. El algoritmo y sus límites están registrados en [ADR-0007](../decisiones/ADR-0007-grafo-logico-de-caminos.md).
+Un snapshot válido necesita que la base esté sobre PATH, que haya al menos un candidato spawn, que cada spawn tenga ruta a la base y que todos los nodos PATH pertenezcan a la red de la base; `Main` pasa el mínimo de cuatro celdas PATH para el tablero inicial y la campaña. La coordenada base provisional `(0,0)` pertenece a la muestra M4/M5; `GameBase` se instancia allí en M5, pero la ubicación final del objetivo sigue abierta. `Main` reconstruye al iniciar y al confirmar expansión, no en cada frame. `TerrainPiecePreview` representa las rutas/endpoints como debug y no modifica el grafo. El algoritmo y sus límites están registrados en [ADR-0007](../decisiones/ADR-0007-grafo-logico-de-caminos.md) y [ADR-0025](../decisiones/ADR-0025-tablero-inicial-y-ruta-minima.md).
 
 ## TowerData : Resource
 ```text
 id
+unlock_id
 display_name
 build_cost
+meta_unlock_cost
 upgrade_costs
 base_damage
 attack_rate
@@ -100,13 +113,14 @@ attack_pattern + area/chain/cone parameters
 visual_archetype + placeholder_color
 allowed_terrain
 height_rules
-unlock_id
 scene
 ```
 
-M6 implementa en `data/towers/tower_data.gd`: `id`, `display_name`, `base_damage`, `attack_rate`, `range_hexes`, `allowed_terrain_mask`, `targeting_mode`, `height_range_bonus_per_level`, `max_level`, los incrementos configurables de mejora y `scene`. M9 incorpora `build_cost`, `upgrade_costs` (un coste por cada nivel alcanzable) y `mana_cost_per_attack`; la compra y la mejora se verifican antes de cambiar ocupación o nivel. La instancia del Resource es configuración compartida y no se modifica al comprar/mejorar. M7 añade `damage_tags`, `armor_multiplier`, `health_multiplier`, `regen_counter_strength` y `regen_counter_duration`; los perfiles se copian a un `DamagePacket` por impacto, no se muta el Resource compartido. M9.5 añade `role_summary`, `attack_pattern` (`SINGLE_TARGET`, `AREA`, `CHAIN`, `CONE`, `SAWBLADE`), parámetros de radio/límite/ángulo, velocidad/radio de impacto/pérdida de daño de proyectil y `visual_archetype`/`visual_color`. `Tower` usa esos datos para impactos de objetivo único, área instantánea, cadena, cono o una hoja que recorre el PATH restante de su objetivo. Las cifras actuales de los siete Resources son placeholders de gameplay, no balance final.
+M6 implementa en `data/towers/tower_data.gd`: identidad, daño base, RPM/cadencia, alcance, terrenos, prioridades, elevación, niveles, costes y escena. M12 agrega unlock/meta coste. M12A añade build-cost increment, mana por ataque/segundo y escalado, RPM de base, multiplicadores Health/Armor/Shield, chance crítica, bonus de elevación, threshold de XP y parámetros Frost. Los patrones soportan objetivo único, área, chain, cono, sawblade y todos-en-rango (Tesla). Los siete Resources empiezan con las estadísticas de la tabla que compartió el usuario; costes secundarios, umbrales, máximos, ataque y balance continúan configurables/provisionales. Comprar/mejorar no muta el Resource compartido.
 
-Las prioridades implementadas son `FIRST_PROGRESS`, `LAST_PROGRESS`, `HIGHEST_HEALTH` y `HIGHEST_ARMOR`. El progreso sale del índice y avance normalizados de `PathFollowerComponent`. Todo daño directo llama a `DamageService.apply_damage`; `Tower` no contiene fórmulas de mitigación. Shredder usa el mismo servicio para cada enemigo que atraviesa y aplica su payload Bleed. El tipo Poison (bit 8) se añade en M9.5 con multiplicador recibido configurable en `EnemyData`; Shield queda fuera porque los enemigos no tienen ese stat/barra.
+`Tower` separa nivel/damage base, bonos de cada capa y tres criterios de objetivo únicos. Cada upgrade cuesta el `upgrade_costs[level-1]`, suma +1 daño base y +1 a la capa elegida; el XP runtime también sube nivel al alcanzar `targeting_xp_required_per_level`, asignando la capa del HP actual del enemigo que mantiene en rango. Elevación añade +1 daño base y +0.5 de rango por nivel. El RPM es fijo salvo Frost Keep, cuya cobertura suma 18 RPM por PATH cubierto. Build price escala como `build_cost + same_type_count × build_cost_increment`; demoler baja ese conteo. `TowerData` contiene ataque visual `SINGLE_TARGET`, `AREA`, `CHAIN`, `CONE` o `SAWBLADE`; Ballista/Mortar tienen proyectiles, Mortar hace splash al aterrizar, Frost usa cobertura cuadrada y Shredder sigue una ruta PATH. Ver [ADR-0023](../decisiones/ADR-0023-reglas-de-torres-y-capas-de-vida.md).
+
+Las prioridades incluyen progreso, valores más altos/bajos de Health/Armor/Shield, capa actual menor y velocidad. `DamageService.apply_damage` centraliza daño directo, crítico, tags y las tres capas. Poison (bit 8), las resistencias de tags y Shield se configuran en `EnemyData`; los enemigos dibujan una barra segmentada con el total de HP máximos repartido entre escudo, armadura y salud. La política de overkill (exceso descartado al llegar a cero de la capa activa) es provisional por falta de regla explícita.
 
 ## EnemyData : Resource
 ```text
@@ -114,7 +128,10 @@ id
 display_name
 max_health
 armor
+shield
 regen_per_second
+armor_regen_per_second
+shield_regen_per_second
 move_speed
 base_damage
 reward
@@ -129,9 +146,9 @@ placeholder_radius
 scene
 ```
 
-M5 implementó `id`, `display_name`, `max_health`, `move_speed`, `base_damage` y `scene`. M6 añadió `armor` para priorizar objetivos. M7 activa `armor`, `regen_per_second` y multiplicadores recibidos de daño Physical/Fire/Arcane; M9.5 añade `poison_damage_multiplier` para el tag Poison. Los valores recibidos por múltiples tags se multiplican. M9 añade `kill_reward`, que `WaveDirector` concede una vez tras la señal de derrota; llegar a base no paga la recompensa. M10 añade `placeholder_color`/`placeholder_radius` para distinguir visualmente tipos de enemigo mientras no haya arte final. Los stats, resistencias, colores y recompensas de fixtures son provisionales. Las reglas confirmadas de escudo → armadura → salud y counters por capa no equivalen a que el atributo Shield esté implementado; ver [ADR-0016](../decisiones/ADR-0016-campana-de-veinte-rondas.md) y el diseño fuente.
+M5 implementa Health; M7 añade Armor y regen de vida. M12A añade Shield y regeneración separada por capa. Bleed suprime la regeneración de Health; Burn la de Armor; Poison la de Shield. El orden activo es Shield→Armor→Health. Los multiplicadores recibidos por múltiples tags se multiplican. Los fixtures, resistencias, stats, colores y recompensas de enemigos siguen siendo configurables. La barra segmentada conserva la proporción de máximos combinados.
 
-`defense_tags` y `status_resistances` del modelo conceptual siguen reservados para decisiones de contenido/status posteriores; no hay stat ni barra de escudo de enemigo implementada.
+`defense_tags` y `status_resistances` permanecen conceptuales; los multiplicadores por tags y las resistencias futuras son mecanismos separados.
 
 ## BaseData / HealthComponent
 
@@ -140,18 +157,20 @@ M5 implementó `id`, `display_name`, `max_health`, `move_speed`, `base_damage` y
 ## DamagePacket
 ```text
 raw_damage
+critical_multiplier
 source_id
 damage_tags
-armor_multiplier
-health_multiplier
+health_damage_multiplier
+armor_damage_multiplier
+shield_damage_multiplier
 regen_counter_strength
 regen_counter_duration
 status_payloads
 status_total_damage_overrides # presupuesto bruto total opcional por estado, distribuido entre sus ticks
-critical? # mantener desactivado si no se aprueba
+legacy_health_multiplier/armor_multiplier # compatibilidad histórica M7
 ```
 
-M7 implementa `DamagePacket` como `RefCounted` transitorio y `DamageResult` como resultado auditable por HUD/señales. `DamageService` calcula `armor_absorbed = min(raw_damage, armor * armor_multiplier)`, luego `floor(max(raw_damage - armor_absorbed, 0) * damage_tag_multiplier * health_multiplier)`. El multiplicador por tag viene de `EnemyData`; si se combinan tags se multiplican sus valores. La vida aplicada queda limitada al HP actual. La contrarregeneración suprime la fracción configurada de `regen_per_second` durante `regen_counter_duration`; impactos sucesivos conservan la mayor fuerza y refrescan el tiempo restante con el máximo. Estos contratos son provisionales y están registrados en ADR-0010. M8 consume `status_payloads` después del daño directo y la contrarregeneración, solo si el objetivo sigue vivo. `status_total_damage_overrides` es opcional: establece un presupuesto bruto por aplicación de estado que el controlador distribuye entre sus ticks; cada tick sigue pasando por `DamageService` y sus defensas.
+El contrato M7 de mitigación plana de Armor queda sustituido por M12A. `DamagePacket` es transitorio y `DamageResult` registra la capa activa y daño por cada HP. El daño es `floor(raw_damage × critical_multiplier × layer_multiplier × damage_tag_multiplier)` y se limita al valor actual de la capa activa: Shield antes que Armor, después Health. El excedente no desborda provisionalmente. Chance crítica produce ×1/×2/×3/×4 con bandas de 50%. Los multiplicadores de tag vienen de `EnemyData` y los tags simultáneos se multiplican. M8 consume payloads si el objetivo sigue vivo; cada tick de DoT vuelve al mismo servicio. Un override de total fija presupuesto bruto por aplicación de estado sin mutar Resources. Ver ADR-0010 para el contrato histórico y [ADR-0023](../decisiones/ADR-0023-reglas-de-torres-y-capas-de-vida.md) para la regla vigente.
 
 ## StatusEffectData
 ```text
@@ -164,6 +183,9 @@ stack_rule: REFRESH | ADD_STACKS
 speed_multiplier
 damage_per_tick
 damage_tags
+health_layer_multiplier
+armor_layer_multiplier
+shield_layer_multiplier
 ```
 
 M8 implementa estos campos en `game/combat/status_effect_data.gd`. `duration` siempre es positiva; `tick_interval` puede ser cero si el efecto no hace daño periódico. `REFRESH` deja una acumulación y reinicia la duración; `ADD_STACKS` suma una acumulación hasta `max_stacks` y también reinicia la duración. Reaplicar no reinicia el reloj del próximo tick. El daño por tick se multiplica por las acumulaciones y pasa por `DamageService` con los `damage_tags` configurados. Si una torre reaplica el mismo ID, la definición y el `source_id` activos pasan a ser los de la aplicación más reciente. Cada enemigo guarda sus propias instancias runtime y no modifica los Resources compartidos. Los efectos de velocidad se combinan usando el menor `speed_multiplier`; al quitar el último efecto se restaura `1.0`. Muerte y llegada a la base limpian todos los estados. El campo de resistencias queda fuera mientras el diseño no lo necesite. Slow, Burn, Bleed y el Poison de M9.5 son datos configurables provisionales; Bleed mantiene el fixture M8 y también se usa en Shredder.
@@ -194,7 +216,7 @@ M9 implementa `round_reward` en `WaveData`; se concede una sola vez cuando termi
 M10 implementa `WaveCampaignData` con 20 `WaveData` ordenados y validación de ronda; exige `MINIBOSS` en 17/19 y `TIER_2_BOSS` en 20. `health_growth_per_round`, `base_damage_growth_per_round` y `reward_growth_per_round` son modificadores globales configurables. `WaveDirector` conserva `pending_spawn_count` y enemigos vivos por separado, emite ambos valores, y solo completa si ambos son cero y el generador terminó. Para escalar, duplica el `EnemyData` por instancia y modifica el snapshot runtime; jamás altera la definición compartida. Un modo `diagnostic` para los fixtures M7/M8 suprime daño a base y recompensas. Las estadísticas de campaña y el jefe/minijefe genéricos son placeholders, no balance confirmado ni selección de una variante comunitaria.
 
 ## RunEconomyData / RunEconomyService
-`RunEconomyData` es una configuración Resource de una run: `starting_gold`, `starting_mana`, `maximum_mana` y `mana_regen_per_second`. `RunEconomyService` es un Node hijo de `Main`, no Autoload: es dueño de los saldos runtime de esa escena, valida compras/gastos, limita el maná a la capacidad y emite `gold_changed`/`mana_changed`. La UI escucha esas señales, pero no modifica los saldos directamente. El oro de construcción se reinicia con el perfil de arranque de la run y no es `MetaProgression.meta_currency`; M12 será dueño de la moneda permanente y del guardado. Las cifras actuales (150 oro, 30/100 maná y 1.5 maná/s) son provisionales.
+`RunEconomyData` es una configuración Resource de una run: `starting_gold`, `starting_mana`, `maximum_mana` y `mana_regen_per_second`. `RunEconomyService` es un Node hijo de `Main`, no Autoload: es dueño de los saldos runtime de esa escena, valida compras/gastos, limita el maná a la capacidad y emite `gold_changed`/`mana_changed`. La UI escucha esas señales, pero no modifica los saldos directamente. El oro de construcción se reinicia con el perfil de arranque de la run y no es `MetaProgression.meta_currency`; M12 conserva la moneda permanente por separado y pasa los bonuses de upgrades al configurar la economía de la siguiente run. Las cifras actuales (150 oro, 30/100 maná y 1.5 maná/s) son provisionales.
 
 ## CardModifierOperation
 ```text
@@ -205,7 +227,7 @@ affected_status_id: optional
 value
 ```
 
-Tipos implementados: daño plano o multiplicador de torre, alcance, cadencia, radio de área, multiplicador de coste de maná, multiplicador de duración de estado, maná máximo y regeneración de maná.
+Tipos disponibles: daño plano/multiplicador, alcance, radio de área, coste de maná, duración de estado, maná máximo/regeneración, crítico y suma al multiplicador de una capa H/A/E. La cadencia ya no se modifica mediante cartas; se mantiene fija salvo Frost Keep por cobertura PATH.
 
 ## CardData
 ```text
@@ -223,25 +245,36 @@ max_per_run
 Una carta describe una elección permanente solo durante la run; sus operaciones no modifican el `TowerData` ni otros `.tres` compartidos. Las operaciones aditivas se suman y los multiplicadores se combinan multiplicando. `unlock_requirement` vacío indica una carta global; los IDs de torre usan `tower:<TowerData.id>`.
 
 ## CardPoolData / RunCardService
-`CardPoolData` mantiene cartas, tamaño de oferta, primera ronda e intervalo. `RunCardService` filtra por unlocks de la run, peso y límite de copias; construye una oferta sin duplicados y agrega los modificadores de cartas elegidas. El calendario y la cantidad actuales son placeholders configurables, no reglas definitivas. `RunCardService` es local a `Main`; M12 podrá alimentar sus unlocks desde meta-progresión.
+`CardPoolData` mantiene cartas, tamaño de oferta, primera ronda e intervalo. `RunCardService` filtra por unlocks de la run, peso y límite de copias; construye una oferta sin duplicados y agrega los modificadores de cartas elegidas. El calendario y la cantidad actuales son placeholders configurables, no reglas definitivas. `RunCardService` es local a `Main`; M12 alimenta sus filtros con los IDs persistentes de torres y upgrades de contenido.
 
 ## PermanentUpgradeData
 ```text
 id
 display_name
+description
 max_level
 cost_by_level[]
 prerequisites[]
-operations_by_level[]
+operations_by_level[]: PermanentUpgradeOperation
 ```
+
+`PermanentUpgradeOperation` expresa una sola operación por nivel: sumar oro/maná inicial, capacidad/regeneración de maná, multiplicar el daño de torres o desbloquear un ID de contenido. La tienda lee el nivel persistido, valida prerrequisitos y saldo, cobra y persiste; el Resource de definición no se modifica. `MetaProgressionData` configura las torres iniciales, catálogo, base/per-round/bonus de victoria y máximo de recompensa. La demo inicia con Ballista y ofrece cuatro upgrades de stats más el Archivo de cartas; estos datos/costes son provisionales.
 
 ## SaveData
 ```json
 {
   "version": 1,
   "meta_currency": 0,
-  "unlocked_towers": [],
+  "unlocked_towers": ["tower:ballista_demo"],
   "permanent_upgrade_levels": {},
-  "settings": {}
+  "settings": {},
+  "total_runs_started": 0,
+  "total_runs_completed": 0,
+  "total_victories": 0,
+  "best_round_reached": 0,
+  "total_meta_earned": 0,
+  "last_run_summary": {}
 }
 ```
+
+`SaveData` convierte a/desde primitivas JSON y valida tipos/rangos. La ruta es `user://rogue_tower_meta.json`; se escribe un temporal, conserva el anterior como `.bak` y reemplaza el archivo. Versiones distintas y JSON inválido no se cargan ni se sobrescriben automáticamente. El resumen almacena outcome, ronda alcanzada/completada, recompensa, saldo, número y seed; no se serializa el estado temporal de una run.

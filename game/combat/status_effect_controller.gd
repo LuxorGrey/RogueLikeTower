@@ -147,8 +147,11 @@ func _apply_damage_tick(effect_id: StringName, active_status: ActiveStatus) -> v
 	packet.set("raw_damage", damage_for_tick)
 	packet.set("source_id", active_status.source_id)
 	packet.set("damage_tags", int(active_status.data.get("damage_tags")))
+	packet.set("health_damage_multiplier", float(active_status.data.get("health_layer_multiplier")))
+	packet.set("armor_damage_multiplier", float(active_status.data.get("armor_layer_multiplier")))
+	packet.set("shield_damage_multiplier", float(active_status.data.get("shield_layer_multiplier")))
 	var result: Variant = _damage_service.call("apply_damage", _enemy, packet)
-	var applied_damage: int = int(result.get("health_damage")) if result != null else 0
+	var applied_damage: int = int(result.get("total_damage")) if result != null else 0
 	status_ticked.emit(effect_id, applied_damage)
 
 func _get_effect_tick_count(effect_data: Resource) -> int:

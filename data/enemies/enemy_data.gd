@@ -13,7 +13,10 @@ const DAMAGE_TAG_POISON: int = 8
 @export_range(0, 100000, 1) var base_damage: int = 10
 @export_range(0, 1000000, 1) var kill_reward: int = 0
 @export_range(0, 100000, 1) var armor: int = 0
+@export_range(0, 100000, 1) var shield: int = 0
 @export_range(0.0, 1000.0, 0.1) var regen_per_second: float = 0.0
+@export_range(0.0, 1000.0, 0.1) var armor_regen_per_second: float = 0.0
+@export_range(0.0, 1000.0, 0.1) var shield_regen_per_second: float = 0.0
 @export_range(0.0, 4.0, 0.05) var physical_damage_multiplier: float = 1.0
 @export_range(0.0, 4.0, 0.05) var fire_damage_multiplier: float = 1.0
 @export_range(0.0, 4.0, 0.05) var arcane_damage_multiplier: float = 1.0
@@ -36,10 +39,10 @@ func validate() -> PackedStringArray:
 		errors.append("El daño del enemigo no puede ser negativo.")
 	if kill_reward < 0:
 		errors.append("La recompensa por derrota no puede ser negativa.")
-	if armor < 0:
-		errors.append("La armadura del enemigo no puede ser negativa.")
-	if regen_per_second < 0.0:
-		errors.append("La regeneración del enemigo no puede ser negativa.")
+	if armor < 0 or shield < 0:
+		errors.append("Las capas de armadura y escudo del enemigo no pueden ser negativas.")
+	if regen_per_second < 0.0 or armor_regen_per_second < 0.0 or shield_regen_per_second < 0.0:
+		errors.append("La regeneración por capa del enemigo no puede ser negativa.")
 	if (
 		physical_damage_multiplier < 0.0 or physical_damage_multiplier > 4.0
 		or fire_damage_multiplier < 0.0 or fire_damage_multiplier > 4.0

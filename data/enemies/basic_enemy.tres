@@ -7,9 +7,10 @@
 script = ExtResource("1_enemy_data")
 id = &"basic_raider"
 display_name = "Asaltante básico (placeholder)"
-max_health = 20
+max_health = 100
 move_speed = 90.0
 base_damage = 10
 kill_reward = 5
 armor = 0
+shield = 0
 scene = ExtResource("2_enemy_scene")

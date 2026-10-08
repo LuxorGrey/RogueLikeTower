@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://game/cards/card_data.gd" id="1_card"]
+[ext_resource type="Script" path="res://game/cards/card_modifier_operation.gd" id="2_operation"]
+
+[sub_resource type="Resource" id="CardModifierOperation_armor"]
+script = ExtResource("2_operation")
+type = 10
+affected_hit_point_layer = 1
+value = 1.0
+
+[resource]
+script = ExtResource("1_card")
+id = &"monster_studies_armor"
+display_name = "Estudios de armadura"
+description = "Todas las torres ganan +1 al multiplicador de daño contra Armadura."
+rarity = 1
+tags = Array[StringName]([&"global", &"tower", &"armor"])
+modifier_operations = Array[Resource]([SubResource("CardModifierOperation_armor")])
+offer_weight = 0.8
+max_per_run = 1

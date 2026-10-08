@@ -94,7 +94,9 @@ func _hit_enemies_along_segment(segment_start: Vector2, segment_end: Vector2) ->
 			continue
 		_hit_enemy_ids[enemy_id] = true
 		_damage_packet.set("raw_damage", _remaining_damage)
-		var bleed_damage: int = int(floor(_remaining_damage))
+		var bleed_damage: int = int(floor(
+			_remaining_damage * float(_damage_packet.get("critical_multiplier"))
+		))
 		var total_damage_overrides: Dictionary[StringName, int] = {}
 		total_damage_overrides[&"bleed"] = bleed_damage
 		_damage_packet.set("status_total_damage_overrides", total_damage_overrides)
