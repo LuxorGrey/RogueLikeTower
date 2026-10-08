@@ -140,6 +140,35 @@
     "terrain_diagnostics_toggle_key": "F3",
     "balance_confirmed": false
   },
+  "m8_status_effects": {
+    "status_ids_provisional": ["slow", "burn", "bleed"],
+    "catalog_confirmed": false,
+    "stack_rules": ["REFRESH", "ADD_STACKS"],
+    "add_stacks_behavior": "increments_to_max_and_refreshes_duration",
+    "refresh_behavior": "resets_to_one_stack_and_refreshes_duration",
+    "tick_phase_on_reapply": "preserved",
+    "dot_damage_pipeline": "DamageService_without_recursive_status_payloads",
+    "speed_effect_combination": "minimum_active_speed_multiplier",
+    "clear_conditions": ["expired", "enemy_death", "enemy_reaches_base"],
+    "resistances_implemented": false,
+    "temporary_tower_id": "status_probe_m8_test",
+    "temporary_tower_attack_rate_per_second": 0.5,
+    "training_enemy_id": "status_training_dummy_m8_test",
+    "training_enemy_health": 180,
+    "debug_wave_id": "m8_status_test",
+    "effect_examples_provisional": {
+      "slow": {"duration_seconds": 2.5, "speed_multiplier": 0.55, "stack_rule": "REFRESH"},
+      "burn": {"duration_seconds": 5.0, "tick_interval_seconds": 1.0, "damage_per_tick": 2.0, "damage_tag": "FIRE", "max_stacks": 3, "stack_rule": "ADD_STACKS"},
+      "bleed": {"duration_seconds": 1.5, "tick_interval_seconds": 0.75, "damage_per_tick": 1.5, "damage_tag": "PHYSICAL", "max_stacks": 4, "stack_rule": "ADD_STACKS"}
+    },
+    "debug_tower_hotkeys": {
+      "1": "basic_bolt",
+      "2": "armor_piercing_bolt_m7_test",
+      "3": "sapping_bolt_m7_test",
+      "4": "status_probe_m8_test"
+    },
+    "balance_confirmed": false
+  },
   "run_phases": [
     "RUN_SETUP",
     "ROUND_PREP",

@@ -55,10 +55,10 @@ Debe existir una función única que traduzca `height_delta` a bonus.
 La fórmula final sigue abierta. Para prototipo usar bonus configurable y documentado, por ejemplo rango adicional o multiplicador moderado. No fijarlo como balance definitivo.
 
 ## Status framework
-Primera versión:
+Catálogo reducido inicial:
 - Slow: modifica velocidad.
 - Burn: DoT.
-- Poison/Bleed: segundo DoT o anti-regen provisional.
+- Bleed: tercer ejemplo DoT provisional; no fija la lista final.
 
 El framework debe soportar:
 - duración;
@@ -67,6 +67,14 @@ El framework debe soportar:
 - tick;
 - source;
 - limpieza al morir.
+
+## M8 — Estados implementados
+
+`StatusEffectData` configura ID/nombre, duración, intervalo de tick, máximo de stacks, regla, multiplicador de velocidad, daño por tick y tags del daño periódico. `TowerData.status_effects` adjunta uno o más efectos a cada impacto. El flujo actual en `DamageService` resuelve primero el daño directo y la contrarregeneración; después aplica los payloads a un objetivo que siga `MOVING`. Los DoT construyen un paquete independiente sin payloads, usan el `source_id` almacenado en el estado y regresan a `DamageService`, por lo que respetan armadura y multiplicadores de `EnemyData` como cualquier otro daño.
+
+Reglas runtime: `REFRESH` conserva una acumulación; `ADD_STACKS` incrementa hasta `max_stacks`. En ambos casos la aplicación renueva la duración completa y conserva la fase del próximo tick. Una reaplicación del mismo ID usa los datos y el origen de la aplicación más reciente. Cada enemigo tiene sus propios contadores aunque varios compartan el mismo Resource. Los multiplicadores de velocidad se combinan por mínimo; `1.0` significa velocidad normal. Un estado desaparece al llegar su duración a cero y todos se limpian cuando el enemigo muere o llega a la base. Los ticks aplicados antes de que expire el tiempo restante se resuelven; no hay daño periódico después de la expiración.
+
+La muestra de M8 contiene Slow (`0.55×`, dura 2.5 s y refresca), Burn (2 de daño de Fuego por segundo, dura 5 s y acumula hasta 3) y Bleed (1.5 de daño Físico cada 0.75 s, dura 1.5 s y acumula hasta 4). La Sonda ataca cada 2 s para dejar visible el hueco de expiración de Bleed, mientras Slow se refresca y Burn alcanza el máximo de stacks. No se implementan resistencias de estados: el diseño no ofrece todavía resistencias configurables y el roadmap las deja condicionales. La torre `Sonda de estados M8` y el enemigo lento de 180 HP son solo fixtures de depuración, no balance ni catálogo final. ADR-0012 detalla estas elecciones; `10_ACCEPTANCE_TESTS.md` define los criterios de aceptación manual.
 
 ## Torre
 Estados:

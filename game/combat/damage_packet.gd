@@ -31,4 +31,11 @@ func validate() -> PackedStringArray:
 		errors.append("La fuerza anti-regeneración debe estar entre 0 y 1.")
 	if regen_counter_duration < 0.0:
 		errors.append("La duración anti-regeneración no puede ser negativa.")
+	for status_effect: Resource in status_payloads:
+		if status_effect == null or not status_effect.has_method("validate"):
+			errors.append("DamagePacket incluye un payload de estado no válido.")
+			continue
+		var status_errors: PackedStringArray = status_effect.call("validate")
+		for status_error in status_errors:
+			errors.append("Payload de estado: %s" % status_error)
 	return errors

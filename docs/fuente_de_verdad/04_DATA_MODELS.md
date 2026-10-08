@@ -145,19 +145,24 @@ status_payloads
 critical? # mantener desactivado si no se aprueba
 ```
 
-M7 implementa `DamagePacket` como `RefCounted` transitorio y `DamageResult` como resultado auditable por HUD/señales. `DamageService` calcula `armor_absorbed = min(raw_damage, armor * armor_multiplier)`, luego `floor(max(raw_damage - armor_absorbed, 0) * damage_tag_multiplier * health_multiplier)`. El multiplicador por tag viene de `EnemyData`; si se combinan tags se multiplican sus valores. La vida aplicada queda limitada al HP actual. La contrarregeneración suprime la fracción configurada de `regen_per_second` durante `regen_counter_duration`; impactos sucesivos conservan la mayor fuerza y refrescan el tiempo restante con el máximo. Estos contratos son provisionales y están registrados en ADR-0010. `status_payloads` queda preparado en el paquete, pero no se procesa hasta M8.
+M7 implementa `DamagePacket` como `RefCounted` transitorio y `DamageResult` como resultado auditable por HUD/señales. `DamageService` calcula `armor_absorbed = min(raw_damage, armor * armor_multiplier)`, luego `floor(max(raw_damage - armor_absorbed, 0) * damage_tag_multiplier * health_multiplier)`. El multiplicador por tag viene de `EnemyData`; si se combinan tags se multiplican sus valores. La vida aplicada queda limitada al HP actual. La contrarregeneración suprime la fracción configurada de `regen_per_second` durante `regen_counter_duration`; impactos sucesivos conservan la mayor fuerza y refrescan el tiempo restante con el máximo. Estos contratos son provisionales y están registrados en ADR-0010. M8 consume `status_payloads` después del daño directo y la contrarregeneración, solo si el objetivo sigue vivo.
 
 ## StatusEffectData
 ```text
 id
+display_name
 duration
 tick_interval
 max_stacks
-stack_rule
+stack_rule: REFRESH | ADD_STACKS
 speed_multiplier
 damage_per_tick
-tags
+damage_tags
 ```
+
+M8 implementa estos campos en `game/combat/status_effect_data.gd`. `duration` siempre es positiva; `tick_interval` puede ser cero si el efecto no hace daño periódico. `REFRESH` deja una acumulación y reinicia la duración; `ADD_STACKS` suma una acumulación hasta `max_stacks` y también reinicia la duración. Reaplicar no reinicia el reloj del próximo tick. El daño por tick se multiplica por las acumulaciones y pasa por `DamageService` con los `damage_tags` configurados. Si una torre reaplica el mismo ID, la definición y el `source_id` activos pasan a ser los de la aplicación más reciente. Cada enemigo guarda sus propias instancias runtime y no modifica los Resources compartidos. Los efectos de velocidad se combinan usando el menor `speed_multiplier`; al quitar el último efecto se restaura `1.0`. Muerte y llegada a la base limpian todos los estados. El campo de resistencias queda fuera mientras el diseño no lo necesite. Slow, Burn y Bleed son fixtures provisionales; Bleed no fija la lista final.
+
+`TowerData.status_effects` es una lista de estos Resources, sin IDs repetidos dentro de una torre. `DamagePacket.status_payloads` transporta esa lista del impacto al `DamageService`, y `DamageResult.applied_status_ids` permite auditar qué se aplicó.
 
 ## WaveData
 ```text

@@ -11,10 +11,12 @@ const FORK_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/fork.tre
 const CONVERGENCE_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/convergence.tres")
 const FIRST_WAVE: WaveData = preload("res://data/waves/round_01.tres")
 const M7_DAMAGE_TEST_WAVE: WaveData = preload("res://data/waves/m7_damage_test.tres")
+const M8_STATUS_TEST_WAVE: WaveData = preload("res://data/waves/m8_status_test.tres")
 const BASIC_BOLT: TowerData = preload("res://data/towers/basic_bolt.tres")
 const ARMOR_PIERCING_BOLT: TowerData = preload("res://data/towers/armor_piercing_bolt.tres")
 const SAPPING_BOLT: TowerData = preload("res://data/towers/sapping_bolt.tres")
-const TOWER_PROFILES: Array[TowerData] = [BASIC_BOLT, ARMOR_PIERCING_BOLT, SAPPING_BOLT]
+const STATUS_PROBE: TowerData = preload("res://data/towers/status_probe_m8.tres")
+const TOWER_PROFILES: Array[TowerData] = [BASIC_BOLT, ARMOR_PIERCING_BOLT, SAPPING_BOLT, STATUS_PROBE]
 const MIN_CAMERA_ZOOM: float = 0.45
 const MAX_CAMERA_ZOOM: float = 2.5
 const CAMERA_ZOOM_STEP: float = 1.12
@@ -54,6 +56,7 @@ var _has_hovered_cell: bool = false
 	%TowerShortcut1,
 	%TowerShortcut2,
 	%TowerShortcut3,
+	%TowerShortcut4,
 ]
 @onready var _camera: Camera2D = %Camera2D
 @onready var _rotate_left: Button = %RotateLeft
@@ -169,6 +172,9 @@ func _input(event: InputEvent) -> void:
 					get_viewport().set_input_as_handled()
 				KEY_3:
 					_select_tower_and_build(2)
+					get_viewport().set_input_as_handled()
+				KEY_4:
+					_select_tower_and_build(3)
 					get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton:
 		var mouse_event := event as InputEventMouseButton
@@ -463,6 +469,7 @@ func _populate_wave_options() -> void:
 	_wave_selector.clear()
 	_wave_selector.add_item("Oleada básica · 3 enemigos")
 	_wave_selector.add_item("Diagnóstico · blindado regenerador")
+	_wave_selector.add_item("Estados M8 · objetivo lento")
 	_wave_selector.select(0)
 	_selected_wave = FIRST_WAVE
 	_active_wave_name = "Oleada básica"
@@ -471,15 +478,22 @@ func _populate_wave_options() -> void:
 	_refresh_tower_controls()
 
 func _on_wave_profile_selected(index: int) -> void:
-	if index < 0 or index > 1:
+	if index < 0 or index > 2:
 		return
-	_selected_wave = FIRST_WAVE if index == 0 else M7_DAMAGE_TEST_WAVE
-	_active_wave_name = "Oleada básica" if index == 0 else "Diagnóstico blindado"
+	match index:
+		0:
+			_selected_wave = FIRST_WAVE
+			_active_wave_name = "Oleada básica"
+			_wave_status.text = "Preparada · 3 enemigos"
+		1:
+			_selected_wave = M7_DAMAGE_TEST_WAVE
+			_active_wave_name = "Diagnóstico blindado"
+			_wave_status.text = "Preparada · 1 blindado · armadura 4 · regen 2/s"
+		2:
+			_selected_wave = M8_STATUS_TEST_WAVE
+			_active_wave_name = "Prueba de estados M8"
+			_wave_status.text = "Preparada · 1 objetivo · vida 180 · velocidad 32"
 	_start_wave_button.text = "▶ Iniciar oleada seleccionada"
-	if index == 0:
-		_wave_status.text = "Preparada · 3 enemigos"
-	else:
-		_wave_status.text = "Preparada · 1 blindado · armadura 4 · regen 2/s"
 
 func _on_targeting_mode_selected(index: int) -> void:
 	if index < 0 or index >= _tower_targeting_mode.item_count:
@@ -536,7 +550,7 @@ func _refresh_tower_controls() -> void:
 	if build_mode:
 		_tower_status.text = "Construir: %s · selecciona Grass o Montaña" % _selected_tower_data.display_name
 	elif selected == null:
-		_tower_status.text = "Torre: ninguna · pulsa 1, 2 o 3 para construir"
+		_tower_status.text = "Torre: ninguna · pulsa 1–4 para construir"
 	else:
 		_tower_status.text = selected.get_summary()
 
@@ -555,7 +569,8 @@ func _start_selected_wave() -> void:
 		_base,
 		_entities,
 		_piece_preview.global_position,
-		HEX_RADIUS
+		HEX_RADIUS,
+		_damage_service
 	):
 		_placement_enabled = true
 		_refresh_placement()
@@ -601,11 +616,13 @@ func _refresh_combat_debug() -> void:
 		_combat_debug.text = "Objetivo: ninguno en alcance"
 		return
 	var estimate: Variant = _damage_service.call("preview_damage", target, tower.create_damage_packet())
+	var status_summaries: PackedStringArray = target.get_active_status_summaries()
+	var status_text: String = "Estados: —" if status_summaries.is_empty() else "Estados: %s" % " · ".join(status_summaries)
 	var regen_text: String = ""
 	var effective_regen: float = target.get_effective_regen_per_second()
 	if not is_equal_approx(effective_regen, target.get_regen_per_second()):
 		regen_text = " → %.1f/s" % effective_regen
-	_combat_debug.text = "%s · %d/%d HP · arm %d · regen %.1f%s · impacto %d" % [
+	_combat_debug.text = "%s · %d/%d HP · arm %d · regen %.1f%s · impacto %d\n%s" % [
 		target.get_display_name(),
 		target.get_current_health(),
 		target.get_maximum_health(),
@@ -613,6 +630,7 @@ func _refresh_combat_debug() -> void:
 		target.get_regen_per_second(),
 		regen_text,
 		int(estimate.get("calculated_health_damage")),
+		status_text,
 	]
 
 func _on_base_health_changed(current_health: int, maximum_health: int) -> void:

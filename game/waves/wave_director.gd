@@ -12,6 +12,7 @@ var _wave_data: WaveData
 var _path_graph: PathGraph
 var _base: GameBase
 var _entities: Node2D
+var _damage_service: Node
 var _map_origin: Vector2 = Vector2.ZERO
 var _hex_radius: float = 52.0
 var _active_enemies: Dictionary[int, Enemy] = {}
@@ -28,7 +29,8 @@ func start_wave(
 	base: GameBase,
 	entities: Node2D,
 	map_origin: Vector2,
-	hex_radius: float
+	hex_radius: float,
+	damage_service: Node = null
 ) -> bool:
 	last_error = ""
 	if _is_running:
@@ -52,6 +54,7 @@ func start_wave(
 	_path_graph = path_graph
 	_base = base
 	_entities = entities
+	_damage_service = damage_service
 	_map_origin = map_origin
 	_hex_radius = hex_radius
 	_wave_token += 1
@@ -106,7 +109,7 @@ func _spawn_enemy(enemy_data: EnemyData, route: PathRoute) -> bool:
 	if enemy == null:
 		return false
 	_entities.add_child(enemy)
-	if not enemy.configure(enemy_data, route, _map_origin, _hex_radius):
+	if not enemy.configure(enemy_data, route, _map_origin, _hex_radius, _damage_service):
 		enemy.queue_free()
 		return false
 	var enemy_id: int = enemy.get_instance_id()

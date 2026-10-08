@@ -101,6 +101,8 @@ Implementar framework, no catálogo enorme.
 - Resistencias si se necesitan.
 - Resultado: status combinables con torres.
 
+Contrato de la primera implementación: `StatusEffectData` es un Resource configurable; cada `Enemy` posee un controlador de efectos con estado runtime propio y cada torre declara payloads en `TowerData`. Slow reduce velocidad, Burn y Bleed hacen daño periódico a través del `DamageService`, y los estados duran, refrescan o acumulan según sus datos. Se selecciona Bleed solo como tercer ejemplo provisional; no se confirma el catálogo final. No se añaden resistencias porque el diseño todavía no define resistencias de estado. La escena de depuración ofrece la torre `Sonda de estados M8` con atajo `4` y una oleada de un enemigo de entrenamiento para verificar acumulación, refresco, ticks, expiración y limpieza. La aceptación manual sigue pendiente; ver [10_ACCEPTANCE_TESTS.md](10_ACCEPTANCE_TESTS.md) y [ADR-0012](../decisiones/ADR-0012-framework-de-estados-m8.md).
+
 ## M9 — Economía de run + maná
 - Moneda de construcción.
 - Costes de torres/upgrades.

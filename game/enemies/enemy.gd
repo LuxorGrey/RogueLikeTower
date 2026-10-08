@@ -21,12 +21,14 @@ var _regen_counter_time_left: float = 0.0
 
 @onready var _health: HealthComponent = %Health
 @onready var _path_follower: PathFollowerComponent = %PathFollower
+@onready var _status_controller: Node = %StatusEffects
 
 func _ready() -> void:
 	add_to_group(&"enemies")
 	_health.health_changed.connect(_on_health_changed)
 	_health.health_depleted.connect(_on_health_depleted)
 	_path_follower.route_completed.connect(_on_route_completed)
+	_status_controller.connect(&"status_changed", _on_status_effects_changed)
 
 func _process(delta: float) -> void:
 	if state != State.MOVING or _enemy_data == null or delta <= 0.0:
@@ -58,7 +60,8 @@ func configure(
 	enemy_data: EnemyData,
 	route: PathRoute,
 	map_origin: Vector2,
-	hex_radius: float
+	hex_radius: float,
+	damage_service: Node = null
 ) -> bool:
 	if not is_node_ready() or enemy_data == null or route == null:
 		return false
@@ -71,6 +74,8 @@ func configure(
 	_regen_fraction = 0.0
 	_regen_counter_strength = 0.0
 	_regen_counter_time_left = 0.0
+	_status_controller.call("clear_all")
+	_status_controller.call("configure_damage_service", damage_service)
 	if not _health.initialize(enemy_data.max_health):
 		return false
 	var waypoints: Array[Vector2] = []
@@ -100,6 +105,17 @@ func apply_regen_counter(strength: float, duration: float) -> void:
 		return
 	_regen_counter_strength = maxf(_regen_counter_strength, clampf(strength, 0.0, 1.0))
 	_regen_counter_time_left = maxf(_regen_counter_time_left, duration)
+
+func apply_status_effect(effect_data: Resource, source_id: int) -> bool:
+	if state != State.MOVING:
+		return false
+	return bool(_status_controller.call("apply_effect", effect_data, source_id))
+
+func set_status_speed_multiplier(multiplier: float) -> void:
+	_path_follower.set_speed_multiplier(multiplier)
+
+func get_active_status_summaries() -> PackedStringArray:
+	return _status_controller.call("get_active_status_summaries")
 
 func get_display_name() -> String:
 	return _enemy_data.display_name if _enemy_data != null else "Enemigo"
@@ -135,6 +151,13 @@ func _draw() -> void:
 	draw_circle(Vector2.ZERO, 13.0, BODY_OUTLINE)
 	draw_circle(Vector2.ZERO, 10.0, BODY_COLOR)
 	draw_arc(Vector2.ZERO, 12.0, 0.0, TAU, 20, Color(1.0, 0.72, 0.60), 1.5, true)
+	var active_status_ids: PackedStringArray = _status_controller.call("get_active_status_ids")
+	if active_status_ids.has("slow"):
+		draw_arc(Vector2.ZERO, 15.0, 0.0, TAU, 24, Color(0.40, 0.85, 1.0, 0.9), 2.0, true)
+	if active_status_ids.has("burn"):
+		draw_arc(Vector2.ZERO, 18.0, 0.0, TAU, 24, Color(1.0, 0.48, 0.18, 0.9), 2.0, true)
+	if active_status_ids.has("bleed"):
+		draw_arc(Vector2.ZERO, 21.0, 0.0, TAU, 24, Color(0.92, 0.31, 0.43, 0.9), 2.0, true)
 	if _enemy_data == null:
 		return
 	var ratio: float = _health.get_health_ratio()
@@ -153,6 +176,9 @@ func _on_health_depleted() -> void:
 	defeated.emit()
 	queue_free()
 
+func _on_status_effects_changed(_active_ids: PackedStringArray) -> void:
+	queue_redraw()
+
 func _on_route_completed() -> void:
 	if state != State.MOVING or _enemy_data == null:
 		return
@@ -163,5 +189,7 @@ func _on_route_completed() -> void:
 func _change_state(next_state: State) -> void:
 	if state == next_state:
 		return
+	if state == State.MOVING and next_state != State.MOVING:
+		_status_controller.call("clear_all")
 	state = next_state
 	state_changed.emit(state)

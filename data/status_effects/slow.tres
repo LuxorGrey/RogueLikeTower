@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="StatusEffectData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/status_effect_data.gd" id="1_status"]
+
+[resource]
+script = ExtResource("1_status")
+id = &"slow"
+display_name = "Lento"
+duration = 2.5
+tick_interval = 0.0
+max_stacks = 1
+stack_rule = 0
+speed_multiplier = 0.55
+damage_per_tick = 0.0
+damage_tags = 1

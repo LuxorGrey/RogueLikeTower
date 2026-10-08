@@ -54,6 +54,14 @@ func apply_damage(target: Enemy, packet: RefCounted) -> RefCounted:
 	var counter_duration: float = float(packet.get("regen_counter_duration"))
 	if counter_strength > 0.0 and counter_duration > 0.0:
 		target.apply_regen_counter(counter_strength, counter_duration)
+	var applied_status_ids := PackedStringArray()
+	if is_instance_valid(target) and target.state == Enemy.State.MOVING:
+		var status_payloads: Array[Resource] = packet.get("status_payloads")
+		var source_id: int = int(packet.get("source_id"))
+		for effect_data in status_payloads:
+			if target.apply_status_effect(effect_data, source_id):
+				applied_status_ids.append(String(effect_data.get("id")))
+	result.set("applied_status_ids", applied_status_ids)
 	result.set("target_killed", target.state == Enemy.State.DEAD)
 	last_result_summary = "%s · %s" % [target.get_display_name(), result.call("get_summary")]
 	damage_resolved.emit(target, packet, result)

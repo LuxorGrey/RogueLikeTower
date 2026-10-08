@@ -50,7 +50,7 @@ unique_name_in_owner = true
 offset_left = 24.0
 offset_top = 24.0
 offset_right = 420.0
-offset_bottom = 390.0
+offset_bottom = 414.0
 
 [node name="Margin" type="MarginContainer" parent="HUD/Panel"]
 layout_mode = 2
@@ -133,7 +133,7 @@ text = "Mejorar"
 unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 2
-text = "Atajos 1–3: elegir torre · clic en una casilla libre para construir"
+text = "Atajos 1–4: elegir torre · clic en una casilla libre para construir"
 
 [node name="TerrainPanel" type="PanelContainer" parent="HUD"]
 unique_name_in_owner = true
@@ -255,9 +255,9 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -252.0
+offset_left = -330.0
 offset_top = -92.0
-offset_right = 252.0
+offset_right = 330.0
 offset_bottom = -20.0
 
 [node name="Margin" type="MarginContainer" parent="HUD/TowerToolbar"]
@@ -297,3 +297,12 @@ size_flags_horizontal = 3
 toggle_mode = true
 text = "3 · DRENADORA\nArcano · anti-regen"
 theme_override_colors/font_color = Color(0.78, 0.66, 1, 1)
+
+[node name="TowerShortcut4" type="Button" parent="HUD/TowerToolbar/Margin/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 56)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "4 · ESTADOS\nLento · fuego · sangrado"
+theme_override_colors/font_color = Color(0.55, 0.88, 0.78, 1)

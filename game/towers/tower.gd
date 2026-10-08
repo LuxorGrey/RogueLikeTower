@@ -107,6 +107,7 @@ func create_damage_packet() -> RefCounted:
 	packet.set("health_multiplier", _tower_data.health_multiplier)
 	packet.set("regen_counter_strength", _tower_data.regen_counter_strength)
 	packet.set("regen_counter_duration", _tower_data.regen_counter_duration)
+	packet.set("status_payloads", _tower_data.status_effects.duplicate())
 	return packet
 
 func get_current_attack_rate() -> float:

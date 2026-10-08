@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="StatusEffectData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/combat/status_effect_data.gd" id="1_status"]
+
+[resource]
+script = ExtResource("1_status")
+id = &"bleed"
+display_name = "Sangrado"
+duration = 1.5
+tick_interval = 0.75
+max_stacks = 4
+stack_rule = 1
+speed_multiplier = 1.0
+damage_per_tick = 1.5
+damage_tags = 1

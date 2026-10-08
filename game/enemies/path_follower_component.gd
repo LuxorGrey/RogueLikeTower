@@ -7,6 +7,7 @@ var _actor: Node2D
 var _waypoints: Array[Vector2] = []
 var _waypoint_index: int = 0
 var _move_speed: float = 0.0
+var _speed_multiplier: float = 1.0
 var _is_following: bool = false
 var _segment_start_position: Vector2 = Vector2.ZERO
 var current_progress: float = 0.0
@@ -26,6 +27,9 @@ func stop() -> void:
 	_is_following = false
 	set_physics_process(false)
 
+func set_speed_multiplier(multiplier: float) -> void:
+	_speed_multiplier = clampf(multiplier, 0.05, 1.0)
+
 func _ready() -> void:
 	set_physics_process(false)
 
@@ -44,6 +48,7 @@ func configure(
 	_segment_start_position = start_position
 	current_progress = 0.0
 	_move_speed = move_speed
+	_speed_multiplier = 1.0
 	_is_following = true
 	set_physics_process(true)
 	return true
@@ -51,7 +56,7 @@ func configure(
 func _physics_process(delta: float) -> void:
 	if not _is_following or not is_instance_valid(_actor):
 		return
-	var distance_budget: float = _move_speed * delta
+	var distance_budget: float = _move_speed * _speed_multiplier * delta
 	while distance_budget > 0.0 and _waypoint_index < _waypoints.size():
 		var destination: Vector2 = _waypoints[_waypoint_index]
 		var displacement: Vector2 = destination - _actor.global_position
