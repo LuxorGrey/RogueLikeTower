@@ -121,7 +121,7 @@ Contrato de implementación M9: `RunEconomyService` pertenece a `Main` y configu
 - Actualizar datos, aceptación y ADR antes de comenzar Cards.
 - Resultado: siete torres seleccionables y construibles que pueden probarse en la escena principal.
 
-El usuario pidió expresamente cerrar este roster antes de avanzar a M10/M11. Por ello M9.5 se ejecuta tras M9; al aceptar esta fase, M10 vuelve a ser el siguiente milestone del roadmap. Los números quedan configurables. No se añaden escudos ni se copia el balance de la referencia.
+El usuario pidió expresamente cerrar este roster antes de avanzar a M10/M11. Por ello M9.5 se ejecuta tras M9; al aceptar esta fase, M10 vuelve a ser el siguiente milestone del roadmap. Los números quedan configurables. M9.5 no implementa todavía Shield; las tres capas y sus counters están confirmados para un hito posterior. No se copia el balance comunitario.
 
 ## M10 — Rondas 1-20
 - `WaveData` data-driven.
@@ -131,6 +131,8 @@ El usuario pidió expresamente cerrar este roster antes de avanzar a M10/M11. Po
 - Tras ronda: bloquear combate y abrir expansión.
 - Ronda 20 completa demo.
 - Resultado: run completa técnicamente.
+
+Contrato M10: la campaña contiene un `WaveData` validado por ronda y una sola ronda de campaña puede iniciarse por vez. Las rondas 17 y 19 contienen minijefe y la 20 un jefe Tier 2 genérico hasta elegir variante; estos hitos provienen de las reglas propias confirmadas en `docs/borradores_personales/02_monstruos.md`. Las estadísticas, composición normal y crecimiento de salud/daño/recompensa son placeholders configurables; no se copian valores ni habilidades de Rogue Tower. Cada oleada termina con cero spawns pendientes y cero enemigos vivos. Tras las rondas 1–19, `TERRAIN_EXPANSION` bloquea el combate hasta confirmar exactamente una pieza válida conectada; después se prepara la siguiente ronda. La ronda 20 pasa a `RUN_VICTORY`. Los fixtures M7/M8 quedan etiquetados `DEBUG`, sin avance de campaña, pagos ni daño a base. Capas Shield/Armor/Health, cartas y meta-progresión no forman parte de M10.
 
 ## M11 — Cards
 - `CardData`.

@@ -10,6 +10,7 @@ const HARD_TURN_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/har
 const FORK_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/fork.tres")
 const CONVERGENCE_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/convergence.tres")
 const FIRST_WAVE: WaveData = preload("res://data/waves/round_01.tres")
+const DEMO_CAMPAIGN: Resource = preload("res://data/waves/demo_campaign.tres")
 const M7_DAMAGE_TEST_WAVE: WaveData = preload("res://data/waves/m7_damage_test.tres")
 const M8_STATUS_TEST_WAVE: WaveData = preload("res://data/waves/m8_status_test.tres")
 const RUN_ECONOMY_DATA: Resource = preload("res://data/run/run_economy_m9.tres")
@@ -39,9 +40,14 @@ var _latest_placement: TerrainPlacementResult
 var _is_panning: bool = false
 var _path_graph := PathGraph.new()
 var _path_debug_visible: bool = false
-var _placement_enabled: bool = true
+var _placement_enabled: bool = false
 var _selected_wave: WaveData = FIRST_WAVE
 var _active_wave_name: String = "Oleada básica"
+var _campaign_round_number: int = 1
+var _campaign_is_valid: bool = true
+var _selected_wave_is_debug: bool = false
+var _debug_return_phase: int = RunManager.Phase.ROUND_PREP
+var _awaiting_campaign_expansion: bool = false
 var _selected_tower_data: TowerData = BALLISTA
 var _combat_debug_timer: float = 0.0
 var _hovered_coord: Vector2i = Vector2i.ZERO
@@ -114,6 +120,7 @@ func _ready() -> void:
 	_wave_director.wave_completed.connect(_on_wave_completed)
 	_wave_director.wave_failed.connect(_on_wave_failed)
 	_wave_director.enemy_count_changed.connect(_on_enemy_count_changed)
+	_wave_director.population_changed.connect(_on_population_changed)
 	_wave_director.base_damaged.connect(_on_base_damaged)
 	_wave_director.reward_earned.connect(_on_reward_earned)
 	_build_controller.tower_selected.connect(_on_tower_selected)
@@ -129,6 +136,10 @@ func _ready() -> void:
 		_damage_service,
 		_run_economy
 	)
+	var campaign_errors: PackedStringArray = DEMO_CAMPAIGN.call("validate")
+	if not campaign_errors.is_empty():
+		_campaign_is_valid = false
+		push_error("Campaña M10 inválida: %s" % "; ".join(campaign_errors))
 	_populate_wave_options()
 	_populate_targeting_modes()
 
@@ -155,7 +166,8 @@ func _ready() -> void:
 	_on_base_health_changed(_base.get_current_health(), _base.get_maximum_health())
 	_refresh_tower_controls()
 	_start_wave_button.disabled = not _path_graph.is_valid
-	_wave_status.text = "Preparada · 3 enemigos"
+	_placement_enabled = false
+	_wave_status.text = "Preparación · ronda 1/20 · %d enemigos" % _get_wave_enemy_count(FIRST_WAVE)
 	RunManager.transition_to(RunManager.Phase.ROUND_PREP)
 	if not bool(_run_economy.call("configure", RUN_ECONOMY_DATA)):
 		push_error("No se pudo iniciar la economía de run: %s" % _run_economy.get("last_error"))
@@ -164,8 +176,8 @@ func _ready() -> void:
 	_piece_selector.add_item("— sin pieza —", 0)
 	for piece in _pieces:
 		_piece_selector.add_item(piece.display_name)
-	_piece_selector.select(1)
-	_on_piece_selected(1)
+	_piece_selector.select(0)
+	_on_piece_selected(0)
 
 func _process(_delta: float) -> void:
 	_combat_debug_timer -= _delta
@@ -412,6 +424,25 @@ func _confirm_placement() -> void:
 	_piece_preview.set_path_graph(_path_graph)
 	_refresh_path_status()
 	_cancel_placement()
+	if _awaiting_campaign_expansion and RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION:
+		_awaiting_campaign_expansion = false
+		_placement_enabled = false
+		_campaign_round_number += 1
+		_selected_wave = _get_campaign_round(_campaign_round_number)
+		_selected_wave_is_debug = false
+		if _selected_wave == null:
+			_wave_status.text = "Error: no existe la ronda %d de la campaña." % _campaign_round_number
+			push_error(_wave_status.text)
+			return
+		_wave_selector.select(_campaign_round_number - 1)
+		_set_campaign_wave_name()
+		RunManager.transition_to(RunManager.Phase.ROUND_PREP)
+		_wave_status.text = "Preparación · ronda %d/20 · %d enemigos" % [
+			_campaign_round_number,
+			_get_wave_enemy_count(_selected_wave),
+		]
+		_refresh_placement()
+		_refresh_tower_controls()
 
 func _cancel_placement() -> void:
 	_selected_piece = null
@@ -516,33 +547,55 @@ func _populate_targeting_modes() -> void:
 func _populate_wave_options() -> void:
 	_selected_tower_data = BALLISTA
 	_wave_selector.clear()
-	_wave_selector.add_item("Oleada básica · 3 enemigos")
-	_wave_selector.add_item("Diagnóstico · blindado regenerador")
-	_wave_selector.add_item("Estados M8 · objetivo lento")
+	for round_index in range(20):
+		var wave: WaveData = _get_campaign_round(round_index + 1)
+		var encounter_label: String = _encounter_label(wave)
+		_wave_selector.add_item("Ronda %02d/20 · %s · %d enemigos" % [
+			round_index + 1,
+			encounter_label,
+			_get_wave_enemy_count(wave),
+		])
+	_wave_selector.add_item("DEBUG · blindado regenerador")
+	_wave_selector.add_item("DEBUG · objetivo de estados M8")
 	_wave_selector.select(0)
-	_selected_wave = FIRST_WAVE
-	_active_wave_name = "Oleada básica"
-	_wave_status.text = "Preparada · 3 enemigos"
-	_start_wave_button.text = "▶ Iniciar oleada seleccionada"
+	_selected_wave = _get_campaign_round(_campaign_round_number)
+	_selected_wave_is_debug = false
+	_set_campaign_wave_name()
+	_wave_status.text = "Preparación · ronda %d/20 · %d enemigos" % [
+		_campaign_round_number,
+		_get_wave_enemy_count(_selected_wave),
+	]
+	_start_wave_button.text = "▶ Iniciar ronda %d/20" % _campaign_round_number
 	_refresh_tower_controls()
 
 func _on_wave_profile_selected(index: int) -> void:
-	if index < 0 or index > 2:
+	if index < 0:
 		return
-	match index:
-		0:
-			_selected_wave = FIRST_WAVE
-			_active_wave_name = "Oleada básica"
-			_wave_status.text = "Preparada · 3 enemigos"
-		1:
-			_selected_wave = M7_DAMAGE_TEST_WAVE
-			_active_wave_name = "Diagnóstico blindado"
-			_wave_status.text = "Preparada · 1 blindado · armadura 4 · regen 2/s"
-		2:
-			_selected_wave = M8_STATUS_TEST_WAVE
-			_active_wave_name = "Prueba de estados M8"
-			_wave_status.text = "Preparada · 1 objetivo · vida 180 · velocidad 32"
-	_start_wave_button.text = "▶ Iniciar oleada seleccionada"
+	if index < 20:
+		if index + 1 != _campaign_round_number or RunManager.phase != RunManager.Phase.ROUND_PREP:
+			_wave_selector.select(_campaign_round_number - 1)
+			return
+		_selected_wave = _get_campaign_round(index + 1)
+		_selected_wave_is_debug = false
+		_set_campaign_wave_name()
+		_wave_status.text = "Preparación · ronda %d/20 · %d enemigos" % [
+			_campaign_round_number,
+			_get_wave_enemy_count(_selected_wave),
+		]
+	elif index == 20:
+		_selected_wave = M7_DAMAGE_TEST_WAVE
+		_selected_wave_is_debug = true
+		_active_wave_name = "Diagnóstico blindado"
+		_wave_status.text = "Diagnóstico · 1 blindado · armadura 4 · regen 2/s"
+	elif index == 21:
+		_selected_wave = M8_STATUS_TEST_WAVE
+		_selected_wave_is_debug = true
+		_active_wave_name = "Prueba de estados M8"
+		_wave_status.text = "Prueba de estados · 1 objetivo · vida 180 · velocidad 32"
+	else:
+		return
+	_start_wave_button.text = "▶ Iniciar prueba" if _selected_wave_is_debug else "▶ Iniciar ronda %d/20" % _campaign_round_number
+	_refresh_tower_controls()
 
 func _on_targeting_mode_selected(index: int) -> void:
 	if index < 0 or index >= _tower_targeting_mode.item_count:
@@ -576,7 +629,7 @@ func _refresh_tower_controls() -> void:
 	var build_mode: bool = _build_controller.is_build_mode()
 	var selected: Tower = _build_controller.selected_tower
 	var can_build: bool = _build_controller.can_build_in_current_phase()
-	var is_defeated: bool = RunManager.phase == RunManager.Phase.RUN_DEFEAT
+	var is_run_ended: bool = RunManager.phase == RunManager.Phase.RUN_DEFEAT or RunManager.phase == RunManager.Phase.RUN_VICTORY
 	for index in _tower_shortcut_buttons.size():
 		var shortcut_button: Button = _tower_shortcut_buttons[index]
 		var tower_data: TowerData = TOWER_PROFILES[index]
@@ -598,13 +651,14 @@ func _refresh_tower_controls() -> void:
 		shortcut_button.set_pressed_no_signal(
 			build_mode and TOWER_PROFILES[index] == _selected_tower_data
 		)
-	_wave_selector.disabled = build_mode or not _can_start_wave() or is_defeated
+	_refresh_wave_option_states()
+	_wave_selector.disabled = build_mode or not _can_start_wave() or is_run_ended
 	_tower_actions.visible = selected != null and not build_mode
 	_start_wave_button.disabled = (
 		build_mode
 		or not _path_graph.is_valid
-		or not _can_start_wave()
-		or is_defeated
+		or not _can_start_selected_wave()
+		or is_run_ended
 	)
 	_tower_targeting_mode.disabled = build_mode or selected == null or not _build_controller.can_build_in_current_phase()
 	var next_upgrade_cost: int = selected.get_next_upgrade_cost() if selected != null else -1
@@ -639,7 +693,11 @@ func _tower_attack_description(tower_data: TowerData) -> String:
 			return "ataque no configurado"
 
 func _start_selected_wave() -> void:
-	if not _path_graph.is_valid or not _can_start_wave():
+	if not _path_graph.is_valid or not _can_start_selected_wave():
+		return
+	if _selected_wave_is_debug:
+		_debug_return_phase = RunManager.phase
+	elif _selected_wave == null or _selected_wave.round_number != _campaign_round_number:
 		return
 	if _build_controller.is_build_mode():
 		_build_controller.cancel_build_mode()
@@ -654,49 +712,82 @@ func _start_selected_wave() -> void:
 		_entities,
 		_piece_preview.global_position,
 		HEX_RADIUS,
-		_damage_service
+		_damage_service,
+		DEMO_CAMPAIGN if not _selected_wave_is_debug else null,
+		_selected_wave_is_debug
 	):
-		_placement_enabled = true
+		_placement_enabled = _selected_wave_is_debug and _debug_return_phase == RunManager.Phase.TERRAIN_EXPANSION
 		_refresh_placement()
 		_wave_status.text = "No se pudo iniciar: %s" % _wave_director.last_error
 		_refresh_tower_controls()
 
 func _on_wave_started(round_number: int) -> void:
 	RunManager.transition_to(RunManager.Phase.COMBAT)
-	_wave_status.text = "%s · ronda %d · enemigos 0" % [_active_wave_name, round_number]
+	var round_label: String = "prueba de diagnóstico" if _selected_wave_is_debug else "ronda %d/20" % round_number
+	_wave_status.text = "%s · %s · preparando spawns…" % [_active_wave_name, round_label]
 	_refresh_tower_controls()
 
 func _on_wave_completed(round_number: int) -> void:
 	_reward_transition_token += 1
 	var transition_token: int = _reward_transition_token
 	RunManager.transition_to(RunManager.Phase.ROUND_REWARD)
-	var round_reward: int = _selected_wave.round_reward if _selected_wave != null else 0
+	var completed_wave: WaveData = _selected_wave
+	var was_debug_wave: bool = _selected_wave_is_debug
+	var return_phase: int = _debug_return_phase
+	var round_reward: int = completed_wave.round_reward if completed_wave != null and not was_debug_wave else 0
 	_wave_status.text = "%s completada · ronda %d · +%d oro · procesando recompensa…" % [
 		_active_wave_name,
 		round_number,
 		round_reward,
 	]
-	_start_wave_button.text = "↻ Probar oleada seleccionada"
+	_start_wave_button.text = "Procesando recompensa…"
 	_refresh_tower_controls()
 	await get_tree().create_timer(0.8).timeout
 	if transition_token != _reward_transition_token or RunManager.phase != RunManager.Phase.ROUND_REWARD:
 		return
-	_placement_enabled = true
-	RunManager.transition_to(RunManager.Phase.TERRAIN_EXPANSION)
-	_wave_status.text = "%s completada · ronda %d · +%d oro · elige otra y vuelve a probar" % [
-		_active_wave_name,
-		round_number,
-		round_reward,
-	]
+	if was_debug_wave:
+		_placement_enabled = return_phase == RunManager.Phase.TERRAIN_EXPANSION and _awaiting_campaign_expansion
+		if return_phase == RunManager.Phase.TERRAIN_EXPANSION:
+			RunManager.transition_to(RunManager.Phase.TERRAIN_EXPANSION)
+		else:
+			RunManager.transition_to(RunManager.Phase.ROUND_PREP)
+		_wave_status.text = "Prueba de diagnóstico completada · campaña detenida en ronda %d/20" % _campaign_round_number
+		_start_wave_button.text = "▶ Iniciar prueba"
+	else:
+		_selected_wave_is_debug = false
+		if round_number >= 20:
+			_placement_enabled = false
+			_awaiting_campaign_expansion = false
+			RunManager.transition_to(RunManager.Phase.RUN_VICTORY)
+			_wave_status.text = "¡DEMO COMPLETADA! · 20/20 rondas superadas · +%d oro" % round_reward
+			_start_wave_button.text = "DEMO COMPLETADA"
+		else:
+			_placement_enabled = true
+			_awaiting_campaign_expansion = true
+			RunManager.transition_to(RunManager.Phase.TERRAIN_EXPANSION)
+			_wave_status.text = "Ronda %d/20 completada · +%d oro · coloca una pieza válida de 7 hexágonos para desbloquear la ronda %d" % [
+				round_number,
+				round_reward,
+				round_number + 1,
+			]
+			_start_wave_button.text = "Coloca terreno para continuar"
 	_refresh_placement()
 	_refresh_tower_controls()
 
 func _on_wave_failed(reason: String) -> void:
 	_build_controller.cancel_build_mode()
-	_placement_enabled = false
-	_start_wave_button.disabled = true
-	_wave_status.text = "DERROTA · %s" % reason
-	RunManager.transition_to(RunManager.Phase.RUN_DEFEAT)
+	if _selected_wave_is_debug:
+		_placement_enabled = _debug_return_phase == RunManager.Phase.TERRAIN_EXPANSION and _awaiting_campaign_expansion
+		if _debug_return_phase == RunManager.Phase.TERRAIN_EXPANSION:
+			RunManager.transition_to(RunManager.Phase.TERRAIN_EXPANSION)
+		else:
+			RunManager.transition_to(RunManager.Phase.ROUND_PREP)
+		_wave_status.text = "Diagnóstico detenido · %s · campaña en ronda %d/20" % [reason, _campaign_round_number]
+	else:
+		_placement_enabled = false
+		_start_wave_button.disabled = true
+		_wave_status.text = "DERROTA · %s" % reason
+		RunManager.transition_to(RunManager.Phase.RUN_DEFEAT)
 	_refresh_placement()
 	_refresh_tower_controls()
 
@@ -704,8 +795,67 @@ func _on_enemy_count_changed(alive_count: int) -> void:
 	if RunManager.phase == RunManager.Phase.COMBAT:
 		_wave_status.text = "%s · enemigos en ruta: %d" % [_active_wave_name, alive_count]
 
+func _on_population_changed(pending_count: int, alive_count: int) -> void:
+	if RunManager.phase == RunManager.Phase.COMBAT:
+		_wave_status.text = "%s · pendientes: %d · en ruta: %d" % [
+			_active_wave_name,
+			pending_count,
+			alive_count,
+		]
+
 func _can_start_wave() -> bool:
 	return RunManager.phase == RunManager.Phase.ROUND_PREP or RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION
+
+func _can_start_selected_wave() -> bool:
+	if _selected_wave_is_debug:
+		return _can_start_wave()
+	return (
+		_campaign_is_valid
+		and RunManager.phase == RunManager.Phase.ROUND_PREP
+		and not _awaiting_campaign_expansion
+		and _selected_wave != null
+		and _selected_wave.round_number == _campaign_round_number
+	)
+
+func _refresh_wave_option_states() -> void:
+	for round_index in range(20):
+		_wave_selector.set_item_disabled(
+			round_index,
+			round_index + 1 != _campaign_round_number or RunManager.phase != RunManager.Phase.ROUND_PREP
+		)
+	var diagnostics_available: bool = _can_start_wave() and RunManager.phase != RunManager.Phase.RUN_DEFEAT and RunManager.phase != RunManager.Phase.RUN_VICTORY
+	_wave_selector.set_item_disabled(20, not diagnostics_available)
+	_wave_selector.set_item_disabled(21, not diagnostics_available)
+
+func _get_campaign_round(round_number: int) -> WaveData:
+	var wave: Variant = DEMO_CAMPAIGN.call("get_round", round_number)
+	return wave as WaveData if wave is WaveData else null
+
+func _get_wave_enemy_count(wave: WaveData) -> int:
+	if wave == null:
+		return 0
+	var total: int = 0
+	for group in wave.groups:
+		if group != null:
+			total += group.count
+	return total
+
+func _encounter_label(wave: WaveData) -> String:
+	if wave == null:
+		return "sin datos"
+	match wave.encounter_type:
+		WaveData.EncounterType.MINIBOSS:
+			return "minijefe"
+		WaveData.EncounterType.TIER_2_BOSS:
+			return "jefe Tier 2"
+		_:
+			return "normal"
+
+func _set_campaign_wave_name() -> void:
+	if _selected_wave == null:
+		_active_wave_name = "Ronda %02d/20" % _campaign_round_number
+		return
+	_active_wave_name = "Ronda %02d/20 · %s" % [_campaign_round_number, _encounter_label(_selected_wave)]
 
 func _on_reward_earned(amount: int, reason: int) -> void:
 	var economy_reason: StringName = &"kill_reward"

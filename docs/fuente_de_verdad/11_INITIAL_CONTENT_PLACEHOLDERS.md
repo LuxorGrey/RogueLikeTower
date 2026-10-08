@@ -20,7 +20,7 @@ Por petición del usuario, los seis arquetipos aprobados y Shredder forman ahora
 
 ### Valores de referencia y adaptación
 
-La tabla de la imagen adjunta enumera daño, multiplicadores de Health/Armor/Shield, alcance, RPM, maná y precio para los siete arquetipos. Es contexto para los roles, no balance final del proyecto. Shredder usa 10 de daño base, alcance 5, 5 disparos/minuto y cero coste de maná; su primer enemigo recibe 10 de daño bruto como Bleed, no 20 de daño directo. La pérdida de 1 por cada enemigo perforado reduce el siguiente presupuesto. Su precio de compra del proyecto es 100 (la imagen muestra 500) para que pueda construirse con los 150 de oro iniciales de M9; las mejoras cuestan `[100, 200]`, frente al incremento orientativo de +100 de la imagen. Armor ×1 se conserva como mitigación del modelo local, pero Shield no se implementa porque el enemigo del proyecto no tiene esa barra. El resto de cifras vive en Resources y se ajusta a los roles/economía propios; no se copian precios ni multiplicadores de Rogue Tower.
+La tabla de la imagen adjunta enumera daño, multiplicadores de Health/Armor/Shield, alcance, RPM, maná y precio para los siete arquetipos. Es contexto para los roles, no balance final del proyecto. Shredder usa 10 de daño base, alcance 5, 5 disparos/minuto y cero coste de maná; su primer enemigo recibe 10 de daño bruto como Bleed, no 20 de daño directo. La pérdida de 1 por cada enemigo perforado reduce el siguiente presupuesto. Su precio de compra del proyecto es 100 (la imagen muestra 500) para que pueda construirse con los 150 de oro iniciales de M9; las mejoras cuestan `[100, 200]`, frente al incremento orientativo de +100 de la imagen. Armor ×1 se conserva como mitigación del modelo local. Shield y las tres capas defensivas están confirmados como diseño futuro del usuario, aunque M9.5/M10 todavía usan el modelo implementado; ver [01_GAME_DESIGN_SOURCE_OF_TRUTH.md](01_GAME_DESIGN_SOURCE_OF_TRUTH.md). El resto de cifras vive en Resources y se ajusta a los roles/economía propios; no se copian precios ni multiplicadores de Rogue Tower.
 
 El tipo `POISON` pasa por `DamageService` y cada `EnemyData` puede definir su multiplicador recibido. Poison es un cuarto tag de daño provisional, además de Physical/Fire/Arcane. No se cambia el catálogo M8: Bleed permanece para las pruebas y para Shredder.
 
@@ -52,6 +52,8 @@ M8 añade `Sonda de estados (M8 prueba)`, con daño 1, cadencia 0.5/s y payloads
 6. Armored Regenerator — combinación.
 7. Swarm — bajo HP, muchos.
 8. Elite — test de presión.
+
+M10 selecciona provisionalmente cuatro perfiles de campaña además del asaltante básico: acorazado, regenerador, minijefe genérico y jefe Tier 2 genérico. La composición y los stats configurables están en `data/enemies/campaign_*.tres`; los valores base y su crecimiento se registran en [ADR-0016](../decisiones/ADR-0016-campana-de-veinte-rondas.md). El jefe no representa una de las variantes comunitarias pendientes ni copia sus habilidades.
 
 ## Piezas
 El milestone M3 crea primero cinco plantillas de conexión para comprobar el contrato de colocación:

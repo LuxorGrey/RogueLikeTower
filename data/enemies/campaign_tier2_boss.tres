@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://data/enemies/enemy_data.gd" id="1_enemy_data"]
+[ext_resource type="PackedScene" path="res://game/enemies/enemy.tscn" id="2_enemy_scene"]
+
+[resource]
+script = ExtResource("1_enemy_data")
+id = &"campaign_tier_2_boss_placeholder"
+display_name = "Jefe Tier 2 (variante pendiente)"
+max_health = 1600
+move_speed = 26.0
+base_damage = 50
+kill_reward = 200
+armor = 45
+regen_per_second = 5.0
+placeholder_color = Color(0.86, 0.62, 0.22, 1)
+placeholder_radius = 20.0
+scene = ExtResource("2_enemy_scene")

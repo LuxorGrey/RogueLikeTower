@@ -124,10 +124,12 @@ physical_damage_multiplier
 fire_damage_multiplier
 arcane_damage_multiplier
 poison_damage_multiplier
+placeholder_color
+placeholder_radius
 scene
 ```
 
-M5 implementó `id`, `display_name`, `max_health`, `move_speed`, `base_damage` y `scene`. M6 añadió `armor` para priorizar objetivos. M7 activa `armor`, `regen_per_second` y multiplicadores recibidos de daño Physical/Fire/Arcane; M9.5 añade `poison_damage_multiplier` para el tag Poison. Los valores recibidos por múltiples tags se multiplican. La oleada M7 usa `data/enemies/armored_regenerator.tres` como fixture de diagnóstico. M9 añade `kill_reward`, que `WaveDirector` concede una vez tras la señal de derrota; llegar a base no paga la recompensa. Los stats, resistencias y recompensas de fixtures son provisionales.
+M5 implementó `id`, `display_name`, `max_health`, `move_speed`, `base_damage` y `scene`. M6 añadió `armor` para priorizar objetivos. M7 activa `armor`, `regen_per_second` y multiplicadores recibidos de daño Physical/Fire/Arcane; M9.5 añade `poison_damage_multiplier` para el tag Poison. Los valores recibidos por múltiples tags se multiplican. M9 añade `kill_reward`, que `WaveDirector` concede una vez tras la señal de derrota; llegar a base no paga la recompensa. M10 añade `placeholder_color`/`placeholder_radius` para distinguir visualmente tipos de enemigo mientras no haya arte final. Los stats, resistencias, colores y recompensas de fixtures son provisionales. Las reglas confirmadas de escudo → armadura → salud y counters por capa no equivalen a que el atributo Shield esté implementado; ver [ADR-0016](../decisiones/ADR-0016-campana-de-veinte-rondas.md) y el diseño fuente.
 
 `defense_tags` y `status_resistances` del modelo conceptual siguen reservados para decisiones de contenido/status posteriores; no hay stat ni barra de escudo de enemigo implementada.
 
@@ -171,6 +173,7 @@ M8 implementa estos campos en `game/combat/status_effect_data.gd`. `duration` si
 ## WaveData
 ```text
 round_number
+encounter_type: STANDARD | MINIBOSS | TIER_2_BOSS
 groups[]
   enemy_data
   count
@@ -185,6 +188,8 @@ M5 implementa `WaveData` y `WaveEnemyGroupData` como Resources validados: datos 
 `PathFollowerComponent` conserva waypoints mundiales derivados de las coordenadas axiales de `PathRoute`, índice del waypoint y progreso normalizado del tramo. El movimiento ocurre en `_physics_process`; el mapa no cambia mientras la oleada está activa.
 
 M9 implementa `round_reward` en `WaveData`; se concede una sola vez cuando terminan todos los spawns y no quedan enemigos activos. Los grupos pueden pagar bajas inmediatamente; un enemigo que llega a base no recibe recompensa. Si una oleada falla no se paga el bonus de ronda, aunque las bajas ya resueltas conservan su pago.
+
+M10 implementa `WaveCampaignData` con 20 `WaveData` ordenados y validación de ronda; exige `MINIBOSS` en 17/19 y `TIER_2_BOSS` en 20. `health_growth_per_round`, `base_damage_growth_per_round` y `reward_growth_per_round` son modificadores globales configurables. `WaveDirector` conserva `pending_spawn_count` y enemigos vivos por separado, emite ambos valores, y solo completa si ambos son cero y el generador terminó. Para escalar, duplica el `EnemyData` por instancia y modifica el snapshot runtime; jamás altera la definición compartida. Un modo `diagnostic` para los fixtures M7/M8 suprime daño a base y recompensas. Las estadísticas de campaña y el jefe/minijefe genéricos son placeholders, no balance confirmado ni selección de una variante comunitaria.
 
 ## RunEconomyData / RunEconomyService
 `RunEconomyData` es una configuración Resource de una run: `starting_gold`, `starting_mana`, `maximum_mana` y `mana_regen_per_second`. `RunEconomyService` es un Node hijo de `Main`, no Autoload: es dueño de los saldos runtime de esa escena, valida compras/gastos, limita el maná a la capacidad y emite `gold_changed`/`mana_changed`. La UI escucha esas señales, pero no modifica los saldos directamente. El oro de construcción se reinicia con el perfil de arranque de la run y no es `MetaProgression.meta_currency`; M12 será dueño de la moneda permanente y del guardado. Las cifras actuales (150 oro, 30/100 maná y 1.5 maná/s) son provisionales.

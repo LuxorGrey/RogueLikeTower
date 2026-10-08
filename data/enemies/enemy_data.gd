@@ -18,6 +18,8 @@ const DAMAGE_TAG_POISON: int = 8
 @export_range(0.0, 4.0, 0.05) var fire_damage_multiplier: float = 1.0
 @export_range(0.0, 4.0, 0.05) var arcane_damage_multiplier: float = 1.0
 @export_range(0.0, 4.0, 0.05) var poison_damage_multiplier: float = 1.0
+@export var placeholder_color: Color = Color(0.82, 0.30, 0.27)
+@export_range(7.0, 22.0, 1.0) var placeholder_radius: float = 10.0
 @export var scene: PackedScene
 
 func validate() -> PackedStringArray:

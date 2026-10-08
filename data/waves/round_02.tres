@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="WaveData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://data/waves/wave_data.gd" id="1_wave_data"]
+[ext_resource type="Script" path="res://data/waves/wave_enemy_group_data.gd" id="2_group_data"]
+[ext_resource type="Resource" path="res://data/enemies/basic_enemy.tres" id="3_enemy_data"]
+[sub_resource type="Resource" id="WaveGroup_2_1"]
+script = ExtResource("2_group_data")
+enemy_data = ExtResource("3_enemy_data")
+count = 4
+spawn_interval = 0.95
+spawn_endpoint_policy = 0
+delay_before_group = 0
+
+[resource]
+script = ExtResource("1_wave_data")
+round_number = 2
+encounter_type = 0
+round_reward = 22
+groups = Array[Resource]([SubResource("WaveGroup_2_1")])

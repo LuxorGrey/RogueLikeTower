@@ -34,6 +34,8 @@ No introducir support buildings.
 
 M9 implementa solo economía runtime: oro inicial, gasto en construcción/mejoras, recompensas por baja y ronda superada, y maná con coste por ataque y regeneración. El oro no se guarda ni se convierte en meta moneda en M9. M12 conserva la responsabilidad de recompensas de fin de run, tienda permanente, desbloqueos y guardado. No hay edificios que generen oro o maná.
 
+M10 implementa el loop técnico de campaña: rondas 1–19 alternan limpieza, recompensa y una única expansión válida de siete hexes; la 20 limpia y entra a victoria demo. La campaña no otorga todavía moneda meta ni resumen persistente; eso sigue en M12. Los encuentros propios confirmados son minijefes en 17/19 y jefe Tier 2 en 20, aún con variantes/poderes pendientes. El selector de ronda y los fixtures M7/M8 de diagnóstico no cambian el avance de campaña.
+
 ## Filosofía
 Las permanentes facilitan progreso y variedad, pero no deben convertir el juego en "ganar por estadísticas" sin estrategia.
 

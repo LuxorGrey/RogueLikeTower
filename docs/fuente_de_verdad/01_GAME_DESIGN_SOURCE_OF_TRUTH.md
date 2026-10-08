@@ -10,7 +10,7 @@ La referencia sistémica principal es Rogue Tower, reducida a un scope de demo p
 - Género: Tower Defense + Roguelike.
 - Demo: **20 rondas**.
 - Grid: hexagonal.
-- Expansión del mapa: al terminar cada ronda.
+- Expansión del mapa: tras limpiar las rondas 1–19. Para continuar se confirma una pieza válida de siete hexágonos; limpiar la ronda 20 completa la demo.
 - El jugador coloca una pieza predefinida compuesta por **7 hexágonos**.
 - La pieza puede rotarse en las 6 orientaciones hexagonales.
 - Si contiene camino, sus conexiones deben ser válidas con el mapa existente.
@@ -20,7 +20,8 @@ La referencia sistémica principal es Rogue Tower, reducida a un scope de demo p
   - Camino: altura 0, transitable por enemigos, no construible.
   - Grass: construible; normalmente altura 1, pudiendo existir variantes elevadas según definición de pieza.
   - Montaña: altura 2, construible y con ventaja de altura.
-- Enemigos: vida, armadura, regeneración y estadísticas/counters.
+- Enemigos: el diseño confirmado prevé escudo, armadura y salud en ese orden de agotamiento; Bleed detiene la regeneración de salud, Burn la de armadura y Poison la de escudo. La capa de escudo y la transferencia del daño sobrante aún no están implementadas/decididas en el prototipo.
+- La demo incluye minijefes en las rondas 17 y 19 y un jefe fijo de Tier 2 en la ronda 20. Su variante, habilidades y estadísticas finales siguen abiertas.
 - Torres especializadas contra diferentes defensas/tipos de enemigo.
 - Status effects inspirados en Rogue Tower, pero catálogo reducido.
 - Upgrade Cards durante la run, reducidas/simplificadas.
@@ -49,6 +50,13 @@ La referencia sistémica principal es Rogue Tower, reducida a un scope de demo p
 15. Volver a tienda/meta.
 16. Comprar mejoras/desbloqueos.
 17. Nueva run.
+
+## Reglas de combate confirmadas y pendientes de implementación
+- Los enemigos tendrán capas de escudo → armadura → salud.
+- La torre aplica daño base por el multiplicador de la capa activa. Falta decidir si el excedente al vaciar una capa pasa a la siguiente.
+- Bleed contrarresta regeneración de salud, Burn la de armadura y Poison la de escudo. Se conservan los comportamientos actuales de los estados hasta implementar las capas faltantes.
+- La demo coloca minijefes en las rondas 17 y 19 y un jefe Tier 2 fijo en la 20. No se ha elegido una de las tres variantes de referencia.
+- Las cifras y apariencias de los enemigos de M10 son placeholders internos. Las tablas de Rogue Tower Wiki en `docs/borradores_personales/02_monstruos.md` son referencia comunitaria, no balance propio ni catálogo aprobado.
 
 ## 4. Fantasía estratégica
 El mapa debe ser una decisión. Una pieza puede:
@@ -87,7 +95,7 @@ No inventar como definitivas:
 - Frecuencia exacta de cartas.
 - Economía/balance numérico final.
 - Número exacto de piezas de terreno.
-- Bosses y rondas exactas de boss.
+- Variante, habilidades y balance exactos de los jefes/minijefes.
 - Reglas definitivas para múltiples entradas.
 - Arte/temática final.
 

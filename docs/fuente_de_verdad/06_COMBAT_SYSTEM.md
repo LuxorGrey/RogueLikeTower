@@ -9,6 +9,8 @@ Cada enemigo tiene como mínimo:
 - Armor.
 - Regeneration.
 
+El diseño confirmado añade capas en orden **Shield → Armor → Health** y una fórmula de daño base por multiplicador de la capa activa. El prototipo aún no implementa Shield ni ha decidido si el exceso al vaciar una capa pasa a la siguiente. Bleed contrarresta regeneración de salud, Burn la de armadura y Poison la de escudo; no se importan DoT, habilidades o cifras de las tablas comunitarias. Ver [ADR-0016](../decisiones/ADR-0016-campana-de-veinte-rondas.md) y `docs/borradores_personales/02_monstruos.md`.
+
 No copiar números de Rogue Tower. Crear sistema propio configurable.
 
 ## Damage pipeline
@@ -108,6 +110,10 @@ El enemigo conoce:
 M5 consume la secuencia axial `PathRoute` cacheada por M4 para inicializar el camino del enemigo y conserva sus propios waypoints, índice y progreso. Si cambia el mapa solo entre rondas, no hace falta recalcular rutas con enemigos vivos. `WaveDirector` escoge candidatos spawn según la política de cada grupo; la muestra usa `FIRST_SORTED`, mientras que la configuración final por ronda sigue abierta. M4 expone candidatos y no decide esa política.
 
 La primera integración M5 implementa `HealthComponent`, `GameBase`, `Enemy`, `PathFollowerComponent` y `WaveDirector`. El enemigo se mueve continuamente entre centros de hex, inicia en la coordenada exterior del endpoint y aplica su daño configurado al llegar; el director retira enemigos llegados o derrotados y termina la oleada al concluir los spawns y quedar cero enemigos activos. La UI bloquea la colocación de terreno durante `COMBAT`; una base agotada cambia a `RUN_DEFEAT`, y una oleada superada habilita `TERRAIN_EXPANSION`.
+
+## M10 — Campaña de veinte rondas
+
+`WaveCampaignData` enlaza una entrada `WaveData` para cada ronda consecutiva 1–20. M10 sitúa minijefes placeholder en 17 y 19 y un jefe Tier 2 genérico con variante todavía pendiente en 20, como confirman las reglas propias del borrador del usuario; composición, salud, daño, recompensas, velocidad y arte siguen provisionales y configurables. El escalado temporal usa crecimiento por ronda para salud, daño de llegada y oro por baja; cada enemigo recibe una copia runtime de `EnemyData` para no modificar la configuración de origen. `WaveDirector` informa cantidad pendiente y viva, y la recompensa/fin no se emite hasta acabar todos los grupos con ambos recuentos a cero. El HUD permite iniciar solo la ronda activa. Después de las rondas 1–19 el combate queda bloqueado hasta colocar exactamente una pieza válida conectada; la ronda 20 entra a `RUN_VICTORY` sin expansión. Los fixtures de diagnóstico M7/M8 pueden repetirse en modo aislado sin avanzar campaña, cobrar recompensas ni dañar la base. ADR-0016 registra los compromisos, provisionalidades y aspectos fuera del alcance. No se incorporan todavía las capas Shield/Armor/Health, cartas, variantes definitivas ni habilidades de referencia.
 
 M6 añade el primer ciclo defensivo con una torre `Basic Bolt`: se puede colocar en una celda Grass o Mountain libre, seleccionar, cambiar prioridad y mejorar. La prioridad consulta enemigos vivos en alcance cada 0.1 s: primero/último por fracción recorrida de `PathRoute`, mayor vida actual o mayor armadura configurada. El ataque ocurre durante `COMBAT`, dentro del alcance, a la cadencia configurada, y muestra un breve flash vectorial de hitscan. La torre no bloquea PATH ni exige recalcular rutas. M7 enruta el ataque por `DamageService`.
 

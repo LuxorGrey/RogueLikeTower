@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://data/enemies/enemy_data.gd" id="1_enemy_data"]
+[ext_resource type="PackedScene" path="res://game/enemies/enemy.tscn" id="2_enemy_scene"]
+
+[resource]
+script = ExtResource("1_enemy_data")
+id = &"campaign_miniboss_placeholder"
+display_name = "Minijefe (placeholder)"
+max_health = 320
+move_speed = 42.0
+base_damage = 24
+kill_reward = 60
+armor = 12
+regen_per_second = 1.0
+placeholder_color = Color(0.62, 0.34, 0.72, 1)
+placeholder_radius = 16.0
+scene = ExtResource("2_enemy_scene")

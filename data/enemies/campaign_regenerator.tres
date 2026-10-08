@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://data/enemies/enemy_data.gd" id="1_enemy_data"]
+[ext_resource type="PackedScene" path="res://game/enemies/enemy.tscn" id="2_enemy_scene"]
+
+[resource]
+script = ExtResource("1_enemy_data")
+id = &"campaign_regenerator"
+display_name = "Regenerador (provisional)"
+max_health = 58
+move_speed = 70.0
+base_damage = 10
+kill_reward = 8
+armor = 1
+regen_per_second = 3.0
+placeholder_color = Color(0.36, 0.68, 0.46, 1)
+placeholder_radius = 12.0
+scene = ExtResource("2_enemy_scene")

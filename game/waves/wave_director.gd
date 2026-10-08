@@ -7,6 +7,7 @@ signal wave_started(round_number: int)
 signal wave_completed(round_number: int)
 signal wave_failed(reason: String)
 signal enemy_count_changed(alive_count: int)
+signal population_changed(pending_count: int, alive_count: int)
 signal base_damaged(amount: int, current_health: int, maximum_health: int)
 signal reward_earned(amount: int, reason: int)
 
@@ -16,16 +17,22 @@ var _path_graph: PathGraph
 var _base: GameBase
 var _entities: Node2D
 var _damage_service: Node
+var _campaign_data: Resource
+var _is_diagnostic: bool = false
 var _map_origin: Vector2 = Vector2.ZERO
 var _hex_radius: float = 52.0
 var _active_enemies: Dictionary[int, Enemy] = {}
 var _kill_rewards: Dictionary[int, int] = {}
+var _pending_spawn_count: int = 0
 var _is_running: bool = false
 var _is_spawning: bool = false
 var _wave_token: int = 0
 
 func get_alive_enemy_count() -> int:
 	return _active_enemies.size()
+
+func get_pending_spawn_count() -> int:
+	return _pending_spawn_count
 
 func start_wave(
 	wave_data: WaveData,
@@ -34,7 +41,9 @@ func start_wave(
 	entities: Node2D,
 	map_origin: Vector2,
 	hex_radius: float,
-	damage_service: Node = null
+	damage_service: Node = null,
+	campaign_data: Resource = null,
+	diagnostic_mode: bool = false
 ) -> bool:
 	last_error = ""
 	if _is_running:
@@ -59,11 +68,17 @@ func start_wave(
 	_base = base
 	_entities = entities
 	_damage_service = damage_service
+	_campaign_data = campaign_data
+	_is_diagnostic = diagnostic_mode
 	_map_origin = map_origin
 	_hex_radius = hex_radius
+	_pending_spawn_count = 0
+	for group in wave_data.groups:
+		_pending_spawn_count += group.count
 	_wave_token += 1
 	_is_running = true
 	_is_spawning = true
+	_emit_population_changed()
 	wave_started.emit(wave_data.round_number)
 	_spawn_wave_groups(_wave_token)
 	return true
@@ -80,6 +95,8 @@ func _spawn_wave_groups(wave_token: int) -> void:
 			if wave_token != _wave_token:
 				return
 			var route := _select_route(group, enemy_index)
+			_pending_spawn_count = maxi(_pending_spawn_count - 1, 0)
+			_emit_population_changed()
 			if route == null or not _spawn_enemy(group.enemy_data, route):
 				_fail_wave("No se pudo generar un enemigo con una ruta válida.")
 				return
@@ -89,6 +106,7 @@ func _spawn_wave_groups(wave_token: int) -> void:
 					return
 
 	_is_spawning = false
+	_emit_population_changed()
 	_check_wave_completion()
 
 func _select_route(group: WaveEnemyGroupData, enemy_index: int) -> PathRoute:
@@ -109,19 +127,26 @@ func _spawn_enemy(enemy_data: EnemyData, route: PathRoute) -> bool:
 		return false
 	if enemy_data == null or enemy_data.scene == null:
 		return false
-	var enemy := enemy_data.scene.instantiate() as Enemy
+	var configured_enemy_data: EnemyData = enemy_data
+	if _campaign_data != null:
+		var scaled_data: Variant = _campaign_data.call("scale_enemy_for_round", enemy_data, _wave_data.round_number)
+		if not (scaled_data is EnemyData):
+			return false
+		configured_enemy_data = scaled_data as EnemyData
+	var enemy := configured_enemy_data.scene.instantiate() as Enemy
 	if enemy == null:
 		return false
 	_entities.add_child(enemy)
-	if not enemy.configure(enemy_data, route, _map_origin, _hex_radius, _damage_service):
+	if not enemy.configure(configured_enemy_data, route, _map_origin, _hex_radius, _damage_service):
 		enemy.queue_free()
 		return false
 	var enemy_id: int = enemy.get_instance_id()
 	_active_enemies[enemy_id] = enemy
-	_kill_rewards[enemy_id] = enemy_data.kill_reward
+	_kill_rewards[enemy_id] = configured_enemy_data.kill_reward if not _is_diagnostic else 0
 	enemy.reached_base.connect(_on_enemy_reached_base.bind(enemy_id))
 	enemy.defeated.connect(_on_enemy_defeated.bind(enemy_id))
 	enemy_count_changed.emit(_active_enemies.size())
+	_emit_population_changed()
 	return true
 
 func _on_enemy_reached_base(base_damage: int, enemy_id: int) -> void:
@@ -129,10 +154,13 @@ func _on_enemy_reached_base(base_damage: int, enemy_id: int) -> void:
 		return
 	_active_enemies.erase(enemy_id)
 	_kill_rewards.erase(enemy_id)
-	var applied_damage: int = _base.apply_damage(base_damage)
-	base_damaged.emit(applied_damage, _base.get_current_health(), _base.get_maximum_health())
+	var applied_damage: int = 0
+	if not _is_diagnostic:
+		applied_damage = _base.apply_damage(base_damage)
+		base_damaged.emit(applied_damage, _base.get_current_health(), _base.get_maximum_health())
 	enemy_count_changed.emit(_active_enemies.size())
-	if _base.get_current_health() <= 0:
+	_emit_population_changed()
+	if not _is_diagnostic and _base.get_current_health() <= 0:
 		_fail_wave("La base ha sido destruida.")
 		return
 	_check_wave_completion()
@@ -146,13 +174,15 @@ func _on_enemy_defeated(enemy_id: int) -> void:
 	if kill_reward > 0:
 		reward_earned.emit(kill_reward, RewardReason.ENEMY_KILL)
 	enemy_count_changed.emit(_active_enemies.size())
+	_emit_population_changed()
 	_check_wave_completion()
 
 func _check_wave_completion() -> void:
-	if not _is_running or _is_spawning or not _active_enemies.is_empty():
+	if not _is_running or _is_spawning or _pending_spawn_count > 0 or not _active_enemies.is_empty():
 		return
 	_is_running = false
-	if _wave_data.round_reward > 0:
+	_emit_population_changed()
+	if _wave_data.round_reward > 0 and not _is_diagnostic:
 		reward_earned.emit(_wave_data.round_reward, RewardReason.ROUND_CLEAR)
 	wave_completed.emit(_wave_data.round_number)
 
@@ -167,5 +197,10 @@ func _fail_wave(reason: String) -> void:
 			enemy.queue_free()
 	_active_enemies.clear()
 	_kill_rewards.clear()
+	_pending_spawn_count = 0
 	enemy_count_changed.emit(0)
+	_emit_population_changed()
 	wave_failed.emit(reason)
+
+func _emit_population_changed() -> void:
+	population_changed.emit(_pending_spawn_count, _active_enemies.size())

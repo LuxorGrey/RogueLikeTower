@@ -15,6 +15,8 @@ const HEALTH_FILL_COLOR: Color = Color(0.36, 0.86, 0.40)
 
 var state: State = State.UNCONFIGURED
 var _enemy_data: EnemyData
+var _body_color: Color = BODY_COLOR
+var _body_radius: float = 10.0
 var _regen_fraction: float = 0.0
 var _regen_counter_strength: float = 0.0
 var _regen_counter_time_left: float = 0.0
@@ -71,6 +73,8 @@ func configure(
 	if route.cells.is_empty() or route.base_endpoint == null or hex_radius <= 0.0:
 		return false
 	_enemy_data = enemy_data
+	_body_color = enemy_data.placeholder_color
+	_body_radius = enemy_data.placeholder_radius
 	_regen_fraction = 0.0
 	_regen_counter_strength = 0.0
 	_regen_counter_time_left = 0.0
@@ -151,9 +155,9 @@ func get_remaining_route_waypoints() -> Array[Vector2]:
 	return _path_follower.get_remaining_route_waypoints()
 
 func _draw() -> void:
-	draw_circle(Vector2.ZERO, 13.0, BODY_OUTLINE)
-	draw_circle(Vector2.ZERO, 10.0, BODY_COLOR)
-	draw_arc(Vector2.ZERO, 12.0, 0.0, TAU, 20, Color(1.0, 0.72, 0.60), 1.5, true)
+	draw_circle(Vector2.ZERO, _body_radius + 3.0, BODY_OUTLINE)
+	draw_circle(Vector2.ZERO, _body_radius, _body_color)
+	draw_arc(Vector2.ZERO, _body_radius + 2.0, 0.0, TAU, 20, Color(1.0, 0.82, 0.62), 1.5, true)
 	var active_status_ids: PackedStringArray = _status_controller.call("get_active_status_ids")
 	if active_status_ids.has("slow"):
 		draw_arc(Vector2.ZERO, 15.0, 0.0, TAU, 24, Color(0.40, 0.85, 1.0, 0.9), 2.0, true)
@@ -166,8 +170,11 @@ func _draw() -> void:
 	if _enemy_data == null:
 		return
 	var ratio: float = _health.get_health_ratio()
-	draw_rect(Rect2(-13.0, -21.0, 26.0, 4.0), HEALTH_BACK_COLOR)
-	draw_rect(Rect2(-13.0, -21.0, 26.0 * ratio, 4.0), HEALTH_FILL_COLOR)
+	var bar_width: float = _body_radius * 2.6
+	var bar_left: float = -bar_width * 0.5
+	var bar_y: float = -_body_radius - 11.0
+	draw_rect(Rect2(bar_left, bar_y, bar_width, 4.0), HEALTH_BACK_COLOR)
+	draw_rect(Rect2(bar_left, bar_y, bar_width * ratio, 4.0), HEALTH_FILL_COLOR)
 
 func _on_health_changed(current_health: int, maximum_health: int) -> void:
 	health_changed.emit(current_health, maximum_health)
