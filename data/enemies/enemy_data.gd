@@ -10,6 +10,7 @@ const DAMAGE_TAG_ARCANE: int = 4
 @export_range(1, 100000, 1) var max_health: int = 20
 @export_range(1.0, 1000.0, 0.1) var move_speed: float = 90.0
 @export_range(0, 100000, 1) var base_damage: int = 10
+@export_range(0, 1000000, 1) var kill_reward: int = 0
 @export_range(0, 100000, 1) var armor: int = 0
 @export_range(0.0, 1000.0, 0.1) var regen_per_second: float = 0.0
 @export_range(0.0, 4.0, 0.05) var physical_damage_multiplier: float = 1.0
@@ -29,6 +30,8 @@ func validate() -> PackedStringArray:
 		errors.append("La velocidad del enemigo debe ser mayor que cero.")
 	if base_damage < 0:
 		errors.append("El daño del enemigo no puede ser negativo.")
+	if kill_reward < 0:
+		errors.append("La recompensa por derrota no puede ser negativa.")
 	if armor < 0:
 		errors.append("La armadura del enemigo no puede ser negativa.")
 	if regen_per_second < 0.0:

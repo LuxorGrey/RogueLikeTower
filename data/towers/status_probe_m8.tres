@@ -10,6 +10,9 @@
 script = ExtResource("1_tower_data")
 id = &"status_probe_m8_test"
 display_name = "Sonda de estados (M8 prueba)"
+build_cost = 40
+upgrade_costs = Array[int]([])
+mana_cost_per_attack = 0.0
 base_damage = 1
 attack_rate = 0.5
 range_hexes = 3.5

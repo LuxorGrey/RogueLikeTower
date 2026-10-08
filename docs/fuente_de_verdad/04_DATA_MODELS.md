@@ -102,7 +102,7 @@ unlock_id
 scene
 ```
 
-M6 implementa en `data/towers/tower_data.gd`: `id`, `display_name`, `base_damage`, `attack_rate`, `range_hexes`, `allowed_terrain_mask`, `targeting_mode`, `height_range_bonus_per_level`, `max_level`, los incrementos configurables de mejora y `scene`. Los costes siguen fuera del modelo activo hasta M9. M7 añade `damage_tags` (bitmask de Físico/Fuego/Arcano), `armor_multiplier`, `health_multiplier`, `regen_counter_strength` y `regen_counter_duration`; los perfiles se copian a un `DamagePacket` por impacto, no se muta el Resource compartido.
+M6 implementa en `data/towers/tower_data.gd`: `id`, `display_name`, `base_damage`, `attack_rate`, `range_hexes`, `allowed_terrain_mask`, `targeting_mode`, `height_range_bonus_per_level`, `max_level`, los incrementos configurables de mejora y `scene`. M9 incorpora `build_cost`, `upgrade_costs` (un coste por cada nivel alcanzable) y `mana_cost_per_attack`; la compra y la mejora se verifican antes de cambiar ocupación o nivel. La instancia del Resource es configuración compartida y no se modifica al comprar/mejorar. M7 añade `damage_tags` (bitmask de Físico/Fuego/Arcano), `armor_multiplier`, `health_multiplier`, `regen_counter_strength` y `regen_counter_duration`; los perfiles se copian a un `DamagePacket` por impacto, no se muta el Resource compartido.
 
 Las prioridades implementadas son `FIRST_PROGRESS`, `LAST_PROGRESS`, `HIGHEST_HEALTH` y `HIGHEST_ARMOR`. El progreso sale del índice y avance normalizados de `PathFollowerComponent`. Desde M7, el ataque hitscan llama a `DamageService.apply_damage`; no hay fórmulas de mitigación en `Tower`.
 
@@ -124,7 +124,7 @@ arcane_damage_multiplier
 scene
 ```
 
-M5 implementó `id`, `display_name`, `max_health`, `move_speed`, `base_damage` y `scene`. M6 añadió `armor` para priorizar objetivos. M7 activa `armor`, `regen_per_second` y `physical_damage_multiplier`, `fire_damage_multiplier` y `arcane_damage_multiplier` en `data/enemies/enemy_data.gd`; los valores recibidos por múltiples tags se multiplican. La oleada M7 usa `data/enemies/armored_regenerator.tres` como fixture de diagnóstico. Los stats y resistencias del fixture son provisionales. Recompensa sigue reservada a M9.
+M5 implementó `id`, `display_name`, `max_health`, `move_speed`, `base_damage` y `scene`. M6 añadió `armor` para priorizar objetivos. M7 activa `armor`, `regen_per_second` y `physical_damage_multiplier`, `fire_damage_multiplier` y `arcane_damage_multiplier` en `data/enemies/enemy_data.gd`; los valores recibidos por múltiples tags se multiplican. La oleada M7 usa `data/enemies/armored_regenerator.tres` como fixture de diagnóstico. M9 añade `kill_reward`, que `WaveDirector` concede una vez tras la señal de derrota; llegar a base no paga la recompensa. Los stats, resistencias y recompensas de fixtures son provisionales.
 
 `defense_tags` y `status_resistances` del modelo conceptual siguen reservados para decisiones de contenido/status posteriores; M7 implementa los tres multiplicadores explícitos de daño recibido y no interpreta esos campos como activos.
 
@@ -179,6 +179,11 @@ round_reward
 M5 implementa `WaveData` y `WaveEnemyGroupData` como Resources validados: datos de enemigo, cantidad, intervalo, política de endpoint y demora de grupo. La oleada de demostración `data/waves/round_01.tres` genera tres enemigos con intervalo de 1 segundo. `FIRST_SORTED` selecciona siempre el primer `PathRoute` válido en orden determinista; `ROUND_ROBIN` también está disponible. Esta selección se limita a la muestra M5 y no confirma una política de balance para las rondas definitivas.
 
 `PathFollowerComponent` conserva waypoints mundiales derivados de las coordenadas axiales de `PathRoute`, índice del waypoint y progreso normalizado del tramo. El movimiento ocurre en `_physics_process`; el mapa no cambia mientras la oleada está activa.
+
+M9 implementa `round_reward` en `WaveData`; se concede una sola vez cuando terminan todos los spawns y no quedan enemigos activos. Los grupos pueden pagar bajas inmediatamente; un enemigo que llega a base no recibe recompensa. Si una oleada falla no se paga el bonus de ronda, aunque las bajas ya resueltas conservan su pago.
+
+## RunEconomyData / RunEconomyService
+`RunEconomyData` es una configuración Resource de una run: `starting_gold`, `starting_mana`, `maximum_mana` y `mana_regen_per_second`. `RunEconomyService` es un Node hijo de `Main`, no Autoload: es dueño de los saldos runtime de esa escena, valida compras/gastos, limita el maná a la capacidad y emite `gold_changed`/`mana_changed`. La UI escucha esas señales, pero no modifica los saldos directamente. El oro de construcción se reinicia con el perfil de arranque de la run y no es `MetaProgression.meta_currency`; M12 será dueño de la moneda permanente y del guardado. Las cifras actuales (150 oro, 30/100 maná y 1.5 maná/s) son provisionales.
 
 ## CardData
 ```text

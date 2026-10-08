@@ -1,6 +1,6 @@
 # ADR-0010: pipeline central de daño y counters M7
 
-- Estado: aceptada para el prototipo; fórmula, tags, perfiles y cifras de contenido provisionales.
+- Estado: aceptada para el prototipo; fórmula, tags, perfiles y cifras de contenido provisionales. La expectativa de recompensas pendientes de M9 quedó resuelta por ADR-0013.
 - Fecha: 2026-10-08.
 
 ## Contexto
@@ -30,3 +30,7 @@ M7 requiere que salud, armadura, regeneración, tipos/counters configurables y e
 - `docs/fuente_de_verdad/02_IMPLEMENTATION_ROADMAP.md`, milestones M6–M9, consultado el 2026-10-08.
 - `docs/fuente_de_verdad/04_DATA_MODELS.md`, `06_COMBAT_SYSTEM.md`, `09_PROGRESS.md` y `10_ACCEPTANCE_TESTS.md`, consultados el 2026-10-08.
 - `.agents/skills/godot-master/references/combat-system.md`, `resource-data-patterns.md` y `signal-architecture.md`, consultados el 2026-10-08.
+
+## Cambio posterior en M9
+
+Este ADR describe el pipeline de daño de M7, cuando todavía no había recompensa económica. M9 conecta las muertes de `Enemy` a los pagos de `WaveDirector`; el cálculo de daño sigue sin ser dueño del oro. Ver [ADR-0013](ADR-0013-economia-de-run-y-mana-m9.md).

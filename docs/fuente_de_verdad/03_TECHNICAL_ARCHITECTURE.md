@@ -27,6 +27,9 @@ res://
     terrain/
     towers/
     enemies/
+    run/
+      run_economy_data.gd
+      run_economy_m9.tres
     status_effects/
     waves/
     cards/
@@ -54,6 +57,8 @@ res://
       projectile.gd
     waves/
       wave_director.gd
+    economy/
+      run_economy_service.gd
     build/
       build_controller.gd
     cards/
@@ -90,6 +95,7 @@ Main (Node2D)
 ├── WaveDirector
 ├── BuildController
 ├── DamageService (escena-local; inyectado a las torres)
+├── RunEconomyService (escena-local; oro/maná de esta run)
 ├── Camera2D
 └── CanvasLayer
     └── HUD
@@ -160,11 +166,13 @@ La navegación del mapa la controla un `Camera2D` en `Main`: el HUD vive en `Can
 
 M5 añade `GameBase` y `WaveDirector` a la escena principal. `GameBase` posee un `HealthComponent`; `Enemy` compone su propio `HealthComponent` y `PathFollowerComponent`. `WaveDirector` recibe la oleada, el snapshot M4, la base y el contenedor Y-sort; crea enemigos desde sus Resources y escucha sus señales de llegada o muerte. La UI de `Main` presenta vida, recuento y estado, y traduce las señales de oleada a fases de `RunManager`. Durante `COMBAT` se bloquean las entradas de colocación de terreno.
 
-M6 añade `BuildController` a `Main`; recibe el `HexGrid`, `Entities`, el origen y el radio del mapa. El controlador valida fase, terreno construible y ocupación antes de instanciar una escena desde `TowerData`, y registra la torre en `HexCell.occupied/tower_id`. Solo Grass y Mountain permiten construir, así que las torres no cambian `PathGraph`. `Tower` es una escena Y-sorted con datos, nivel, selección, prioridad de objetivo, alcance y cadencia; consulta los nodos del grupo `enemies` cada 0.1 s y usa `PathFollowerComponent.get_progress_ratio()` para first/last progress. Su placeholder vectorial dibuja pedestal, orientación, anillo de alcance al seleccionarlo y un flash hitscan al atacar. `TerrainPiecePreview` representa el marcador/rango de colocación. La UI de `Main` alterna build mode, muestra errores, cambia la prioridad y mejora la torre. Las mejoras de esta muestra son gratuitas hasta que M9 integre economía. ADR-0009 recoge las reglas temporales.
+M6 añade `BuildController` a `Main`; recibe el `HexGrid`, `Entities`, el origen y el radio del mapa. El controlador valida fase, terreno construible y ocupación antes de instanciar una escena desde `TowerData`, y registra la torre en `HexCell.occupied/tower_id`. Solo Grass y Mountain permiten construir, así que las torres no cambian `PathGraph`. `Tower` es una escena Y-sorted con datos, nivel, selección, prioridad de objetivo, alcance y cadencia; consulta los nodos del grupo `enemies` cada 0.1 s y usa `PathFollowerComponent.get_progress_ratio()` para first/last progress. Su placeholder vectorial dibuja pedestal, orientación, anillo de alcance al seleccionarlo y un flash hitscan al atacar. `TerrainPiecePreview` representa el marcador/rango de colocación. La UI de `Main` alterna build mode, muestra errores, cambia la prioridad y mejora la torre. En M6 las mejoras no tenían coste; M9 incorpora costes configurables. ADR-0009 recoge las reglas temporales.
 
-M7 añade `DamageService` como hijo de `Main`, no como Autoload global. `BuildController` lo inyecta al configurar cada `Tower`, y cada disparo crea un `DamagePacket` con origen, tags y perfil desde `TowerData`. `DamageService.preview_damage()` calcula el resultado sin mutar al enemigo para el HUD; `apply_damage()` usa ese mismo cálculo, aplica daño y contrarregeneración y emite `damage_resolved`. `Enemy` mantiene su `HealthComponent`, regenera en `_process` con fracciones acumuladas y expone sus stats para targeting/debug. Las respuestas de muerte siguen conectadas a las señales M5; no se entrega recompensa hasta M9. El HUD provisional de depuración conserva solo estado de base/oleada, torre seleccionada y daño estimado; la barra inferior vincula las torres de prueba a los atajos 1–3. La selección de oleada se libera en cada expansión para que la oleada básica y la diagnóstica puedan repetirse hasta que M10 defina la progresión real. `F3` muestra los controles y datos técnicos de terreno; `H` oculta el HUD entero. Los scripts M7 cargan packet/result por rutas `preload` y exponen interfaces base `RefCounted`/`Node` en las fronteras, evitando referencias de tipo a clases globales recién creadas antes de que Godot refresque su caché. Los payloads de status quedan reservados para M8. ADR-0010 fija el contrato y la fórmula provisional; ADR-0011 registra este HUD temporal y sus atajos.
+M7 añade `DamageService` como hijo de `Main`, no como Autoload global. `BuildController` lo inyecta al configurar cada `Tower`, y cada disparo crea un `DamagePacket` con origen, tags y perfil desde `TowerData`. `DamageService.preview_damage()` calcula el resultado sin mutar al enemigo para el HUD; `apply_damage()` usa ese mismo cálculo, aplica daño y contrarregeneración y emite `damage_resolved`. `Enemy` mantiene su `HealthComponent`, regenera en `_process` con fracciones acumuladas y expone sus stats para targeting/debug. En M7 las respuestas de muerte seguían conectadas a las señales M5 y todavía no pagaban recompensa; M9 conecta ahora el evento al `RunEconomyService`. El HUD provisional de depuración conserva solo estado de base/oleada, torre seleccionada y daño estimado; la barra inferior vincula las torres de prueba a los atajos 1–3. La selección de oleada se libera en cada expansión para que la oleada básica y la diagnóstica puedan repetirse hasta que M10 defina la progresión real. `F3` muestra los controles y datos técnicos de terreno; `H` oculta el HUD entero. Los scripts M7 cargan packet/result por rutas `preload` y exponen interfaces base `RefCounted`/`Node` en las fronteras, evitando referencias de tipo a clases globales recién creadas antes de que Godot refresque su caché. Los payloads de status quedan reservados para M8. ADR-0010 fija el contrato y la fórmula provisional; ADR-0011 registra este HUD temporal y sus atajos.
 
 M8 añade `StatusEffectData` como Resource y `StatusEffectController` como hijo de cada `Enemy`; los Resources de configuración se comparten como datos, pero stacks, duración restante, temporizador de tick y origen activo pertenecen a cada enemigo. `TowerData.status_effects` proporciona los payloads del impacto; `DamageService` aplica el daño directo y, si el objetivo sigue vivo, aplica los estados. El controlador combina modificadores de velocidad tomando el mínimo multiplicador activo, ejecuta ticks periódicos llamando al mismo `DamageService` (sin payloads recursivos) y limpia al expirar el estado, morir el enemigo o llegar a la base. La instancia del servicio de combate continúa siendo local a `Main` e inyectada al enemigo por `WaveDirector`. Los tres Resources Slow/Burn/Bleed, el dummy, la torre y la oleada M8 son fixtures provisionales. La barra de prueba amplía los atajos a `1–4`; el panel compacto informa los estados y sus temporizadores en el objetivo de la torre seleccionada. Las reglas de acumulación y propiedad del tick están registradas en ADR-0012.
+
+M9 añade `RunEconomyService` como nodo local de `Main`, configurado desde `RunEconomyData`; conserva oro y maná de la run sin mezclar la moneda meta. `BuildController` recibe el servicio y aplica compras atómicas de torres/mejoras con costes de `TowerData`. Cada `Tower` recibe la misma instancia: antes de un impacto con coste de maná intenta gastar el recurso y no dispara si el saldo no alcanza. El servicio regenera maná durante la run, acotado por su capacidad, y emite señales de saldo; el HUD refleja oro, maná, regeneración, costes de atajos y coste de mejora. `WaveDirector` guarda la recompensa de cada instancia enemiga, la paga una vez al derrotarla y descarta el pago al llegar a base; entrega la recompensa de ronda solo al limpiar todos los grupos. `Main` pasa brevemente a `ROUND_REWARD` antes de permitir la siguiente oleada. La remuneración por baja ya emitida se conserva aunque otro enemigo haga fallar esa oleada; no se paga el bonus de ronda fallida. Los valores de M9 son fixtures provisionales. ADR-0013 registra el contrato y las provisionalidades.
 
 ## Save
 Guardar solo datos estables:

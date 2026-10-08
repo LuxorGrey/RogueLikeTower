@@ -15,4 +15,5 @@ delay_before_group = 0.0
 [resource]
 script = ExtResource("1_wave_data")
 round_number = 1
+round_reward = 20
 groups = Array[Resource]([SubResource("WaveEnemyGroupData_round_01")])

@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://game/main/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://game/board/terrain_piece_preview.gd" id="2_preview"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://game/waves/wave_director.gd" id="4_wave_director"]
 [ext_resource type="Script" path="res://game/build/build_controller.gd" id="5_build_controller"]
 [ext_resource type="Script" path="res://game/combat/damage_service.gd" id="6_damage_service"]
+[ext_resource type="Script" path="res://game/economy/run_economy_service.gd" id="7_run_economy"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -42,6 +43,10 @@ script = ExtResource("5_build_controller")
 unique_name_in_owner = true
 script = ExtResource("6_damage_service")
 
+[node name="RunEconomyService" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("7_run_economy")
+
 [node name="HUD" type="CanvasLayer" parent="."]
 unique_name_in_owner = true
 
@@ -50,7 +55,7 @@ unique_name_in_owner = true
 offset_left = 24.0
 offset_top = 24.0
 offset_right = 420.0
-offset_bottom = 414.0
+offset_bottom = 438.0
 
 [node name="Margin" type="MarginContainer" parent="HUD/Panel"]
 layout_mode = 2
@@ -84,6 +89,12 @@ text = "F3 - Terreno   H - Interfaz"
 unique_name_in_owner = true
 layout_mode = 2
 text = "Base · preparando vida..."
+
+[node name="EconomyStatus" type="Label" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 0.83, 0.55, 1)
+text = "Oro — · Maná —"
 
 [node name="WaveStatus" type="Label" parent="HUD/Panel/Margin/Content"]
 unique_name_in_owner = true

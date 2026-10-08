@@ -1,6 +1,6 @@
 # ADR-0009: construcción y primera torre M6
 
-- Estado: aceptada para el prototipo; el camino temporal de daño directo quedó sustituido por ADR-0010. Contenido, números y regla de altura siguen provisionales.
+- Estado: aceptada para el prototipo; el camino temporal de daño directo quedó sustituido por ADR-0010 y el coste gratuito de M6 quedó sustituido por ADR-0013. Contenido, números y regla de altura siguen provisionales.
 - Fecha: 2026-10-08.
 
 ## Contexto
@@ -31,3 +31,7 @@ M6 debe convertir la ruta y la oleada de M4/M5 en un prototipo de Tower Defense 
 - `docs/fuente_de_verdad/02_IMPLEMENTATION_ROADMAP.md`, secciones M5–M9, consultado el 2026-10-08.
 - `docs/fuente_de_verdad/04_DATA_MODELS.md`, `06_COMBAT_SYSTEM.md` y `10_ACCEPTANCE_TESTS.md`, consultados el 2026-10-08.
 - `.agents/skills/godot-master/references/combat-system.md`, `resource-data-patterns.md`, `signal-architecture.md` y `2d-physics-area2d-and-queries.md`, consultados el 2026-10-08.
+
+## Cambio posterior en M9
+
+La decisión histórica de que las mejoras fueran gratuitas solo aplicaba al prototipo M6 y queda reemplazada por los costes configurables `TowerData.upgrade_costs`, el coste de construcción y la integración de oro/maná descritos en [ADR-0013](ADR-0013-economia-de-run-y-mana-m9.md). El resto de este ADR conserva los contratos de construcción y targeting de M6.

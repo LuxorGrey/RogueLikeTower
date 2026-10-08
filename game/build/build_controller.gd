@@ -14,6 +14,7 @@ var _map_origin: Vector2 = Vector2.ZERO
 var _hex_radius: float = 52.0
 var _tower_data: TowerData
 var _damage_service: Node
+var _run_economy: Node
 var _is_build_mode: bool = false
 var _towers_by_coord: Dictionary[Vector2i, Tower] = {}
 
@@ -22,7 +23,8 @@ func configure(
 	entities: Node2D,
 	map_origin: Vector2,
 	hex_radius: float,
-	damage_service: Node
+	damage_service: Node,
+	run_economy: Node = null
 ) -> bool:
 	if board_grid == null or entities == null or damage_service == null or hex_radius <= 0.0:
 		last_error = "BuildController requiere grid, entidades, DamageService y radio positivos."
@@ -32,6 +34,7 @@ func configure(
 	_map_origin = map_origin
 	_hex_radius = hex_radius
 	_damage_service = damage_service
+	_run_economy = run_economy
 	return true
 
 func can_build_in_current_phase() -> bool:
@@ -92,6 +95,11 @@ func get_placement_error(coord: Vector2i) -> String:
 			_tower_data.display_name,
 			_terrain_name(cell.terrain_type),
 		]
+	if _run_economy != null and not bool(_run_economy.call("can_afford_gold", _tower_data.build_cost)):
+		return "Oro insuficiente: %d disponibles · %d necesarios." % [
+			int(_run_economy.call("get_gold")),
+			_tower_data.build_cost,
+		]
 	return ""
 
 func get_preview_range_pixels(coord: Vector2i) -> float:
@@ -114,11 +122,15 @@ func place_tower(coord: Vector2i) -> bool:
 	if tower == null:
 		last_error = "La escena de TowerData no crea un nodo Tower."
 		return false
-	_entities.add_child(tower)
-	if not tower.configure(_tower_data, coord, cell.elevation, _map_origin, _hex_radius, _damage_service):
+	if not tower.configure(_tower_data, coord, cell.elevation, _map_origin, _hex_radius, _damage_service, _run_economy):
 		last_error = tower.last_error
-		tower.queue_free()
+		tower.free()
 		return false
+	if _run_economy != null and not bool(_run_economy.call("try_spend_gold", _tower_data.build_cost, &"tower_build")):
+		last_error = "No se pudo completar la compra: oro insuficiente."
+		tower.free()
+		return false
+	_entities.add_child(tower)
 	cell.occupied = true
 	cell.tower_id = _tower_data.id
 	_towers_by_coord[coord] = tower
@@ -147,7 +159,22 @@ func upgrade_selected_tower() -> bool:
 	if selected_tower == null or not is_instance_valid(selected_tower):
 		last_error = "Selecciona una torre antes de mejorarla."
 		return false
+	var upgrade_cost: int = selected_tower.get_next_upgrade_cost()
+	if upgrade_cost < 0:
+		last_error = "La torre ya está en su nivel máximo."
+		return false
+	if _run_economy != null and not bool(_run_economy.call("can_afford_gold", upgrade_cost)):
+		last_error = "Oro insuficiente: %d disponibles · %d necesarios." % [
+			int(_run_economy.call("get_gold")),
+			upgrade_cost,
+		]
+		return false
+	if _run_economy != null and not bool(_run_economy.call("try_spend_gold", upgrade_cost, &"tower_upgrade")):
+		last_error = "No se pudo completar la mejora: oro insuficiente."
+		return false
 	if not selected_tower.upgrade():
+		if _run_economy != null:
+			_run_economy.call("add_gold", upgrade_cost, &"upgrade_refund")
 		last_error = "La torre ya está en su nivel máximo."
 		return false
 	tower_upgraded.emit(selected_tower, selected_tower.level)

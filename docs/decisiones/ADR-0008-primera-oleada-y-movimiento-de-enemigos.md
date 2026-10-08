@@ -1,5 +1,7 @@
 # ADR-0008: primera oleada y movimiento de enemigos M5
 
+> Nota posterior: M9 implementa los campos de recompensa que quedaban pendientes en este prototipo. Sus valores de prueba y la propiedad del pago están en [ADR-0013](ADR-0013-economia-de-run-y-mana-m9.md).
+
 - Estado: aceptada para el prototipo M5; contenido y parámetros provisionales.
 - Fecha: 2026-10-08.
 

@@ -6,13 +6,13 @@
 - construcción;
 - upgrades de torre;
 - mapa;
-- economía;
-- maná;
+- oro de construcción (saldo temporal de `RunEconomyService`);
+- maná (saldo temporal, capacidad y regeneración configurables);
 - cartas;
 - status/build synergies.
 
 ### Entre runs
-- moneda meta;
+- moneda meta (`MetaProgression.meta_currency`, persistente y separada del oro de construcción);
 - tienda;
 - desbloqueo de torres;
 - mejoras permanentes.
@@ -31,6 +31,8 @@ Tipos iniciales:
 - ampliar/alterar pool de cartas.
 
 No introducir support buildings.
+
+M9 implementa solo economía runtime: oro inicial, gasto en construcción/mejoras, recompensas por baja y ronda superada, y maná con coste por ataque y regeneración. El oro no se guarda ni se convierte en meta moneda en M9. M12 conserva la responsabilidad de recompensas de fin de run, tienda permanente, desbloqueos y guardado. No hay edificios que generen oro o maná.
 
 ## Filosofía
 Las permanentes facilitan progreso y variedad, pero no deben convertir el juego en "ganar por estadísticas" sin estrategia.

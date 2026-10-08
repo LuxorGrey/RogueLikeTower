@@ -12,11 +12,13 @@ const CONVERGENCE_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/c
 const FIRST_WAVE: WaveData = preload("res://data/waves/round_01.tres")
 const M7_DAMAGE_TEST_WAVE: WaveData = preload("res://data/waves/m7_damage_test.tres")
 const M8_STATUS_TEST_WAVE: WaveData = preload("res://data/waves/m8_status_test.tres")
+const RUN_ECONOMY_DATA: Resource = preload("res://data/run/run_economy_m9.tres")
 const BASIC_BOLT: TowerData = preload("res://data/towers/basic_bolt.tres")
 const ARMOR_PIERCING_BOLT: TowerData = preload("res://data/towers/armor_piercing_bolt.tres")
 const SAPPING_BOLT: TowerData = preload("res://data/towers/sapping_bolt.tres")
 const STATUS_PROBE: TowerData = preload("res://data/towers/status_probe_m8.tres")
 const TOWER_PROFILES: Array[TowerData] = [BASIC_BOLT, ARMOR_PIERCING_BOLT, SAPPING_BOLT, STATUS_PROBE]
+const TOWER_SHORT_NAMES: PackedStringArray = ["BOLT", "PERFORADORA", "DRENADORA", "SONDA M8"]
 const MIN_CAMERA_ZOOM: float = 0.45
 const MAX_CAMERA_ZOOM: float = 2.5
 const CAMERA_ZOOM_STEP: float = 1.12
@@ -65,6 +67,7 @@ var _has_hovered_cell: bool = false
 @onready var _base: GameBase = %GameBase
 @onready var _wave_director: WaveDirector = %WaveDirector
 @onready var _base_status: Label = %BaseStatus
+@onready var _economy_status: Label = %EconomyStatus
 @onready var _wave_status: Label = %WaveStatus
 @onready var _start_wave_button: Button = %StartWave
 @onready var _build_controller: BuildController = %BuildController
@@ -76,6 +79,9 @@ var _has_hovered_cell: bool = false
 @onready var _upgrade_tower_button: Button = %UpgradeTower
 @onready var _wave_selector: OptionButton = %WaveSelector
 @onready var _damage_service: Node = %DamageService
+@onready var _run_economy: Node = %RunEconomyService
+
+var _reward_transition_token: int = 0
 
 func _ready() -> void:
 	_camera.position = get_viewport_rect().size * 0.5
@@ -93,11 +99,14 @@ func _ready() -> void:
 	_piece_preview.hover_changed.connect(_on_preview_hover_changed)
 	_piece_preview.hover_cleared.connect(_on_preview_hover_cleared)
 	_base.health_changed.connect(_on_base_health_changed)
+	_run_economy.connect(&"gold_changed", _on_gold_changed)
+	_run_economy.connect(&"mana_changed", _on_mana_changed)
 	_wave_director.wave_started.connect(_on_wave_started)
 	_wave_director.wave_completed.connect(_on_wave_completed)
 	_wave_director.wave_failed.connect(_on_wave_failed)
 	_wave_director.enemy_count_changed.connect(_on_enemy_count_changed)
 	_wave_director.base_damaged.connect(_on_base_damaged)
+	_wave_director.reward_earned.connect(_on_reward_earned)
 	_build_controller.tower_selected.connect(_on_tower_selected)
 	_build_controller.tower_upgraded.connect(_on_tower_upgraded)
 	_build_controller.build_mode_changed.connect(_on_build_mode_changed)
@@ -108,7 +117,8 @@ func _ready() -> void:
 		_entities,
 		_piece_preview.global_position,
 		HEX_RADIUS,
-		_damage_service
+		_damage_service,
+		_run_economy
 	)
 	_populate_wave_options()
 	_populate_targeting_modes()
@@ -138,6 +148,8 @@ func _ready() -> void:
 	_start_wave_button.disabled = not _path_graph.is_valid
 	_wave_status.text = "Preparada · 3 enemigos"
 	RunManager.transition_to(RunManager.Phase.ROUND_PREP)
+	if not bool(_run_economy.call("configure", RUN_ECONOMY_DATA)):
+		push_error("No se pudo iniciar la economía de run: %s" % _run_economy.get("last_error"))
 	_refresh_tower_controls()
 	_refresh_path_status()
 	_piece_selector.add_item("— sin pieza —", 0)
@@ -395,8 +407,9 @@ func _handle_board_click() -> void:
 			_build_status.text = "Coloca el cursor sobre una casilla existente."
 			return
 		if _build_controller.place_tower(_hovered_coord):
-			_build_status.text = "%s construida en (%d, %d)." % [
+			_build_status.text = "%s construida por %d oro en (%d, %d)." % [
 				_selected_tower_data.display_name,
+				_selected_tower_data.build_cost,
 				_hovered_coord.x,
 				_hovered_coord.y,
 			]
@@ -503,8 +516,10 @@ func _on_targeting_mode_selected(index: int) -> void:
 		_refresh_tower_controls()
 
 func _on_upgrade_tower_pressed() -> void:
+	var tower: Tower = _build_controller.selected_tower
+	var upgrade_cost: int = tower.get_next_upgrade_cost() if tower != null and is_instance_valid(tower) else -1
 	if _build_controller.upgrade_selected_tower():
-		_build_status.text = "Torre mejorada sin coste en este prototipo (la economía llega en M9)."
+		_build_status.text = "Torre mejorada · −%d oro." % upgrade_cost
 	else:
 		_build_status.text = _build_controller.last_error
 	_refresh_tower_controls()
@@ -528,23 +543,39 @@ func _refresh_tower_controls() -> void:
 	var is_defeated: bool = RunManager.phase == RunManager.Phase.RUN_DEFEAT
 	for index in _tower_shortcut_buttons.size():
 		var shortcut_button: Button = _tower_shortcut_buttons[index]
-		shortcut_button.disabled = not can_build
+		var tower_data: TowerData = TOWER_PROFILES[index]
+		var mana_suffix: String = " · %.1f maná/ataque" % tower_data.mana_cost_per_attack if tower_data.mana_cost_per_attack > 0.0 else ""
+		shortcut_button.text = "%d · %s\n%d oro%s" % [
+			index + 1,
+			TOWER_SHORT_NAMES[index],
+			tower_data.build_cost,
+			mana_suffix,
+		]
+		shortcut_button.tooltip_text = "%s · coste %d oro%s" % [
+			tower_data.display_name,
+			tower_data.build_cost,
+			mana_suffix,
+		]
+		shortcut_button.disabled = not can_build or not bool(_run_economy.call("can_afford_gold", tower_data.build_cost))
 		shortcut_button.set_pressed_no_signal(
 			build_mode and TOWER_PROFILES[index] == _selected_tower_data
 		)
-	_wave_selector.disabled = build_mode or RunManager.phase == RunManager.Phase.COMBAT or is_defeated
+	_wave_selector.disabled = build_mode or not _can_start_wave() or is_defeated
 	_tower_actions.visible = selected != null and not build_mode
 	_start_wave_button.disabled = (
 		build_mode
 		or not _path_graph.is_valid
-		or RunManager.phase == RunManager.Phase.COMBAT
+		or not _can_start_wave()
 		or is_defeated
 	)
 	_tower_targeting_mode.disabled = build_mode or selected == null or not _build_controller.can_build_in_current_phase()
+	var next_upgrade_cost: int = selected.get_next_upgrade_cost() if selected != null else -1
+	_upgrade_tower_button.text = "Mejorar · %d oro" % next_upgrade_cost if next_upgrade_cost >= 0 else "Mejorar"
 	_upgrade_tower_button.disabled = (
 		build_mode
 		or selected == null
-		or selected.level >= selected.get_tower_data().max_level
+		or next_upgrade_cost < 0
+		or not bool(_run_economy.call("can_afford_gold", next_upgrade_cost))
 		or not _build_controller.can_build_in_current_phase()
 	)
 	if build_mode:
@@ -555,7 +586,7 @@ func _refresh_tower_controls() -> void:
 		_tower_status.text = selected.get_summary()
 
 func _start_selected_wave() -> void:
-	if not _path_graph.is_valid or RunManager.phase == RunManager.Phase.COMBAT or RunManager.phase == RunManager.Phase.RUN_DEFEAT:
+	if not _path_graph.is_valid or not _can_start_wave():
 		return
 	if _build_controller.is_build_mode():
 		_build_controller.cancel_build_mode()
@@ -583,13 +614,27 @@ func _on_wave_started(round_number: int) -> void:
 	_refresh_tower_controls()
 
 func _on_wave_completed(round_number: int) -> void:
-	_placement_enabled = true
-	RunManager.transition_to(RunManager.Phase.TERRAIN_EXPANSION)
-	_wave_status.text = "%s completada · ronda %d · elige otra y vuelve a probar" % [
+	_reward_transition_token += 1
+	var transition_token: int = _reward_transition_token
+	RunManager.transition_to(RunManager.Phase.ROUND_REWARD)
+	var round_reward: int = _selected_wave.round_reward if _selected_wave != null else 0
+	_wave_status.text = "%s completada · ronda %d · +%d oro · procesando recompensa…" % [
 		_active_wave_name,
 		round_number,
+		round_reward,
 	]
 	_start_wave_button.text = "↻ Probar oleada seleccionada"
+	_refresh_tower_controls()
+	await get_tree().create_timer(0.8).timeout
+	if transition_token != _reward_transition_token or RunManager.phase != RunManager.Phase.ROUND_REWARD:
+		return
+	_placement_enabled = true
+	RunManager.transition_to(RunManager.Phase.TERRAIN_EXPANSION)
+	_wave_status.text = "%s completada · ronda %d · +%d oro · elige otra y vuelve a probar" % [
+		_active_wave_name,
+		round_number,
+		round_reward,
+	]
 	_refresh_placement()
 	_refresh_tower_controls()
 
@@ -606,6 +651,38 @@ func _on_enemy_count_changed(alive_count: int) -> void:
 	if RunManager.phase == RunManager.Phase.COMBAT:
 		_wave_status.text = "%s · enemigos en ruta: %d" % [_active_wave_name, alive_count]
 
+func _can_start_wave() -> bool:
+	return RunManager.phase == RunManager.Phase.ROUND_PREP or RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION
+
+func _on_reward_earned(amount: int, reason: int) -> void:
+	var economy_reason: StringName = &"kill_reward"
+	if reason == WaveDirector.RewardReason.ROUND_CLEAR:
+		economy_reason = &"round_reward"
+	var accepted: int = int(_run_economy.call("add_gold", amount, economy_reason))
+	if accepted <= 0:
+		return
+	if reason == WaveDirector.RewardReason.ENEMY_KILL:
+		_build_status.text = "Recompensa por baja: +%d oro." % accepted
+	elif reason == WaveDirector.RewardReason.ROUND_CLEAR:
+		_build_status.text = "Recompensa por oleada: +%d oro." % accepted
+
+func _on_gold_changed(_current_gold: int, _delta: int, _reason: StringName) -> void:
+	_refresh_economy_status()
+	_refresh_tower_controls()
+
+func _on_mana_changed(_current_mana: float, _maximum_mana: float) -> void:
+	_refresh_economy_status()
+
+func _refresh_economy_status() -> void:
+	if _run_economy == null or _economy_status == null:
+		return
+	_economy_status.text = "Oro %d  ·  Maná %.1f / %.0f  ·  regen %.1f/s" % [
+		int(_run_economy.call("get_gold")),
+		float(_run_economy.call("get_mana")),
+		float(_run_economy.call("get_maximum_mana")),
+		float(_run_economy.call("get_mana_regen_per_second")),
+	]
+
 func _refresh_combat_debug() -> void:
 	var tower: Tower = _build_controller.selected_tower
 	if tower == null or not is_instance_valid(tower):
@@ -614,15 +691,20 @@ func _refresh_combat_debug() -> void:
 	var target: Enemy = tower.get_current_target()
 	if target == null or not is_instance_valid(target) or target.state != Enemy.State.MOVING:
 		_combat_debug.text = "Objetivo: ninguno en alcance"
+		if tower.is_mana_blocked():
+			_combat_debug.text += " · sin maná"
 		return
 	var estimate: Variant = _damage_service.call("preview_damage", target, tower.create_damage_packet())
 	var status_summaries: PackedStringArray = target.get_active_status_summaries()
 	var status_text: String = "Estados: —" if status_summaries.is_empty() else "Estados: %s" % " · ".join(status_summaries)
+	var mana_text: String = ""
+	if tower.get_mana_cost_per_attack() > 0.0:
+		mana_text = " · sin maná" if tower.is_mana_blocked() else " · %.1f maná/ataque" % tower.get_mana_cost_per_attack()
 	var regen_text: String = ""
 	var effective_regen: float = target.get_effective_regen_per_second()
 	if not is_equal_approx(effective_regen, target.get_regen_per_second()):
 		regen_text = " → %.1f/s" % effective_regen
-	_combat_debug.text = "%s · %d/%d HP · arm %d · regen %.1f%s · impacto %d\n%s" % [
+	_combat_debug.text = "%s · %d/%d HP · arm %d · regen %.1f%s · impacto %d%s\n%s" % [
 		target.get_display_name(),
 		target.get_current_health(),
 		target.get_maximum_health(),
@@ -630,6 +712,7 @@ func _refresh_combat_debug() -> void:
 		target.get_regen_per_second(),
 		regen_text,
 		int(estimate.get("calculated_health_damage")),
+		mana_text,
 		status_text,
 	]
 

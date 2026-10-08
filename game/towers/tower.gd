@@ -24,6 +24,7 @@ var last_error: String = ""
 
 var _tower_data: TowerData
 var _damage_service: Node
+var _run_economy: Node
 var _hex_radius: float = 52.0
 var _is_selected: bool = false
 var _current_target: Enemy
@@ -33,6 +34,7 @@ var _attack_cooldown: float = 0.0
 var _shot_flash_timer: float = 0.0
 var _shot_target_position: Vector2 = Vector2.ZERO
 var _turret_angle: float = -PI * 0.5
+var _is_mana_blocked: bool = false
 
 func configure(
 	tower_data: TowerData,
@@ -40,7 +42,8 @@ func configure(
 	cell_elevation: int,
 	map_origin: Vector2,
 	hex_radius: float,
-	damage_service: Node
+	damage_service: Node,
+	run_economy: Node = null
 ) -> bool:
 	last_error = ""
 	if tower_data == null or damage_service == null or hex_radius <= 0.0 or cell_elevation < 0 or cell_elevation > 2:
@@ -52,6 +55,7 @@ func configure(
 		return false
 	_tower_data = tower_data
 	_damage_service = damage_service
+	_run_economy = run_economy
 	cell_coord = coord
 	elevation = cell_elevation
 	_hex_radius = hex_radius
@@ -87,6 +91,17 @@ func upgrade() -> bool:
 
 func get_tower_data() -> TowerData:
 	return _tower_data
+
+func get_next_upgrade_cost() -> int:
+	if _tower_data == null:
+		return -1
+	return _tower_data.get_upgrade_cost(level)
+
+func get_mana_cost_per_attack() -> float:
+	return _tower_data.mana_cost_per_attack if _tower_data != null else 0.0
+
+func is_mana_blocked() -> bool:
+	return _is_mana_blocked
 
 func get_current_target() -> Enemy:
 	return _current_target
@@ -134,12 +149,16 @@ func get_targeting_mode() -> int:
 func get_summary() -> String:
 	if _tower_data == null:
 		return "Torre sin configurar."
-	return "%s · N%d/%d · daño %d · alcance %.1f hex" % [
+	var mana_summary: String = ""
+	if _tower_data.mana_cost_per_attack > 0.0:
+		mana_summary = " · %.1f maná/ataque" % _tower_data.mana_cost_per_attack
+	return "%s · N%d/%d · daño %d · alcance %.1f hex%s" % [
 		_tower_data.display_name,
 		level,
 		_tower_data.max_level,
 		get_current_damage(),
 		get_current_range_hexes(),
+		mana_summary,
 	]
 
 func get_damage_tag_name(tags: int) -> String:
@@ -176,15 +195,18 @@ func _physics_process(delta: float) -> void:
 		return
 	if _current_target != null and not is_instance_valid(_current_target):
 		_current_target = null
+		_is_mana_blocked = false
 		_scan_timer = 0.0
 	_scan_timer -= delta
 	if _scan_timer <= 0.0:
 		_acquire_target()
 		_scan_timer = SCAN_INTERVAL
 	if _current_target == null:
+		_is_mana_blocked = false
 		return
 	if not _is_target_in_range(_current_target):
 		_current_target = null
+		_is_mana_blocked = false
 		return
 	_turret_angle = global_position.direction_to(_current_target.global_position).angle()
 	_attack_cooldown = maxf(_attack_cooldown - delta, 0.0)
@@ -228,6 +250,12 @@ func _is_target_in_range(target: Enemy) -> bool:
 func _fire_at_target() -> void:
 	if _damage_service == null or not _is_target_in_range(_current_target):
 		return
+	if _tower_data.mana_cost_per_attack > 0.0 and _run_economy != null:
+		if not bool(_run_economy.call("try_spend_mana", _tower_data.mana_cost_per_attack)):
+			_is_mana_blocked = true
+			_attack_cooldown = 0.25
+			return
+	_is_mana_blocked = false
 	var target: Enemy = _current_target
 	var result: Variant = _damage_service.call("apply_damage", target, create_damage_packet())
 	_attack_cooldown = 1.0 / maxf(get_current_attack_rate(), 0.001)

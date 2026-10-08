@@ -7,6 +7,9 @@
 script = ExtResource("1_tower_data")
 id = &"armor_piercing_bolt_m7_test"
 display_name = "Perforadora M7 (prueba)"
+build_cost = 40
+upgrade_costs = Array[int]([20, 35])
+mana_cost_per_attack = 0.0
 base_damage = 10
 attack_rate = 1.0
 range_hexes = 3.0

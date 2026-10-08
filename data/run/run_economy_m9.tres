@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="RunEconomyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/run/run_economy_data.gd" id="1_run_economy_data"]
+
+[resource]
+script = ExtResource("1_run_economy_data")
+starting_gold = 150
+starting_mana = 30.0
+maximum_mana = 100.0
+mana_regen_per_second = 1.5

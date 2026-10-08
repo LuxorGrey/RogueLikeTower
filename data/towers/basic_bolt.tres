@@ -7,6 +7,9 @@
 script = ExtResource("1_tower_data")
 id = &"basic_bolt"
 display_name = "Basic Bolt (placeholder)"
+build_cost = 30
+upgrade_costs = Array[int]([20, 35])
+mana_cost_per_attack = 0.0
 base_damage = 10
 attack_rate = 1.0
 range_hexes = 3.0

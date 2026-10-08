@@ -1,11 +1,14 @@
 class_name WaveDirector
 extends Node
 
+enum RewardReason { ENEMY_KILL, ROUND_CLEAR }
+
 signal wave_started(round_number: int)
 signal wave_completed(round_number: int)
 signal wave_failed(reason: String)
 signal enemy_count_changed(alive_count: int)
 signal base_damaged(amount: int, current_health: int, maximum_health: int)
+signal reward_earned(amount: int, reason: int)
 
 var last_error: String = ""
 var _wave_data: WaveData
@@ -16,6 +19,7 @@ var _damage_service: Node
 var _map_origin: Vector2 = Vector2.ZERO
 var _hex_radius: float = 52.0
 var _active_enemies: Dictionary[int, Enemy] = {}
+var _kill_rewards: Dictionary[int, int] = {}
 var _is_running: bool = false
 var _is_spawning: bool = false
 var _wave_token: int = 0
@@ -114,6 +118,7 @@ func _spawn_enemy(enemy_data: EnemyData, route: PathRoute) -> bool:
 		return false
 	var enemy_id: int = enemy.get_instance_id()
 	_active_enemies[enemy_id] = enemy
+	_kill_rewards[enemy_id] = enemy_data.kill_reward
 	enemy.reached_base.connect(_on_enemy_reached_base.bind(enemy_id))
 	enemy.defeated.connect(_on_enemy_defeated.bind(enemy_id))
 	enemy_count_changed.emit(_active_enemies.size())
@@ -123,6 +128,7 @@ func _on_enemy_reached_base(base_damage: int, enemy_id: int) -> void:
 	if not _active_enemies.has(enemy_id):
 		return
 	_active_enemies.erase(enemy_id)
+	_kill_rewards.erase(enemy_id)
 	var applied_damage: int = _base.apply_damage(base_damage)
 	base_damaged.emit(applied_damage, _base.get_current_health(), _base.get_maximum_health())
 	enemy_count_changed.emit(_active_enemies.size())
@@ -135,6 +141,10 @@ func _on_enemy_defeated(enemy_id: int) -> void:
 	if not _active_enemies.has(enemy_id):
 		return
 	_active_enemies.erase(enemy_id)
+	var kill_reward: int = int(_kill_rewards.get(enemy_id, 0))
+	_kill_rewards.erase(enemy_id)
+	if kill_reward > 0:
+		reward_earned.emit(kill_reward, RewardReason.ENEMY_KILL)
 	enemy_count_changed.emit(_active_enemies.size())
 	_check_wave_completion()
 
@@ -142,6 +152,8 @@ func _check_wave_completion() -> void:
 	if not _is_running or _is_spawning or not _active_enemies.is_empty():
 		return
 	_is_running = false
+	if _wave_data.round_reward > 0:
+		reward_earned.emit(_wave_data.round_reward, RewardReason.ROUND_CLEAR)
 	wave_completed.emit(_wave_data.round_number)
 
 func _fail_wave(reason: String) -> void:
@@ -154,5 +166,6 @@ func _fail_wave(reason: String) -> void:
 		if is_instance_valid(enemy):
 			enemy.queue_free()
 	_active_enemies.clear()
+	_kill_rewards.clear()
 	enemy_count_changed.emit(0)
 	wave_failed.emit(reason)

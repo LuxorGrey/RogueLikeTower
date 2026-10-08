@@ -57,7 +57,7 @@
     "upgrade_max_level": 3,
     "upgrade_damage_per_level_provisional": 5,
     "upgrade_range_hexes_per_level_provisional": 0.25,
-    "upgrade_costs": "free_placeholder_until_m9_economy",
+    "upgrade_costs": "configured_per_level_by_TowerData_since_m9",
     "sale": false,
     "path_blocking": false
   },
@@ -169,6 +169,29 @@
     },
     "balance_confirmed": false
   },
+  "m9_run_economy": {
+    "service_scope": "Main_scene_local",
+    "configuration_resource": "RunEconomyData",
+    "starting_gold_provisional": 150,
+    "starting_mana_provisional": 30.0,
+    "maximum_mana_provisional": 100.0,
+    "mana_regen_per_second_provisional": 1.5,
+    "build_and_upgrade_costs": "TowerData",
+    "kill_rewards": "EnemyData.kill_reward_paid_once_on_defeat",
+    "round_rewards": "WaveData.round_reward_paid_once_when_spawning_finished_and_no_enemies_remain_and_wave_not_failed",
+    "mana_spend": "before_tower_attack; no_attack_when_unaffordable",
+    "run_gold_is_meta_currency": false,
+    "support_buildings": false,
+    "balance_confirmed": false
+  },
+  "m14_demo_tower_roster_proposal": [
+    {"id": "ballista_role", "working_name": "Ballesta", "parallel": "Rogue Tower Ballista", "role": "single_target_generalist"},
+    {"id": "mortar_role", "working_name": "Mortero", "parallel": "Rogue Tower Mortar", "role": "long_range_slow_area_anti_armor"},
+    {"id": "tesla_role", "working_name": "Bobina Tesla", "parallel": "Rogue Tower Tesla Coil", "role": "multi_target_mana_attack"},
+    {"id": "frost_role", "working_name": "Guardafría", "parallel": "Rogue Tower Frost Keep", "role": "mana_slow"},
+    {"id": "flame_role", "working_name": "Lanzallamas", "parallel": "Rogue Tower Flame Thrower", "role": "fire_burn_status"},
+    {"id": "poison_role", "working_name": "Pulverizador venenoso", "parallel": "Rogue Tower Poison Sprayer", "role": "poison_damage_over_time"}
+  ],
   "run_phases": [
     "RUN_SETUP",
     "ROUND_PREP",

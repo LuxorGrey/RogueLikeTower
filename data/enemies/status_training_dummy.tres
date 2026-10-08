@@ -10,6 +10,7 @@ display_name = "Objetivo de estados (M8 prueba)"
 max_health = 180
 move_speed = 32.0
 base_damage = 10
+kill_reward = 5
 armor = 0
 regen_per_second = 0.0
 physical_damage_multiplier = 1.0

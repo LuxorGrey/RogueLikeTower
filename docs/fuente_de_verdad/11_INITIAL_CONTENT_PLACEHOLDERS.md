@@ -2,13 +2,32 @@
 
 Estos nombres/números son temporales y NO diseño final.
 
-## Torres de prueba
-1. Basic Bolt — generalista. M6 implementa la primera versión vectorial con estadísticas configurables en `data/towers/basic_bolt.tres`; M7 lo enruta por `DamageService`.
-2. Breaker — mejor contra armor.
-3. Executioner — mejor contra health.
-4. Hexfire — Burn.
-5. Frost — Slow.
-6. Suppressor — anti-regen.
+## Propuesta de torres para la DEMO M14
+
+La lista de seis perfiles es una propuesta de roster para orientar el vertical slice, no confirma que las seis ya existan ni fija sus estadísticas. Los paralelos con Rogue Tower son de rol; no se copian cifras ni reglas de balance.
+
+1. **Ballesta** — paralelo de rol: **Ballista**; torre generalista de objetivo único. `Basic Bolt` es el placeholder funcional más cercano, pero no es arte ni nombre final.
+2. **Mortero** — paralelo: **Mortar**; largo alcance, cadencia lenta y daño de área con enfoque antiarmadura.
+3. **Bobina Tesla** — paralelo: **Tesla Coil**; ataque de maná con potencial multiobjetivo.
+4. **Guardafría** — paralelo: **Frost Keep**; usa maná para aplicar Slow.
+5. **Lanzallamas** — paralelo: **Flame Thrower**; especialización en daño de Fuego/Burn periódico.
+6. **Pulverizador venenoso** — paralelo: **Poison Sprayer**; especialización de daño periódico de veneno. El status Poison todavía no está implementado; queda para contenido posterior.
+
+La implementación de M9 solo habilita economía/maná en el prototipo. Las únicas cuatro opciones disponibles en el HUD son Basic Bolt y tres perfiles de diagnóstico M7/M8; estos últimos no cuentan como roster final. No hay Support Buildings: ninguna torre de la propuesta requiere añadir edificios de soporte.
+
+### Fuentes de referencia comunitaria
+
+Consultadas el 2026-10-08. La wiki es contexto comunitario y puede cambiar; sus números, costes, multipliers y reglas no se usan como balance de este proyecto.
+
+- [Towers — Rogue Tower Wiki](https://rogue-tower.fandom.com/wiki/Towers)
+- [Ballista — Rogue Tower Wiki](https://rogue-tower.fandom.com/wiki/Ballista)
+- [Mortar — Rogue Tower Wiki](https://rogue-tower.fandom.com/wiki/Mortar)
+- [Tesla Coil — Rogue Tower Wiki](https://rogue-tower.fandom.com/wiki/Tesla_Coil)
+- [Frost Keep — Rogue Tower Wiki](https://rogue-tower.fandom.com/wiki/Frost_Keep)
+- [Flame Thrower — Rogue Tower Wiki](https://rogue-tower.fandom.com/wiki/Flame_Thrower)
+- [Poison Sprayer — Rogue Tower Wiki](https://rogue-tower.fandom.com/wiki/Poison_Sprayer)
+
+Edición/versionado de la wiki no visible en las páginas consultadas; solo se tomaron los arquetipos/roles descritos.
 
 M7 expone `Basic Bolt`, `Perforadora M7` (mitiga menos armor por impacto) y `Drenadora M7` (tag Arcano y anti-regen temporal) como perfiles placeholder de prueba que comparten el mismo sprite vectorial. El enemigo `Armored Regenerator` y su oleada de diagnóstico también son fixtures; no son aún decisiones del contenido final. Todos los valores están configurados en Resources y detallados en ADR-0010.
 

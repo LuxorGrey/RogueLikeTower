@@ -75,7 +75,7 @@
 - La UI selecciona cada prioridad: más avanzado, menos avanzado, más vida actual y más armadura. Los empates conservan orden estable por ID de instancia.
 - Una torre solo adquiere y ataca enemigos `MOVING` dentro de su alcance durante `COMBAT`; mantiene la cadencia configurada y el daño reduce la vida del objetivo. Fuera de alcance o fuera de combate no ataca.
 - La elevación suma el bonus de alcance configurable de TowerData. La elevación no modifica la coordenada ni la ocupación lógica de la torre.
-- Mejorar aumenta los stats configurados hasta `max_level`; una mejora posterior se bloquea. En M6 los upgrades son gratuitos como placeholder; costes quedan pendientes de M9.
+- Mejorar aumenta los stats configurados hasta `max_level`; una mejora posterior se bloquea. En el alcance histórico M6 las mejoras eran gratuitas; el flujo vigente con coste se verifica en la sección M9.
 - El placeholder muestra la torre en `Entities` Y-sorted, orientación hacia el objetivo y un flash de ataque; el anillo de alcance se ve al seleccionar.
 - El `armor` de `EnemyData` permite ordenar por highest armor y desde M7 mitiga daño en `DamageService`.
 - Smoke M6: `tests/m6_tower_smoke.tscn` comprueba fases, Grass/Mountain, rechazo de PATH/ocupado, ocupación axial, niveles/alcance, elevación, las cuatro prioridades, filtro de rango, cooldown/cadencia, daño hitscan y descarte seguro de una referencia a enemigo eliminado.
@@ -99,7 +99,7 @@ Para dar M6 por aceptado deben pasar todos los bullets de la sección y la prueb
 - `DamageService.preview_damage()` y `apply_damage()` usan el mismo cálculo; el servicio emite un resultado con armadura absorbida, multiplicador de tipo, HP aplicado y objetivo derrotado.
 - El HUD muestra HP, armadura, regen base/efectiva y daño estimado del objetivo de la torre seleccionada; la descripción de torre presenta su perfil configurado.
 - Se pueden seleccionar los perfiles de prueba Basic Bolt (6 HP al fixture), Perforadora (9 HP) y Drenadora Arcana (7 HP y 100% de contrarregeneración durante 1.25 s) contra el blindado de armadura 4, regen 2 HP/s y multiplicador arcano 1.25. Estos valores son placeholders.
-- Status y sus payloads no se aplican en M7; recompensas por muerte permanecen pendientes de M9.
+- Status y sus payloads no se aplicaban en M7; M8/M9 añadieron estados y recompensas en hitos posteriores.
 
 ### Prueba manual de M7 en el juego
 1. Ejecutar `game/main/main.tscn`. La interfaz principal debe limitarse a base, estado de oleada, selección de oleada, resumen de torre y diagnóstico del objetivo. La cabecera muestra permanentemente **F3 - Terreno   H - Interfaz**; `F3` abre/cierra el panel técnico del terreno y `H` oculta/muestra todo el HUD.
@@ -131,6 +131,31 @@ Para cerrar M7 deben pasar todos los criterios anteriores y la prueba manual deb
 6. Repetir la oleada M8: los stacks, timers y ticks deben comenzar limpios en la nueva instancia. Elegir después la oleada de diagnóstico M7 para confirmar que los atajos `1–3` y sus perfiles conservan el comportamiento anterior.
 
 Para dar M8 por aceptado deben pasar todos los criterios de la sección y la prueba manual debe verificar velocidad real, refresh, límite de stacks, daño periódico, expiración antes de la llegada, limpieza al finalizar la ruta, HUD y aros. Registrar cualquier ajuste de valores de fixture como provisional; la prueba no convierte Bleed ni estos números en diseño final.
+
+## M9 Economy + Mana
+- `Main` configura `RunEconomyService` desde `RunEconomyData`; el perfil de prueba inicia con 150 oro, 30/100 maná y regen de 1.5/s. El HUD muestra ambos saldos y la regen.
+- El oro de construcción es runtime de esta run y no altera `MetaProgression.meta_currency` ni se persiste como moneda meta.
+- Las cuatro opciones del HUD muestran el coste: Basic Bolt 30 oro; Perforadora, Drenadora y Sonda M8 40 oro. Drenadora indica 4 maná por ataque; los otros perfiles no consumen maná.
+- Una construcción legal cobra una sola vez antes de ocupar la celda. Terreno inválido, casilla ocupada o saldo insuficiente no cobran ni crean torre/ocupación.
+- Una mejora cobra `TowerData.get_upgrade_cost(nivel_actual)`: en los fixtures M9, nivel 1→2 cuesta 20 oro y nivel 2→3 cuesta 35. El nivel/stats aumentan una sola vez; tope o fondos insuficientes dejan nivel y saldo intactos.
+- Cada enemigo derrotado paga una sola vez el `EnemyData.kill_reward`, también si la muerte procede de DoT. Un enemigo que llega a base no paga recompensa de baja. Repetir callbacks no duplica el pago.
+- La recompensa de `WaveData.round_reward` solo se paga una vez cuando acabaron los spawns y no queda enemigo activo. Si una baja ya pagó y luego la oleada falla, esa recompensa por baja se conserva, pero no se concede el bonus de limpieza.
+- Una torre con `mana_cost_per_attack` descuenta maná antes de cada impacto; con saldo insuficiente no ejecuta daño/status, no genera saldo negativo y muestra estado sin maná en el debug de la torre seleccionada. Una torre sin coste de maná no consulta ni consume el saldo.
+- El maná regenera en preparación, combate, recompensa y expansión; no supera `maximum_mana` y se detiene en setup/derrota/victoria. No existe una fuente de maná de Support Building.
+- Al terminar la oleada, `RunManager` entra a `ROUND_REWARD` durante 0.8 s: no se puede iniciar otra oleada, comprar ni colocar terreno. Después pasa a `TERRAIN_EXPANSION`, habilitando replay y compras.
+- Los costes, recompensas y tasas actuales son fixtures configurables y provisionales, no balance confirmado.
+
+### Prueba manual de M9 en el juego
+1. Ejecutar `game/main/main.tscn`. El HUD debe mostrar **Oro 150 · Maná 30 / 100 · regen 1.5/s**. La barra inferior debe indicar costes de los atajos `1–4`.
+2. Pulsar `1` y colocar Basic Bolt en una casilla Grass libre. El oro pasa a 120, la celda queda ocupada y aparece una sola torre. Seleccionarla y mejorarla: el saldo pasa a 100 al llegar a nivel 2 y a 65 al llegar a nivel 3; los stats cambian según el nivel y el botón deja de ofrecer otra mejora. Repetir clic sobre la torre o un terreno no construible no debe cobrar.
+3. Iniciar **Oleada básica · 3 enemigos**. El oro sube +5 por cada enemigo derrotado, una vez por baja, y al terminar todos los spawns con cero enemigos activos sube +20 una sola vez. Si todos mueren, desde los 65 restantes debe terminar en 100. El aviso de recompensa y el saldo tienen que coincidir.
+4. Reiniciar la escena para disponer otra vez del perfil inicial. Construir tres Drenadoras M7 en celdas construibles próximas al camino (por ejemplo `(1,-1)`, `(1,0)` y `(0,1)`); deben costar 40 cada una. Con los 30 oro restantes, intentar construir la Sonda M8 de 40 (tecla `4`): el preview/HUD explica que faltan fondos, el botón se deshabilita y el oro se conserva en 30. Pulsar `Esc` para salir del preview rechazado antes de cambiar la oleada.
+5. Elegir **Estados M8 · objetivo lento** e iniciar la oleada. Con tres Drenadoras, el saldo de maná debe bajar en pasos de 4 por disparo mientras hay objetivo. Al llegar a cero, la torre seleccionada muestra **sin maná** y deja de disparar; su ataque no reduce HP ni aplica nuevos estados y el maná no queda negativo. El enemigo puede alcanzar la base; el daño de llegada no da recompensa de kill.
+6. Tras la oleada, observar el maná durante la expansión: debe aumentar a 1.5/s hasta 100 y nunca superar ese máximo. La barra de estado vuelve a permitir construir/repetir. Confirmar que el bonus de la oleada M8 es +10 cuando el director completa; repetirla debe pagar otra vez solo por la nueva instancia/ronda de prueba.
+7. Durante el instante posterior a una victoria, comprobar que aparece `ROUND_REWARD`; el botón de oleada/selector y la colocación permanecen bloqueados esos 0.8 s, y luego se habilitan al entrar en expansión.
+8. (Opcional, comprueba fallo) Reiniciar la escena, no construir torres, y dejar que se filtren enemigos en secuencia: oleada básica, diagnóstico M7 y estados M8. La llegada final que destruya la base debe terminar en derrota sin pagar el bonus de limpieza M8. Las recompensas por baja de eventos anteriores permanecen en el saldo.
+
+Para dar M9 por aceptado deben pasar todos los criterios de la sección y la prueba manual debe confirmar saldos y mensajes en pantalla, cobros atómicos, pago único por evento, rechazo sin fondos, bloqueo de disparos sin maná y regeneración acotada. La prueba debe incluir una llegada a base para verificar que no se confunde con una baja; el bonus de ronda se comprueba aparte. El smoke/validación automática de gameplay queda pendiente; la prueba descrita es interactiva.
 
 ## Loop
 - Al terminar oleada se entra en expansión.

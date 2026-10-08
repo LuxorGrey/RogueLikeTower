@@ -12,6 +12,9 @@ const ALL_DAMAGE_TAGS: int = DAMAGE_TAG_PHYSICAL | DAMAGE_TAG_FIRE | DAMAGE_TAG_
 
 @export var id: StringName = &""
 @export var display_name: String = ""
+@export_range(0, 1000000, 1) var build_cost: int = 0
+@export var upgrade_costs: Array[int] = [20, 35]
+@export_range(0.0, 100000.0, 0.5) var mana_cost_per_attack: float = 0.0
 @export_range(1, 100000, 1) var base_damage: int = 10
 @export_range(0.05, 100.0, 0.05) var attack_rate: float = 1.0
 @export_range(0.25, 20.0, 0.25) var range_hexes: float = 3.0
@@ -38,6 +41,10 @@ func validate() -> PackedStringArray:
 		errors.append("TowerData requiere un ID estable.")
 	if display_name.strip_edges().is_empty():
 		errors.append("TowerData requiere un nombre visible.")
+	if build_cost < 0:
+		errors.append("El coste de construcción no puede ser negativo.")
+	if mana_cost_per_attack < 0.0:
+		errors.append("El coste de maná por ataque no puede ser negativo.")
 	if base_damage <= 0:
 		errors.append("El daño base de la torre debe ser mayor que cero.")
 	if attack_rate <= 0.0:
@@ -69,6 +76,12 @@ func validate() -> PackedStringArray:
 		errors.append("La prioridad de objetivo configurada no existe.")
 	if max_level < 1:
 		errors.append("La torre debe tener al menos un nivel.")
+	if upgrade_costs.size() < maxi(max_level - 1, 0):
+		errors.append("TowerData requiere un coste de mejora por cada nivel alcanzable.")
+	for upgrade_cost in upgrade_costs:
+		if upgrade_cost < 0:
+			errors.append("Los costes de mejora no pueden ser negativos.")
+			break
 	if upgrade_damage_per_level < 0 or upgrade_range_per_level < 0.0 or upgrade_attack_rate_per_level < 0.0:
 		errors.append("Los incrementos de mejora no pueden ser negativos.")
 	if scene == null:
@@ -79,3 +92,11 @@ func allows_terrain(terrain_type: int) -> bool:
 	if terrain_type < HexCell.TerrainType.PATH or terrain_type > HexCell.TerrainType.MOUNTAIN:
 		return false
 	return (allowed_terrain_mask & (1 << terrain_type)) != 0
+
+func get_upgrade_cost(current_level: int) -> int:
+	if current_level < 1 or current_level >= max_level:
+		return -1
+	var cost_index: int = current_level - 1
+	if cost_index >= upgrade_costs.size():
+		return -1
+	return upgrade_costs[cost_index]

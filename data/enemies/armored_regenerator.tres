@@ -10,6 +10,7 @@ display_name = "Blindado regenerador (M7 prueba)"
 max_health = 60
 move_speed = 90.0
 base_damage = 10
+kill_reward = 10
 armor = 4
 regen_per_second = 2.0
 physical_damage_multiplier = 1.0

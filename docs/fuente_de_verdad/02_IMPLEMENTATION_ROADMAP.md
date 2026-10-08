@@ -112,6 +112,8 @@ Contrato de la primera implementación: `StatusEffectData` es un Resource config
 - Sin support buildings.
 - Resultado: economía jugable.
 
+Contrato de implementación M9: `RunEconomyService` pertenece a `Main` y configura su estado desde `RunEconomyData`; el oro de la run no usa `MetaProgression.meta_currency`. `TowerData` define coste de construcción, coste por cada nivel de mejora y maná por ataque; `EnemyData` define recompensa por baja y `WaveData` la recompensa de ronda. Una baja concede su recompensa una sola vez; llegar a la base no la concede. La recompensa de ronda solo se paga al completar todos los spawns con cero enemigos vivos. Mejoras y construcciones verifican y cobran antes de confirmar la mutación. El maná se consume antes de disparar y, si falta, la torre espera; la regeneración y capacidad son configurables. Los costes y cifras de arranque de esta primera integración son provisionales, no balance final. La escena de prueba mantiene replay de oleadas M7/M8; esto no implementa la secuencia completa M10.
+
 ## M10 — Rondas 1-20
 - `WaveData` data-driven.
 - Director de oleadas.
