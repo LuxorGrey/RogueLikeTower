@@ -2,6 +2,7 @@ class_name PathFollowerComponent
 extends Node
 
 signal route_completed
+signal horizontal_direction_changed(is_facing_left: bool)
 
 var _actor: Node2D
 var _waypoints: Array[Vector2] = []
@@ -26,6 +27,9 @@ func get_remaining_route_waypoints() -> Array[Vector2]:
 		remaining.append(_waypoints[index])
 	return remaining
 
+func get_remaining_waypoint_count() -> int:
+	return maxi(_waypoints.size() - _waypoint_index, 0)
+
 func get_progress_ratio() -> float:
 	if _waypoints.is_empty():
 		return 0.0
@@ -36,7 +40,7 @@ func stop() -> void:
 	set_physics_process(false)
 
 func set_speed_multiplier(multiplier: float) -> void:
-	_speed_multiplier = clampf(multiplier, 0.05, 1.0)
+	_speed_multiplier = clampf(multiplier, 0.05, 1.6)
 
 func _ready() -> void:
 	set_physics_process(false)
@@ -59,6 +63,23 @@ func configure(
 	_speed_multiplier = 1.0
 	_is_following = true
 	set_physics_process(true)
+	_update_horizontal_direction(start_position, waypoints[0])
+	return true
+
+func advance_tiles(tile_count: int) -> bool:
+	if not _is_following or tile_count <= 0 or _waypoint_index >= _waypoints.size():
+		return false
+	var target_index: int = mini(_waypoint_index + tile_count - 1, _waypoints.size() - 1)
+	var destination: Vector2 = _waypoints[target_index]
+	_update_horizontal_direction(_actor.global_position, destination)
+	_actor.global_position = destination
+	_segment_start_position = destination
+	_waypoint_index = target_index + 1
+	current_progress = 0.0
+	if _waypoint_index >= _waypoints.size():
+		_is_following = false
+		set_physics_process(false)
+		route_completed.emit()
 	return true
 
 func _physics_process(delta: float) -> void:
@@ -68,6 +89,7 @@ func _physics_process(delta: float) -> void:
 	while distance_budget > 0.0 and _waypoint_index < _waypoints.size():
 		var destination: Vector2 = _waypoints[_waypoint_index]
 		var displacement: Vector2 = destination - _actor.global_position
+		_update_horizontal_direction(_actor.global_position, destination)
 		var remaining_distance: float = displacement.length()
 		if remaining_distance <= 0.001:
 			_actor.global_position = destination
@@ -92,3 +114,9 @@ func _physics_process(delta: float) -> void:
 		_is_following = false
 		set_physics_process(false)
 		route_completed.emit()
+
+func _update_horizontal_direction(from_position: Vector2, destination: Vector2) -> void:
+	var delta_x: float = destination.x - from_position.x
+	if absf(delta_x) <= 0.001:
+		return
+	horizontal_direction_changed.emit(delta_x < 0.0)

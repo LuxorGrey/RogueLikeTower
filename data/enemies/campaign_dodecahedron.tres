@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://data/enemies/enemy_data.gd" id="1_enemy_data"]
+[ext_resource type="PackedScene" path="res://game/enemies/enemy.tscn" id="2_enemy_scene"]
+[ext_resource type="Texture2D" path="res://assets/enemies/dodecahedron.png" id="3_sprite"]
+[ext_resource type="Script" path="res://data/enemies/enemy_ability_data.gd" id="4_ability_data"]
+[ext_resource type="Resource" path="res://data/enemies/campaign_octahedron.tres" id="5_ability_ref"]
+
+[sub_resource type="Resource" id="EnemyAbilityData_0"]
+script = ExtResource("4_ability_data")
+trigger = 0
+effect = 1
+target_policy = 0
+strength = 30
+near_base_hexes = 5
+radius_hexes = 2
+[sub_resource type="Resource" id="EnemyAbilityData_1"]
+script = ExtResource("4_ability_data")
+trigger = 4
+effect = 2
+target_policy = 0
+near_base_hexes = 5
+radius_hexes = 2
+spawn_enemy_data = ExtResource("5_ability_ref")
+spawned_armor_override = 20000
+spawned_move_speed_override = 58.5
+
+[resource]
+script = ExtResource("1_enemy_data")
+id = &"campaign_dodecahedron"
+display_name = "Dodecahedron"
+max_health = 15000
+move_speed = 63
+base_damage = 1
+kill_reward = 42
+armor = 3000
+shield = 3000
+regen_per_second = 300
+armor_regen_per_second = 300
+shield_regen_per_second = 300
+placeholder_color = Color(0.58, 0.40, 0.20, 1)
+placeholder_radius = 17.3
+sprite_texture = ExtResource("3_sprite")
+sprite_extent = 55.2
+scene = ExtResource("2_enemy_scene")
+abilities = Array[EnemyAbilityData]([SubResource("EnemyAbilityData_0"), SubResource("EnemyAbilityData_1")])

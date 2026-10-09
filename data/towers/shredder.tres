@@ -8,7 +8,7 @@
 script = ExtResource("1_tower_data")
 id = &"shredder_demo"
 unlock_id = &"tower:shredder_demo"
-display_name = "Trituradora · Shredder"
+display_name = "Shredder"
 role_summary = "Hoja que recorre PATH · perfora y causa Bleed"
 meta_unlock_cost = 35
 build_cost = 500
@@ -35,5 +35,6 @@ max_level = 3
 upgrade_damage_per_level = 1
 upgrade_range_per_level = 0.0
 visual_archetype = 6
+visual_icon_size = 62.0
 visual_color = Color(0.72, 0.75, 0.63, 1)
 scene = ExtResource("2_tower_scene")

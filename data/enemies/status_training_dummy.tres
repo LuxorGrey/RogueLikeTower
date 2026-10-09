@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1_enemy_data")
 id = &"status_training_dummy_m8_test"
-display_name = "Objetivo de estados (M8 prueba)"
+display_name = "Status Training Target (DEBUG)"
 max_health = 180
 move_speed = 32.0
 base_damage = 10

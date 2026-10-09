@@ -4,7 +4,6 @@ extends Node2D
 signal health_changed(current_health: int, maximum_health: int)
 signal defeated
 
-const BASE_COLOR: Color = Color(0.94, 0.76, 0.28)
 const BASE_TILE_COLOR: Color = Color(0.36, 0.29, 0.16)
 const BASE_OUTLINE: Color = Color(0.16, 0.13, 0.08)
 
@@ -12,6 +11,7 @@ const BASE_OUTLINE: Color = Color(0.16, 0.13, 0.08)
 @export_range(1.0, 200.0, 1.0) var footprint_radius: float = 52.0
 
 @onready var _health: HealthComponent = %Health
+@onready var _base_sprite: Sprite2D = %BaseSprite
 
 var _is_hovered: bool = false
 
@@ -26,6 +26,9 @@ func _ready() -> void:
 		push_error("BaseData inválido: %s" % "; ".join(validation_errors))
 		return
 	_health.initialize(base_data.max_health)
+	_base_sprite.texture = base_data.sprite_texture
+	if base_data.sprite_texture != null:
+		_base_sprite.scale = base_data.sprite_size / Vector2(base_data.sprite_texture.get_width(), base_data.sprite_texture.get_height())
 	queue_redraw()
 
 func apply_damage(amount: int) -> int:
@@ -50,13 +53,6 @@ func _draw() -> void:
 	draw_colored_polygon(footprint, BASE_TILE_COLOR)
 	draw_polyline(closed_footprint, BASE_OUTLINE, 4.0, true)
 
-	var keep := _hex_corners(footprint_radius * 0.58)
-	var closed_keep := keep.duplicate()
-	closed_keep.append(keep[0])
-	draw_colored_polygon(keep, BASE_COLOR)
-	draw_polyline(closed_keep, Color(1.0, 0.92, 0.58), 2.5, true)
-	draw_circle(Vector2.ZERO, footprint_radius * 0.18, BASE_OUTLINE)
-	draw_arc(Vector2.ZERO, footprint_radius * 0.18, 0.0, TAU, 24, Color(1.0, 0.93, 0.62), 2.0, true)
 	if _is_hovered:
 		var hover_tint := Color(0.51, 0.75, 0.90, 0.34)
 		draw_colored_polygon(footprint, hover_tint)

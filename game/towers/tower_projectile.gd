@@ -14,6 +14,8 @@ var _speed: float = 560.0
 var _hit_radius: float = 12.0
 var _splash_radius: float = 0.0
 var _impact_mode: int = ImpactMode.SINGLE_TARGET
+var _ballista_cooldown_cycle_id: int = 0
+var _is_resolving_impact: bool = false
 
 func configure(
 	launch_position: Vector2,
@@ -25,7 +27,8 @@ func configure(
 	speed: float,
 	hit_radius: float,
 	splash_radius: float,
-	impact_mode: int
+	impact_mode: int,
+	ballista_cooldown_cycle_id: int = 0
 ) -> bool:
 	if target == null or damage_packet == null or damage_service == null or source_tower == null:
 		return false
@@ -42,7 +45,10 @@ func configure(
 	_hit_radius = hit_radius
 	_splash_radius = splash_radius
 	_impact_mode = impact_mode
+	_ballista_cooldown_cycle_id = ballista_cooldown_cycle_id
 	global_position = launch_position
+	if _ballista_cooldown_cycle_id > 0:
+		_target.state_changed.connect(_on_target_state_changed)
 	set_process(true)
 	return true
 
@@ -77,7 +83,9 @@ func _process(delta: float) -> void:
 func _apply_impact() -> void:
 	if _impact_mode == ImpactMode.SINGLE_TARGET:
 		if is_instance_valid(_target) and _target.state == Enemy.State.MOVING and _target.global_position.distance_squared_to(global_position) <= _hit_radius * _hit_radius:
+			_is_resolving_impact = true
 			var result: Variant = _damage_service.call("apply_damage", _target, _damage_packet)
+			_is_resolving_impact = false
 			if result != null and bool(result.get("is_valid")):
 				_source_tower.call("on_projectile_hit", _target, int(result.get("total_damage")))
 		else:
@@ -99,6 +107,13 @@ func _apply_impact() -> void:
 			_source_tower.call("on_projectile_hit", enemy, int(result.get("total_damage")))
 		if not impacted_primary and is_instance_valid(_target):
 			_source_tower.call("on_projectile_hit", _target, 0)
+	queue_free()
+
+func _on_target_state_changed(new_state: int) -> void:
+	if new_state != Enemy.State.DEAD or _is_resolving_impact:
+		return
+	if is_instance_valid(_source_tower) and _source_tower.has_method("on_projectile_target_died_before_impact"):
+		_source_tower.call("on_projectile_target_died_before_impact", _target, _ballista_cooldown_cycle_id)
 	queue_free()
 
 func _distance_squared_to_segment(point: Vector2, start: Vector2, end: Vector2) -> float:

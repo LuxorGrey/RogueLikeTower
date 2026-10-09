@@ -7,6 +7,7 @@ signal stats_changed(level: int)
 const ELEVATION_PIXEL_OFFSET: float = 18.0
 const SCAN_INTERVAL: float = 0.1
 const SHOT_FLASH_DURATION: float = 0.12
+const BALLISTA_MISSED_TARGET_COOLDOWN_REFUND: float = 0.33
 const RANGE_COLOR: Color = Color(0.30, 0.80, 1.0, 0.48)
 const SHOT_COLOR: Color = Color(1.0, 0.91, 0.46, 0.96)
 const DAMAGE_PACKET_SCRIPT: Script = preload("res://game/combat/damage_packet.gd")
@@ -41,6 +42,9 @@ var _targeting_xp_by_layer: Dictionary[int, float] = {}
 var _layer_upgrade_bonus: Dictionary[int, float] = {}
 var _scan_timer: float = 0.0
 var _attack_cooldown: float = 0.0
+var _ballista_shot_cycle_id: int = 0
+var _active_ballista_reload_cycle_id: int = 0
+var _active_ballista_reload_duration: float = 0.0
 var _shot_flash_timer: float = 0.0
 var _shot_target_position: Vector2 = Vector2.ZERO
 var _shot_target_positions: Array[Vector2] = []
@@ -345,10 +349,10 @@ func get_summary() -> String:
 		var current_mana_per_second: float = _tower_data.mana_cost_per_second
 		if _run_card_service != null and is_instance_valid(_run_card_service):
 			current_mana_per_second *= float(_run_card_service.call("get_tower_mana_cost_multiplier", _tower_data.id))
-		mana_summary = " · %.1f maná/s" % current_mana_per_second
+		mana_summary = " · %.1f Mana/s" % current_mana_per_second
 	elif get_current_mana_cost() > 0.0:
-		mana_summary = " · %.1f maná/ataque" % get_current_mana_cost()
-	return "%s · NIVEL %d/%d\nDaño %d · Rango %.1f hex · %.0f RPM\nVida {icon:health} %.1f · Armadura {icon:armor} %.1f · Escudo {icon:shield} %.1f\nCrítico %.0f%% · %s%s\nXP {icon:health} %.0f · {icon:armor} %.0f · {icon:shield} %.0f" % [
+		mana_summary = " · %.1f Mana/ataque" % get_current_mana_cost()
+	return "%s · NIVEL %d/%d\nDaño %d · Rango %.1f hex · %.0f RPM\nHealth {icon:health} %.1f · Armor {icon:armor} %.1f · Shield {icon:shield} %.1f\nCrítico %.0f%% · %s%s\nXP {icon:health} %.0f · {icon:armor} %.0f · {icon:shield} %.0f" % [
 		_tower_data.display_name,
 		level,
 		_tower_data.max_level,
@@ -381,20 +385,20 @@ func get_attack_pattern_name() -> String:
 		TowerData.AttackPattern.CONE:
 			return "cono %.0f°" % _tower_data.cone_angle_degrees
 		TowerData.AttackPattern.SAWBLADE:
-			return "hoja perforante · sangrado"
+			return "hoja perforante · Bleed"
 		_:
 			return "desconocido"
 
 func get_damage_tag_name(tags: int) -> String:
 	var names := PackedStringArray()
 	if (tags & DAMAGE_TAG_PHYSICAL) != 0:
-		names.append("físico")
+		names.append("Physical")
 	if (tags & DAMAGE_TAG_FIRE) != 0:
-		names.append("fuego")
+		names.append("Fire")
 	if (tags & DAMAGE_TAG_ARCANE) != 0:
-		names.append("arcano")
+		names.append("Arcane")
 	if (tags & DAMAGE_TAG_POISON) != 0:
-		names.append("veneno")
+		names.append("Poison")
 	return " + ".join(names) if not names.is_empty() else "sin tipo"
 
 func get_targeting_mode_name(mode: int = -1) -> String:
@@ -407,17 +411,17 @@ func get_targeting_mode_name(mode: int = -1) -> String:
 		TowerData.TargetingMode.LOWEST_TOTAL_HIT_POINTS:
 			return "casi muerto"
 		TowerData.TargetingMode.HIGHEST_HEALTH:
-			return "más vida"
+			return "más Health"
 		TowerData.TargetingMode.HIGHEST_ARMOR:
-			return "más armadura"
+			return "más Armor"
 		TowerData.TargetingMode.HIGHEST_SHIELD:
-			return "más escudo"
+			return "más Shield"
 		TowerData.TargetingMode.LOWEST_HEALTH:
-			return "menos vida"
+			return "menos Health"
 		TowerData.TargetingMode.LOWEST_ARMOR:
-			return "menos armadura"
+			return "menos Armor"
 		TowerData.TargetingMode.LOWEST_SHIELD:
-			return "menos escudo"
+			return "menos Shield"
 		TowerData.TargetingMode.SLOWEST:
 			return "más lento"
 		TowerData.TargetingMode.FASTEST:
@@ -534,8 +538,17 @@ func _fire_at_target() -> void:
 		queue_redraw()
 		return
 	if _tower_data.visual_archetype in [TowerData.VisualArchetype.BALLISTA, TowerData.VisualArchetype.MORTAR]:
-		if not _launch_tower_projectile(target):
+		var cooldown_cycle_id: int = 0
+		if _tower_data.visual_archetype == TowerData.VisualArchetype.BALLISTA:
+			_ballista_shot_cycle_id += 1
+			_active_ballista_reload_cycle_id = _ballista_shot_cycle_id
+			_active_ballista_reload_duration = _attack_cooldown
+			cooldown_cycle_id = _active_ballista_reload_cycle_id
+		if not _launch_tower_projectile(target, cooldown_cycle_id):
 			_attack_cooldown = 0.25
+			if cooldown_cycle_id == _active_ballista_reload_cycle_id:
+				_active_ballista_reload_cycle_id = 0
+				_active_ballista_reload_duration = 0.0
 		return
 	var packet: RefCounted = create_damage_packet()
 	var targets: Array[Enemy] = _get_attack_targets(target)
@@ -560,7 +573,7 @@ func _fire_at_target() -> void:
 	_shot_flash_timer = SHOT_FLASH_DURATION
 	queue_redraw()
 
-func _launch_tower_projectile(target: Enemy) -> bool:
+func _launch_tower_projectile(target: Enemy, cooldown_cycle_id: int = 0) -> bool:
 	if target == null or not is_instance_valid(target):
 		return false
 	var projectile := TOWER_PROJECTILE_SCRIPT.new() as Node2D
@@ -586,7 +599,8 @@ func _launch_tower_projectile(target: Enemy) -> bool:
 		_tower_data.projectile_speed,
 		_tower_data.projectile_hit_radius,
 		splash_radius,
-		impact_mode
+		impact_mode,
+		cooldown_cycle_id
 	))
 
 func on_projectile_hit(target: Enemy, total_damage: int) -> void:
@@ -597,6 +611,23 @@ func on_projectile_hit(target: Enemy, total_damage: int) -> void:
 	_shot_flash_timer = SHOT_FLASH_DURATION
 	attack_fired.emit(target, total_damage)
 	queue_redraw()
+
+func on_projectile_target_died_before_impact(target: Enemy, cooldown_cycle_id: int) -> void:
+	if (
+		target == null or not is_instance_valid(target)
+		or _tower_data == null
+		or _tower_data.visual_archetype != TowerData.VisualArchetype.BALLISTA
+		or cooldown_cycle_id <= 0
+		or cooldown_cycle_id != _active_ballista_reload_cycle_id
+		or _attack_cooldown <= 0.0
+	):
+		return
+	_attack_cooldown = maxf(
+		_attack_cooldown - _active_ballista_reload_duration * BALLISTA_MISSED_TARGET_COOLDOWN_REFUND,
+		0.0
+	)
+	_active_ballista_reload_cycle_id = 0
+	_active_ballista_reload_duration = 0.0
 
 func _get_attack_targets(primary_target: Enemy) -> Array[Enemy]:
 	var targets: Array[Enemy] = [primary_target]
@@ -721,6 +752,7 @@ func _draw() -> void:
 	if _is_selected or _is_hovered:
 		var range_color: Color = Color(0.36, 0.86, 1.0, 0.36) if _is_selected else Color(0.65, 0.9, 1.0, 0.2)
 		draw_arc(Vector2.ZERO, get_current_range_pixels(), 0.0, TAU, 72, range_color, 2.0 if _is_selected else 1.4, true)
+	var visual_scale: float = _tower_data.visual_icon_size / 54.0
 	var pedestal := PackedVector2Array([
 		Vector2(-16.0, -2.0),
 		Vector2(-11.0, -12.0),
@@ -729,15 +761,18 @@ func _draw() -> void:
 		Vector2(10.0, 5.0),
 		Vector2(-10.0, 5.0),
 	])
+	for point_index in range(pedestal.size()):
+		pedestal[point_index] = pedestal[point_index] * visual_scale
 	var body_color: Color = _tower_data.visual_color
 	var dark_color: Color = body_color.darkened(0.55)
-	var icon_center := Vector2(0.0, -27.0)
+	var icon_center := Vector2(0.0, -_tower_data.visual_icon_size * 0.5)
 	if _is_selected or _is_hovered:
 		var outline_color: Color = Color(1.0, 0.92, 0.56, 0.98) if _is_selected else Color(0.82, 0.94, 1.0, 0.8)
-		draw_arc(icon_center, 27.0, 0.0, TAU, 48, outline_color, 3.2 if _is_selected else 2.0, true)
+		draw_arc(icon_center, _tower_data.visual_icon_size * 0.5, 0.0, TAU, 48, outline_color, 3.2 if _is_selected else 2.0, true)
 	draw_colored_polygon(pedestal, dark_color)
 	if _tower_icon != null:
-		draw_texture_rect(_tower_icon, Rect2(icon_center - Vector2(27.0, 27.0), Vector2(54.0, 54.0)), false)
+		var icon_size := Vector2.ONE * _tower_data.visual_icon_size
+		draw_texture_rect(_tower_icon, Rect2(icon_center - icon_size * 0.5, icon_size), false)
 	if _shot_flash_timer > 0.0:
 		for target_offset in _shot_target_positions:
 			draw_line(icon_center, target_offset, SHOT_COLOR, 2.0, true)

@@ -24,8 +24,13 @@ func preview_damage(target: Enemy, packet: RefCounted) -> RefCounted:
 		return result
 
 	var raw_damage: float = float(packet.get("raw_damage")) * float(packet.get("critical_multiplier"))
+	var fortification_reduction: float = target.get_fortification_damage_reduction()
+	raw_damage = maxf(raw_damage - fortification_reduction, 0.0)
 	var damage_tag_multiplier: float = target.get_damage_tag_multiplier(int(packet.get("damage_tags")))
 	var active_layer: int = target.get_active_hit_point_layer()
+	var layer_status_bonus: float = 0.0
+	if not bool(packet.get("is_status_damage")):
+		layer_status_bonus = target.get_layer_status_damage_bonus(active_layer)
 	var layer_damage: Dictionary = _calculate_layer_damage(target, packet, raw_damage, damage_tag_multiplier)
 	var final_damage: int = int(layer_damage.get("health", 0)) + int(layer_damage.get("armor", 0)) + int(layer_damage.get("shield", 0))
 	result.set("is_valid", true)
@@ -37,7 +42,9 @@ func preview_damage(target: Enemy, packet: RefCounted) -> RefCounted:
 	result.set("shield_before", target.get_shield_value())
 	result.set("armor_absorbed", 0.0)
 	result.set("damage_tag_multiplier", damage_tag_multiplier)
+	result.set("fortification_reduction", fortification_reduction)
 	result.set("health_multiplier", float(packet.call("get_hit_point_multiplier", active_layer)))
+	result.set("layer_status_bonus", layer_status_bonus)
 	result.set("calculated_health_damage", final_damage)
 	result.set("total_damage", final_damage)
 	result.set("health_damage", int(layer_damage.get("health", 0)))
@@ -59,6 +66,8 @@ func _calculate_layer_damage(
 	if current_value <= 0:
 		return layer_damage
 	var layer_multiplier: float = float(packet.call("get_hit_point_multiplier", active_layer))
+	if not bool(packet.get("is_status_damage")):
+		layer_multiplier += target.get_layer_status_damage_bonus(active_layer)
 	var effective_multiplier: float = layer_multiplier * damage_tag_multiplier
 	var layer_damage_budget: int = int(floor(raw_damage * effective_multiplier))
 	if layer_damage_budget <= 0:

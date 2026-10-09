@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://data/enemies/enemy_data.gd" id="1_enemy_data"]
+[ext_resource type="PackedScene" path="res://game/enemies/enemy.tscn" id="2_enemy_scene"]
+[ext_resource type="Texture2D" path="res://assets/enemies/cyclops.png" id="3_sprite"]
+
+[resource]
+script = ExtResource("1_enemy_data")
+id = &"cyclops_demo"
+display_name = "Cyclops"
+max_health = 320
+move_speed = 42.0
+base_damage = 24
+kill_reward = 60
+armor = 12
+regen_per_second = 1.0
+placeholder_color = Color(0.62, 0.34, 0.72, 1)
+placeholder_radius = 18.4
+sprite_texture = ExtResource("3_sprite")
+sprite_extent = 58.9
+scene = ExtResource("2_enemy_scene")

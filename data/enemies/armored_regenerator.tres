@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1_enemy_data")
 id = &"armored_regenerator_m7_test"
-display_name = "Blindado regenerador (M7 prueba)"
+display_name = "Armored Regenerator (DEBUG)"
 max_health = 60
 move_speed = 90.0
 base_damage = 10

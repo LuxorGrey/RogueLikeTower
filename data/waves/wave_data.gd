@@ -1,10 +1,10 @@
 class_name WaveData
 extends Resource
 
-enum EncounterType { STANDARD, MINIBOSS, TIER_2_BOSS }
+enum EncounterType { STANDARD, MINIBOSS, TIER_2_BOSS, BOSS }
 
-@export_range(1, 20, 1) var round_number: int = 1
-@export_enum("Normal", "Minijefe", "Jefe Tier 2") var encounter_type: int = EncounterType.STANDARD
+@export_range(1, 45, 1) var round_number: int = 1
+@export_enum("Standard", "Miniboss (obsoleto)", "Tier 2 Boss", "Boss") var encounter_type: int = EncounterType.STANDARD
 @export var groups: Array[WaveEnemyGroupData] = []
 @export_range(0, 1000000, 1) var round_reward: int = 0
 
@@ -12,7 +12,7 @@ func validate() -> PackedStringArray:
 	var errors := PackedStringArray()
 	if round_number <= 0:
 		errors.append("La ronda debe ser mayor que cero.")
-	if encounter_type < EncounterType.STANDARD or encounter_type > EncounterType.TIER_2_BOSS:
+	if encounter_type < EncounterType.STANDARD or encounter_type > EncounterType.BOSS:
 		errors.append("El tipo de encuentro de WaveData no es válido.")
 	if groups.is_empty():
 		errors.append("WaveData requiere al menos un grupo.")

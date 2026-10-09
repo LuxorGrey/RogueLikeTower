@@ -1,0 +1,322 @@
+{
+  "engine": "Godot 4.7",
+  "language": "GDScript",
+  "rendering": "2D with logical elevation",
+  "genre": [
+    "Tower Defense",
+    "Roguelike"
+  ],
+  "demo_rounds": 20,
+  "grid": "hexagonal axial",
+  "terrain_piece_cell_count": 7,
+  "terrain_piece_initial_footprint_axial": [
+    [0, 0],
+    [0, -1],
+    [1, -1],
+    [1, 0],
+    [0, 1],
+    [-1, 1],
+    [-1, 0]
+  ],
+  "starting_board": {
+    "resource": "data/terrain/starting_board.tres",
+    "cell_count": 19,
+    "axial_radius": 2,
+    "base_coord_axial": [0, 0],
+    "minimum_spawn_route_cells": 4,
+    "path_cells_axial": [[0, 0], [1, 0], [2, -1], [2, -2]],
+    "spawn_outside_coord_axial": [3, -2],
+    "orientation_per_run": "advance_one_axial_rotation_step_of_60_degrees; six_step_cycle_from_persistent_run_count",
+    "rotated_data": ["cell_coordinates_about_base", "path_edges", "flexible_path_edges"]
+  },
+  "m4_path_graph": {
+    "algorithm": "deterministic_breadth_first_search",
+    "base_coord_axial_provisional": [0, 0],
+    "spawn_endpoint_source": "unmatched_external_explicit_path_edges",
+    "connection_sockets": [
+      "path_edges",
+      "flexible_path_edges"
+    ],
+    "rebuild": "initialization_and_confirmed_piece_placement",
+    "debug_toggle_key": "D",
+    "reachable_spawn_marker": "always_visible_red_amber_portal_with_inward_arrow_and_SPAWN_label",
+    "spawn_marker_data_source": "reachable_PathGraph_routes",
+    "placement_spawn_preview": "valid_piece_ghost_compares_candidate_graph; retained_SIGUE_cyan; added_NUEVO_green; removed_CIERRA_red_cross; live_count_to_candidate_count; no_board_mutation_until_confirm"
+  },
+  "m5_first_wave_prototype": {
+    "status": "historical_m5_fixture; campaign_start_uses_starting_board",
+    "base_coord_axial_provisional": [0, 0],
+    "base_max_health_provisional": 50,
+    "enemy_id": "basic_raider",
+    "enemy_max_health_provisional": 20,
+    "enemy_move_speed_px_per_second_provisional": 90,
+    "enemy_base_damage_provisional": 10,
+    "enemy_count_provisional": 3,
+    "spawn_interval_seconds_provisional": 1.0,
+    "spawn_endpoint_policy_provisional": "FIRST_SORTED",
+    "blocking_terrain_placement_during_combat": true,
+    "automatic_next_round": false
+  },
+  "m6_towers_prototype": {
+    "initial_tower_id": "basic_bolt",
+    "base_damage_provisional": 10,
+    "attack_rate_per_second_provisional": 1.0,
+    "range_hexes_provisional": 3.0,
+    "allowed_terrain": ["GRASS", "MOUNTAIN"],
+    "buildable_phases": ["ROUND_PREP", "COMBAT", "TERRAIN_EXPANSION"],
+    "targeting_modes": ["FIRST_PROGRESS", "LAST_PROGRESS", "HIGHEST_HEALTH", "HIGHEST_ARMOR"],
+    "target_scan_interval_seconds": 0.1,
+    "attack": "hitscan_through_scene_local_damage_service",
+    "height_range_bonus_per_elevation_level_provisional": 0.25,
+    "upgrade_max_level": 3,
+    "upgrade_damage_per_level_provisional": 5,
+    "upgrade_range_hexes_per_level_provisional": 0.25,
+    "upgrade_costs": "configured_per_level_by_TowerData_since_m9",
+    "sale": false,
+    "path_blocking": false
+  },
+  "terrain_piece_rotation_step_degrees": 60,
+  "terrain_piece_rotation_positions": 6,
+  "terrain_piece_initial_content_ids": [
+    "straight",
+    "gentle_turn",
+    "hard_turn",
+    "fork",
+    "convergence"
+  ],
+  "terrain_piece_placement": {
+    "requires_unique_cells": true,
+    "requires_connected_footprint": true,
+    "requires_board_edge_adjacency": true,
+    "internal_path_edges_are_reciprocal": true,
+    "external_path_edges_allow_lateral_flexible_sockets": true,
+    "expansion_path_edges_require_complementary_socket": true,
+    "expansion_requires_existing_path_connection": true,
+    "global_spawn_to_base_route_validation_milestone": "M4"
+  },
+  "map_navigation": {
+    "pan": "middle_mouse_drag",
+    "zoom": "mouse_wheel_at_cursor",
+    "zoom_min": 0.45,
+    "zoom_max": 2.5,
+    "toggle_hud_key": "H",
+    "recenter_key": "R",
+    "hud_layer": "CanvasLayer"
+  },
+  "terrain_preview_elevation_pixel_offset": 18,
+  "terrain_preview_colors": {
+    "PATH": "#59666E",
+    "GRASS": "#479157",
+    "MOUNTAIN": "#A1947A"
+  },
+  "terrain_preview_hover_colors": {
+    "PATH": "#82BFE6",
+    "GRASS": "#80E085",
+    "MOUNTAIN": "#F5C25C"
+  },
+  "terrain_preview_hover_coordinates": "global axial q,r in upper HUD on board",
+  "terrain": {
+    "PATH": {
+      "elevation": 0,
+      "buildable": false
+    },
+    "GRASS": {
+      "elevation_default": 1,
+      "buildable": true
+    },
+    "MOUNTAIN": {
+      "elevation": 2,
+      "buildable": true
+    }
+  },
+  "support_buildings": false,
+  "enemy_core_stats": [
+    "health",
+    "armor",
+    "shield",
+    "shield_regeneration",
+    "armor_regeneration",
+    "health_regeneration"
+  ],
+  "m7_damage_model": {
+    "status": "historical_m7_contract_superseded_by_m12a_tower_and_hit_point_rules",
+    "damage_service_scope": "Main_scene_local; injected_into_towers",
+    "damage_tags": ["PHYSICAL", "FIRE", "ARCANE"],
+    "armor_formula": "min(raw_damage, armor * packet_armor_multiplier)",
+    "health_formula": "floor(max(raw_damage - armor_absorbed, 0) * target_tag_multiplier * packet_health_multiplier)",
+    "regeneration": "fractional_hp_per_second_capped_at_max_health",
+    "regen_counter_strength_range": [0.0, 1.0],
+    "regen_counter_duration_seconds_provisional": 1.25,
+    "debug_wave_id": "m7_damage_test",
+    "temporary_tower_profiles": ["basic_bolt", "armor_piercing_bolt_m7_test", "sapping_bolt_m7_test"],
+    "debug_tower_hotkeys": {
+      "1": "ballista_demo",
+      "8": "armor_piercing_bolt_m7_test",
+      "9": "sapping_bolt_m7_test"
+    },
+    "debug_wave_replay": true,
+    "terrain_diagnostics_toggle_key": "F3",
+    "balance_confirmed": false
+  },
+  "m8_status_effects": {
+    "status_ids_provisional": ["slow", "burn", "bleed"],
+    "catalog_confirmed": false,
+    "stack_rules": ["REFRESH", "ADD_STACKS"],
+    "add_stacks_behavior": "increments_to_max_and_refreshes_duration",
+    "refresh_behavior": "resets_to_one_stack_and_refreshes_duration",
+    "tick_phase_on_reapply": "preserved",
+    "dot_damage_pipeline": "DamageService_without_recursive_status_payloads",
+    "speed_effect_combination": "minimum_active_speed_multiplier",
+    "clear_conditions": ["expired", "enemy_death", "enemy_reaches_base"],
+    "resistances_implemented": false,
+    "temporary_tower_id": "status_probe_m8_test",
+    "temporary_tower_attack_rate_per_second": 0.5,
+    "training_enemy_id": "status_training_dummy_m8_test",
+    "training_enemy_health": 180,
+    "debug_wave_id": "m8_status_test",
+    "effect_examples_provisional": {
+      "slow": {"duration_seconds": 2.5, "speed_multiplier": 0.55, "stack_rule": "REFRESH"},
+      "burn": {"duration_seconds": 5.0, "tick_interval_seconds": 1.0, "damage_per_tick": 2.0, "damage_tag": "FIRE", "max_stacks": 3, "stack_rule": "ADD_STACKS"},
+      "bleed": {"duration_seconds": 1.5, "tick_interval_seconds": 0.75, "damage_per_tick": 1.5, "damage_tag": "PHYSICAL", "max_stacks": 4, "stack_rule": "ADD_STACKS"}
+    },
+    "debug_tower_hotkeys": {
+      "1": "ballista_demo",
+      "8": "armor_piercing_bolt_m7_test",
+      "9": "sapping_bolt_m7_test",
+      "0": "status_probe_m8_test"
+    },
+    "balance_confirmed": false
+  },
+  "m9_run_economy": {
+    "service_scope": "Main_scene_local",
+    "configuration_resource": "RunEconomyData",
+    "starting_gold_provisional": 150,
+    "starting_mana_provisional": 100.0,
+    "maximum_mana_provisional": 100.0,
+    "mana_regen_per_second_provisional": 1.5,
+    "mana_regeneration_display": "whole_mana_equivalents_over_whole_second_intervals; keep_exact_runtime_rate",
+    "build_and_upgrade_costs": "TowerData",
+    "kill_rewards": "EnemyData.kill_reward_paid_once_on_defeat",
+    "round_rewards": "WaveData.round_reward_paid_once_when_spawning_finished_and_no_enemies_remain_and_wave_not_failed",
+    "mana_spend": "before_tower_attack; no_attack_when_unaffordable",
+    "run_gold_is_meta_currency": false,
+    "support_buildings": false,
+    "balance_confirmed": false
+  },
+  "m9_5_demo_tower_roster": {
+    "user_confirmed": true,
+    "profiles": [
+      {"id": "ballista_demo", "working_name": "Ballesta", "parallel": "Rogue Tower Ballista", "role": "single_target_generalist", "attack_pattern": "SINGLE_TARGET"},
+      {"id": "mortar_demo", "working_name": "Mortero", "parallel": "Rogue Tower Mortar", "role": "long_range_slow_area_anti_armor", "attack_pattern": "AREA"},
+      {"id": "tesla_coil_demo", "working_name": "Bobina Tesla", "parallel": "Rogue Tower Tesla Coil", "role": "all_targets_in_range_mana_attack", "attack_pattern": "ALL_IN_RANGE"},
+      {"id": "frost_keep_demo", "working_name": "Guardafría", "parallel": "Rogue Tower Frost Keep", "role": "mana_slow", "attack_pattern": "AREA"},
+      {"id": "flame_thrower_demo", "working_name": "Lanzallamas", "parallel": "Rogue Tower Flame Thrower", "role": "fire_burn_status", "attack_pattern": "CONE"},
+      {"id": "poison_sprayer_demo", "working_name": "Pulverizador venenoso", "parallel": "Rogue Tower Poison Sprayer", "role": "poison_damage_over_time", "attack_pattern": "CONE"},
+      {"id": "shredder_demo", "working_name": "Trituradora", "parallel": "Rogue Tower Shredder", "role": "path_following_piercing_bleed", "attack_pattern": "SAWBLADE"}
+    ],
+    "main_hotkeys": ["1", "2", "3", "4", "5", "6", "7"],
+    "diagnostic_hotkeys": {"8": "armor_piercing_bolt_m7_test", "9": "sapping_bolt_m7_test", "0": "status_probe_m8_test"},
+    "tower_profiles_provisional": {
+      "ballista_demo": {"damage": 10, "health_armor_shield": [10, 5, 5], "range": 5, "rpm": 20, "mana": "0/attack", "build_cost": 10, "same_type_increment": 15},
+      "mortar_demo": {"damage": 20, "health_armor_shield": [10, 15, 5], "range": 10, "rpm": 10, "mana": "0/attack", "build_cost": 200, "same_type_increment": 75},
+      "tesla_coil_demo": {"damage": 10, "health_armor_shield": [6, 3, 10], "range": 1.5, "rpm": 30, "mana": "5/attack; scales with base damage", "build_cost": 200, "same_type_increment": 75},
+      "frost_keep_demo": {"damage": 6, "health_armor_shield": [10, 5, 5], "range": 2, "rpm": "180 + 18 per covered PATH cell", "mana": "2/second", "build_cost": 250, "same_type_increment": 100},
+      "flame_thrower_demo": {"damage": 5, "health_armor_shield": [6, 9, 3], "range": 4, "rpm": 60, "mana": "1/attack; scales with base damage", "build_cost": 300, "same_type_increment": 75},
+      "poison_sprayer_demo": {"damage": 5, "health_armor_shield": [6, 3, 9], "range": 4, "rpm": 60, "mana": "1/attack; scales with base damage", "build_cost": 300, "same_type_increment": 75},
+      "shredder_demo": {"damage": 10, "health_armor_shield": [20, 10, 10], "range": 5, "rpm": 5, "mana": "0/attack", "build_cost": 500, "same_type_increment": 100}
+    },
+    "poison_damage_tag": 8,
+    "enemy_shield_model": true,
+    "tower_rules": "ADR-0023: damage/current HP layer; +1 base damage and selected H/A/S multiplier per level; 3 targeting criteria; critical bands; same-type cost scaling; Frost RPM per PATH coverage",
+    "balance_confirmed": false
+  },
+  "m12a_tower_and_hit_point_rules": {
+    "enemy_hit_point_pools": {"modeled_for_each_enemy": ["HEALTH", "ARMOR", "SHIELD"], "profile_maximum_zero_disables_layer": true},
+    "active_hit_point_order": ["SHIELD", "ARMOR", "HEALTH"],
+    "damage_formula": "floor(raw_damage * critical_multiplier * (active_layer_multiplier + matching_status_bonus) * enemy_damage_tag_multiplier)",
+    "damage_cap": "current_hp_of_active_layer",
+    "overflow_policy_provisional": "discard_after_active_layer_is_depleted",
+    "hit_point_bar_rows": ["SHIELD", "ARMOR", "HEALTH"],
+    "health_bar_fragmented": true,
+    "status_regeneration_counters": {"bleed": "HEALTH", "burn": "ARMOR", "poison": "SHIELD"},
+    "status_attack_layer_bonus": {"bleed": {"layer": "HEALTH", "bonus": 1}, "burn": {"layer": "ARMOR", "bonus": 1}, "poison": {"layer": "SHIELD", "bonus": 1}, "scope": "direct_attacks_once_while_status_active; no_stack_scaling"},
+    "status_dot_layer_multipliers": {"associated_layer": 1.0, "other_layers": 0.5},
+    "status_ticks_receive_attack_bonus": false,
+    "campaign_layer_showcase": {"wave": 20, "enemy": "campaign_tier_2_boss_placeholder", "shield": 100, "shield_regeneration_per_second": 1.0, "provisional": true},
+    "tower_level_gains": {"base_damage": 1, "selected_or_target_active_layer_multiplier": 1},
+    "targeting_xp_formula_provisional": "0.5 + 1 / (2 * tower_range_hexes) per second while target remains in range",
+    "target_priority_criteria_max": 3,
+    "critical_chance_max": 1.5,
+    "critical_multipliers": [2, 3, 4],
+    "tesla_targets": "all_moving_enemies_within_circular_range",
+    "tower_upgrade_costs_provisional": {
+      "ballista_mortar": [10, 20],
+      "tesla_frost_keep": [20, 40],
+      "flame_poison_shredder": [30, 60]
+    },
+    "run_card_pool_count": 18,
+    "global_hit_point_multiplier_cards": ["monster_studies_health", "monster_studies_armor", "monster_studies_shield"],
+    "source_decision": "ADR-0023",
+    "balance_confirmed": false
+  },
+  "m12_meta_progression": {
+    "service": "MetaProgression autoload; run economy remains scene-local",
+    "save_path": "user://rogue_tower_meta.json",
+    "save_version": 1,
+    "save_payload": ["meta_currency", "unlocked_towers", "permanent_upgrade_levels", "settings", "run_counters", "last_run_summary"],
+    "save_recovery": "temporary write + .bak + atomic rename; legacy version 0/missing version migrates to 1 when schema is valid; malformed/future versions preserved and purchases locked",
+    "starting_unlocked_towers_provisional": ["tower:ballista_demo"],
+    "run_reward_formula_provisional": "min(1000, 5 + 5 * completed_rounds + (victory ? 30 : 0))",
+    "permanent_effects": ["starting_gold", "starting_mana", "maximum_mana", "mana_regen_per_second", "tower_damage_multiplier", "card_content_unlock"],
+    "meta_shop": "shown after RUN_VICTORY or RUN_DEFEAT; purchases persist; new run reloads Main",
+    "base_card_pool_count": 12,
+    "card_archive_unlocks": ["archive_burnished_blades", "archive_mana_channel"],
+    "balance_confirmed": false
+  },
+  "m13_ux_ui": {
+    "main_hud_panels": {
+      "top_left": ["base_health_bar_with_value", "run_gold_icon_and_value", "run_mana_icon_and_value", "F3_H_shortcuts"],
+      "top_center": ["campaign_phase", "round_progress_20", "start_round_action"],
+      "top_right": ["selected_tower_stats_and_actions", "hidden_when_deselected"]
+    },
+    "tower_panel_dismissal": "click_empty_cell_or_outside_board",
+    "icon_assets": {
+      "directory": "game/ui/icons/",
+      "format": "16 individual transparent RGBA PNG files, each 256x256; no shared atlas",
+      "ids": ["gold", "mana", "health", "armor", "shield", "ballista", "mortar", "tesla_coil", "frost_keep", "flame_thrower", "poison_sprayer", "shredder", "burn", "slow", "poison", "bleed"]
+    },
+    "tower_shortcuts": "square_buttons_with_shared_tower_sprite_large_icon_name_and_gold_icon_price",
+    "tower_stat_layer_icons": "health_armor_shield_icons_in_layer_multipliers_xp_and_upgrade_actions",
+    "tower_hover_selection": "show_attack_radius_and_outline; selected_tower_panel_scrollable",
+    "target_priorities_ui": "single_checkable_selector_up_to_three_distinct_criteria",
+    "enemy_health_visual": "larger_single_frame_with_shield_and_armor_rows_above_fragmented_health_row_and_larger_layer_icons; status_icons_show_stack_count_after_one",
+    "enemy_status_icons": "transparent_PNG_symbols_without_backing_plate; larger_icons; count_only_for_stacks_above_one",
+    "enemy_hit_feedback": "flash_jump_and_floating_layer_colored_damage_text",
+    "tower_upgrade_cards": "show_affected_tower_sprite",
+    "currency_text": "inline_gold_and_mana_icons_in_ui_text",
+    "game_title_in_hud": false,
+    "round_progress_colors": {"completed": "forest_green", "active": "amber", "future": "slate", "special_rounds": [17, 19, 20]},
+    "debug_panel_key": "F3",
+    "debug_panel_contents": ["terrain_tools", "wave_and_debug_fixture_selector", "continuous_target_inspector"],
+    "selected_tower_target_detail": "tooltip",
+    "hud_visibility_key": "H",
+    "terminal_outcomes": ["RUN_VICTORY", "RUN_DEFEAT"],
+    "terminal_summary": ["reached_round", "completed_rounds", "meta_reward", "total_meta_currency"],
+    "meta_shop_categories": ["tower_unlocks", "permanent_upgrades"],
+    "shop_actions": ["purchase_with_validation", "start_new_run"],
+    "ui_style": {"surface": "slate", "edge": "steel", "action": "amber", "success": "forest_green", "defeat": "terracotta", "external_assets": false},
+    "balance_confirmed": false,
+    "acceptance": "manual_window_review_pending"
+  },
+  "run_phases": [
+    "RUN_SETUP",
+    "ROUND_PREP",
+    "COMBAT",
+    "ROUND_REWARD",
+    "TERRAIN_EXPANSION",
+    "CARD_OFFER",
+    "ROUND_TRANSITION",
+    "RUN_VICTORY",
+    "RUN_DEFEAT"
+  ]
+}

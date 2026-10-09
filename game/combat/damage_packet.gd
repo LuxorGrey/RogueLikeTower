@@ -20,6 +20,8 @@ var armor_multiplier: float = 1.0
 var health_multiplier: float = 1.0
 var armor_damage_multiplier: float = 1.0
 var shield_damage_multiplier: float = 1.0
+## True for a periodic status tick; status ticks do not receive the matching-layer attack bonus.
+var is_status_damage: bool = false
 var regen_counter_strength: float = 0.0
 var regen_counter_duration: float = 0.0
 var status_payloads: Array[Resource] = []

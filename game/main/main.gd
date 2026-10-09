@@ -1,6 +1,8 @@
 extends Node2D
 
 const HEX_RADIUS: float = 52.0
+const CAMPAIGN_ROUND_COUNT: int = 45
+const DEBUG_WAVE_START_INDEX: int = CAMPAIGN_ROUND_COUNT
 const ELEVATION_PIXEL_OFFSET: float = 18.0
 const STARTING_BOARD: Resource = preload("res://data/terrain/starting_board.tres")
 const STRAIGHT_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/straight.tres")
@@ -18,6 +20,7 @@ const DEMO_CARD_POOL: Resource = preload("res://data/cards/demo_card_pool.tres")
 const META_SHOP_PANEL_SCRIPT: Script = preload("res://game/progression/meta_shop_panel.gd")
 const HUD_STYLE_SCRIPT: Script = preload("res://game/ui/rogue_hud_style.gd")
 const ICON_CATALOG_SCRIPT: Script = preload("res://game/ui/icon_catalog.gd")
+const TOWER_CARD_BUTTON_TEXTURE: Texture2D = preload("res://assets/ui/tower_card_button.png")
 const BALLISTA: TowerData = preload("res://data/towers/ballista.tres")
 const MORTAR: TowerData = preload("res://data/towers/mortar.tres")
 const TESLA_COIL: TowerData = preload("res://data/towers/tesla_coil.tres")
@@ -29,7 +32,6 @@ const ARMOR_PIERCING_BOLT: TowerData = preload("res://data/towers/armor_piercing
 const SAPPING_BOLT: TowerData = preload("res://data/towers/sapping_bolt.tres")
 const STATUS_PROBE: TowerData = preload("res://data/towers/status_probe_m8.tres")
 const TOWER_PROFILES: Array[TowerData] = [BALLISTA, MORTAR, TESLA_COIL, FROST_KEEP, FLAME_THROWER, POISON_SPRAYER, SHREDDER]
-const TOWER_SHORT_NAMES: PackedStringArray = ["BALLISTA", "MORTERO", "TESLA", "FRÍO", "FUEGO", "VENENO", "SHREDDER"]
 const MIN_CAMERA_ZOOM: float = 0.45
 const MAX_CAMERA_ZOOM: float = 2.5
 const CAMERA_ZOOM_STEP: float = 1.12
@@ -72,11 +74,15 @@ var _upgrade_card_heading: Label
 var _meta_shop_panel: CanvasLayer
 var _hud_style: RefCounted
 var _icon_catalog: RefCounted
-var _base_health_fill_style: StyleBoxFlat
+var _gold_feedback_tween: Tween
+var _gold_feedback_positions_cached: bool = false
+var _gold_icon_base_position: Vector2 = Vector2.ZERO
+var _gold_status_base_position: Vector2 = Vector2.ZERO
 var _tower_shortcut_names: Array[Label] = []
 var _tower_shortcut_prices: Array[Label] = []
 var _tower_shortcut_icons: Array[TextureRect] = []
 var _tower_upgrade_amounts: Array[Label] = []
+var _tower_upgrade_effect_labels: Array[Label] = []
 var _tower_upgrade_cost_icons: Array[TextureRect] = []
 var _tower_upgrade_layer_icons: Array[TextureRect] = []
 var _hovered_tower: Tower
@@ -93,6 +99,7 @@ var _hovered_tower: Tower
 @onready var _hud_panel: PanelContainer = %Panel
 @onready var _round_panel: PanelContainer = %RoundPanel
 @onready var _tower_info_panel: PanelContainer = %TowerInfoPanel
+@onready var _tower_portrait: TextureRect = %TowerPortrait
 @onready var _hud: CanvasLayer = %HUD
 @onready var _terrain_panel: PanelContainer = %TerrainPanel
 @onready var _terrain_card_panel: PanelContainer = %TerrainCardPanel
@@ -111,7 +118,7 @@ var _hovered_tower: Tower
 	%CardPreview2,
 	%CardPreview3,
 ]
-@onready var _tower_toolbar: PanelContainer = %TowerToolbar
+@onready var _tower_toolbar: MarginContainer = %TowerToolbar
 @onready var _tower_shortcut_buttons: Array[Button] = [
 	%TowerShortcut1,
 	%TowerShortcut2,
@@ -127,7 +134,7 @@ var _hovered_tower: Tower
 @onready var _entities: Node2D = %Entities
 @onready var _base: GameBase = %GameBase
 @onready var _wave_director: WaveDirector = %WaveDirector
-@onready var _base_health_bar: ProgressBar = %BaseHealthBar
+@onready var _base_health_bar: Control = %BaseHealthBar
 @onready var _base_status: Label = %BaseStatus
 @onready var _gold_icon: TextureRect = %GoldIcon
 @onready var _gold_status: Label = %GoldStatus
@@ -157,6 +164,7 @@ var _reward_transition_token: int = 0
 var _base_coord: Vector2i = Vector2i.ZERO
 
 func _ready() -> void:
+	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	_base_coord = STARTING_BOARD.get("base_coord")
 	MetaProgression.call("configure_tower_catalog", TOWER_PROFILES)
 	var current_run_seed: int = int(MetaProgression.call("begin_run"))
@@ -269,7 +277,7 @@ func _ready() -> void:
 	_refresh_tower_controls()
 	_start_wave_button.disabled = not _path_graph.is_valid
 	_placement_enabled = false
-	_wave_status.text = "Preparación · ronda 1/20 · %d enemigos" % _get_wave_enemy_count(FIRST_WAVE)
+	_wave_status.text = "Preparación · ronda 1/45 · %d enemigos" % _get_wave_enemy_count(FIRST_WAVE)
 	RunManager.transition_to(RunManager.Phase.ROUND_PREP)
 	var permanent_economy_bonuses: Dictionary = MetaProgression.call("get_run_economy_bonuses")
 	if not bool(_run_economy.call("configure", RUN_ECONOMY_DATA, permanent_economy_bonuses)):
@@ -422,16 +430,6 @@ func _configure_hud_visuals() -> void:
 	_configure_tower_shortcut_visuals()
 	_configure_tower_upgrade_visuals()
 
-	var background_style := StyleBoxFlat.new()
-	background_style.bg_color = Color("#253238")
-	background_style.set_corner_radius_all(4)
-	var fill_style := StyleBoxFlat.new()
-	fill_style.bg_color = Color("#76bd82")
-	fill_style.set_corner_radius_all(4)
-	_base_health_fill_style = fill_style
-	_base_health_bar.add_theme_stylebox_override("background", background_style)
-	_base_health_bar.add_theme_stylebox_override("fill", _base_health_fill_style)
-
 func _configure_tower_shortcut_visuals() -> void:
 	var icon_names: Array[StringName] = [
 		&"ballista", &"mortar", &"tesla_coil", &"frost_keep", &"flame_thrower", &"poison_sprayer", &"shredder",
@@ -442,8 +440,13 @@ func _configure_tower_shortcut_visuals() -> void:
 	for index in _tower_shortcut_buttons.size():
 		var shortcut_button: Button = _tower_shortcut_buttons[index]
 		shortcut_button.text = ""
-		shortcut_button.custom_minimum_size = Vector2(132.0, 132.0)
+		shortcut_button.custom_minimum_size = Vector2(132.0, 140.0)
 		shortcut_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		shortcut_button.add_theme_stylebox_override("normal", _create_tower_card_style(Color.WHITE))
+		shortcut_button.add_theme_stylebox_override("hover", _create_tower_card_style(Color(1.12, 1.08, 0.92, 1.0)))
+		shortcut_button.add_theme_stylebox_override("pressed", _create_tower_card_style(Color(0.82, 0.88, 0.98, 1.0)))
+		shortcut_button.add_theme_stylebox_override("hover_pressed", _create_tower_card_style(Color(0.92, 0.98, 1.08, 1.0)))
+		shortcut_button.add_theme_stylebox_override("disabled", _create_tower_card_style(Color(0.62, 0.65, 0.70, 0.76)))
 		var margins := MarginContainer.new()
 		margins.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		margins.add_theme_constant_override("margin_left", 4)
@@ -464,7 +467,7 @@ func _configure_tower_shortcut_visuals() -> void:
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		content.add_child(icon)
 		var name_label := Label.new()
-		name_label.text = TOWER_SHORT_NAMES[index]
+		name_label.text = TOWER_PROFILES[index].display_name
 		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -497,48 +500,138 @@ func _configure_tower_shortcut_visuals() -> void:
 		_tower_shortcut_names.append(name_label)
 		_tower_shortcut_prices.append(price_label)
 
+func _create_tower_card_style(tint: Color) -> StyleBoxTexture:
+	var style := StyleBoxTexture.new()
+	style.texture = TOWER_CARD_BUTTON_TEXTURE
+	style.texture_margin_left = 16.0
+	style.texture_margin_top = 18.0
+	style.texture_margin_right = 16.0
+	style.texture_margin_bottom = 18.0
+	style.content_margin_left = 9.0
+	style.content_margin_top = 9.0
+	style.content_margin_right = 9.0
+	style.content_margin_bottom = 9.0
+	style.modulate_color = tint
+	return style
+
 func _configure_tower_upgrade_visuals() -> void:
 	_tower_upgrade_amounts.clear()
+	_tower_upgrade_effect_labels.clear()
 	_tower_upgrade_cost_icons.clear()
 	_tower_upgrade_layer_icons.clear()
 	var layer_icons: Array[StringName] = [&"health", &"armor", &"shield"]
+	var layer_names: Array[String] = ["Health", "Armor", "Shield"]
 	for layer in _tower_upgrade_buttons.size():
 		var button: Button = _tower_upgrade_buttons[layer]
 		button.text = ""
-		var row := HBoxContainer.new()
-		row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		row.alignment = BoxContainer.ALIGNMENT_CENTER
-		row.add_theme_constant_override("separation", 3)
-		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		button.custom_minimum_size = Vector2(116.0, 116.0)
+		var content := VBoxContainer.new()
+		content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		content.alignment = BoxContainer.ALIGNMENT_CENTER
+		content.add_theme_constant_override("separation", 2)
+		content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var layer_icon := TextureRect.new()
-		layer_icon.custom_minimum_size = Vector2(19.0, 19.0)
+		layer_icon.custom_minimum_size = Vector2(29.0, 29.0)
+		layer_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		layer_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		layer_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		layer_icon.texture = _icon_catalog.call("get_icon", layer_icons[layer]) as Texture2D
 		layer_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.add_child(layer_icon)
-		var amount_label := Label.new()
-		amount_label.add_theme_font_size_override("font_size", 11)
-		amount_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.add_child(amount_label)
+		content.add_child(layer_icon)
+		var effect_label := Label.new()
+		effect_label.text = "+1 Daño\n+1 %s" % layer_names[layer]
+		effect_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		effect_label.add_theme_font_size_override("font_size", 11)
+		effect_label.add_theme_color_override("font_color", _hp_layer_color(layer))
+		effect_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		content.add_child(effect_label)
+		var price_row := HBoxContainer.new()
+		price_row.alignment = BoxContainer.ALIGNMENT_CENTER
+		price_row.add_theme_constant_override("separation", 4)
+		price_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var cost_icon := TextureRect.new()
-		cost_icon.custom_minimum_size = Vector2(15.0, 15.0)
+		cost_icon.custom_minimum_size = Vector2(18.0, 18.0)
 		cost_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		cost_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		cost_icon.texture = _gold_icon.texture
 		cost_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.add_child(cost_icon)
-		button.add_child(row)
+		price_row.add_child(cost_icon)
+		var amount_label := Label.new()
+		amount_label.add_theme_font_size_override("font_size", 14)
+		amount_label.add_theme_color_override("font_color", Color("#ffe29a"))
+		amount_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		price_row.add_child(amount_label)
+		content.add_child(price_row)
+		button.add_child(content)
 		_tower_upgrade_layer_icons.append(layer_icon)
+		_tower_upgrade_effect_labels.append(effect_label)
 		_tower_upgrade_amounts.append(amount_label)
 		_tower_upgrade_cost_icons.append(cost_icon)
 
+func _hp_layer_color(layer: int) -> Color:
+	match layer:
+		Enemy.HitPointLayer.HEALTH:
+			return Color("#82df8b")
+		Enemy.HitPointLayer.ARMOR:
+			return Color("#f2bd68")
+		Enemy.HitPointLayer.SHIELD:
+			return Color("#72d5f2")
+		_:
+			return Color.WHITE
+
+func _format_tower_summary(source_text: String) -> String:
+	var result := _style_summary_layer(source_text, "Health", "health", "#82df8b")
+	result = _style_summary_layer(result, "Armor", "armor", "#f2bd68")
+	result = _style_summary_layer(result, "Shield", "shield", "#72d5f2")
+	result = result.replace("Daño ", "[b]Daño[/b] ")
+	result = result.replace("Rango ", "[b]Rango[/b] ")
+	result = result.replace("RPM", "[b]RPM[/b]")
+	result = result.replace("Crítico ", "[b]Crítico[/b] ")
+	result = result.replace("XP {icon:health}", "[b]XP[/b] {icon:health}")
+	return result
+
+func _style_summary_layer(source_text: String, layer_name: String, icon_name: String, color_hex: String) -> String:
+	var fragment: String = "%s {icon:%s} " % [layer_name, icon_name]
+	var layer_start: int = source_text.find(fragment)
+	if layer_start < 0:
+		return source_text
+	var value_start: int = layer_start + fragment.length()
+	var separator_end: int = source_text.find(" · ", value_start)
+	var line_end: int = source_text.find("\n", value_start)
+	var value_end: int = separator_end if separator_end >= 0 else line_end
+	if value_end < 0:
+		value_end = source_text.length()
+	var value: String = source_text.substr(value_start, value_end - value_start)
+	var formatted: String = "[b][color=%s]%s[/color][/b] {icon:%s} [color=%s]%s[/color]" % [
+		color_hex,
+		layer_name,
+		icon_name,
+		color_hex,
+		value,
+	]
+	return source_text.substr(0, layer_start) + formatted + source_text.substr(value_end)
+
+func _fit_tower_info_panel() -> void:
+	if not is_instance_valid(_tower_info_panel) or not _tower_info_panel.visible:
+		return
+	var viewport_size: Vector2 = _tower_info_panel.get_viewport_rect().size
+	_tower_info_panel.offset_left = -444.0
+	_tower_info_panel.offset_right = -24.0
+	_tower_info_panel.size.x = 420.0
+	var desired_height: float = _tower_info_panel.get_combined_minimum_size().y
+	var available_height: float = maxf(180.0, viewport_size.y - 48.0)
+	_tower_info_panel.size.y = clampf(desired_height, 150.0, available_height)
+	_tower_info_panel.offset_bottom = _tower_info_panel.offset_top + _tower_info_panel.size.y
+
+func _on_viewport_size_changed() -> void:
+	call_deferred("_fit_tower_info_panel")
+
 func _configure_hud_tooltips() -> void:
-	_base_health_bar.tooltip_text = "Vida restante de la base. Si llega a cero, termina la run."
-	_gold_status.tooltip_text = "Moneda disponible para construir y mejorar torres."
-	_mana_status.tooltip_text = "Energía disponible para activar algunas torres."
+	_base_health_bar.tooltip_text = "Health restante de Main Tower. Si llega a cero, termina la run."
+	_gold_status.tooltip_text = "Gold disponible para construir y mejorar torres."
+	_mana_status.tooltip_text = "Mana disponible para activar algunas torres."
 	_wave_status.tooltip_text = "Fase y actividad de la ronda de campaña actual."
-	_round_progress.tooltip_text = "Veinte segmentos: rondas completadas, ronda actual y rondas pendientes."
+	_round_progress.tooltip_text = "45 segmentos: rondas completadas, ronda actual y rondas pendientes."
 	_wave_selector.tooltip_text = "Selector técnico de rondas y perfiles DEBUG. Solo aparece en el panel F3."
 	_piece_selector.tooltip_text = "Selecciona una pieza disponible para inspeccionar o colocar."
 	_rotate_left.tooltip_text = "Gira la pieza 60 grados en sentido antihorario. Atajo: Q."
@@ -870,7 +963,7 @@ func _handle_board_click() -> void:
 			_build_status.text = "Coloca el cursor sobre una casilla existente."
 			return
 		if _build_controller.place_tower(_hovered_coord):
-			_set_rich_text_with_currency_icons(_build_status, "%s construida por %d oro en (%d, %d)." % [
+			_set_rich_text_with_currency_icons(_build_status, "%s construida por %d Gold en (%d, %d)." % [
 				_selected_tower_data.display_name,
 				_selected_tower_data.build_cost,
 				_hovered_coord.x,
@@ -905,8 +998,6 @@ func _select_tower_and_build(index: int) -> void:
 
 func _select_debug_tower_and_build(tower_data: TowerData) -> void:
 	_select_tower_profile_and_build(tower_data)
-	if _build_controller.is_build_mode() and _selected_tower_data == tower_data:
-		_build_status.text = "Perfil de diagnóstico: %s · clic en Grass/Montaña libre." % tower_data.display_name
 
 func _select_tower_profile_and_build(chosen_tower: TowerData) -> void:
 	if chosen_tower == null:
@@ -926,7 +1017,7 @@ func _select_tower_profile_and_build(chosen_tower: TowerData) -> void:
 	if _selected_expansion_piece == null:
 		_cancel_placement()
 	if _build_controller.begin_build(_selected_tower_data):
-		_build_status.text = "%s · clic en Grass/Montaña libre." % _selected_tower_data.display_name
+		_build_status.clear()
 	else:
 		_set_rich_text_with_currency_icons(_build_status, _build_controller.last_error)
 	_refresh_build_preview()
@@ -950,14 +1041,15 @@ func _refresh_build_preview() -> void:
 		_hovered_coord,
 		error.is_empty(),
 		_build_controller.get_preview_range_pixels(_hovered_coord),
-		_icon_catalog.call("get_tower_icon", StringName(_selected_tower_data.id)) as Texture2D
+		_icon_catalog.call("get_tower_icon", StringName(_selected_tower_data.id)) as Texture2D,
+		_selected_tower_data.visual_icon_size
 	)
 
 func _populate_targeting_modes() -> void:
 	var labels: PackedStringArray = [
-		"Más avanzado", "Menos avanzado", "Casi sin vida/capa", "Más vida",
-		"Más armadura", "Más escudo", "Menos vida", "Menos armadura",
-		"Menos escudo", "Más lento", "Más rápido",
+		"Más avanzado", "Menos avanzado", "Casi sin Health/capa", "Más Health",
+		"Más Armor", "Más Shield", "Menos Health", "Menos Armor",
+		"Menos Shield", "Más lento", "Más rápido",
 	]
 	var popup: PopupMenu = _tower_priority_menu.get_popup()
 	popup.clear()
@@ -969,32 +1061,36 @@ func _populate_targeting_modes() -> void:
 func _populate_wave_options() -> void:
 	_selected_tower_data = BALLISTA
 	_wave_selector.clear()
-	for round_index in range(20):
+	var boss_rounds := PackedInt32Array()
+	for round_index in range(CAMPAIGN_ROUND_COUNT):
 		var wave: WaveData = _get_campaign_round(round_index + 1)
 		var encounter_label: String = _encounter_label(wave)
-		_wave_selector.add_item("Ronda %02d/20 · %s · %d enemigos" % [
+		_wave_selector.add_item("Ronda %02d/45 · %s · %d enemigos" % [
 			round_index + 1,
 			encounter_label,
 			_get_wave_enemy_count(wave),
 		])
-	_wave_selector.add_item("DEBUG · blindado regenerador")
-	_wave_selector.add_item("DEBUG · objetivo de estados M8")
-	_wave_selector.add_item("DEBUG · capas escudo/armadura/vida")
+		if wave != null and wave.encounter_type in [WaveData.EncounterType.BOSS, WaveData.EncounterType.TIER_2_BOSS]:
+			boss_rounds.append(wave.round_number)
+	_round_progress.call("set_boss_rounds", boss_rounds)
+	_wave_selector.add_item("DEBUG · Armored Regenerator")
+	_wave_selector.add_item("DEBUG · Status Training Target")
+	_wave_selector.add_item("DEBUG · Health/Armor/Shield target")
 	_wave_selector.select(0)
 	_selected_wave = _get_campaign_round(_campaign_round_number)
 	_selected_wave_is_debug = false
 	_set_campaign_wave_name()
-	_wave_status.text = "Preparación · ronda %d/20 · %d enemigos" % [
+	_wave_status.text = "Preparación · ronda %d/45 · %d enemigos" % [
 		_campaign_round_number,
 		_get_wave_enemy_count(_selected_wave),
 	]
-	_start_wave_button.text = "▶ Iniciar ronda %d/20" % _campaign_round_number
+	_start_wave_button.text = "▶ Iniciar ronda %d/45" % _campaign_round_number
 	_refresh_tower_controls()
 
 func _refresh_campaign_option_counts() -> void:
-	for round_index in range(20):
+	for round_index in range(CAMPAIGN_ROUND_COUNT):
 		var wave: WaveData = _get_campaign_round(round_index + 1)
-		_wave_selector.set_item_text(round_index, "Ronda %02d/20 · %s · %d enemigos" % [
+		_wave_selector.set_item_text(round_index, "Ronda %02d/45 · %s · %d enemigos" % [
 			round_index + 1,
 			_encounter_label(wave),
 			_get_wave_enemy_count(wave),
@@ -1003,35 +1099,35 @@ func _refresh_campaign_option_counts() -> void:
 func _on_wave_profile_selected(index: int) -> void:
 	if index < 0:
 		return
-	if index < 20:
+	if index < CAMPAIGN_ROUND_COUNT:
 		if index + 1 != _campaign_round_number or RunManager.phase != RunManager.Phase.ROUND_PREP:
 			_wave_selector.select(_campaign_round_number - 1)
 			return
 		_selected_wave = _get_campaign_round(index + 1)
 		_selected_wave_is_debug = false
 		_set_campaign_wave_name()
-		_wave_status.text = "Preparación · ronda %d/20 · %d enemigos" % [
+		_wave_status.text = "Preparación · ronda %d/45 · %d enemigos" % [
 			_campaign_round_number,
 			_get_wave_enemy_count(_selected_wave),
 		]
-	elif index == 20:
+	elif index == DEBUG_WAVE_START_INDEX:
 		_selected_wave = M7_DAMAGE_TEST_WAVE
 		_selected_wave_is_debug = true
-		_active_wave_name = "Diagnóstico blindado"
-		_wave_status.text = "Diagnóstico · 1 blindado · armadura 4 · regen 2/s"
-	elif index == 21:
+		_active_wave_name = "Armored Regenerator (M7 DEBUG)"
+		_wave_status.text = "DEBUG · 1 Armored Regenerator · Armor 4 · regen 2/s"
+	elif index == DEBUG_WAVE_START_INDEX + 1:
 		_selected_wave = M8_STATUS_TEST_WAVE
 		_selected_wave_is_debug = true
-		_active_wave_name = "Prueba de estados M8"
-		_wave_status.text = "Prueba de estados · 1 objetivo · vida 180 · velocidad 32"
-	elif index == 22:
+		_active_wave_name = "Status Training Target (M8 DEBUG)"
+		_wave_status.text = "DEBUG · 1 Status Training Target · Health 180 · velocidad 32"
+	elif index == DEBUG_WAVE_START_INDEX + 2:
 		_selected_wave = TOWER_LAYER_TEST_WAVE
 		_selected_wave_is_debug = true
-		_active_wave_name = "Prueba de capas H/A/E"
-		_wave_status.text = "Prueba de capas · escudo 40 · armadura 60 · vida 120 · regeneración 1/s por capa"
+		_active_wave_name = "Health/Armor/Shield Training Target (M12A DEBUG)"
+		_wave_status.text = "DEBUG · Shield 40 · Armor 60 · Health 120 · regeneración 1/s por capa"
 	else:
 		return
-	_start_wave_button.text = "▶ Iniciar prueba" if _selected_wave_is_debug else "▶ Iniciar ronda %d/20" % _campaign_round_number
+	_start_wave_button.text = "▶ Iniciar prueba" if _selected_wave_is_debug else "▶ Iniciar ronda %d/45" % _campaign_round_number
 	_refresh_tower_controls()
 
 func _on_targeting_mode_toggled(mode: int) -> void:
@@ -1078,7 +1174,7 @@ func _on_upgrade_tower_pressed(layer: int) -> void:
 	var tower: Tower = _build_controller.selected_tower
 	var upgrade_cost: int = tower.get_next_upgrade_cost() if tower != null and is_instance_valid(tower) else -1
 	if _build_controller.upgrade_selected_tower(layer):
-		_set_rich_text_with_currency_icons(_build_status, "Torre mejorada: +1 daño base y +1 %s · −%d oro." % [
+		_set_rich_text_with_currency_icons(_build_status, "Torre mejorada: +1 daño base y +1 %s · −%d Gold." % [
 			_hp_layer_name(layer),
 			upgrade_cost,
 		])
@@ -1103,7 +1199,7 @@ func _on_tower_demolished(_tower_data: TowerData, _next_build_cost: int) -> void
 func _on_tower_selected(tower: Tower, _coord: Vector2i) -> void:
 	if tower == null or not is_instance_valid(tower):
 		return
-	_set_rich_text_with_currency_icons(_tower_status, tower.get_summary())
+	_set_rich_text_with_currency_icons(_tower_status, _format_tower_summary(tower.get_summary()))
 	_sync_targeting_priority_menu(tower)
 	_refresh_combat_debug()
 	_refresh_tower_controls()
@@ -1135,7 +1231,7 @@ func _refresh_tower_controls() -> void:
 			energy_suffix = " · consume %.1f por ataque" % effective_mana_cost
 		var build_cost: int = _build_controller.get_current_build_cost(tower_data)
 		_tower_shortcut_prices[index].text = "%d" % build_cost
-		var role_summary: String = tower_data.role_summary.replace("maná", "energía").replace("mana", "energía")
+		var role_summary: String = tower_data.role_summary
 		shortcut_button.tooltip_text = "%s\n%s · precio %d%s · %s" % [
 			tower_data.display_name,
 			role_summary,
@@ -1148,7 +1244,7 @@ func _refresh_tower_controls() -> void:
 		# Los controles personalizados dentro del Button no heredan su estilo disabled.
 		shortcut_button.modulate = Color("#778187") if shortcut_button.disabled else Color.WHITE
 		if can_build and not can_afford:
-			shortcut_button.tooltip_text += "\nNo hay oro suficiente para comprar esta torre."
+			shortcut_button.tooltip_text += "\nNo hay Gold suficiente para comprar esta torre."
 		shortcut_button.set_pressed_no_signal(
 			build_mode and TOWER_PROFILES[index] == _selected_tower_data
 		)
@@ -1161,7 +1257,11 @@ func _refresh_tower_controls() -> void:
 		and not _terrain_panel.visible
 		and (build_mode or has_selected_tower)
 	)
-	_build_status.visible = build_mode or has_selected_tower
+	_build_status.visible = (_build_status.get_parsed_text().strip_edges() != "") and (build_mode or has_selected_tower)
+	_tower_portrait.visible = build_mode
+	_tower_portrait.texture = null
+	if build_mode:
+		_tower_portrait.texture = _icon_catalog.call("get_tower_icon", StringName(_selected_tower_data.id)) as Texture2D
 	_start_wave_button.disabled = (
 		build_mode
 		or not _path_graph.is_valid
@@ -1174,6 +1274,7 @@ func _refresh_tower_controls() -> void:
 		var upgrade_button: Button = _tower_upgrade_buttons[layer]
 		_tower_upgrade_layer_icons[layer].visible = has_selected_tower
 		_tower_upgrade_cost_icons[layer].visible = has_selected_tower and next_upgrade_cost >= 0
+		_tower_upgrade_effect_labels[layer].visible = has_selected_tower
 		if next_upgrade_cost >= 0:
 			_tower_upgrade_amounts[layer].text = "%d" % next_upgrade_cost
 		else:
@@ -1183,15 +1284,47 @@ func _refresh_tower_controls() -> void:
 	_demolish_tower_button.disabled = build_mode or not has_selected_tower or not _build_controller.can_build_in_current_phase()
 	_demolish_tower_button.tooltip_text = "Retira esta torre sin devolución y reduce el precio siguiente de su tipo."
 	if build_mode:
-		_tower_status.text = "Construir: %s · selecciona Grass o Montaña" % _selected_tower_data.display_name
+		_set_rich_text_with_currency_icons(_tower_status, _build_tower_description(_selected_tower_data))
 	elif not has_selected_tower:
 		_tower_status.text = "Torre: ninguna · pulsa 1–7 para construir"
 	else:
-		_set_rich_text_with_currency_icons(_tower_status, selected.get_summary())
+		_set_rich_text_with_currency_icons(_tower_status, _format_tower_summary(selected.get_summary()))
 		_tower_status.tooltip_text = "Consulta F3 para ver el objetivo en alcance, sus capas, regeneración y estados."
 	_tower_priority_menu.tooltip_text = "Selecciona hasta tres criterios. El orden de selección resuelve los empates."
 	_build_status.tooltip_text = "Estado de construcción, recompensa reciente o motivo por el que una acción no se puede realizar."
-	_start_wave_button.tooltip_text = "Inicia la ronda activa. La campaña avanza en orden y termina tras la ronda 20."
+	_start_wave_button.tooltip_text = "Inicia la ronda activa. La campaña avanza en orden y termina tras la ronda 45."
+	call_deferred("_fit_tower_info_panel")
+
+func _build_tower_description(tower_data: TowerData) -> String:
+	var build_cost: int = _build_controller.get_current_build_cost(tower_data)
+	var range_bonus: float = tower_data.height_range_bonus_per_level
+	var damage_bonus: float = tower_data.elevation_damage_bonus_per_level
+	var elevation_text := "Sin bonificación por altura"
+	if damage_bonus > 0.0 or range_bonus > 0.0:
+		var bonus_parts := PackedStringArray()
+		if damage_bonus > 0.0:
+			bonus_parts.append("+%.1f Daño" % damage_bonus)
+		if range_bonus > 0.0:
+			bonus_parts.append("+%.2f hex de alcance" % range_bonus)
+		elevation_text = "[b]Mountain vs Grass:[/b] %s" % " · ".join(bonus_parts)
+	var energy_text := ""
+	if tower_data.mana_cost_per_second > 0.0:
+		energy_text = "\nConsumo: %.1f Mana/s" % tower_data.mana_cost_per_second
+	elif tower_data.mana_cost_per_attack > 0.0:
+		energy_text = "\nConsumo: %.1f Mana/ataque" % tower_data.mana_cost_per_attack
+	return "[b]%s[/b]\n%s\n[b]Precio:[/b] %d Gold · [b]Daño:[/b] %d · [b]Rango:[/b] %.1f hex · [b]RPM:[/b] %.0f\n[b][color=#82df8b]Health[/color][/b] [color=#82df8b]×%.1f[/color] · [b][color=#f2bd68]Armor[/color][/b] [color=#f2bd68]×%.1f[/color] · [b][color=#72d5f2]Shield[/color][/b] [color=#72d5f2]×%.1f[/color]\n%s%s" % [
+		tower_data.display_name,
+		tower_data.role_summary,
+		build_cost,
+		tower_data.base_damage,
+		tower_data.range_hexes,
+		tower_data.get_rounds_per_minute(),
+		tower_data.health_damage_multiplier,
+		tower_data.armor_damage_multiplier,
+		tower_data.shield_damage_multiplier,
+		elevation_text,
+		energy_text,
+	]
 
 func _tower_attack_description(tower_data: TowerData) -> String:
 	match tower_data.attack_pattern:
@@ -1216,13 +1349,13 @@ func _tower_attack_description(tower_data: TowerData) -> String:
 func _hp_layer_name(layer: int) -> String:
 	match layer:
 		Enemy.HitPointLayer.HEALTH:
-			return "vida"
+			return "Health"
 		Enemy.HitPointLayer.ARMOR:
-			return "armadura"
+			return "Armor"
 		Enemy.HitPointLayer.SHIELD:
-			return "escudo"
+			return "Shield"
 		_:
-			return "capa"
+			return "Layer"
 
 func _start_selected_wave() -> void:
 	if RunManager.phase == RunManager.Phase.CARD_OFFER or not _path_graph.is_valid or not _can_start_selected_wave():
@@ -1261,8 +1394,10 @@ func _start_selected_wave() -> void:
 		_refresh_tower_controls()
 
 func _on_wave_started(round_number: int) -> void:
+	if not _selected_wave_is_debug:
+		_run_economy.call("refill_mana_to_max")
 	RunManager.transition_to(RunManager.Phase.COMBAT)
-	var round_label: String = "prueba de diagnóstico" if _selected_wave_is_debug else "ronda %d/20" % round_number
+	var round_label: String = "prueba de diagnóstico" if _selected_wave_is_debug else "ronda %d/45" % round_number
 	_wave_status.text = "%s · %s · preparando spawns…" % [_active_wave_name, round_label]
 	_refresh_tower_controls()
 
@@ -1278,7 +1413,7 @@ func _on_wave_completed(round_number: int) -> void:
 		_round_progress.call("set_progress", round_number, round_number)
 	var return_phase: int = _debug_return_phase
 	var round_reward: int = completed_wave.round_reward if completed_wave != null and not was_debug_wave else 0
-	_set_rich_text_with_currency_icons(_wave_status, "%s completada · ronda %d · +%d oro · procesando recompensa…" % [
+	_set_rich_text_with_currency_icons(_wave_status, "%s completada · ronda %d · +%d Gold · procesando recompensa…" % [
 		_active_wave_name,
 		round_number,
 		round_reward,
@@ -1296,15 +1431,15 @@ func _on_wave_completed(round_number: int) -> void:
 				_present_terrain_card_offer()
 		else:
 			RunManager.transition_to(RunManager.Phase.ROUND_PREP)
-		_wave_status.text = "Prueba de diagnóstico completada · campaña detenida en ronda %d/20" % _campaign_round_number
+		_wave_status.text = "Prueba de diagnóstico completada · campaña detenida en ronda %d/45" % _campaign_round_number
 		_start_wave_button.text = "▶ Iniciar prueba"
 	else:
 		_selected_wave_is_debug = false
-		if round_number >= 20:
+		if round_number >= CAMPAIGN_ROUND_COUNT:
 			_placement_enabled = false
 			_awaiting_campaign_expansion = false
 			RunManager.transition_to(RunManager.Phase.RUN_VICTORY)
-			_set_rich_text_with_currency_icons(_wave_status, "¡DEMO COMPLETADA! · 20/20 rondas superadas · +%d oro" % round_reward)
+			_set_rich_text_with_currency_icons(_wave_status, "¡CAMPAÑA COMPLETADA! · 45/45 rondas superadas · +%d Gold" % round_reward)
 			_start_wave_button.text = "DEMO COMPLETADA"
 			_show_run_end(&"VICTORY", round_number)
 		else:
@@ -1326,7 +1461,7 @@ func _on_wave_failed(reason: String) -> void:
 				_present_terrain_card_offer()
 		else:
 			RunManager.transition_to(RunManager.Phase.ROUND_PREP)
-		_wave_status.text = "Diagnóstico detenido · %s · campaña en ronda %d/20" % [reason, _campaign_round_number]
+		_wave_status.text = "Diagnóstico detenido · %s · campaña en ronda %d/45" % [reason, _campaign_round_number]
 	else:
 		_placement_enabled = false
 		_start_wave_button.disabled = true
@@ -1363,14 +1498,14 @@ func _can_start_selected_wave() -> bool:
 	)
 
 func _refresh_wave_option_states() -> void:
-	for round_index in range(20):
+	for round_index in range(CAMPAIGN_ROUND_COUNT):
 		_wave_selector.set_item_disabled(
 			round_index,
 			round_index + 1 != _campaign_round_number or RunManager.phase != RunManager.Phase.ROUND_PREP
 		)
 	var diagnostics_available: bool = _can_start_wave() and RunManager.phase != RunManager.Phase.RUN_DEFEAT and RunManager.phase != RunManager.Phase.RUN_VICTORY
-	_wave_selector.set_item_disabled(20, not diagnostics_available)
-	_wave_selector.set_item_disabled(21, not diagnostics_available)
+	for debug_index in range(DEBUG_WAVE_START_INDEX, DEBUG_WAVE_START_INDEX + 3):
+		_wave_selector.set_item_disabled(debug_index, not diagnostics_available)
 
 func _get_campaign_round(round_number: int) -> WaveData:
 	var wave: Variant = DEMO_CAMPAIGN.call("get_round", round_number)
@@ -1383,34 +1518,26 @@ func _get_wave_enemy_count(wave: WaveData) -> int:
 	for group in wave.groups:
 		if group != null:
 			total += group.count
-	var route_count: int = _get_reachable_spawn_route_count()
-	return total * maxi(route_count, 1)
-
-func _get_reachable_spawn_route_count() -> int:
-	if _path_graph == null:
-		return 0
-	var route_count: int = 0
-	for route in _path_graph.routes:
-		if route != null and route.is_reachable:
-			route_count += 1
-	return route_count
+	return total
 
 func _encounter_label(wave: WaveData) -> String:
 	if wave == null:
-		return "sin datos"
+		return "No data"
 	match wave.encounter_type:
 		WaveData.EncounterType.MINIBOSS:
-			return "minijefe"
+			return "Miniboss obsoleto"
 		WaveData.EncounterType.TIER_2_BOSS:
-			return "jefe Tier 2"
+			return "Tier 2 Boss"
+		WaveData.EncounterType.BOSS:
+			return "Boss"
 		_:
-			return "normal"
+			return "Standard"
 
 func _set_campaign_wave_name() -> void:
 	if _selected_wave == null:
-		_active_wave_name = "Ronda %02d/20" % _campaign_round_number
+		_active_wave_name = "Ronda %02d/45" % _campaign_round_number
 		return
-	_active_wave_name = "Ronda %02d/20 · %s" % [_campaign_round_number, _encounter_label(_selected_wave)]
+	_active_wave_name = "Ronda %02d/45 · %s" % [_campaign_round_number, _encounter_label(_selected_wave)]
 
 func _on_reward_earned(amount: int, reason: int) -> void:
 	var economy_reason: StringName = &"kill_reward"
@@ -1420,13 +1547,15 @@ func _on_reward_earned(amount: int, reason: int) -> void:
 	if accepted <= 0:
 		return
 	if reason == WaveDirector.RewardReason.ENEMY_KILL:
-		_set_rich_text_with_currency_icons(_build_status, "Recompensa por baja: +%d oro." % accepted)
+		_set_rich_text_with_currency_icons(_build_status, "Recompensa por baja: +%d Gold." % accepted)
 	elif reason == WaveDirector.RewardReason.ROUND_CLEAR:
-		_set_rich_text_with_currency_icons(_build_status, "Recompensa por oleada: +%d oro." % accepted)
+		_set_rich_text_with_currency_icons(_build_status, "Recompensa por oleada: +%d Gold." % accepted)
 
-func _on_gold_changed(_current_gold: int, _delta: int, _reason: StringName) -> void:
+func _on_gold_changed(_current_gold: int, delta: int, _reason: StringName) -> void:
 	_refresh_economy_status()
 	_refresh_tower_controls()
+	if delta != 0:
+		_play_gold_feedback()
 
 func _on_mana_changed(_current_mana: float, _maximum_mana: float) -> void:
 	_refresh_economy_status()
@@ -1450,18 +1579,49 @@ func _refresh_economy_status() -> void:
 	if _run_economy == null or _gold_status == null or _mana_status == null:
 		return
 	_gold_status.text = "%d" % int(_run_economy.call("get_gold"))
-	_mana_status.text = "%.1f / %.0f" % [
-		float(_run_economy.call("get_mana")),
-		float(_run_economy.call("get_maximum_mana")),
+	_mana_status.text = "%d / %d" % [
+		int(roundf(float(_run_economy.call("get_mana")))),
+		int(roundf(float(_run_economy.call("get_maximum_mana")))),
 	]
-	_mana_status.tooltip_text = "Maná disponible · regeneración: %s." % _format_mana_regeneration(
+	_mana_status.tooltip_text = "Mana disponible · regeneración: %s." % _format_mana_regeneration(
 		float(_run_economy.call("get_mana_regen_per_second"))
 	)
+
+func _play_gold_feedback() -> void:
+	if not _gold_feedback_positions_cached:
+		_gold_icon_base_position = _gold_icon.position
+		_gold_status_base_position = _gold_status.position
+		_gold_feedback_positions_cached = true
+	if _gold_feedback_tween != null and _gold_feedback_tween.is_running():
+		_gold_feedback_tween.kill()
+	_gold_icon.position = _gold_icon_base_position
+	_gold_status.position = _gold_status_base_position
+	_gold_icon.scale = Vector2.ONE
+	_gold_status.scale = Vector2.ONE
+	_gold_icon.pivot_offset = _gold_icon.size * 0.5
+	_gold_status.pivot_offset = _gold_status.size * 0.5
+	var tween_targets: Array[Control] = [_gold_icon, _gold_status]
+	_gold_feedback_tween = create_tween()
+	_gold_feedback_tween.set_parallel(true)
+	for target in tween_targets:
+		var base_y: float = _gold_icon_base_position.y if target == _gold_icon else _gold_status_base_position.y
+		_gold_feedback_tween.tween_property(target, "scale", Vector2(1.22, 1.22), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		_gold_feedback_tween.tween_property(target, "position:y", base_y - 6.0, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_gold_feedback_tween.chain().set_parallel(true)
+	for target in tween_targets:
+		var base_y: float = _gold_icon_base_position.y if target == _gold_icon else _gold_status_base_position.y
+		_gold_feedback_tween.tween_property(target, "scale", Vector2(0.94, 0.94), 0.09).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+		_gold_feedback_tween.tween_property(target, "position:y", base_y + 1.5, 0.09).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	_gold_feedback_tween.chain().set_parallel(true)
+	for target in tween_targets:
+		var base_y: float = _gold_icon_base_position.y if target == _gold_icon else _gold_status_base_position.y
+		_gold_feedback_tween.tween_property(target, "scale", Vector2.ONE, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		_gold_feedback_tween.tween_property(target, "position:y", base_y, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _format_mana_regeneration(rate_per_second: float) -> String:
 	var numerator: int = int(roundf(maxf(rate_per_second, 0.0) * 100.0))
 	if numerator == 0:
-		return "0 maná/s"
+		return "0 Mana/s"
 	var denominator: int = 100
 	var divisor_a: int = numerator
 	var divisor_b: int = denominator
@@ -1473,8 +1633,8 @@ func _format_mana_regeneration(rate_per_second: float) -> String:
 	numerator = floori(float(numerator) / float(divisor))
 	denominator = floori(float(denominator) / float(divisor))
 	if denominator == 1:
-		return "%d maná/s" % numerator
-	return "%d maná cada %d s" % [numerator, denominator]
+		return "%d Mana/s" % numerator
+	return "%d Mana cada %d s" % [numerator, denominator]
 
 func _refresh_combat_debug() -> void:
 	var tower: Tower = _build_controller.selected_tower
@@ -1486,7 +1646,7 @@ func _refresh_combat_debug() -> void:
 	if target == null or not is_instance_valid(target) or target.state != Enemy.State.MOVING:
 		var no_target_text: String = "Objetivo: ninguno en alcance"
 		if tower.is_mana_blocked():
-			no_target_text += " · sin maná"
+			no_target_text += " · sin Mana"
 		_set_rich_text_with_currency_icons(_combat_debug, no_target_text)
 		_tower_status.tooltip_text = no_target_text
 		return
@@ -1497,7 +1657,7 @@ func _refresh_combat_debug() -> void:
 	var damage_tag_name: String = tower.get_damage_tag_name(tower_data.damage_tags)
 	var mana_text: String = ""
 	if tower.get_mana_cost_per_attack() > 0.0:
-		mana_text = " · sin maná" if tower.is_mana_blocked() else " · consumo %.1f maná/ataque" % tower.get_mana_cost_per_attack()
+		mana_text = " · sin Mana" if tower.is_mana_blocked() else " · consumo %.1f Mana/ataque" % tower.get_mana_cost_per_attack()
 	var active_layer: int = target.get_active_hit_point_layer()
 	var damage_summary: String = "impacto %d %s · %s" % [
 		int(estimate.get("total_damage")),
@@ -1511,7 +1671,7 @@ func _refresh_combat_debug() -> void:
 			int(estimate.get("total_damage")),
 			blade_damage,
 		]
-	var debug_text: String = "%s · Esc %d/%d · Arm %d/%d · Vida %d/%d · regen E/A/V %.1f/%.1f/%.1f/s · %s%s\n%s" % [
+	var debug_text: String = "%s · Shield %d/%d · Armor %d/%d · Health %d/%d · regen S/A/H %.1f/%.1f/%.1f/s · %s%s\n%s" % [
 		target.get_display_name(),
 		target.get_shield_value(),
 		target.get_maximum_shield(),
@@ -1536,9 +1696,7 @@ func _on_base_health_changed(current_health: int, maximum_health: int) -> void:
 		health_color = Color("#e27661")
 	elif health_ratio <= 0.5:
 		health_color = Color("#e5be6a")
-	_base_health_bar.max_value = maxi(maximum_health, 1)
-	_base_health_bar.value = clampi(current_health, 0, maxi(maximum_health, 1))
-	_base_health_fill_style.bg_color = health_color
+	_base_health_bar.call("set_health", current_health, maximum_health, health_color)
 	_base_status.text = "%d / %d" % [current_health, maximum_health]
 	if current_health <= 0:
 		_base_status.text = "DESTRUIDA  ·  0 / %d" % maximum_health
@@ -1572,7 +1730,7 @@ func _piece_summary(piece: TerrainPieceData) -> String:
 				grass_count += 1
 			HexCell.TerrainType.MOUNTAIN:
 				mountain_count += 1
-	return "%s · %d hexágonos\nCamino %d · Grass %d · Montaña %d" % [
+	return "%s · %d hexágonos\nPath %d · Grass %d · Mountain %d" % [
 		piece.display_name,
 		piece.cells.size(),
 		path_count,
@@ -1619,7 +1777,7 @@ func _begin_campaign_terrain_expansion(round_number: int, round_reward: int) -> 
 	_placement_enabled = false
 	_awaiting_campaign_expansion = true
 	RunManager.transition_to(RunManager.Phase.TERRAIN_EXPANSION)
-	_set_rich_text_with_currency_icons(_wave_status, "Ronda %d/20 completada · +%d oro · elige una de tres piezas para desbloquear la ronda %d" % [
+	_set_rich_text_with_currency_icons(_wave_status, "Ronda %d/45 completada · +%d Gold · elige una de tres piezas para desbloquear la ronda %d" % [
 		round_number,
 		round_reward,
 		round_number + 1,
@@ -1652,7 +1810,7 @@ func _present_upgrade_card_offer(round_number: int, cards: Array[Resource]) -> v
 	_piece_selector.select(0)
 	_refresh_placement()
 	RunManager.transition_to(RunManager.Phase.CARD_OFFER)
-	_set_rich_text_with_currency_icons(_wave_status, "Ronda %d/20 completada · +%d oro · elige una mejora para la run" % [
+	_set_rich_text_with_currency_icons(_wave_status, "Ronda %d/45 completada · +%d Gold · elige una mejora para la run" % [
 		round_number,
 		_pending_expansion_reward,
 	])
@@ -1682,11 +1840,11 @@ func _prepare_next_campaign_round() -> void:
 	_wave_selector.select(_campaign_round_number - 1)
 	_set_campaign_wave_name()
 	RunManager.transition_to(RunManager.Phase.ROUND_PREP)
-	_wave_status.text = "Preparación · ronda %d/20 · %d enemigos" % [
+	_wave_status.text = "Preparación · ronda %d/45 · %d enemigos" % [
 		_campaign_round_number,
 		_get_wave_enemy_count(_selected_wave),
 	]
-	_start_wave_button.text = "▶ Iniciar ronda %d/20" % _campaign_round_number
+	_start_wave_button.text = "▶ Iniciar ronda %d/45" % _campaign_round_number
 	_refresh_placement()
 	_refresh_tower_controls()
 
@@ -1840,7 +1998,7 @@ func _get_card_tower_icon_name(card: Resource) -> StringName:
 func _set_rich_text_with_currency_icons(label: RichTextLabel, source_text: String) -> void:
 	label.clear()
 	var currency_pattern := RegEx.new()
-	currency_pattern.compile("(?i)\\b(oro|moneda|man[aá])\\b|\\{icon:(gold|mana|health|armor|shield)\\}")
+	currency_pattern.compile("(?i)\\b(gold|mana|oro|moneda|man[aá])\\b|\\{icon:(gold|mana|health|armor|shield)\\}")
 	var matches: Array[RegExMatch] = currency_pattern.search_all(source_text)
 	var cursor: int = 0
 	for currency_match in matches:
@@ -2003,10 +2161,10 @@ func _refresh_path_status() -> void:
 func _terrain_display_name(terrain_type: int) -> String:
 	match terrain_type:
 		HexCell.TerrainType.PATH:
-			return "CAMINO"
+			return "PATH"
 		HexCell.TerrainType.GRASS:
 			return "GRASS"
 		HexCell.TerrainType.MOUNTAIN:
-			return "MONTAÑA"
+			return "MOUNTAIN"
 		_:
-			return "DESCONOCIDO"
+			return "UNKNOWN"

@@ -10,7 +10,7 @@ enum EffectType {
 	UNLOCK_CONTENT,
 }
 
-@export_enum("Oro inicial", "Maná inicial", "Capacidad máxima de maná", "Regeneración de maná", "Multiplicador de daño global", "Desbloquear contenido")
+@export_enum("Starting Gold", "Starting Mana", "Mana Capacity", "Mana Regeneration", "Global Damage Multiplier", "Unlock Content")
 var effect_type: int = EffectType.STARTING_GOLD_ADD
 @export var value: float = 0.0
 @export var affected_tower_id: StringName = &""

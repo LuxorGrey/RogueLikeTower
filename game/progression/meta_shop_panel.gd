@@ -242,14 +242,14 @@ func _create_shop_row(title_text: String, description_text: String) -> Dictionar
 func _set_rich_text_with_currency_icons(label: RichTextLabel, source_text: String) -> void:
 	label.clear()
 	var currency_pattern := RegEx.new()
-	currency_pattern.compile("(?i)\\b(oro|man[aá])\\b")
+	currency_pattern.compile("(?i)\\b(gold|mana|oro|man[aá])\\b")
 	var matches: Array[RegExMatch] = currency_pattern.search_all(source_text)
 	var cursor: int = 0
 	for currency_match in matches:
 		var match_start: int = currency_match.get_start(0)
 		label.append_text(source_text.substr(cursor, match_start - cursor))
 		var currency_text: String = currency_match.get_string(1).to_lower()
-		var icon_name: StringName = &"gold" if currency_text == "oro" else &"mana"
+		var icon_name: StringName = &"gold" if currency_text in ["oro", "gold"] else &"mana"
 		var currency_icon: Texture2D = _icon_catalog.call("get_icon", icon_name) as Texture2D
 		if currency_icon != null:
 			label.add_image(currency_icon, 16, 16)
@@ -280,13 +280,13 @@ func _refresh() -> void:
 	var completed_rounds: int = int(_run_summary.get("completed_rounds", 0))
 	var reward: int = int(_run_summary.get("meta_reward", 0))
 	var run_seed_value: int = int(_run_summary.get("run_seed", 0))
-	_summary_label.text = "Ronda alcanzada %02d/20   ·   %d rondas completas   ·   +%d moneda meta" % [
+	_summary_label.text = "Ronda alcanzada %02d/20   ·   %d rondas completas   ·   +%d Meta Currency" % [
 		reached_round,
 		completed_rounds,
 		reward,
 	]
 	_summary_label.tooltip_text = "Semilla de esta run: %d" % run_seed_value
-	_currency_label.text = "MONEDA META   %d" % int(MetaProgression.call("get_meta_currency"))
+	_currency_label.text = "META CURRENCY   %d" % int(MetaProgression.call("get_meta_currency"))
 	_tower_tab_button.text = "TORRES  ·  %d" % _tower_rows.size()
 	_upgrade_tab_button.text = "MEJORAS  ·  %d" % _upgrade_rows.size()
 	var can_save: bool = bool(MetaProgression.call("can_persist_progress"))

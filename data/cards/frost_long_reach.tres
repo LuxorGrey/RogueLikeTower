@@ -12,7 +12,7 @@ value = 0.5
 [resource]
 script = ExtResource("1_card")
 id = &"frost_long_reach"
-display_name = "Alcance glacial"
+display_name = "Blizzard"
 description = "Frost Keep gana 0,5 hex de alcance."
 rarity = 0
 unlock_requirement = &"tower:frost_keep_demo"

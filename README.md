@@ -4,12 +4,14 @@ Tower Defense Roguelike con progresión roguelike y un mapa que el jugador expan
 
 ## Fuente de verdad
 
-El paquete de diseño vigente está en [`docs/fuente_de_verdad/`](docs/fuente_de_verdad/). El documento principal es [Game Design — Source of Truth](docs/fuente_de_verdad/01_GAME_DESIGN_SOURCE_OF_TRUTH.md); el orden de trabajo está en [Implementation Roadmap](docs/fuente_de_verdad/02_IMPLEMENTATION_ROADMAP.md), y el estado actual en [Project Progress](docs/fuente_de_verdad/09_PROGRESS.md). El origen del paquete y las referencias consultadas constan en [ORIGEN.md](docs/fuente_de_verdad/ORIGEN.md).
+Toda la documentación vigente, las decisiones, las referencias y los candidatos están reunidos en [`docs/rogue_tower/`](docs/rogue_tower/). Su [índice de autoridad](docs/rogue_tower/README.md) explica qué documento manda en caso de discrepancia. El diseño activo está en [design](docs/rogue_tower/design/README.md); el origen del paquete y las referencias constan en [ORIGEN.md](docs/rogue_tower/references/ORIGEN.md).
 
 ## Ejecutar
 
-Abre esta carpeta con Godot 4.7 y ejecuta `game/main/main.tscn`. La escena muestra el tablero inicial y las cinco piezas placeholder de M3. Elige una pieza en el HUD; mueve el cursor para ajustar su pivote al grid, gira con Q/E o con los botones, y confirma solo cuando el fantasma esté verde. El fantasma rojo explica por qué la colocación no es legal. Usa el botón central + arrastre para panear, la rueda para hacer zoom, `H` para ocultar/mostrar la interfaz y `R` para centrar el tablero. La ruta global spawn-base se añadirá en M4.
+Abre el proyecto con Godot 4.7 y ejecuta `game/main/main.tscn`. La campaña contiene 45 rondas y 1.093 enemigos directos conforme a la tabla única de `docs/rogue_tower/design/14_CAMPANA_45_RONDAS.md`: al terminar una oleada, elige una de las tres piezas visuales de terreno, colócala en una ubicación legal y continúa; en las rondas programadas también aparecerá una oferta de mejoras. El modelo de cada enemigo incluye Health, Armor y Shield, resueltos en ese orden defensivo: Shield, Armor y Health. Cada perfil configura sus máximos; un máximo cero desactiva esa capa para ese enemigo. Las barras de las capas activas aparecen sobre el enemigo.
+
+Controles principales: `1–7` seleccionan las torres disponibles, `F3` muestra herramientas de diagnóstico, `H` oculta o muestra el HUD, `Q/E` rota la pieza seleccionada, el botón central y arrastre desplazan el mapa, la rueda ajusta el zoom y `R` centra el tablero.
 
 ## Estado
 
-La implementación anterior de terreno 3×3×3 se retiró al adoptar el paquete nuevo. M1 y M2 están implementados; M3 ya incluye datos y flujo de colocación, pendiente de inspección en Godot. El preview dibuja alturas y cliffs temporales, resalta por terreno al pasar el cursor sobre una cara superior y muestra `(q,r)` global en el HUD. Los hitos pendientes aparecen en el [documento de progreso](docs/fuente_de_verdad/09_PROGRESS.md).
+M13 (UX/UI) está implementado en código y pendiente de aceptación visual/manual en Godot. M12A también está implementado y pendiente de aceptación manual; las comprobaciones pendientes de cada milestone se detallan por separado en el registro. El siguiente milestone del roadmap es M14, después de cerrar la aceptación visual de M13. Consulta el [estado y las verificaciones pendientes](docs/rogue_tower/design/09_PROGRESS.md) y el [roadmap](docs/rogue_tower/design/02_IMPLEMENTATION_ROADMAP.md).

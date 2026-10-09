@@ -21,17 +21,17 @@ enum Type {
 	"Alcance de torre +",
 	"Cadencia de torre ×",
 	"Radio de área +",
-	"Coste de maná ×",
+	"Coste de Mana ×",
 	"Duración de estado ×",
-	"Maná máximo +",
-	"Regeneración de maná +",
+	"Mana máximo +",
+	"Regeneración de Mana +",
 	"Probabilidad crítica de torre +",
-	"Multiplicador H/A/E de torre +"
+	"Multiplicador H/A/S de torre +"
 ) var type: int = Type.TOWER_DAMAGE_ADD
 @export var affected_tower_id: StringName = &""
-@export_flags("Físico", "Fuego", "Arcano", "Veneno") var affected_damage_tags: int = 0
+@export_flags("Physical", "Fire", "Arcane", "Poison") var affected_damage_tags: int = 0
 @export var affected_status_id: StringName = &""
-@export_enum("Vida", "Armadura", "Escudo") var affected_hit_point_layer: int = 0
+@export_enum("Health", "Armor", "Shield") var affected_hit_point_layer: int = 0
 @export var value: float = 0.0
 
 func validate() -> PackedStringArray:

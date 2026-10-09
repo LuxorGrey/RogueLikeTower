@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1_enemy_data")
 id = &"tower_layer_training_dummy"
-display_name = "Muñeco de capas H/A/E"
+display_name = "Health/Armor/Shield Training Target (DEBUG)"
 max_health = 120
 move_speed = 24.0
 base_damage = 0

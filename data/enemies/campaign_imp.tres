@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://data/enemies/enemy_data.gd" id="1_enemy_data"]
+[ext_resource type="PackedScene" path="res://game/enemies/enemy.tscn" id="2_enemy_scene"]
+[ext_resource type="Texture2D" path="res://assets/enemies/imp.png" id="3_sprite"]
+[ext_resource type="Script" path="res://data/enemies/enemy_ability_data.gd" id="4_ability_data"]
+
+[sub_resource type="Resource" id="EnemyAbilityData_0"]
+script = ExtResource("4_ability_data")
+trigger = 0
+effect = 0
+target_policy = 2
+strength = 60
+near_base_hexes = 5
+radius_hexes = 2
+
+[resource]
+script = ExtResource("1_enemy_data")
+id = &"campaign_imp"
+display_name = "Imp"
+max_health = 7000
+move_speed = 90
+base_damage = 1
+kill_reward = 26
+regen_per_second = 200
+placeholder_color = Color(0.73, 0.32, 0.25, 1)
+placeholder_radius = 12.6
+sprite_texture = ExtResource("3_sprite")
+sprite_extent = 55.2
+scene = ExtResource("2_enemy_scene")
+abilities = Array[EnemyAbilityData]([SubResource("EnemyAbilityData_0")])

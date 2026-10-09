@@ -11,7 +11,7 @@ value = 0.15
 [resource]
 script = ExtResource("1_card")
 id = &"quantity_over_quality"
-display_name = "Cantidad sobre calidad"
+display_name = "Impulso crítico global"
 description = "Todas las torres ganan un 15 % de probabilidad crítica."
 rarity = 2
 tags = Array[StringName]([&"global", &"critical"])

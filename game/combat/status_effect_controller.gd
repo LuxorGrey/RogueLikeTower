@@ -155,6 +155,7 @@ func _apply_damage_tick(effect_id: StringName, active_status: ActiveStatus) -> v
 	packet.set("raw_damage", damage_for_tick)
 	packet.set("source_id", active_status.source_id)
 	packet.set("damage_tags", int(active_status.data.get("damage_tags")))
+	packet.set("is_status_damage", true)
 	packet.set("health_damage_multiplier", float(active_status.data.get("health_layer_multiplier")))
 	packet.set("armor_damage_multiplier", float(active_status.data.get("armor_layer_multiplier")))
 	packet.set("shield_damage_multiplier", float(active_status.data.get("shield_layer_multiplier")))

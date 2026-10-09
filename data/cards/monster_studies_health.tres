@@ -12,8 +12,8 @@ value = 1.0
 [resource]
 script = ExtResource("1_card")
 id = &"monster_studies_health"
-display_name = "Estudios de vida"
-description = "Todas las torres ganan +1 al multiplicador de daño contra Vida."
+display_name = "Foco de Health"
+description = "Todas las torres ganan +1 al multiplicador de daño contra Health."
 rarity = 1
 tags = Array[StringName]([&"global", &"tower", &"health"])
 modifier_operations = Array[Resource]([SubResource("CardModifierOperation_health")])

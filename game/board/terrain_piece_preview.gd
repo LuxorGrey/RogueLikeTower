@@ -46,6 +46,7 @@ var _tower_preview_coord: Vector2i = Vector2i.ZERO
 var _tower_preview_is_valid: bool = false
 var _tower_preview_range_pixels: float = 0.0
 var _tower_preview_icon: Texture2D
+var _tower_preview_icon_size: float = 54.0
 var _combo_strength_by_coord: Dictionary[Vector2i, int] = {}
 var _combo_animation_time: float = 0.0
 var _combo_redraw_timer: float = 0.0
@@ -76,13 +77,15 @@ func set_tower_build_preview(
 	coord: Vector2i = Vector2i.ZERO,
 	is_valid: bool = false,
 	range_pixels: float = 0.0,
-	icon_texture: Texture2D = null
+	icon_texture: Texture2D = null,
+	icon_size: float = 54.0
 ) -> void:
 	_tower_build_preview_active = active
 	_tower_preview_coord = coord
 	_tower_preview_is_valid = is_valid
 	_tower_preview_range_pixels = maxf(range_pixels, 0.0)
 	_tower_preview_icon = icon_texture
+	_tower_preview_icon_size = maxf(icon_size, 1.0)
 	queue_redraw()
 
 func set_placement_preview(
@@ -150,7 +153,8 @@ func _draw_tower_build_preview() -> void:
 	corners.append(corners[0])
 	draw_polyline(corners, tint, 3.0, true)
 	if _tower_preview_icon != null:
-		draw_texture_rect(_tower_preview_icon, Rect2(center + Vector2(-27.0, -54.0), Vector2(54.0, 54.0)), false)
+		var icon_size := Vector2.ONE * _tower_preview_icon_size
+		draw_texture_rect(_tower_preview_icon, Rect2(center + Vector2(-icon_size.x * 0.5, -icon_size.y), icon_size), false)
 	else:
 		draw_circle(center + Vector2(0.0, -7.0), 9.0, tint)
 

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://data/enemies/enemy_data.gd" id="1_enemy_data"]
+[ext_resource type="PackedScene" path="res://game/enemies/enemy.tscn" id="2_enemy_scene"]
+[ext_resource type="Texture2D" path="res://assets/enemies/manticore.png" id="3_sprite"]
+
+[resource]
+script = ExtResource("1_enemy_data")
+id = &"campaign_manticore"
+display_name = "Manticore"
+max_health = 12000
+move_speed = 56.25
+base_damage = 1
+kill_reward = 32
+armor = 4000
+regen_per_second = 200
+placeholder_color = Color(0.72, 0.45, 0.22, 1)
+placeholder_radius = 17.3
+sprite_texture = ExtResource("3_sprite")
+sprite_extent = 55.2
+scene = ExtResource("2_enemy_scene")

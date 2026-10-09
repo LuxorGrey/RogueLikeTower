@@ -16,8 +16,8 @@ value = 0.25
 [resource]
 script = ExtResource("1_upgrade")
 id = &"mana_wellspring"
-display_name = "Manantial"
-description = "Aumenta la regeneración continua en el equivalente a 1 maná cada 4 s por nivel, en cada nueva run."
+display_name = "Sourcery"
+description = "Aumenta la regeneración continua en el equivalente a 1 Mana cada 4 s por nivel, en cada nueva run."
 max_level = 2
 cost_by_level = Array[int]([15, 30])
 operations_by_level = Array[ExtResource("2_operation")]([SubResource("PermanentUpgradeOperation_1"), SubResource("PermanentUpgradeOperation_2")])

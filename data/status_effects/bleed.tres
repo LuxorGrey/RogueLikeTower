@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_status")
 id = &"bleed"
-display_name = "Sangrado"
+display_name = "Bleed"
 duration = 1.5
 tick_interval = 0.75
 max_stacks = 4

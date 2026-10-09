@@ -76,6 +76,16 @@ func get_mana_regen_per_second() -> float:
 		bonus = float(_run_card_service.call("get_mana_regen_bonus"))
 	return maxf(_mana_regen_per_second + bonus, 0.0)
 
+func refill_mana_to_max() -> void:
+	if not _is_configured:
+		return
+	var effective_maximum: float = get_maximum_mana()
+	if is_equal_approx(_mana, effective_maximum):
+		return
+	_mana = effective_maximum
+	_mana_signal_timer = 0.0
+	mana_changed.emit(_mana, effective_maximum)
+
 func can_afford_gold(amount: int) -> bool:
 	return amount >= 0 and _is_configured and _gold >= amount
 

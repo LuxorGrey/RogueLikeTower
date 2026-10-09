@@ -52,14 +52,14 @@ var attack_pattern: int = AttackPattern.SINGLE_TARGET
 @export_range(0.0, 100.0, 0.05) var armor_damage_multiplier: float = 1.0
 @export_range(0.0, 100.0, 0.05) var shield_damage_multiplier: float = 1.0
 @export_range(0.0, 1.5, 0.01) var base_crit_chance: float = 0.0
-@export_flags("Físico", "Fuego", "Arcano", "Veneno") var damage_tags: int = DAMAGE_TAG_PHYSICAL
+@export_flags("Physical", "Fire", "Arcane", "Poison") var damage_tags: int = DAMAGE_TAG_PHYSICAL
 ## Deprecated for imported M7 fixtures. Current combat uses the three hit-point multipliers above.
 @export_range(0.0, 4.0, 0.05) var armor_multiplier: float = 1.0
 @export_range(0.0, 4.0, 0.05) var health_multiplier: float = 1.0
 @export_range(0.0, 1.0, 0.05) var regen_counter_strength: float = 0.0
 @export_range(0.0, 10.0, 0.1) var regen_counter_duration: float = 1.0
 @export var status_effects: Array[Resource] = []
-@export_flags("Path (no construible)", "Grass", "Montaña")
+@export_flags("Path (no construible)", "Grass", "Mountain")
 var allowed_terrain_mask: int = GRASS_FLAG | MOUNTAIN_FLAG
 @export_enum("Progress", "Least progress", "Near death", "Most health", "Most armor", "Most shield", "Least health", "Least armor", "Least shield", "Slowest", "Fastest")
 var targeting_mode: int = TargetingMode.FIRST_PROGRESS
@@ -74,6 +74,8 @@ var targeting_mode: int = TargetingMode.FIRST_PROGRESS
 @export_range(0.0, 10.0, 0.05) var upgrade_attack_rate_per_level: float = 0.0
 @export_enum("Ballista", "Mortar", "Tesla Coil", "Frost Keep", "Flame Thrower", "Poison Sprayer", "Shredder")
 var visual_archetype: int = VisualArchetype.BALLISTA
+## Visual width/height of the tower icon; independent from hex occupancy and range.
+@export_range(32.0, 128.0, 1.0) var visual_icon_size: float = 62.0
 @export var visual_color: Color = Color(0.28, 0.64, 0.78)
 @export var scene: PackedScene
 
@@ -92,7 +94,7 @@ func validate() -> PackedStringArray:
 	if build_cost < 0:
 		errors.append("El coste de construcción no puede ser negativo.")
 	if mana_cost_per_attack < 0.0 or mana_cost_per_second < 0.0:
-		errors.append("El coste de maná de una torre no puede ser negativo.")
+		errors.append("El coste de Mana de una torre no puede ser negativo.")
 	if base_damage <= 0:
 		errors.append("El daño base de la torre debe ser mayor que cero.")
 	if get_rounds_per_minute() <= 0.0:
@@ -113,12 +115,14 @@ func validate() -> PackedStringArray:
 		errors.append("El ángulo de cono debe estar entre 0 y 180 grados.")
 	if visual_archetype < VisualArchetype.BALLISTA or visual_archetype > VisualArchetype.SHREDDER:
 		errors.append("El arquetipo visual de la torre no existe.")
+	if visual_icon_size <= 0.0:
+		errors.append("El tamaño visual de la torre debe ser positivo.")
 	if (
 		health_damage_multiplier < 0.0 or health_damage_multiplier > 100.0
 		or armor_damage_multiplier < 0.0 or armor_damage_multiplier > 100.0
 		or shield_damage_multiplier < 0.0 or shield_damage_multiplier > 100.0
 	):
-		errors.append("Los multiplicadores por capa de vida deben estar entre 0 y 100.")
+		errors.append("Los multiplicadores de Health/Armor/Shield deben estar entre 0 y 100.")
 	if base_crit_chance < 0.0 or base_crit_chance > 1.5:
 		errors.append("La probabilidad crítica base debe estar entre 0 y 150%.")
 	if damage_tags <= 0 or (damage_tags & ~ALL_DAMAGE_TAGS) != 0:

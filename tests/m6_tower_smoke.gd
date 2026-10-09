@@ -53,11 +53,15 @@ func _run_smoke() -> void:
 	if not controller.upgrade_selected_tower() or not controller.upgrade_selected_tower():
 		_fail("No se pudieron realizar las mejoras configuradas.")
 		return
-	if grass_tower.level != 3 or grass_tower.get_current_damage() != 20:
-		_fail("Los niveles no aplicaron el daño de mejora esperado.")
+	# The active M12A rule adds +1 base damage per level and +1 elevation
+	# damage at elevation 1: 10 + 2 upgrades + 1 elevation = 13.
+	if grass_tower.level != 3 or grass_tower.get_current_damage() != 13:
+		_fail("Los niveles no aplicaron la regla vigente de daño y elevación.")
 		return
-	if grass_tower.get_current_range_hexes() <= level_one_range:
-		_fail("Las mejoras no aumentaron el alcance configurado.")
+	# M12A levels improve damage and one HP-layer multiplier; range comes
+	# from terrain elevation/cards, not the retired M6 upgrade_range field.
+	if not is_equal_approx(grass_tower.get_current_range_hexes(), level_one_range):
+		_fail("Las mejoras de nivel alteraron un alcance que no escala en M12A.")
 		return
 	if controller.upgrade_selected_tower():
 		_fail("La torre superó su nivel máximo configurado.")
@@ -132,16 +136,20 @@ func _run_smoke() -> void:
 		_fail("El alcance incluyó un enemigo situado fuera del radio.")
 		return
 	grass_tower.attack_fired.connect(_on_attack_fired)
+	grass_tower.set_physics_process(false)
 	var health_before: int = armored_enemy.get_current_health()
+	var armor_before: int = armored_enemy.get_armor_value()
 	grass_tower._fire_at_target()
-	if armored_enemy.get_current_health() != health_before - grass_tower.get_current_damage():
-		_fail("El ataque hitscan no aplicó el daño de la torre al objetivo.")
+	await get_tree().create_timer(0.1).timeout
+	if armored_enemy.get_armor_value() >= armor_before or armored_enemy.get_current_health() != health_before:
+		_fail("El proyectil no respetó la capa Armor activa del objetivo.")
 		return
 	grass_tower._physics_process(0.5)
 	if _attack_count != 1:
 		_fail("La torre superó su cadencia antes de un segundo.")
 		return
 	grass_tower._physics_process(0.51)
+	await get_tree().create_timer(0.1).timeout
 	if _attack_count != 2:
 		_fail("La torre no volvió a disparar al cumplirse su cooldown.")
 		return

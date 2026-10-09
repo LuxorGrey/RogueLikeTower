@@ -5,11 +5,11 @@
 [resource]
 script = ExtResource("1_status")
 id = &"slow"
-display_name = "Lento"
-duration = 2.5
+display_name = "Slow"
+duration = 1.0
 tick_interval = 0.0
 max_stacks = 1
 stack_rule = 0
-speed_multiplier = 0.5
+speed_multiplier = 0.85
 damage_per_tick = 0.0
 damage_tags = 1

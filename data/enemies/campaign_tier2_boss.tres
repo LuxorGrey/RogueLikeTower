@@ -1,18 +1,55 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://data/enemies/enemy_data.gd" id="1_enemy_data"]
 [ext_resource type="PackedScene" path="res://game/enemies/enemy.tscn" id="2_enemy_scene"]
+[ext_resource type="Texture2D" path="res://assets/enemies/oogie_von_oogovich_haunted.png" id="3_sprite"]
+[ext_resource type="Script" path="res://data/enemies/enemy_ability_data.gd" id="4_ability_data"]
+[ext_resource type="Resource" path="res://data/enemies/campaign_bat.tres" id="5_ability_ref"]
+
+[sub_resource type="Resource" id="EnemyAbilityData_0"]
+script = ExtResource("4_ability_data")
+trigger = 0
+effect = 0
+target_policy = 0
+strength = 60
+near_base_hexes = 5
+radius_hexes = 2
+[sub_resource type="Resource" id="EnemyAbilityData_1"]
+script = ExtResource("4_ability_data")
+trigger = 5
+effect = 2
+target_policy = 0
+interval = 2
+near_base_hexes = 5
+radius_hexes = 2
+spawn_count = 2
+spawn_enemy_data = ExtResource("5_ability_ref")
+[sub_resource type="Resource" id="EnemyAbilityData_2"]
+script = ExtResource("4_ability_data")
+trigger = 4
+effect = 3
+target_policy = 0
+near_base_hexes = 5
+radius_hexes = 2
+transform_enemy_data = ExtResource("5_ability_ref")
+transformed_health_override = 2500
 
 [resource]
 script = ExtResource("1_enemy_data")
-id = &"campaign_tier_2_boss_placeholder"
-display_name = "Jefe Tier 2 (variante pendiente)"
-max_health = 1600
-move_speed = 26.0
+id = &"campaign_oogie_von_oogovich_haunted"
+display_name = "Ooogie von Ooogovich"
+boss_tier = 2
+max_health = 8000
+move_speed = 26
 base_damage = 50
 kill_reward = 200
-armor = 45
-regen_per_second = 5.0
+armor = 1500
+shield = 2000
+regen_per_second = 25
+shield_regen_per_second = 10
 placeholder_color = Color(0.86, 0.62, 0.22, 1)
-placeholder_radius = 20.0
+placeholder_radius = 23.0
+sprite_texture = ExtResource("3_sprite")
+sprite_extent = 73.6
 scene = ExtResource("2_enemy_scene")
+abilities = Array[EnemyAbilityData]([SubResource("EnemyAbilityData_0"), SubResource("EnemyAbilityData_1"), SubResource("EnemyAbilityData_2")])

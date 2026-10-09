@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://data/enemies/enemy_data.gd" id="1_enemy_data"]
+[ext_resource type="PackedScene" path="res://game/enemies/enemy.tscn" id="2_enemy_scene"]
+[ext_resource type="Texture2D" path="res://assets/enemies/werewolf.png" id="3_sprite"]
+[ext_resource type="Script" path="res://data/enemies/enemy_ability_data.gd" id="4_ability_data"]
+
+[sub_resource type="Resource" id="EnemyAbilityData_0"]
+script = ExtResource("4_ability_data")
+trigger = 0
+effect = 0
+target_policy = 0
+strength = 60
+near_base_hexes = 5
+radius_hexes = 2
+[sub_resource type="Resource" id="EnemyAbilityData_1"]
+script = ExtResource("4_ability_data")
+trigger = 1
+effect = 1
+target_policy = 0
+strength = 60
+near_base_hexes = 5
+radius_hexes = 2
+
+[resource]
+script = ExtResource("1_enemy_data")
+id = &"campaign_werewolf"
+display_name = "Werewolf"
+max_health = 3000
+move_speed = 90
+base_damage = 1
+kill_reward = 24
+shield = 2000
+regen_per_second = 100
+placeholder_color = Color(0.45, 0.47, 0.50, 1)
+placeholder_radius = 15.0
+sprite_texture = ExtResource("3_sprite")
+sprite_extent = 55.2
+scene = ExtResource("2_enemy_scene")
+abilities = Array[EnemyAbilityData]([SubResource("EnemyAbilityData_0"), SubResource("EnemyAbilityData_1")])

@@ -4,7 +4,7 @@ extends Resource
 enum SpawnEndpointPolicy { FIRST_SORTED, ROUND_ROBIN }
 
 @export var enemy_data: EnemyData
-# In campaign waves, each count unit is a spawn pulse replicated across all active endpoints.
+# In campaign waves, count is the direct number of enemies in this group.
 @export_range(1, 10000, 1) var count: int = 1
 @export_range(0.0, 60.0, 0.1) var spawn_interval: float = 1.0
 @export_enum("Primero ordenado", "Rotación por endpoints")

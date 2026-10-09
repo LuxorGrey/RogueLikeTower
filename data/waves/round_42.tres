@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="WaveData" load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://data/waves/wave_data.gd" id="1_wave_data"]
+[ext_resource type="Script" path="res://data/waves/wave_enemy_group_data.gd" id="2_group_data"]
+[ext_resource type="Resource" path="res://data/enemies/campaign_oogie.tres" id="3_enemy_data"]
+[ext_resource type="Resource" path="res://data/enemies/campaign_succubus.tres" id="4_enemy_data"]
+[ext_resource type="Resource" path="res://data/enemies/campaign_hexahedron.tres" id="5_enemy_data"]
+[ext_resource type="Resource" path="res://data/enemies/campaign_icosahedron.tres" id="6_enemy_data"]
+
+[sub_resource type="Resource" id="WaveGroup_42_1"]
+script = ExtResource("2_group_data")
+enemy_data = ExtResource("3_enemy_data")
+count = 35
+spawn_interval = 0.5
+spawn_endpoint_policy = 1
+delay_before_group = 0.0
+
+[sub_resource type="Resource" id="WaveGroup_42_2"]
+script = ExtResource("2_group_data")
+enemy_data = ExtResource("4_enemy_data")
+count = 8
+spawn_interval = 0.5
+spawn_endpoint_policy = 1
+delay_before_group = 0.0
+
+[sub_resource type="Resource" id="WaveGroup_42_3"]
+script = ExtResource("2_group_data")
+enemy_data = ExtResource("5_enemy_data")
+count = 3
+spawn_interval = 0.5
+spawn_endpoint_policy = 1
+delay_before_group = 0.0
+
+[sub_resource type="Resource" id="WaveGroup_42_4"]
+script = ExtResource("2_group_data")
+enemy_data = ExtResource("6_enemy_data")
+count = 2
+spawn_interval = 0.5
+spawn_endpoint_policy = 1
+delay_before_group = 0.0
+
+[resource]
+script = ExtResource("1_wave_data")
+round_number = 42
+encounter_type = 3
+round_reward = 210
+groups = Array[Resource]([SubResource("WaveGroup_42_1"), SubResource("WaveGroup_42_2"), SubResource("WaveGroup_42_3"), SubResource("WaveGroup_42_4")])

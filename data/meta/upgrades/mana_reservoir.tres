@@ -16,8 +16,8 @@ value = 15.0
 [resource]
 script = ExtResource("1_upgrade")
 id = &"mana_reservoir"
-display_name = "Reserva de maná"
-description = "+15 de capacidad máxima de maná por nivel en cada nueva run."
+display_name = "Mana Capacity"
+description = "+15 de capacidad máxima de Mana por nivel en cada nueva run."
 max_level = 2
 cost_by_level = Array[int]([15, 30])
 operations_by_level = Array[ExtResource("2_operation")]([SubResource("PermanentUpgradeOperation_1"), SubResource("PermanentUpgradeOperation_2")])

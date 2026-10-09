@@ -11,8 +11,8 @@ value = 20.0
 [resource]
 script = ExtResource("1_card")
 id = &"mana_reservoir"
-display_name = "Depósito de maná"
-description = "Aumenta en 20 la capacidad máxima de maná."
+display_name = "Depósito de Mana"
+description = "Aumenta en 20 la capacidad máxima de Mana."
 rarity = 0
 tags = Array[StringName]([&"mana", &"capacity"])
 modifier_operations = Array[Resource]([SubResource("CardModifierOperation_mana_max")])

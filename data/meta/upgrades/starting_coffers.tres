@@ -21,8 +21,8 @@ value = 20.0
 [resource]
 script = ExtResource("1_upgrade")
 id = &"starting_coffers"
-display_name = "Fondo de campaña"
-description = "+20 de oro inicial por nivel en cada nueva run."
+display_name = "Treasury"
+description = "+20 de Gold inicial por nivel en cada nueva run."
 max_level = 3
 cost_by_level = Array[int]([10, 20, 35])
 operations_by_level = Array[ExtResource("2_operation")]([SubResource("PermanentUpgradeOperation_1"), SubResource("PermanentUpgradeOperation_2"), SubResource("PermanentUpgradeOperation_3")])

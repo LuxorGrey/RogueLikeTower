@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://game/main/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://game/board/terrain_piece_preview.gd" id="2_preview"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://game/board/terrain_piece_card_preview.gd" id="8_card_preview"]
 [ext_resource type="Script" path="res://game/cards/run_card_service.gd" id="9_run_card_service"]
 [ext_resource type="Script" path="res://game/ui/round_progress_strip.gd" id="10_round_strip"]
+[ext_resource type="Script" path="res://game/ui/segmented_health_bar.gd" id="11_segmented_health"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -75,12 +76,12 @@ theme_override_constants/margin_bottom = 10
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="BaseHealthBar" type="ProgressBar" parent="HUD/Panel/Margin/Content"]
+[node name="BaseHealthBar" type="Control" parent="HUD/Panel/Margin/Content"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
-show_percentage = false
 mouse_filter = 1
+script = ExtResource("11_segmented_health")
 
 [node name="BaseStatus" type="Label" parent="HUD/Panel/Margin/Content/BaseHealthBar"]
 unique_name_in_owner = true
@@ -205,11 +206,11 @@ unique_name_in_owner = true
 visible = false
 anchor_left = 1.0
 anchor_right = 1.0
-anchor_bottom = 1.0
+anchor_bottom = 0.0
 offset_left = -420.0
 offset_top = 24.0
 offset_right = -24.0
-offset_bottom = -150.0
+offset_bottom = 350.0
 
 [node name="Margin" type="MarginContainer" parent="HUD/TowerInfoPanel"]
 layout_mode = 2
@@ -220,71 +221,80 @@ theme_override_constants/margin_bottom = 12
 
 [node name="Scroll" type="ScrollContainer" parent="HUD/TowerInfoPanel/Margin"]
 layout_mode = 2
-size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="Content" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin/Scroll"]
+[node name="TowerInfoContent" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin/Scroll"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 9
 
-[node name="TowerStatus" type="RichTextLabel" parent="HUD/TowerInfoPanel/Margin/Scroll/Content"]
+[node name="TowerPortrait" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(118, 118)
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TowerStatus" type="RichTextLabel" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent"]
 unique_name_in_owner = true
 layout_mode = 2
 fit_content = true
 scroll_active = false
+bbcode_enabled = true
 autowrap_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Selecciona una torre para ver sus datos."
 
-[node name="TowerActions" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin/Scroll/Content"]
+[node name="TowerActions" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="PriorityRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/Scroll/Content/TowerActions"]
+[node name="PriorityRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent/TowerActions"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="TowerPriorityMenu" type="MenuButton" parent="HUD/TowerInfoPanel/Margin/Scroll/Content/TowerActions/PriorityRow"]
+[node name="TowerPriorityMenu" type="MenuButton" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent/TowerActions/PriorityRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Criterios · 1/3"
 
-[node name="UpgradeRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/Scroll/Content/TowerActions"]
+[node name="UpgradeRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent/TowerActions"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="UpgradeHealth" type="Button" parent="HUD/TowerInfoPanel/Margin/Scroll/Content/TowerActions/UpgradeRow"]
+[node name="UpgradeHealth" type="Button" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent/TowerActions/UpgradeRow"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
-text = "+ Vida"
+text = ""
 
-[node name="UpgradeArmor" type="Button" parent="HUD/TowerInfoPanel/Margin/Scroll/Content/TowerActions/UpgradeRow"]
+[node name="UpgradeArmor" type="Button" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent/TowerActions/UpgradeRow"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
-text = "+ Armadura"
+text = ""
 
-[node name="UpgradeShield" type="Button" parent="HUD/TowerInfoPanel/Margin/Scroll/Content/TowerActions/UpgradeRow"]
+[node name="UpgradeShield" type="Button" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent/TowerActions/UpgradeRow"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
-text = "+ Escudo"
+text = ""
 
-[node name="DemolishTower" type="Button" parent="HUD/TowerInfoPanel/Margin/Scroll/Content/TowerActions/UpgradeRow"]
+[node name="DemolishTower" type="Button" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent/TowerActions"]
 unique_name_in_owner = true
 layout_mode = 2
+custom_minimum_size = Vector2(0, 42)
 text = "Demoler"
 
-[node name="BuildStatus" type="RichTextLabel" parent="HUD/TowerInfoPanel/Margin/Scroll/Content"]
+[node name="BuildStatus" type="RichTextLabel" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent"]
 unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 2
 fit_content = true
 scroll_active = false
+bbcode_enabled = true
 theme_override_colors/font_color = Color(0.68, 0.75, 0.8, 1)
 theme_override_font_sizes/font_size = 12
 text = ""
@@ -360,7 +370,7 @@ scroll_active = false
 theme_override_font_sizes/font_size = 12
 autowrap_mode = 2
 text = "Objetivo de prueba: —"
-tooltip_text = "Lectura técnica del objetivo seleccionado: capas de vida, regeneración, daño previsto y estados."
+tooltip_text = "Lectura técnica del objetivo seleccionado: capas Health/Armor/Shield, regeneración, daño previsto y estados."
 
 [node name="Legend" type="HBoxContainer" parent="HUD/TerrainPanel/Margin/Content"]
 layout_mode = 2
@@ -369,7 +379,7 @@ theme_override_constants/separation = 18
 [node name="PathLegend" type="Label" parent="HUD/TerrainPanel/Margin/Content/Legend"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.35, 0.40, 0.43, 1)
-text = "● CAMINO"
+text = "● PATH"
 
 [node name="GrassLegend" type="Label" parent="HUD/TerrainPanel/Margin/Content/Legend"]
 layout_mode = 2
@@ -379,7 +389,7 @@ text = "● GRASS"
 [node name="MountainLegend" type="Label" parent="HUD/TerrainPanel/Margin/Content/Legend"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.63, 0.58, 0.48, 1)
-text = "● MONTAÑA"
+text = "● MOUNTAIN"
 
 [node name="RotationButtons" type="HBoxContainer" parent="HUD/TerrainPanel/Margin/Content"]
 layout_mode = 2
@@ -419,84 +429,81 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Mapa: rueda = zoom · botón central + arrastrar = mover · R recentra · H oculta toda la interfaz."
 
-[node name="TowerToolbar" type="PanelContainer" parent="HUD"]
+[node name="TowerToolbar" type="MarginContainer" parent="HUD"]
 unique_name_in_owner = true
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -508.0
-offset_top = -170.0
+offset_top = -178.0
 offset_right = 508.0
 offset_bottom = -20.0
-
-[node name="Margin" type="MarginContainer" parent="HUD/TowerToolbar"]
-layout_mode = 2
 theme_override_constants/margin_left = 8
 theme_override_constants/margin_top = 7
 theme_override_constants/margin_right = 8
 theme_override_constants/margin_bottom = 7
 
-[node name="Buttons" type="HBoxContainer" parent="HUD/TowerToolbar/Margin"]
+[node name="Buttons" type="HBoxContainer" parent="HUD/TowerToolbar"]
 layout_mode = 2
 alignment = 1
 theme_override_constants/separation = 8
 
-[node name="TowerShortcut1" type="Button" parent="HUD/TowerToolbar/Margin/Buttons"]
+[node name="TowerShortcut1" type="Button" parent="HUD/TowerToolbar/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 132)
+custom_minimum_size = Vector2(132, 140)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
 text = ""
 theme_override_colors/font_color = Color(0.54, 0.86, 0.96, 1)
 
-[node name="TowerShortcut2" type="Button" parent="HUD/TowerToolbar/Margin/Buttons"]
+[node name="TowerShortcut2" type="Button" parent="HUD/TowerToolbar/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 132)
+custom_minimum_size = Vector2(132, 140)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
 text = ""
 theme_override_colors/font_color = Color(1, 0.74, 0.43, 1)
 
-[node name="TowerShortcut3" type="Button" parent="HUD/TowerToolbar/Margin/Buttons"]
+[node name="TowerShortcut3" type="Button" parent="HUD/TowerToolbar/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 132)
+custom_minimum_size = Vector2(132, 140)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
 text = ""
 theme_override_colors/font_color = Color(0.78, 0.66, 1, 1)
 
-[node name="TowerShortcut4" type="Button" parent="HUD/TowerToolbar/Margin/Buttons"]
+[node name="TowerShortcut4" type="Button" parent="HUD/TowerToolbar/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 132)
+custom_minimum_size = Vector2(132, 140)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
 text = ""
 theme_override_colors/font_color = Color(0.55, 0.88, 0.78, 1)
 
-[node name="TowerShortcut5" type="Button" parent="HUD/TowerToolbar/Margin/Buttons"]
+[node name="TowerShortcut5" type="Button" parent="HUD/TowerToolbar/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 132)
+custom_minimum_size = Vector2(132, 140)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
 text = ""
 
-[node name="TowerShortcut6" type="Button" parent="HUD/TowerToolbar/Margin/Buttons"]
+[node name="TowerShortcut6" type="Button" parent="HUD/TowerToolbar/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 132)
+custom_minimum_size = Vector2(132, 140)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
 text = ""
 
-[node name="TowerShortcut7" type="Button" parent="HUD/TowerToolbar/Margin/Buttons"]
+[node name="TowerShortcut7" type="Button" parent="HUD/TowerToolbar/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 132)
+custom_minimum_size = Vector2(132, 140)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true

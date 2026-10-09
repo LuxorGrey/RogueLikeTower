@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WaveCampaignData" load_steps=22 format=3]
+[gd_resource type="Resource" script_class="WaveCampaignData" load_steps=47 format=3]
 
 [ext_resource type="Script" path="res://data/waves/wave_campaign_data.gd" id="1_campaign"]
 [ext_resource type="Resource" path="res://data/waves/round_01.tres" id="2_round"]
@@ -21,10 +21,35 @@
 [ext_resource type="Resource" path="res://data/waves/round_18.tres" id="19_round"]
 [ext_resource type="Resource" path="res://data/waves/round_19.tres" id="20_round"]
 [ext_resource type="Resource" path="res://data/waves/round_20.tres" id="21_round"]
+[ext_resource type="Resource" path="res://data/waves/round_21.tres" id="22_round"]
+[ext_resource type="Resource" path="res://data/waves/round_22.tres" id="23_round"]
+[ext_resource type="Resource" path="res://data/waves/round_23.tres" id="24_round"]
+[ext_resource type="Resource" path="res://data/waves/round_24.tres" id="25_round"]
+[ext_resource type="Resource" path="res://data/waves/round_25.tres" id="26_round"]
+[ext_resource type="Resource" path="res://data/waves/round_26.tres" id="27_round"]
+[ext_resource type="Resource" path="res://data/waves/round_27.tres" id="28_round"]
+[ext_resource type="Resource" path="res://data/waves/round_28.tres" id="29_round"]
+[ext_resource type="Resource" path="res://data/waves/round_29.tres" id="30_round"]
+[ext_resource type="Resource" path="res://data/waves/round_30.tres" id="31_round"]
+[ext_resource type="Resource" path="res://data/waves/round_31.tres" id="32_round"]
+[ext_resource type="Resource" path="res://data/waves/round_32.tres" id="33_round"]
+[ext_resource type="Resource" path="res://data/waves/round_33.tres" id="34_round"]
+[ext_resource type="Resource" path="res://data/waves/round_34.tres" id="35_round"]
+[ext_resource type="Resource" path="res://data/waves/round_35.tres" id="36_round"]
+[ext_resource type="Resource" path="res://data/waves/round_36.tres" id="37_round"]
+[ext_resource type="Resource" path="res://data/waves/round_37.tres" id="38_round"]
+[ext_resource type="Resource" path="res://data/waves/round_38.tres" id="39_round"]
+[ext_resource type="Resource" path="res://data/waves/round_39.tres" id="40_round"]
+[ext_resource type="Resource" path="res://data/waves/round_40.tres" id="41_round"]
+[ext_resource type="Resource" path="res://data/waves/round_41.tres" id="42_round"]
+[ext_resource type="Resource" path="res://data/waves/round_42.tres" id="43_round"]
+[ext_resource type="Resource" path="res://data/waves/round_43.tres" id="44_round"]
+[ext_resource type="Resource" path="res://data/waves/round_44.tres" id="45_round"]
+[ext_resource type="Resource" path="res://data/waves/round_45.tres" id="46_round"]
 
 [resource]
 script = ExtResource("1_campaign")
-health_growth_per_round = 0.05
-base_damage_growth_per_round = 0.025
-reward_growth_per_round = 0.02
-rounds = Array[Resource]([ExtResource("2_round"), ExtResource("3_round"), ExtResource("4_round"), ExtResource("5_round"), ExtResource("6_round"), ExtResource("7_round"), ExtResource("8_round"), ExtResource("9_round"), ExtResource("10_round"), ExtResource("11_round"), ExtResource("12_round"), ExtResource("13_round"), ExtResource("14_round"), ExtResource("15_round"), ExtResource("16_round"), ExtResource("17_round"), ExtResource("18_round"), ExtResource("19_round"), ExtResource("20_round"), ExtResource("21_round")])
+health_growth_per_round = 0.0
+base_damage_growth_per_round = 0.0
+reward_growth_per_round = 0.0
+rounds = Array[Resource]([ExtResource("2_round"), ExtResource("3_round"), ExtResource("4_round"), ExtResource("5_round"), ExtResource("6_round"), ExtResource("7_round"), ExtResource("8_round"), ExtResource("9_round"), ExtResource("10_round"), ExtResource("11_round"), ExtResource("12_round"), ExtResource("13_round"), ExtResource("14_round"), ExtResource("15_round"), ExtResource("16_round"), ExtResource("17_round"), ExtResource("18_round"), ExtResource("19_round"), ExtResource("20_round"), ExtResource("21_round"), ExtResource("22_round"), ExtResource("23_round"), ExtResource("24_round"), ExtResource("25_round"), ExtResource("26_round"), ExtResource("27_round"), ExtResource("28_round"), ExtResource("29_round"), ExtResource("30_round"), ExtResource("31_round"), ExtResource("32_round"), ExtResource("33_round"), ExtResource("34_round"), ExtResource("35_round"), ExtResource("36_round"), ExtResource("37_round"), ExtResource("38_round"), ExtResource("39_round"), ExtResource("40_round"), ExtResource("41_round"), ExtResource("42_round"), ExtResource("43_round"), ExtResource("44_round"), ExtResource("45_round"), ExtResource("46_round")])

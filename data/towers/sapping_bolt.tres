@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1_tower_data")
 id = &"sapping_bolt_m7_test"
-display_name = "Drenadora M7 (prueba)"
+display_name = "Sapping Bolt (DEBUG)"
 build_cost = 40
 upgrade_costs = Array[int]([20, 35])
 mana_cost_per_attack = 4.0
@@ -25,4 +25,5 @@ max_level = 3
 upgrade_damage_per_level = 5
 upgrade_range_per_level = 0.25
 upgrade_attack_rate_per_level = 0.0
+visual_icon_size = 62.0
 scene = ExtResource("2_tower_scene")

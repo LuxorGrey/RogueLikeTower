@@ -115,7 +115,7 @@ func get_placement_error(coord: Vector2i) -> String:
 		return "No hay una casilla de terreno bajo el cursor."
 	var cell: HexCell = _board_grid.cells[coord]
 	if cell == null or not cell.buildable or cell.terrain_type == HexCell.TerrainType.PATH:
-		return "Solo se puede construir en Grass o Montaña."
+		return "Solo se puede construir en Grass o Mountain."
 	if cell.occupied or _towers_by_coord.has(coord):
 		return "Esa casilla ya está ocupada."
 	if not _tower_data.allows_terrain(cell.terrain_type):
@@ -125,7 +125,7 @@ func get_placement_error(coord: Vector2i) -> String:
 		]
 	var build_cost: int = get_current_build_cost(_tower_data)
 	if _run_economy != null and not bool(_run_economy.call("can_afford_gold", build_cost)):
-		return "Moneda insuficiente: %d disponibles · %d necesarios." % [
+		return "Gold insuficiente: %d disponibles · %d necesarios." % [
 			int(_run_economy.call("get_gold")),
 			build_cost,
 		]
@@ -159,7 +159,7 @@ func place_tower(coord: Vector2i) -> bool:
 		return false
 	var build_cost: int = get_current_build_cost(_tower_data)
 	if _run_economy != null and not bool(_run_economy.call("try_spend_gold", build_cost, &"tower_build")):
-		last_error = "No se pudo completar la compra: moneda insuficiente."
+		last_error = "No se pudo completar la compra: Gold insuficiente."
 		tower.free()
 		return false
 	_entities.add_child(tower)
@@ -196,13 +196,13 @@ func upgrade_selected_tower(hit_point_layer: int = Enemy.HitPointLayer.HEALTH) -
 		last_error = "La torre ya está en su nivel máximo."
 		return false
 	if _run_economy != null and not bool(_run_economy.call("can_afford_gold", upgrade_cost)):
-		last_error = "Moneda insuficiente: %d disponibles · %d necesarios." % [
+		last_error = "Gold insuficiente: %d disponibles · %d necesarios." % [
 			int(_run_economy.call("get_gold")),
 			upgrade_cost,
 		]
 		return false
 	if _run_economy != null and not bool(_run_economy.call("try_spend_gold", upgrade_cost, &"tower_upgrade")):
-		last_error = "No se pudo completar la mejora: moneda insuficiente."
+		last_error = "No se pudo completar la mejora: Gold insuficiente."
 		return false
 	if not selected_tower.upgrade(hit_point_layer):
 		if _run_economy != null:
@@ -261,6 +261,6 @@ func _terrain_name(terrain_type: int) -> String:
 		HexCell.TerrainType.GRASS:
 			return "Grass"
 		HexCell.TerrainType.MOUNTAIN:
-			return "Montaña"
+			return "Mountain"
 		_:
-			return "Camino"
+			return "Path"

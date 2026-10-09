@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_status")
 id = &"poison"
-display_name = "Veneno"
+display_name = "Poison"
 duration = 4.0
 tick_interval = 1.0
 max_stacks = 3

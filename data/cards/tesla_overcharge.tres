@@ -12,7 +12,7 @@ value = 0.15
 [resource]
 script = ExtResource("1_card")
 id = &"tesla_overcharge"
-display_name = "Bobina sobrecargada"
+display_name = "Advanced Circuits"
 description = "Tesla Coil gana un 15 % de probabilidad crítica."
 rarity = 1
 unlock_requirement = &"tower:tesla_coil_demo"

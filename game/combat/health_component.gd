@@ -10,7 +10,7 @@ var _depleted: bool = false
 
 func initialize(health_value: int) -> bool:
 	if health_value <= 0:
-		push_error("HealthComponent requiere salud máxima mayor que cero.")
+		push_error("HealthComponent requiere un máximo de Health mayor que cero.")
 		return false
 	maximum_health = health_value
 	current_health = health_value

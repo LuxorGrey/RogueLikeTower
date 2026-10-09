@@ -7,8 +7,8 @@
 script = ExtResource("1_tower_data")
 id = &"mortar_demo"
 unlock_id = &"tower:mortar_demo"
-display_name = "Mortero · Mortar"
-role_summary = "Largo alcance · explosión antiarmadura"
+display_name = "Mortar"
+role_summary = "Largo alcance · explosión anti-Armor"
 meta_unlock_cost = 15
 build_cost = 200
 build_cost_increment = 75
@@ -33,5 +33,6 @@ max_level = 3
 upgrade_damage_per_level = 1
 upgrade_range_per_level = 0.0
 visual_archetype = 1
+visual_icon_size = 62.0
 visual_color = Color(0.66, 0.46, 0.29, 1)
 scene = ExtResource("2_tower_scene")

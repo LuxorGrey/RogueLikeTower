@@ -14,7 +14,9 @@ var armor_absorbed: float = 0.0
 var shield_damage: int = 0
 var armor_damage: int = 0
 var damage_tag_multiplier: float = 1.0
+var fortification_reduction: float = 0.0
 var health_multiplier: float = 1.0
+var layer_status_bonus: float = 0.0
 var calculated_health_damage: int = 0
 var total_damage: int = 0
 var regen_counter_strength: float = 0.0
@@ -25,10 +27,13 @@ var applied_status_ids: PackedStringArray = PackedStringArray()
 func get_summary() -> String:
 	if not is_valid:
 		return "Daño no aplicado: %s" % blocked_reason
-	var summary: String = "bruto %.1f × crítico %.1f · capa %d · escudo −%d · armadura −%d · vida −%d · tipo ×%.2f · anti-regen %.0f%%/%.1fs" % [
+	var summary: String = "bruto %.1f × crítico %.1f · Fortification −%.0f · capa %d ×%.2f (+%.0f de estado) · Shield −%d · Armor −%d · Health −%d · tipo ×%.2f · anti-regen %.0f%%/%.1fs" % [
 		raw_damage,
 		critical_multiplier,
+		fortification_reduction,
 		active_hit_point_layer,
+		health_multiplier,
+		layer_status_bonus,
 		shield_damage,
 		armor_damage,
 		health_damage,

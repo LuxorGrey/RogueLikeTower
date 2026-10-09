@@ -9,7 +9,7 @@
 [resource]
 script = ExtResource("1_tower_data")
 id = &"status_probe_m8_test"
-display_name = "Sonda de estados (M8 prueba)"
+display_name = "Status Probe (DEBUG)"
 build_cost = 40
 upgrade_costs = Array[int]([])
 mana_cost_per_attack = 0.0
@@ -29,4 +29,5 @@ upgrade_damage_per_level = 0
 upgrade_range_per_level = 0.0
 upgrade_attack_rate_per_level = 0.0
 status_effects = Array[Resource]([ExtResource("3_slow"), ExtResource("4_burn"), ExtResource("5_bleed")])
+visual_icon_size = 62.0
 scene = ExtResource("2_tower_scene")
