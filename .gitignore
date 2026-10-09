@@ -25,3 +25,7 @@ mono_crash.*.json
 *.exe
 # Uncomment if your project does not version PCK files as runtime dependencies.
 # *.pck
+
+# Tiny Swords Free Pack is usable in projects but its creator prohibits repackaging the raw assets.
+/assets/third_party/tiny_swords/**
+!/assets/third_party/tiny_swords/README.md

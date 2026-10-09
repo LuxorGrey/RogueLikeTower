@@ -34,6 +34,7 @@ const STATUS_ICON_IDS: Dictionary = {
 }
 const HIT_JUMP_DURATION: float = 0.32
 const HIT_FLASH_DURATION: float = 0.14
+const VISUAL_ART_OFFSET_Y: float = 6.0
 
 var state: State = State.UNCONFIGURED
 var _enemy_data: EnemyData
@@ -69,6 +70,7 @@ const RT_FORTIFICATION_DAMAGE_REDUCTION: float = 5.0
 @onready var _status_controller: Node = %StatusEffects
 
 func _ready() -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	_icon_catalog = ICON_CATALOG_SCRIPT.new() as RefCounted
 	add_to_group(&"enemies")
 	_health.health_changed.connect(_on_health_changed)
@@ -475,7 +477,7 @@ func teleport_forward_tiles(tile_count: int) -> bool:
 func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.42))
 	draw_circle(Vector2.ZERO, _body_radius + 2.0, Color(0.02, 0.03, 0.04, 0.28))
-	draw_set_transform(Vector2(0.0, -_jump_height), 0.0, Vector2.ONE)
+	draw_set_transform(Vector2(0.0, -_jump_height + VISUAL_ART_OFFSET_Y), 0.0, Vector2.ONE)
 	var flash_ratio: float = _hit_flash_time_left / HIT_FLASH_DURATION
 	if _sprite_texture != null:
 		var sprite_extent: float = _enemy_data.sprite_extent if _enemy_data.sprite_extent > 0.0 else maxf(_body_radius * 3.2, 48.0)
@@ -484,9 +486,9 @@ func _draw() -> void:
 			Vector2(sprite_extent, sprite_extent)
 		)
 		var sprite_tint: Color = Color.WHITE.lerp(Color(1.0, 0.52, 0.52), clampf(flash_ratio, 0.0, 1.0))
-		draw_set_transform(Vector2(0.0, -_jump_height), 0.0, Vector2(-1.0, 1.0) if _is_facing_left else Vector2.ONE)
+		draw_set_transform(Vector2(0.0, -_jump_height + VISUAL_ART_OFFSET_Y), 0.0, Vector2(-1.0, 1.0) if _is_facing_left else Vector2.ONE)
 		draw_texture_rect(_sprite_texture, sprite_rect, false, sprite_tint)
-		draw_set_transform(Vector2(0.0, -_jump_height), 0.0, Vector2.ONE)
+		draw_set_transform(Vector2(0.0, -_jump_height + VISUAL_ART_OFFSET_Y), 0.0, Vector2.ONE)
 	else:
 		draw_circle(Vector2.ZERO, _body_radius + 3.0, BODY_OUTLINE)
 		var body_color: Color = _body_color.lerp(Color.WHITE, clampf(flash_ratio, 0.0, 1.0))

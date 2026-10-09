@@ -73,14 +73,14 @@ M8 añade `Status Probe (DEBUG)`, con daño 1, cadencia 0.5/s y payloads Slow/Bu
 La campaña de 45 rondas usa los 26 perfiles canónicos descritos en [Catálogo y escalado](13_CONTENT_ROSTER.md). La composición directa exacta, el orden y el total 1.093 están en [14 — Campaña de 45 rondas](14_CAMPANA_45_RONDAS.md). Los nombres siguen Rogue Tower; Cyclops/Werewolf no son designaciones Miniboss especiales en rondas 17/19. Ooogie von Ooogovich conserva identidad y habilidades adaptadas: invoca dos Bats cada 2 s y al morir se transforma en Bat con 2.500 Health, balance propio provisional; la oleada y recompensa esperan la derrota final. Todos los sprites se registran por perfil en assets/enemies/. Los perfiles adoptan habilidades y estadísticas individuales seleccionadas de las fichas comunitarias; esas cifras no determinan la tabla de composición.
 
 ## Piezas
-El milestone M3 crea primero cinco plantillas de conexión para comprobar el contrato de colocación:
+El milestone M3 creó primero cinco plantillas de conexión para comprobar el contrato de colocación:
 - straight;
 - gentle_turn;
 - hard_turn;
 - fork;
 - convergence;
 
-Quedan reservadas para expansión del pool de contenido: `mountain_reward`, `long_path` y `build_space`. Son propuestas de contenido placeholder, no requisitos técnicos nuevos de M3.
+M18 amplió el catálogo a quince piezas con seis paisajes Grass/Mountain y cuatro diseños PATH: `meadow_hills`, `mountain_massif`, `open_grassland`, `staggered_ridge`, `mountain_islet`, `twin_peaks`, `dead_end_spur`, `cliff_turn`, `meadow_switchback` y `three_way_ravine`. Quedan como propuestas todavía no implementadas: `mountain_reward`, `long_path` y `build_space`. No son requisitos técnicos nuevos del validador.
 
 Cada pieza = 7 celdas conectadas, con coordenadas locales y sockets PATH configurables en `.tres`. Los sockets laterales opcionales se derivan de las salidas externas según [05_HEX_GRID_AND_TERRAIN.md](05_HEX_GRID_AND_TERRAIN.md). Todas las composiciones y pesos iniciales son temporales; la plantilla inicial del tablero está separada del pool de piezas.
 

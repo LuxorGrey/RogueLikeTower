@@ -58,6 +58,15 @@ Se aplican al comenzar cada run. Costes en Meta Currency por nivel.
 | Mana Capacity | +15 Mana máximo | 2; 15 / 30 |
 | Archivo de cartas | +2 cartas globales al pool | 1; 25 |
 | Calibración de torres | Daño global ×1,05 | 3; 20 / 35 / 50 |
+| Suerte del explorador | +5 puntos porcentuales por nivel desde 1 % base; máximo total 20 % | 4; 10 / 20 / 35 / 55 |
+
+## Contenido de terreno
+
+| Elemento | Frecuencia / efecto |
+|---|---|
+| Variantes Path / Grass / Mountain | 3 PNG por tipo; variación visual sin efecto de juego. |
+| Obstáculos | Grass: 25 %; Mountain: 15 %. Selección uniforme provisional entre roca, esquirla, hierba alta, tótem y piedras. Bloquean construcción y no afectan rutas. |
+| Cofre | 1 % base en Grass/Mountain sin obstáculo; cuatro mejoras de +5 puntos porcentuales, limitadas a 20 %. Al abrir: +25 Gold provisional, pagado una vez. |
 
 ## Enemigos de campaña
 

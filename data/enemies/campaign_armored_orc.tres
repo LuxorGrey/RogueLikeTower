@@ -26,6 +26,6 @@ armor = 600
 placeholder_color = Color(0.40, 0.55, 0.31, 1)
 placeholder_radius = 13.8
 sprite_texture = ExtResource("3_sprite")
-sprite_extent = 55.2
+sprite_extent = 72.0
 scene = ExtResource("2_enemy_scene")
 abilities = Array[EnemyAbilityData]([SubResource("EnemyAbilityData_0")])

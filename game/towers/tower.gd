@@ -2,9 +2,11 @@ class_name Tower
 extends Node2D
 
 signal attack_fired(target: Enemy, damage: int)
+signal impact_effect_requested(effect_id: StringName, world_position: Vector2)
 signal stats_changed(level: int)
 
 const ELEVATION_PIXEL_OFFSET: float = 18.0
+const VISUAL_ART_OFFSET_Y: float = 6.0
 const SCAN_INTERVAL: float = 0.1
 const SHOT_FLASH_DURATION: float = 0.12
 const BALLISTA_MISSED_TARGET_COOLDOWN_REFUND: float = 0.33
@@ -73,6 +75,7 @@ func configure(
 		last_error = "; ".join(errors)
 		return false
 	_tower_data = tower_data
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	_icon_catalog = ICON_CATALOG_SCRIPT.new() as RefCounted
 	_tower_icon = _icon_catalog.call("get_tower_icon", StringName(tower_data.id)) as Texture2D
 	_damage_service = damage_service
@@ -562,6 +565,7 @@ func _fire_at_target() -> void:
 		var result: Variant = _damage_service.call("apply_damage", affected_target, packet)
 		if result == null or not bool(result.get("is_valid")):
 			continue
+		_emit_impact_effect(affected_target.global_position)
 		var target_offset: Vector2 = affected_target.global_position - global_position
 		_shot_target_positions.append(target_offset)
 		if not did_hit:
@@ -606,11 +610,21 @@ func _launch_tower_projectile(target: Enemy, cooldown_cycle_id: int = 0) -> bool
 func on_projectile_hit(target: Enemy, total_damage: int) -> void:
 	if target == null or not is_instance_valid(target):
 		return
+	if _tower_data.visual_archetype == TowerData.VisualArchetype.BALLISTA:
+		_emit_impact_effect(target.global_position)
 	_shot_target_position = target.global_position - global_position
 	_shot_target_positions = [_shot_target_position]
 	_shot_flash_timer = SHOT_FLASH_DURATION
 	attack_fired.emit(target, total_damage)
 	queue_redraw()
+
+func on_projectile_area_impact(world_position: Vector2) -> void:
+	if _tower_data != null and _tower_data.visual_archetype == TowerData.VisualArchetype.MORTAR:
+		_emit_impact_effect(world_position)
+
+func on_sawblade_hit(target: Enemy) -> void:
+	if target != null and is_instance_valid(target) and _tower_data != null:
+		_emit_impact_effect(target.global_position)
 
 func on_projectile_target_died_before_impact(target: Enemy, cooldown_cycle_id: int) -> void:
 	if (
@@ -737,11 +751,34 @@ func _launch_sawblade(target: Enemy) -> bool:
 		_damage_service,
 		_tower_data.projectile_speed,
 		_tower_data.projectile_hit_radius,
-		_tower_data.pierce_damage_loss_per_hit
+		_tower_data.pierce_damage_loss_per_hit,
+		self
 	)):
 		projectile.queue_free()
 		return false
 	return true
+
+func _emit_impact_effect(world_position: Vector2) -> void:
+	if _tower_data == null:
+		return
+	var effect_id: StringName = &""
+	match _tower_data.visual_archetype:
+		TowerData.VisualArchetype.BALLISTA:
+			effect_id = &"dust_01"
+		TowerData.VisualArchetype.MORTAR:
+			effect_id = &"explosion_01"
+		TowerData.VisualArchetype.TESLA:
+			effect_id = &"tesla_coil"
+		TowerData.VisualArchetype.FROST:
+			effect_id = &"ice_01"
+		TowerData.VisualArchetype.FLAME:
+			effect_id = &"fire_03"
+		TowerData.VisualArchetype.POISON:
+			effect_id = &"poison"
+		TowerData.VisualArchetype.SHREDDER:
+			effect_id = &"blood"
+	if effect_id != &"":
+		impact_effect_requested.emit(effect_id, world_position)
 
 func _hex_neighbor_distance() -> float:
 	return HexMath.axial_to_world(HexCoord.new(1, 0), _hex_radius).length()
@@ -762,10 +799,10 @@ func _draw() -> void:
 		Vector2(-10.0, 5.0),
 	])
 	for point_index in range(pedestal.size()):
-		pedestal[point_index] = pedestal[point_index] * visual_scale
+		pedestal[point_index] = pedestal[point_index] * visual_scale + Vector2(0.0, VISUAL_ART_OFFSET_Y)
 	var body_color: Color = _tower_data.visual_color
 	var dark_color: Color = body_color.darkened(0.55)
-	var icon_center := Vector2(0.0, -_tower_data.visual_icon_size * 0.5)
+	var icon_center := Vector2(0.0, -_tower_data.visual_icon_size * 0.5 + VISUAL_ART_OFFSET_Y)
 	if _is_selected or _is_hovered:
 		var outline_color: Color = Color(1.0, 0.92, 0.56, 0.98) if _is_selected else Color(0.82, 0.94, 1.0, 0.8)
 		draw_arc(icon_center, _tower_data.visual_icon_size * 0.5, 0.0, TAU, 48, outline_color, 3.2 if _is_selected else 2.0, true)

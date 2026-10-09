@@ -1,5 +1,7 @@
 extends Control
 
+const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
+
 const HEX_RADIUS: float = 52.0
 const ELEVATION_PIXEL_OFFSET: float = 18.0
 const HEX_OUTLINE: Color = Color(0.82, 0.87, 0.84)
@@ -8,6 +10,9 @@ const GRASS_COLOR: Color = Color(0.28, 0.57, 0.34)
 const MOUNTAIN_COLOR: Color = Color(0.63, 0.58, 0.48)
 
 var _piece: TerrainPieceData
+
+func _ready() -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 
 func set_piece(piece: TerrainPieceData) -> void:
 	_piece = piece
@@ -55,8 +60,73 @@ func _draw() -> void:
 		var closed_corners := corners.duplicate()
 		closed_corners.append(corners[0])
 		draw_colored_polygon(corners, _terrain_color(cell.terrain_type))
+		var tile_size := Vector2(HEX_RADIUS * sqrt(3.0), HEX_RADIUS * 2.0) * render_scale
+		var tile_region: Rect2 = TERRAIN_VISUAL_CATALOG_SCRIPT.get_terrain_art_region(
+			cell.terrain_type,
+			cell.visual_variant,
+			cell.local_coord
+		)
+		draw_texture_rect_region(
+			TERRAIN_VISUAL_CATALOG_SCRIPT.TERRAIN_ATLAS,
+			Rect2(center - tile_size * 0.5, tile_size),
+			tile_region
+		)
 		draw_polyline(closed_corners, HEX_OUTLINE, maxf(1.0, 1.8 * render_scale), true)
 		_draw_path_edges(cell, center, corners, render_scale)
+	_draw_obstacles(cells, rendered_centers, render_scale)
+
+func _draw_obstacles(
+	cells: Array[TerrainPieceCellData],
+	centers: Dictionary[Vector2i, Vector2],
+	render_scale: float
+) -> void:
+	var obstacle_by_coord: Dictionary[Vector2i, int] = {}
+	var eligible_cells: Array[TerrainPieceCellData] = []
+	var piece_key: String = str(_piece.resource_path)
+	if piece_key.is_empty():
+		piece_key = _piece.display_name
+	for cell in cells:
+		var chance: float = 0.0
+		if cell.terrain_type == HexCell.TerrainType.GRASS:
+			chance = TERRAIN_VISUAL_CATALOG_SCRIPT.GRASS_OBSTACLE_CHANCE
+		elif cell.terrain_type == HexCell.TerrainType.MOUNTAIN:
+			chance = TERRAIN_VISUAL_CATALOG_SCRIPT.MOUNTAIN_OBSTACLE_CHANCE
+		if chance <= 0.0:
+			continue
+		eligible_cells.append(cell)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = hash("%s:%d:%d:card_obstacle" % [piece_key, cell.local_coord.x, cell.local_coord.y])
+		if rng.randf() < chance:
+			obstacle_by_coord[cell.local_coord] = rng.randi_range(
+				0,
+				TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_COUNT - 1
+			)
+
+	# Card art is representative. Ensure each card with buildable terrain shows
+	# at least one prop; actual obstacles are rolled only after placement.
+	if obstacle_by_coord.is_empty() and not eligible_cells.is_empty():
+		var representative_rng := RandomNumberGenerator.new()
+		representative_rng.seed = hash("%s:representative_obstacle" % piece_key)
+		var representative: TerrainPieceCellData = eligible_cells[
+			representative_rng.randi_range(0, eligible_cells.size() - 1)
+		]
+		obstacle_by_coord[representative.local_coord] = representative_rng.randi_range(
+			0,
+			TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_COUNT - 1
+		)
+
+	for cell in cells:
+		if not obstacle_by_coord.has(cell.local_coord):
+			continue
+		var obstacle_type: int = obstacle_by_coord[cell.local_coord]
+		var source_region: Rect2 = TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_art_region(obstacle_type)
+		var obstacle_size: Vector2 = TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_DISPLAY_SIZE * render_scale
+		var center: Vector2 = centers[cell.local_coord] + Vector2(0.0, 6.0 * render_scale)
+		draw_texture_rect_region(
+			TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLES_ATLAS,
+			Rect2(Vector2(center.x - obstacle_size.x * 0.5, center.y - obstacle_size.y), obstacle_size),
+			source_region
+		)
 
 func _draw_cliffs(
 	cells: Array[TerrainPieceCellData],
@@ -66,6 +136,8 @@ func _draw_cliffs(
 ) -> void:
 	for cell in cells:
 		for direction_index in range(HexCoord.DIRECTION_OFFSETS.size()):
+			if direction_index >= 4:
+				continue
 			var neighbor_coord: Vector2i = cell.local_coord + HexCoord.DIRECTION_OFFSETS[direction_index]
 			var neighbor: TerrainPieceCellData = cells_by_coord.get(neighbor_coord) as TerrainPieceCellData
 			var neighbor_elevation: int = neighbor.elevation if neighbor != null else 0

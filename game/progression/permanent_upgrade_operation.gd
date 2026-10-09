@@ -8,9 +8,10 @@ enum EffectType {
 	MANA_REGEN_ADD,
 	TOWER_DAMAGE_MULTIPLIER,
 	UNLOCK_CONTENT,
+	CHEST_SPAWN_CHANCE_ADD,
 }
 
-@export_enum("Starting Gold", "Starting Mana", "Mana Capacity", "Mana Regeneration", "Global Damage Multiplier", "Unlock Content")
+@export_enum("Starting Gold", "Starting Mana", "Mana Capacity", "Mana Regeneration", "Global Damage Multiplier", "Unlock Content", "Chest Chance")
 var effect_type: int = EffectType.STARTING_GOLD_ADD
 @export var value: float = 0.0
 @export var affected_tower_id: StringName = &""
@@ -18,7 +19,7 @@ var effect_type: int = EffectType.STARTING_GOLD_ADD
 
 func validate() -> PackedStringArray:
 	var errors := PackedStringArray()
-	if effect_type < EffectType.STARTING_GOLD_ADD or effect_type > EffectType.UNLOCK_CONTENT:
+	if effect_type < EffectType.STARTING_GOLD_ADD or effect_type > EffectType.CHEST_SPAWN_CHANCE_ADD:
 		errors.append("El efecto permanente configurado no existe.")
 	if not is_finite(value):
 		errors.append("El valor de una operación permanente debe ser finito.")

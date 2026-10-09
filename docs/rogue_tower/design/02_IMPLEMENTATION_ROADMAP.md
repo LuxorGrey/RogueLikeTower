@@ -41,7 +41,7 @@ Codex debe ejecutar estos milestones en orden. **No saltar al contenido final.**
 - Validación de adyacencia.
 - Validación de conexiones de camino.
 - Confirmar/cancelar colocación.
-- Crear 5 piezas placeholder.
+- Crear cinco piezas placeholder iniciales (ampliadas a quince en M18).
 - Resultado: expansión manual robusta.
 
 ## M4 — Grafo de caminos
@@ -175,7 +175,7 @@ M12A está implementado en código; la aceptación manual sigue pendiente. Las r
 - El Mana se repone al máximo efectivo cuando empieza cada ronda de campaña, y se presenta como entero sin alterar la precisión de los cálculos internos.
 - Al seleccionar una torre, mostrar en líneas legibles nivel, daño, multiplicadores H/A/S con iconos de Health/Armor/Shield, alcance, RPM, crítico, patrón, Mana y XP; conservar prioridades, mejoras y demolición en el panel derecho, que desaparece al deseleccionar.
 - PNG RGBA transparentes e independientes, uno por objeto, para moneda, energía, Health/Armor/Shield, siete torres y cuatro estados; no se usa atlas. Los atajos inferiores usan un fondo individual estilo carta y los mismos iconos de la selección, preview y torre colocada; el contenedor no dibuja un panel común.
-- Hover/selección de torre muestra alcance y contorno; el panel lateral usa scroll y un único menú de prioridades con selección múltiple de hasta tres criterios.
+- Hover/selección de torre muestra alcance y contorno; el panel lateral ajusta su altura al contenido, nunca usa scroll, y un menú de prioridades permite seleccionar hasta tres criterios.
 - Enemigos muestran barras apiladas por Shield/Armor/Health con Health fragmentada, iconos de estados y contador de acumulaciones; el daño tiene destello, salto y texto flotante coloreado por capa.
 - Las cards de mejora incluyen el icono de torre afectada. Los textos de economía/campaña y descripciones convierten Gold/Mana en iconos PNG reutilizables.
 - La inspección técnica de enemigos y la selección de fixtures DEBUG se pliegan bajo `F3`; las estadísticas de objetivo siguen accesibles como tooltip de la torre seleccionada.
@@ -194,7 +194,7 @@ Contenido provisional suficiente:
 - 5-8 arquetipos de enemigo.
 - 4 status placeholder: Slow, Burn, Bleed y Poison.
 - 12-20 cartas.
-- 8-12 piezas de terreno.
+- 15 piezas de terreno disponibles tras M18.
 - 8-15 permanentes.
 Estas cantidades NO son compromiso de diseño final.
 - Balance preliminar de campaña de 45 rondas.
@@ -207,14 +207,32 @@ Estas cantidades NO son compromiso de diseño final.
 - Props que pueden sobresalir visualmente.
 - Mantener footprint lógico limpio.
 - Variantes visuales.
+- Tres variantes PNG por tipo Path/Grass/Mountain y cinco obstáculos transparentes asignados por semilla a celdas reales. Obstáculos bloquean construcción.
 - Resultado: mapa orgánico que oculta la rigidez de la grid.
 
 ## M16 — Polish
 - Audio.
-- VFX.
+- VFX; los primeros efectos de impacto se integran por torre con las hojas locales Tiny Swords proporcionadas por el usuario.
+- Cursores de Tiny Swords para normal, hover interactivo, acción inválida y colocación de torre.
 - Feedback impactos.
 - Transiciones.
 - Cámara.
 - Performance profiling.
 - Balance.
 - QA/save migration.
+
+## M17 — Profundidad, arte y flujo de rutas
+- Alinear atlas/terreno con caras hexagonales y separar props en nodos individuales.
+- Ordenar profundidad compartida entre unidades, base, torres y decoración.
+- Mostrar flechas animadas sobre cada ruta hacia la base y reducir la tasa inicial de cofres al 1 %.
+- Revisar tamaño individual de sprites y documentar la aceptación visual.
+- Resultado: oclusión y rutas legibles en mapas con expansiones.
+
+## M18 — Elevación, feedback y diversidad de terreno
+- Ordenar copias texturadas de las tapas elevadas con base, torres, enemigos, portales y props. Las fachadas quedan bajo las entidades y se omiten los bordes traseros; consulta [ADR-0043](../decisions/ADR-0043-superficies-de-elevacion-y-preview-de-spawns.md).
+- Ocultar bordes y sockets de grid hasta hover, con dos anillos vecinos de opacidad decreciente.
+- Reemplazar etiquetas de spawn por un sprite PNG de portal pulsante; conservar flechas animadas del `PathGraph` hacia la base.
+- Reducir y pulsar el cursor de construcción, animar el icono de torre construida y compactar/aumentar la barra de torres.
+- Añadir diez piezas de terreno equilibradas sobre la huella estándar de siete hexes.
+- Actualizar diseño, aceptación, ADR y progreso; revisar visualmente profundidad y navegación.
+- Resultado: lectura del tablero clara con variedad de composición y sin cambiar la topología lógica.

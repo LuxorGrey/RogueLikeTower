@@ -29,6 +29,8 @@ elevation: int 0..2
 buildable: bool
 occupied: bool
 tower_id: optional
+obstacle_type: NONE | ROCK | SHARD | TALL_GRASS | TOTEM | STONE_CLUSTER
+chest_available: bool
 piece_instance_id
 path_edges: bitmask/array[6]
 flexible_path_edges: bitmask/array[6] derivada en runtime
@@ -39,7 +41,10 @@ Reglas:
 - PATH: elevation 0; buildable false.
 - GRASS: buildable true; elevation definida por pieza (por defecto 1).
 - MOUNTAIN: elevation 2; buildable true.
+- `obstacle_type` y `chest_available` son estado de contenido visual/runtime de una celda; no cambian el tipo de terreno, elevación ni PathGraph. Un obstáculo o cofre sin abrir bloquea construcción.
 - Elevation no cambia coordenada lógica.
+
+`TerrainVisualCatalog` asigna `visual_variant`, `obstacle_type` y `chest_available` de forma determinista desde `(run_seed, coord, salt)` cuando la celda entra al tablero. Hay tres variantes de cada tipo de terreno; obstáculos con tasas Grass 25 % y Mountain 15 %; y cofres con base 1 %, más +5 puntos porcentuales por nivel de `CHEST_SPAWN_CHANCE_ADD`, hasta 20 % en cuatro niveles (el último incremento se limita por el tope). PATH nunca recibe obstáculos o cofres. El catálogo recorta cada variante de terreno a su silueta visible para ajustar el arte al footprint; props y cofres son nodos individuales bajo el contenedor Y-sort. Todos los obstáculos se dibujan estirados en el mismo rectángulo de 104×104 px, definido por `OBSTACLE_DISPLAY_SIZE`, tanto en el tablero como en las cards. Al abrir el cofre, `RunEconomyService` añade Gold temporal; el valor inicial 25 es provisional y configurable en el catálogo.
 
 ## TerrainPieceCellData
 ```text
@@ -117,7 +122,7 @@ height_rules
 scene
 ```
 
-M6 implementa en `data/towers/tower_data.gd`: identidad, daño base, RPM/cadencia, alcance, terrenos, prioridades, elevación, niveles, costes y escena. M12 agrega unlock/meta coste. M12A añade build-cost increment, mana por ataque/segundo y escalado, RPM de base, multiplicadores Health/Armor/Shield, chance crítica, bonus de elevación, threshold de XP y parámetros Frost. M13 añade `visual_icon_size`, que dimensiona por Resource el sprite y el pedestal de cada torre. Los perfiles actuales usan 62 px frente a los 54 px anteriores (aprox. +15%); el icono de preview usa el mismo tamaño. Los patrones soportan objetivo único, área, chain, cono, sawblade y todos-en-rango (Tesla). Los siete Resources adoptan los parámetros base de Rogue Tower seleccionados por el usuario; Tesla Coil y Flame Thrower siguen los ajustes del changelog oficial en ADR-0036. Reglas propias de niveles, XP, altura, áreas/patrones adaptados y mejora manual siguen configurables. Comprar/mejorar no muta el Resource compartido.
+M6 implementa en `data/towers/tower_data.gd`: identidad, daño base, RPM/cadencia, alcance, terrenos, prioridades, elevación, niveles, costes y escena. M12 agrega unlock/meta coste. M12A añade build-cost increment, mana por ataque/segundo y escalado, RPM de base, multiplicadores Health/Armor/Shield, chance crítica, bonus de elevación, threshold de XP y parámetros Frost. M13 añade `visual_icon_size`, que dimensiona por Resource el sprite y el pedestal de cada torre. Tras ADR-0041, los perfiles usan 84 px frente a los 54 px originales; el icono de preview usa el mismo tamaño. Los patrones soportan objetivo único, área, chain, cono, sawblade y todos-en-rango (Tesla). Los siete Resources adoptan los parámetros base de Rogue Tower seleccionados por el usuario; Tesla Coil y Flame Thrower siguen los ajustes del changelog oficial en ADR-0036. Reglas propias de niveles, XP, altura, áreas/patrones adaptados y mejora manual siguen configurables. Comprar/mejorar no muta el Resource compartido.
 
 `Tower` separa nivel/damage base, bonos de cada capa y tres criterios de objetivo únicos. Cada upgrade cuesta el `upgrade_costs[level-1]`, suma +1 daño base y +1 a la capa elegida; el XP runtime también sube nivel al alcanzar `targeting_xp_required_per_level`, asignando la capa del HP actual del enemigo que mantiene en rango. Elevación añade +1 daño base y +0.5 de rango por nivel. El RPM es fijo salvo Frost Keep, cuya cobertura suma 18 RPM por PATH cubierto. Build price escala como `build_cost + same_type_count × build_cost_increment`; demoler baja ese conteo. `TowerData` contiene ataque visual `SINGLE_TARGET`, `AREA`, `CHAIN`, `CONE` o `SAWBLADE`; Ballista/Mortar tienen proyectiles, Mortar hace splash al aterrizar, Frost usa cobertura cuadrada y Shredder sigue una ruta PATH. Ver [ADR-0023](../decisions/ADR-0023-reglas-de-torres-y-capas-de-vida.md).
 
@@ -151,11 +156,11 @@ scene
 
 Históricamente M5 introdujo Health, M7 Armor/regen y M12A completó Shield con regeneración separada; el modelo vigente de cada enemigo contiene los tres pools. Cada perfil configura los máximos, y un máximo cero omite esa capa en el juego. El orden activo es Shield→Armor→Health. Bleed/Burn/Poison detienen la regeneración de Health/Armor/Shield y aumentan en +1 el multiplicador de ataque de esa capa; sus ticks aplican el daño por capa 1.0/0.5/0.5 según la capa activa. Los multiplicadores recibidos por múltiples tags se multiplican. `sprite_texture` referencia el PNG individual del perfil; si no hay textura, `Enemy` conserva el dibujo vectorial placeholder. La barra dibuja las capas con máximo positivo en filas diferenciadas y fragmenta Health.
 
-`EnemyData.sprite_extent` configura individualmente el lado del PNG de cada enemigo en juego; sus perfiles activos aumentaron el tamaño de sprite alrededor de 15%. `placeholder_radius` también creció por perfil y se usa para la sombra, el placeholder vectorial y la colocación de barras/estados; no representa una hitbox ni cambia movimiento, selección, ocupación o colisión lógica. Si no hay textura se conserva el dibujo vectorial. `EnemyData` no exporta `defense_tags` ni `status_resistances`: los tags del paquete se definen en `DamagePacket` y el Resource sí configura multiplicadores recibidos por cada tag. Las resistencias de estado no están implementadas.
+`EnemyData.sprite_extent` configura individualmente el lado del PNG de cada enemigo en juego; los perfiles estándar pasan a 72 px y los perfiles grandes escalan proporcionalmente. La ilustración se dibuja 6 px por debajo del anclaje del PathFollower. `placeholder_radius` se usa para la sombra, el placeholder vectorial y la colocación de barras/estados; no representa una hitbox ni cambia movimiento, selección, ocupación o colisión lógica. Si no hay textura se conserva el dibujo vectorial. `EnemyData` no exporta `defense_tags` ni `status_resistances`: los tags del paquete se definen en `DamagePacket` y el Resource sí configura multiplicadores recibidos por cada tag. Las resistencias de estado no están implementadas.
 
 ## BaseData / HealthComponent
 
-`BaseData` configura el ID, nombre, Health máxima, `sprite_texture` y `sprite_size` de la base. La textura RGBA es un PNG individual que se puede sustituir desde el Resource sin cambiar `GameBase`; el tamaño define su escala visual y no altera la huella lógica hexagonal. El sprite vigente se amplió de 112×112 a 129×129 (aprox. +15%). `HealthComponent` inicializa Health, aplica daño/curación acotados y emite `health_changed` y `health_depleted`; en M5 lo consumen `GameBase` y `Enemy`. La barra del HUD divide Health en segmentos de 10 (el último puede ser parcial). El objetivo inicial `(0,0)` sigue siendo una decisión provisional del prototipo. `data/base/base_data.tres` define 50 de Health provisional.
+`BaseData` configura el ID, nombre, Health máxima, `sprite_texture` y `sprite_size` de la base. La textura RGBA es un PNG individual que se puede sustituir desde el Resource sin cambiar `GameBase`; el tamaño define su escala visual y no altera la huella lógica hexagonal. Tras ADR-0041, el sprite mide 176×176 y se dibuja 6 px más abajo. `HealthComponent` inicializa Health, aplica daño/curación acotados y emite `health_changed` y `health_depleted`; en M5 lo consumen `GameBase` y `Enemy`. La barra del HUD divide Health en segmentos de 10 (el último puede ser parcial). El objetivo inicial `(0,0)` sigue siendo una decisión provisional del prototipo. `data/base/base_data.tres` define 50 de Health provisional.
 
 ## DamagePacket
 ```text
@@ -254,7 +259,7 @@ prerequisites[]
 operations_by_level[]: PermanentUpgradeOperation
 ```
 
-`PermanentUpgradeOperation` expresa una sola operación por nivel: sumar Gold/Mana inicial, capacidad/regeneración de Mana, multiplicar el daño de torres o desbloquear un ID de contenido. La tienda lee el nivel persistido, valida prerrequisitos y saldo, cobra y persiste; el Resource de definición no se modifica. `MetaProgressionData` configura las torres iniciales, catálogo, base/per-round/bonus de victoria y máximo de recompensa. La demo inicia con Ballista y ofrece cuatro upgrades de stats más el Archivo de cartas; estos datos/costes son provisionales.
+`PermanentUpgradeOperation` expresa una sola operación por nivel: sumar Gold/Mana inicial, capacidad/regeneración de Mana, multiplicar el daño de torres, aumentar la probabilidad de cofres o desbloquear un ID de contenido. La tienda lee el nivel persistido, valida prerrequisitos y saldo, cobra y persiste; el Resource de definición no se modifica. `MetaProgressionData` configura las torres iniciales, catálogo, base/per-round/bonus de victoria y máximo de recompensa. La mejora «Suerte del explorador» parte de una base de 1 %, añade cinco puntos porcentuales por nivel, tiene cuatro niveles, cuesta 10/20/35/55 y queda limitada a 20 %; las cifras de coste son provisionales.
 
 ## SaveData
 ```json

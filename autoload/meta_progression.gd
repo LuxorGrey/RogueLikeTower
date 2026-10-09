@@ -1,5 +1,7 @@
 extends Node
 
+const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
+
 signal progress_changed
 signal run_ended(summary: Dictionary)
 
@@ -156,6 +158,14 @@ func get_run_economy_bonuses() -> Dictionary:
 		"maximum_mana": _get_permanent_bonus(PermanentUpgradeOperation.EffectType.MAXIMUM_MANA_ADD),
 		"mana_regen_per_second": _get_permanent_bonus(PermanentUpgradeOperation.EffectType.MANA_REGEN_ADD),
 	}
+
+func get_chest_spawn_chance() -> float:
+	return clampf(
+		TERRAIN_VISUAL_CATALOG_SCRIPT.BASE_CHEST_CHANCE
+			+ _get_permanent_bonus(PermanentUpgradeOperation.EffectType.CHEST_SPAWN_CHANCE_ADD),
+		TERRAIN_VISUAL_CATALOG_SCRIPT.BASE_CHEST_CHANCE,
+		TERRAIN_VISUAL_CATALOG_SCRIPT.MAX_CHEST_CHANCE
+	)
 
 func get_tower_damage_multiplier(tower_id: StringName) -> float:
 	var multiplier: float = 1.0

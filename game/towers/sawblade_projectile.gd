@@ -7,6 +7,7 @@ var _route: Array[Vector2] = []
 var _route_index: int = 1
 var _damage_packet: RefCounted
 var _damage_service: Node
+var _source_tower: Node
 var _remaining_damage: float = 0.0
 var _hit_radius: float = 16.0
 var _travel_speed: float = 560.0
@@ -24,12 +25,14 @@ func configure(
 	damage_service: Node,
 	travel_speed: float,
 	hit_radius: float,
-	damage_loss_per_hit: float
+	damage_loss_per_hit: float,
+	source_tower: Node = null
 ) -> bool:
 	if enemy_route.size() < 2 or damage_packet == null or damage_service == null or travel_speed <= 0.0 or hit_radius <= 0.0:
 		return false
 	_damage_packet = damage_packet
 	_damage_service = damage_service
+	_source_tower = source_tower
 	_remaining_damage = float(_damage_packet.get("raw_damage"))
 	_travel_speed = travel_speed
 	_hit_radius = hit_radius
@@ -100,7 +103,10 @@ func _hit_enemies_along_segment(segment_start: Vector2, segment_end: Vector2) ->
 		var total_damage_overrides: Dictionary[StringName, int] = {}
 		total_damage_overrides[&"bleed"] = bleed_damage
 		_damage_packet.set("status_total_damage_overrides", total_damage_overrides)
-		_damage_service.call("apply_damage", enemy, _damage_packet)
+		var damage_result: Variant = _damage_service.call("apply_damage", enemy, _damage_packet)
+		if damage_result != null and bool(damage_result.get("is_valid")) and int(damage_result.get("total_damage")) > 0:
+			if is_instance_valid(_source_tower) and _source_tower.has_method("on_sawblade_hit"):
+				_source_tower.call("on_sawblade_hit", enemy)
 		_remaining_damage = maxf(_remaining_damage - _damage_loss_per_hit, 0.0)
 		if _remaining_damage <= 0.0:
 			queue_free()

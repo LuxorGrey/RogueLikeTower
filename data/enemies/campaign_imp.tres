@@ -26,6 +26,6 @@ regen_per_second = 200
 placeholder_color = Color(0.73, 0.32, 0.25, 1)
 placeholder_radius = 12.6
 sprite_texture = ExtResource("3_sprite")
-sprite_extent = 55.2
+sprite_extent = 72.0
 scene = ExtResource("2_enemy_scene")
 abilities = Array[EnemyAbilityData]([SubResource("EnemyAbilityData_0")])

@@ -92,6 +92,8 @@ func _apply_impact() -> void:
 			queue_free()
 			return
 	else:
+		if _source_tower.has_method("on_projectile_area_impact"):
+			_source_tower.call("on_projectile_area_impact", _impact_position)
 		var impacted_primary: bool = false
 		for enemy_variant in get_tree().get_nodes_in_group(&"enemies"):
 			var enemy := enemy_variant as Enemy

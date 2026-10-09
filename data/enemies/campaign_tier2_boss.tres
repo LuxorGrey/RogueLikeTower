@@ -50,6 +50,6 @@ shield_regen_per_second = 10
 placeholder_color = Color(0.86, 0.62, 0.22, 1)
 placeholder_radius = 23.0
 sprite_texture = ExtResource("3_sprite")
-sprite_extent = 73.6
+sprite_extent = 96.0
 scene = ExtResource("2_enemy_scene")
 abilities = Array[EnemyAbilityData]([SubResource("EnemyAbilityData_0"), SubResource("EnemyAbilityData_1"), SubResource("EnemyAbilityData_2")])

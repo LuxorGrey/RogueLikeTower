@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://game/main/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://game/board/terrain_piece_preview.gd" id="2_preview"]
@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://game/cards/run_card_service.gd" id="9_run_card_service"]
 [ext_resource type="Script" path="res://game/ui/round_progress_strip.gd" id="10_round_strip"]
 [ext_resource type="Script" path="res://game/ui/segmented_health_bar.gd" id="11_segmented_health"]
+[ext_resource type="Script" path="res://game/ui/build_cursor_overlay.gd" id="12_build_cursor"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -219,17 +220,13 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 12
 
-[node name="Scroll" type="ScrollContainer" parent="HUD/TowerInfoPanel/Margin"]
-layout_mode = 2
-horizontal_scroll_mode = 0
-
-[node name="TowerInfoContent" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin/Scroll"]
+[node name="TowerInfoContent" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 9
 
-[node name="TowerPortrait" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent"]
+[node name="TowerPortrait" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -238,7 +235,7 @@ custom_minimum_size = Vector2(118, 118)
 expand_mode = 1
 stretch_mode = 5
 
-[node name="TowerStatus" type="RichTextLabel" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent"]
+[node name="TowerStatus" type="RichTextLabel" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent"]
 unique_name_in_owner = true
 layout_mode = 2
 fit_content = true
@@ -248,47 +245,47 @@ autowrap_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Selecciona una torre para ver sus datos."
 
-[node name="TowerActions" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent"]
+[node name="TowerActions" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="PriorityRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent/TowerActions"]
+[node name="PriorityRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="TowerPriorityMenu" type="MenuButton" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent/TowerActions/PriorityRow"]
+[node name="TowerPriorityMenu" type="MenuButton" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/PriorityRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Criterios · 1/3"
 
-[node name="UpgradeRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent/TowerActions"]
+[node name="UpgradeRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="UpgradeHealth" type="Button" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent/TowerActions/UpgradeRow"]
+[node name="UpgradeHealth" type="Button" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/UpgradeRow"]
 unique_name_in_owner = true
 layout_mode = 2
 text = ""
 
-[node name="UpgradeArmor" type="Button" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent/TowerActions/UpgradeRow"]
+[node name="UpgradeArmor" type="Button" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/UpgradeRow"]
 unique_name_in_owner = true
 layout_mode = 2
 text = ""
 
-[node name="UpgradeShield" type="Button" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent/TowerActions/UpgradeRow"]
+[node name="UpgradeShield" type="Button" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/UpgradeRow"]
 unique_name_in_owner = true
 layout_mode = 2
 text = ""
 
-[node name="DemolishTower" type="Button" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent/TowerActions"]
+[node name="DemolishTower" type="Button" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions"]
 unique_name_in_owner = true
 layout_mode = 2
 custom_minimum_size = Vector2(0, 42)
 text = "Demoler"
 
-[node name="BuildStatus" type="RichTextLabel" parent="HUD/TowerInfoPanel/Margin/Scroll/TowerInfoContent"]
+[node name="BuildStatus" type="RichTextLabel" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent"]
 unique_name_in_owner = true
 layout_mode = 2
 autowrap_mode = 2
@@ -435,9 +432,9 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -508.0
-offset_top = -178.0
-offset_right = 508.0
+offset_left = -536.0
+offset_top = -190.0
+offset_right = 536.0
 offset_bottom = -20.0
 theme_override_constants/margin_left = 8
 theme_override_constants/margin_top = 7
@@ -447,11 +444,11 @@ theme_override_constants/margin_bottom = 7
 [node name="Buttons" type="HBoxContainer" parent="HUD/TowerToolbar"]
 layout_mode = 2
 alignment = 1
-theme_override_constants/separation = 8
+theme_override_constants/separation = 2
 
 [node name="TowerShortcut1" type="Button" parent="HUD/TowerToolbar/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 140)
+custom_minimum_size = Vector2(144, 148)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
@@ -460,7 +457,7 @@ theme_override_colors/font_color = Color(0.54, 0.86, 0.96, 1)
 
 [node name="TowerShortcut2" type="Button" parent="HUD/TowerToolbar/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 140)
+custom_minimum_size = Vector2(144, 148)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
@@ -469,7 +466,7 @@ theme_override_colors/font_color = Color(1, 0.74, 0.43, 1)
 
 [node name="TowerShortcut3" type="Button" parent="HUD/TowerToolbar/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 140)
+custom_minimum_size = Vector2(144, 148)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
@@ -478,7 +475,7 @@ theme_override_colors/font_color = Color(0.78, 0.66, 1, 1)
 
 [node name="TowerShortcut4" type="Button" parent="HUD/TowerToolbar/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 140)
+custom_minimum_size = Vector2(144, 148)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
@@ -487,7 +484,7 @@ theme_override_colors/font_color = Color(0.55, 0.88, 0.78, 1)
 
 [node name="TowerShortcut5" type="Button" parent="HUD/TowerToolbar/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 140)
+custom_minimum_size = Vector2(144, 148)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
@@ -495,7 +492,7 @@ text = ""
 
 [node name="TowerShortcut6" type="Button" parent="HUD/TowerToolbar/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 140)
+custom_minimum_size = Vector2(144, 148)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
@@ -503,7 +500,7 @@ text = ""
 
 [node name="TowerShortcut7" type="Button" parent="HUD/TowerToolbar/Buttons"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(132, 140)
+custom_minimum_size = Vector2(144, 148)
 layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
@@ -573,6 +570,14 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("8_card_preview")
+
+[node name="BuildCursorLayer" type="CanvasLayer" parent="."]
+layer = 128
+
+[node name="BuildCursor" type="TextureRect" parent="BuildCursorLayer"]
+unique_name_in_owner = true
+mouse_filter = 2
+script = ExtResource("12_build_cursor")
 
 [node name="TerrainCard2" type="Button" parent="HUD/TerrainCardPanel/Margin/Content/Cards"]
 unique_name_in_owner = true

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="MetaProgressionData" load_steps=8 format=3]
+[gd_resource type="Resource" script_class="MetaProgressionData" load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://data/meta/meta_progression_data.gd" id="1_meta_data"]
 [ext_resource type="Script" path="res://game/progression/permanent_upgrade_data.gd" id="2_upgrade_script"]
@@ -7,11 +7,12 @@
 [ext_resource type="Resource" path="res://data/meta/upgrades/mana_wellspring.tres" id="5_mana_wellspring"]
 [ext_resource type="Resource" path="res://data/meta/upgrades/tower_calibration.tres" id="6_tower_calibration"]
 [ext_resource type="Resource" path="res://data/meta/upgrades/card_archive.tres" id="7_card_archive"]
+[ext_resource type="Resource" path="res://data/meta/upgrades/chest_finder.tres" id="8_chest_finder"]
 
 [resource]
 script = ExtResource("1_meta_data")
 starting_unlocked_towers = Array[StringName]([&"tower:ballista_demo"])
-permanent_upgrades = Array[ExtResource("2_upgrade_script")]([ExtResource("3_starting_coffers"), ExtResource("4_mana_reservoir"), ExtResource("5_mana_wellspring"), ExtResource("6_tower_calibration"), ExtResource("7_card_archive")])
+permanent_upgrades = Array[ExtResource("2_upgrade_script")]([ExtResource("3_starting_coffers"), ExtResource("4_mana_reservoir"), ExtResource("5_mana_wellspring"), ExtResource("6_tower_calibration"), ExtResource("7_card_archive"), ExtResource("8_chest_finder")])
 base_run_reward = 5
 reward_per_completed_round = 5
 victory_bonus = 30

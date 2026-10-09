@@ -1,7 +1,7 @@
 # ADR-0039: Panel lateral de torre y escala visual por objeto
 
 - Fecha: 2026-10-09
-- Estado: Aceptado por petición explícita del usuario; código y Resources actualizados, aceptación visual pendiente.
+- Estado: Aceptado; la regla de scroll se sustituyó por ADR-0040 y las escalas visuales por ADR-0041. La aceptación visual sigue pendiente.
 - Ámbito: panel informativo/build de torres y tamaño mostrado de torres, enemigos y base.
 - Decisiones relacionadas: ADR-0026, ADR-0031, ADR-0038.
 - Sustituye parcialmente: ADR-0038 en el tamaño visual de la base.
@@ -12,10 +12,10 @@ El panel de torre mantenía una altura fija excesiva, no identificaba visualment
 
 ## Decisiones
 
-1. El panel lateral se coloca arriba a la derecha y ajusta su altura al contenido disponible. Conserva scroll cuando el contenido excede el alto de la ventana.
+1. Decisión histórica, sustituida por ADR-0040: el panel lateral se coloca arriba a la derecha y ajusta su altura al contenido; no presenta scroll y reduce la escala vertical si falta espacio.
 2. Al construir, el panel presenta un icono de torre grande, nombre, resumen de rol, precio, daño, alcance, cadencia, multiplicadores Health/Armor/Shield y consumo de Mana si existe. Muestra la diferencia real de elevación `Mountain vs Grass` tomada del `TowerData`; no muestra el texto genérico de elegir terreno. El preview conserva el feedback verde/rojo y los errores de colocación siguen informándose.
 3. En el resumen seleccionado, Health se muestra en verde, Armor en ámbar y Shield en azul, con etiquetas en negrita. Los tres botones de mejora son cuadrados y muestran icono, coste y la ganancia de +1 daño base junto con +1 al multiplicador de la capa elegida. Demoler aparece en la fila inferior.
-4. El tamaño visual se configura por Resource y objeto. Los siete perfiles jugables y los Resources de torre de diagnóstico usan `TowerData.visual_icon_size = 62` frente a 54 px (aprox. +15%); el preview de construcción lee ese mismo valor. Los perfiles de enemigo definen `EnemyData.sprite_extent` y aumentan su `placeholder_radius` de presentación alrededor de 15%. La base aumenta `BaseData.sprite_size` de 112×112 a 129×129.
+4. Decisión histórica, sustituida por ADR-0041: el tamaño visual se configura por Resource y objeto. Los perfiles originales subieron las torres a 62 px, los enemigos alrededor de 15 % y la base a 129×129; ADR-0041 fija los tamaños mayores vigentes.
 5. El escalado solo afecta la presentación, las sombras y el espacio de sus barras/estados. Mantiene el tamaño lógico de la huella axial, la ocupación del tablero, los rangos, las colisiones lógicas y el movimiento.
 
 ## Consecuencias

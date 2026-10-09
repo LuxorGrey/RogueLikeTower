@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="PermanentUpgradeData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://game/progression/permanent_upgrade_data.gd" id="1_upgrade"]
+[ext_resource type="Script" path="res://game/progression/permanent_upgrade_operation.gd" id="2_operation"]
+
+[sub_resource type="Resource" id="ChestLuck1"]
+script = ExtResource("2_operation")
+effect_type = 6
+value = 0.05
+
+[sub_resource type="Resource" id="ChestLuck2"]
+script = ExtResource("2_operation")
+effect_type = 6
+value = 0.05
+
+[sub_resource type="Resource" id="ChestLuck3"]
+script = ExtResource("2_operation")
+effect_type = 6
+value = 0.05
+
+[sub_resource type="Resource" id="ChestLuck4"]
+script = ExtResource("2_operation")
+effect_type = 6
+value = 0.05
+
+[resource]
+script = ExtResource("1_upgrade")
+id = &"meta:chest_finder"
+display_name = "Suerte del explorador"
+description = "+5 puntos porcentuales de probabilidad de cofre por nivel. Parte de 1 % y llega hasta 20 % por loseta."
+max_level = 4
+cost_by_level = Array[int]([10, 20, 35, 55])
+operations_by_level = Array[ExtResource("2_operation")]([SubResource("ChestLuck1"), SubResource("ChestLuck2"), SubResource("ChestLuck3"), SubResource("ChestLuck4")])

@@ -33,6 +33,6 @@ max_level = 3
 upgrade_damage_per_level = 1
 upgrade_range_per_level = 0.0
 visual_archetype = 2
-visual_icon_size = 62.0
+visual_icon_size = 84.0
 visual_color = Color(0.47, 0.75, 0.91, 1)
 scene = ExtResource("2_tower_scene")

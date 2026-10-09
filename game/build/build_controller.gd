@@ -116,6 +116,10 @@ func get_placement_error(coord: Vector2i) -> String:
 	var cell: HexCell = _board_grid.cells[coord]
 	if cell == null or not cell.buildable or cell.terrain_type == HexCell.TerrainType.PATH:
 		return "Solo se puede construir en Grass o Mountain."
+	if cell.obstacle_type != HexCell.ObstacleType.NONE:
+		return "Un obstáculo bloquea esta casilla."
+	if cell.chest_available:
+		return "Abre el cofre antes de construir en esta casilla."
 	if cell.occupied or _towers_by_coord.has(coord):
 		return "Esa casilla ya está ocupada."
 	if not _tower_data.allows_terrain(cell.terrain_type):

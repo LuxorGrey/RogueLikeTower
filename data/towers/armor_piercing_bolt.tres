@@ -25,5 +25,5 @@ max_level = 3
 upgrade_damage_per_level = 5
 upgrade_range_per_level = 0.25
 upgrade_attack_rate_per_level = 0.0
-visual_icon_size = 62.0
+visual_icon_size = 84.0
 scene = ExtResource("2_tower_scene")

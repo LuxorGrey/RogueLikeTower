@@ -15,5 +15,5 @@ kill_reward = 4
 placeholder_color = Color(0.82, 0.30, 0.27, 1)
 placeholder_radius = 11.5
 sprite_texture = ExtResource("3_sprite")
-sprite_extent = 55.2
+sprite_extent = 72.0
 scene = ExtResource("2_enemy_scene")

@@ -1,11 +1,18 @@
 class_name TerrainPiecePreview
 extends Node2D
 
+const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
+const TERRAIN_CELL_DECORATION_SCRIPT: Script = preload("res://game/board/terrain_cell_decoration.gd")
+const TERRAIN_SURFACE_OCCLUDER_SCRIPT: Script = preload("res://game/board/terrain_surface_occluder.gd")
+const PATH_FLOW_OVERLAY_SCRIPT: Script = preload("res://game/board/path_flow_overlay.gd")
+const SPAWN_PORTAL_SCENE: PackedScene = preload("res://game/board/spawn_portal.tscn")
+
 signal hover_changed(local_coord: Vector2i, terrain_type: int, elevation: int)
 signal hover_cleared
 
 const HEX_RADIUS: float = 52.0
 const ELEVATION_PIXEL_OFFSET: float = 18.0
+const WORLD_ART_OFFSET_Y: float = 6.0
 const HEX_OUTLINE: Color = Color(0.82, 0.87, 0.84)
 const PATH_COLOR: Color = Color(0.35, 0.40, 0.43)
 const GRASS_COLOR: Color = Color(0.28, 0.57, 0.34)
@@ -15,11 +22,6 @@ const GRASS_HOVER_COLOR: Color = Color(0.50, 0.88, 0.52)
 const MOUNTAIN_HOVER_COLOR: Color = Color(0.96, 0.76, 0.36)
 const CLIFF_DARKEN_FACTOR: float = 0.38
 const CLIFF_MIN_SCREEN_DEPTH: float = 6.0
-const SPAWN_MARKER_DARK: Color = Color(0.035, 0.05, 0.06, 0.96)
-const SPAWN_MARKER_COLOR: Color = Color(0.94, 0.27, 0.18, 1.0)
-const SPAWN_NEXT_COLOR: Color = Color("#55e39a")
-const SPAWN_RETAINED_COLOR: Color = Color("#5dcfff")
-const SPAWN_CLOSING_COLOR: Color = Color("#ff7068")
 const ROUTE_DEBUG_COLORS: Array[Color] = [
 	Color(0.25, 0.78, 1.0, 0.92),
 	Color(1.0, 0.76, 0.25, 0.92),
@@ -31,6 +33,11 @@ var _piece_data: TerrainPieceData
 var _rotation_steps: int = 0
 var _display_cells: Array[TerrainPieceCellData] = []
 var _board_cells: Dictionary[Vector2i, HexCell] = {}
+var _decoration_parent: Node2D
+var _decorations_by_coord: Dictionary[Vector2i, Node2D] = {}
+var _terrain_surface_occluders_by_coord: Dictionary[Vector2i, Node2D] = {}
+var _spawn_portals_by_key: Dictionary[String, Node2D] = {}
+var _path_flow_overlay: Node2D
 var _board_mode: bool = false
 var _placement_active: bool = false
 var _placement_anchor: Vector2i = Vector2i.ZERO
@@ -51,6 +58,9 @@ var _combo_strength_by_coord: Dictionary[Vector2i, int] = {}
 var _combo_animation_time: float = 0.0
 var _combo_redraw_timer: float = 0.0
 
+func _ready() -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+
 func set_piece(piece_data: TerrainPieceData) -> void:
 	_piece_data = piece_data
 	_rebuild_display_cells()
@@ -60,12 +70,34 @@ func set_piece(piece_data: TerrainPieceData) -> void:
 func set_board_cells(board_cells: Dictionary[Vector2i, HexCell]) -> void:
 	_board_mode = true
 	_board_cells = board_cells
+	_sync_elevation_surface_occluders()
+	_sync_cell_decorations()
 	_rebuild_display_cells()
 	_refresh_hovered_cell()
 	queue_redraw()
 
+func set_decoration_parent(parent: Node2D) -> void:
+	_decoration_parent = parent
+	if _path_flow_overlay == null and parent != null and parent.get_parent() != null:
+		_path_flow_overlay = PATH_FLOW_OVERLAY_SCRIPT.new() as Node2D
+		_path_flow_overlay.name = "PathFlowOverlay"
+		var board_parent: Node = parent.get_parent()
+		board_parent.add_child(_path_flow_overlay)
+		board_parent.move_child(_path_flow_overlay, parent.get_index())
+	if _path_flow_overlay != null:
+		_path_flow_overlay.global_position = global_position
+	_sync_path_flow_overlay()
+	_sync_elevation_surface_occluders()
+	_sync_cell_decorations()
+	_sync_spawn_portals()
+
+func refresh_cell_decorations() -> void:
+	_sync_cell_decorations()
+
 func set_path_graph(path_graph: PathGraph) -> void:
 	_path_graph = path_graph
+	_sync_path_flow_overlay()
+	_sync_spawn_portals()
 	queue_redraw()
 
 func set_path_debug_visible(debug_enabled: bool) -> void:
@@ -103,21 +135,24 @@ func set_placement_preview(
 	_placement_is_valid = is_valid
 	_placement_active = active
 	_placement_path_graph = placement_path_graph
+	_sync_path_flow_overlay()
+	_sync_spawn_portals()
 	_rebuild_display_cells()
 	_refresh_hovered_cell()
 	queue_redraw()
 
 func set_rotation_steps(steps: int) -> void:
 	_rotation_steps = posmod(steps, 6)
+	_sync_path_flow_overlay()
 	_rebuild_display_cells()
 	_refresh_hovered_cell()
 	queue_redraw()
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_refresh_hovered_cell()
 	if not _combo_strength_by_coord.is_empty():
-		_combo_animation_time += _delta
-		_combo_redraw_timer -= _delta
+		_combo_animation_time += delta
+		_combo_redraw_timer -= delta
 		if _combo_redraw_timer <= 0.0:
 			_combo_redraw_timer = 0.12
 			queue_redraw()
@@ -137,7 +172,6 @@ func _draw() -> void:
 	if _board_mode and _path_graph != null:
 		if _path_debug_visible:
 			_draw_path_debug_overlay()
-		_draw_spawn_markers()
 	if _tower_build_preview_active:
 		_draw_tower_build_preview()
 
@@ -154,9 +188,13 @@ func _draw_tower_build_preview() -> void:
 	draw_polyline(corners, tint, 3.0, true)
 	if _tower_preview_icon != null:
 		var icon_size := Vector2.ONE * _tower_preview_icon_size
-		draw_texture_rect(_tower_preview_icon, Rect2(center + Vector2(-icon_size.x * 0.5, -icon_size.y), icon_size), false)
+		draw_texture_rect(
+			_tower_preview_icon,
+			Rect2(center + Vector2(-icon_size.x * 0.5, -icon_size.y + WORLD_ART_OFFSET_Y), icon_size),
+			false
+	)
 	else:
-		draw_circle(center + Vector2(0.0, -7.0), 9.0, tint)
+		draw_circle(center + Vector2(0.0, -7.0 + WORLD_ART_OFFSET_Y), 9.0, tint)
 
 func _draw_path_debug_overlay() -> void:
 	for route_index in range(_path_graph.routes.size()):
@@ -178,95 +216,16 @@ func _draw_path_debug_overlay() -> void:
 		draw_circle(base_center, 12.0, Color(0.04, 0.05, 0.06, 0.92))
 		draw_circle(base_center, 8.0, Color(1.0, 0.85, 0.28, 1.0))
 
-func _draw_spawn_markers() -> void:
-	var preview_is_active: bool = (
-		_placement_active
-		and _placement_is_valid
-		and _placement_path_graph != null
-		and _placement_path_graph.is_valid
-	)
-	if not preview_is_active:
-		for route in _path_graph.routes:
-			if route.is_reachable and route.spawn_endpoint != null:
-				_draw_spawn_marker(route.spawn_endpoint, SPAWN_MARKER_COLOR, "SPAWN")
-		return
-
-	var current_spawn_keys: Dictionary = {}
-	var preview_spawn_keys: Dictionary = {}
-	for route in _path_graph.routes:
-		if route.is_reachable and route.spawn_endpoint != null:
-			current_spawn_keys[_spawn_endpoint_key(route.spawn_endpoint)] = true
-	for route in _placement_path_graph.routes:
-		if route.is_reachable and route.spawn_endpoint != null:
-			preview_spawn_keys[_spawn_endpoint_key(route.spawn_endpoint)] = true
-
-	for route in _path_graph.routes:
-		if not route.is_reachable or route.spawn_endpoint == null:
-			continue
-		var current_key: String = _spawn_endpoint_key(route.spawn_endpoint)
-		if not preview_spawn_keys.has(current_key):
-			_draw_spawn_marker(route.spawn_endpoint, SPAWN_CLOSING_COLOR, "CIERRA", true)
-
-	for route in _placement_path_graph.routes:
-		if not route.is_reachable or route.spawn_endpoint == null:
-			continue
-		var candidate_key: String = _spawn_endpoint_key(route.spawn_endpoint)
-		var is_new_spawn: bool = not current_spawn_keys.has(candidate_key)
-		_draw_spawn_marker(
-			route.spawn_endpoint,
-			SPAWN_NEXT_COLOR if is_new_spawn else SPAWN_RETAINED_COLOR,
-			"NUEVO" if is_new_spawn else "SIGUE"
-		)
-
-func _draw_spawn_marker(endpoint: PathEndpoint, marker_color: Color, label: String, is_closing: bool = false) -> void:
-	var spawn_center: Vector2 = _top_center(endpoint.outside_coord, 0)
-	var path_center: Vector2 = _top_center(endpoint.cell_coord, 0)
-	var inward_direction: Vector2 = (path_center - spawn_center).normalized()
-	var path_corners: PackedVector2Array = _hex_corners(path_center)
-	var edge_start: int = posmod(endpoint.edge_direction + 1, 6)
-	var edge_end: int = posmod(endpoint.edge_direction + 2, 6)
-	var path_edge_midpoint: Vector2 = (path_corners[edge_start] + path_corners[edge_end]) * 0.5
-	# El color separa el spawn futuro de los actuales sin tapar las caras del terreno.
-	draw_line(path_edge_midpoint, spawn_center, SPAWN_MARKER_DARK, 9.0, true)
-	draw_line(path_edge_midpoint, spawn_center, marker_color, 5.5, true)
-	draw_circle(spawn_center, 17.0, SPAWN_MARKER_DARK)
-	draw_circle(spawn_center, 12.5, marker_color)
-	draw_arc(spawn_center, 14.5, 0.0, TAU, 24, marker_color.lightened(0.35), 2.5, true)
-	if is_closing:
-		draw_line(spawn_center + Vector2(-6.0, -6.0), spawn_center + Vector2(6.0, 6.0), Color.WHITE, 2.5, true)
-		draw_line(spawn_center + Vector2(6.0, -6.0), spawn_center + Vector2(-6.0, 6.0), Color.WHITE, 2.5, true)
-	else:
-		var arrow_tip: Vector2 = spawn_center + inward_direction * 8.0
-		var arrow_back: Vector2 = spawn_center - inward_direction * 6.0
-		var arrow_side: Vector2 = inward_direction.orthogonal() * 4.5
-		draw_colored_polygon(PackedVector2Array([
-			arrow_tip,
-			arrow_back + arrow_side,
-			arrow_back - arrow_side,
-		]), marker_color.lightened(0.35))
-
-	var label_rect := Rect2(spawn_center + Vector2(16.0, -11.0), Vector2(76.0, 22.0))
-	draw_rect(label_rect, SPAWN_MARKER_DARK, true)
-	draw_rect(label_rect, marker_color.lightened(0.18), false, 1.2)
-	draw_string(
-		ThemeDB.fallback_font,
-		label_rect.position + Vector2(5.0, 15.0),
-		label,
-		HORIZONTAL_ALIGNMENT_LEFT,
-		-1.0,
-		12,
-		marker_color.lightened(0.42)
-	)
-
-func _spawn_endpoint_key(endpoint: PathEndpoint) -> String:
-	return "%d,%d,%d" % [endpoint.cell_coord.x, endpoint.cell_coord.y, endpoint.edge_direction]
-
 func _draw_cliffs(
 	cells: Array[TerrainPieceCellData],
 	cells_by_coord: Dictionary[Vector2i, TerrainPieceCellData]
 ) -> void:
 	for cell in cells:
 		for direction_index in range(HexCoord.DIRECTION_OFFSETS.size()):
+			# Las aristas traseras (noroeste/noreste) quedan debajo del terreno.
+			# Solo se dibujan las fachadas visibles desde el frente y los laterales.
+			if direction_index >= 4:
+				continue
 			var neighbor_coord: Vector2i = cell.local_coord + HexCoord.DIRECTION_OFFSETS[direction_index]
 			var neighbor_cell: TerrainPieceCellData = cells_by_coord.get(neighbor_coord) as TerrainPieceCellData
 			var neighbor_elevation: int = 0
@@ -305,15 +264,17 @@ func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 	var closed_corners := corners.duplicate()
 	closed_corners.append(corners[0])
 	var is_hovered := _is_hovered(cell)
+	var grid_opacity: float = _grid_opacity_for_cell(cell)
 	var fill_color := _terrain_color(cell.terrain_type)
 	var outline_color := HEX_OUTLINE
-	var outline_width := 2.0
+	var outline_width: float = 2.0 if grid_opacity > 0.0 else 0.0
 	var placement_tint: Color = Color(0.20, 0.92, 0.37) if _placement_is_valid else Color(0.96, 0.20, 0.16)
 	if is_ghost:
 		fill_color = fill_color.lerp(placement_tint, 0.48)
 		fill_color.a = 0.78
 		outline_color = placement_tint.lightened(0.12)
 		outline_width = 2.5
+		grid_opacity = 1.0
 	if is_hovered:
 		fill_color = _terrain_hover_color(cell.terrain_type)
 		if is_ghost:
@@ -322,6 +283,19 @@ func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 		outline_color = fill_color.lightened(0.18)
 		outline_width = 3.5
 	draw_colored_polygon(corners, fill_color)
+	var tile_size := Vector2(HEX_RADIUS * sqrt(3.0), HEX_RADIUS * 2.0)
+	var tile_rect := Rect2(center - tile_size * 0.5, tile_size)
+	var tile_region: Rect2 = TERRAIN_VISUAL_CATALOG_SCRIPT.get_terrain_art_region(
+		cell.terrain_type,
+		cell.visual_variant,
+		cell.local_coord
+	)
+	var tile_tint: Color = Color(1.0, 1.0, 1.0, 0.86 if is_ghost else 1.0)
+	draw_texture_rect_region(TERRAIN_VISUAL_CATALOG_SCRIPT.TERRAIN_ATLAS, tile_rect, tile_region, tile_tint)
+	if is_ghost or is_hovered:
+		var interaction_overlay: Color = placement_tint if is_ghost else _terrain_hover_color(cell.terrain_type)
+		interaction_overlay.a = 0.24 if is_ghost else 0.17
+		draw_colored_polygon(corners, interaction_overlay)
 	var combo_strength: int = int(_combo_strength_by_coord.get(cell.local_coord, 0))
 	if combo_strength >= 3:
 		var combo_color := _combo_color(cell.terrain_type)
@@ -332,10 +306,125 @@ func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 		combo_color.a = glow_alpha
 		draw_colored_polygon(corners, combo_color)
 		outline_color = _combo_color(cell.terrain_type)
-		outline_color.a = 0.42 + pulse * 0.18
-		outline_width = 2.5 if combo_strength < 5 else 3.0
-	draw_polyline(closed_corners, outline_color, outline_width, true)
+		outline_color.a = (0.42 + pulse * 0.18) * grid_opacity
+		outline_width = (2.5 if combo_strength < 5 else 3.0) if grid_opacity > 0.0 else 0.0
+	if not is_ghost:
+		outline_color.a *= grid_opacity if combo_strength < 3 else 1.0
+	if outline_width > 0.0:
+		draw_polyline(closed_corners, outline_color, outline_width, true)
 	_draw_path_edges(cell, center, corners, is_ghost)
+
+func _grid_opacity_for_cell(cell: TerrainPieceCellData) -> float:
+	if _hovered_cell == null:
+		return 0.0
+	var delta: Vector2i = cell.local_coord - _hovered_cell.local_coord
+	var distance: int = maxi(absi(delta.x), maxi(absi(delta.y), absi(delta.x + delta.y)))
+	match distance:
+		0:
+			return 0.96
+		1:
+			return 0.48
+		2:
+			return 0.18
+		_:
+			return 0.0
+
+func _sync_cell_decorations() -> void:
+	if _decoration_parent == null or not is_instance_valid(_decoration_parent):
+		return
+	var active_coords: Dictionary[Vector2i, bool] = {}
+	for coord in _board_cells:
+		var cell: HexCell = _board_cells[coord]
+		if cell == null or (cell.obstacle_type < 0 and not cell.chest_available):
+			continue
+		active_coords[coord] = true
+		var decoration: Node2D = _decorations_by_coord.get(coord) as Node2D
+		if decoration == null or not is_instance_valid(decoration):
+			decoration = TERRAIN_CELL_DECORATION_SCRIPT.new() as Node2D
+			decoration.name = "CellDecoration_%d_%d" % [coord.x, coord.y]
+			_decoration_parent.add_child(decoration)
+			_decorations_by_coord[coord] = decoration
+		decoration.global_position = global_position + _top_center(coord, cell.elevation)
+		decoration.call("configure", cell.obstacle_type, cell.chest_available)
+	for coord in _decorations_by_coord.keys():
+		if active_coords.has(coord):
+			continue
+		var decoration_to_remove: Node2D = _decorations_by_coord[coord]
+		if is_instance_valid(decoration_to_remove):
+			decoration_to_remove.queue_free()
+		_decorations_by_coord.erase(coord)
+
+func _sync_elevation_surface_occluders() -> void:
+	if _decoration_parent == null or not is_instance_valid(_decoration_parent):
+		return
+	var active_coords: Dictionary[Vector2i, bool] = {}
+	for coord in _board_cells:
+		var cell: HexCell = _board_cells[coord]
+		if cell == null or cell.elevation <= 0:
+			continue
+		active_coords[coord] = true
+		var surface: Node2D = _terrain_surface_occluders_by_coord.get(coord) as Node2D
+		if surface == null or not is_instance_valid(surface):
+			surface = TERRAIN_SURFACE_OCCLUDER_SCRIPT.new() as Node2D
+			surface.name = "TerrainSurface_%d_%d" % [coord.x, coord.y]
+			_decoration_parent.add_child(surface)
+			# Keep the cover before actors and props when Y positions tie, so an
+			# entity standing on this exact tile remains visible above its surface.
+			_decoration_parent.move_child(surface, 0)
+			_terrain_surface_occluders_by_coord[coord] = surface
+		surface.global_position = global_position + _top_center(coord, cell.elevation)
+		surface.call("configure_surface", cell.terrain_type, cell.visual_variant, coord)
+	for coord in _terrain_surface_occluders_by_coord.keys():
+		if active_coords.has(coord):
+			continue
+		var removed_surface: Node2D = _terrain_surface_occluders_by_coord[coord]
+		if is_instance_valid(removed_surface):
+			removed_surface.queue_free()
+		_terrain_surface_occluders_by_coord.erase(coord)
+
+func _sync_spawn_portals() -> void:
+	if _decoration_parent == null or not is_instance_valid(_decoration_parent):
+		return
+	var graph: PathGraph = _path_graph
+	var using_candidate_graph: bool = (
+		_placement_active
+		and _placement_is_valid
+		and _placement_path_graph != null
+		and _placement_path_graph.is_valid
+	)
+	if using_candidate_graph:
+		graph = _placement_path_graph
+	var active_keys: Dictionary[String, bool] = {}
+	if graph != null and graph.is_valid:
+		for route in graph.routes:
+			if not route.is_reachable or route.spawn_endpoint == null:
+				continue
+			var endpoint: PathEndpoint = route.spawn_endpoint
+			var key: String = "%d,%d,%d" % [endpoint.cell_coord.x, endpoint.cell_coord.y, endpoint.edge_direction]
+			active_keys[key] = true
+			var portal: Node2D = _spawn_portals_by_key.get(key) as Node2D
+			if portal == null or not is_instance_valid(portal):
+				portal = SPAWN_PORTAL_SCENE.instantiate() as Node2D
+				portal.name = "SpawnPortal_%d_%d_%d" % [endpoint.cell_coord.x, endpoint.cell_coord.y, endpoint.edge_direction]
+				_decoration_parent.add_child(portal)
+				_spawn_portals_by_key[key] = portal
+			portal.global_position = global_position + _top_center(endpoint.outside_coord, 0)
+			portal.call("set_candidate_preview", using_candidate_graph)
+	for key in _spawn_portals_by_key.keys():
+		if active_keys.has(key):
+			continue
+		var removed_portal: Node2D = _spawn_portals_by_key[key]
+		if is_instance_valid(removed_portal):
+			removed_portal.queue_free()
+		_spawn_portals_by_key.erase(key)
+
+func _sync_path_flow_overlay() -> void:
+	if _path_flow_overlay == null or not is_instance_valid(_path_flow_overlay):
+		return
+	var preview_graph: PathGraph = null
+	if _placement_active and _placement_is_valid and _placement_path_graph != null and _placement_path_graph.is_valid:
+		preview_graph = _placement_path_graph
+	_path_flow_overlay.call("set_path_graphs", _path_graph, preview_graph)
 
 func _refresh_hovered_cell() -> void:
 	var next_hovered_cell := _find_hovered_cell(get_local_mouse_position())
@@ -446,12 +535,18 @@ func _draw_path_edges(
 ) -> void:
 	if cell.terrain_type != HexCell.TerrainType.PATH:
 		return
+	var edge_opacity: float = 1.0 if is_ghost else _grid_opacity_for_cell(cell)
+	if edge_opacity <= 0.0:
+		return
 	var edge_color := Color(0.86, 0.91, 0.93, 0.9)
 	var flexible_edge_color := Color(0.86, 0.91, 0.93, 0.55)
 	if is_ghost:
 		var placement_tint: Color = Color(0.20, 0.92, 0.37) if _placement_is_valid else Color(0.96, 0.20, 0.16)
 		edge_color = placement_tint.lightened(0.28)
 		flexible_edge_color = edge_color.darkened(0.08)
+	else:
+		edge_color.a *= edge_opacity
+		flexible_edge_color.a *= edge_opacity
 	for direction_index in range(HexCoord.DIRECTION_OFFSETS.size()):
 		var edge_bit: int = 1 << direction_index
 		var is_explicit_edge: bool = (cell.path_edges & edge_bit) != 0
@@ -476,8 +571,8 @@ func _is_hovered(cell: TerrainPieceCellData) -> bool:
 	)
 
 func _sort_cells_back_to_front(a: TerrainPieceCellData, b: TerrainPieceCellData) -> bool:
-	var a_base := _top_center(a.local_coord, 0)
-	var b_base := _top_center(b.local_coord, 0)
+	var a_base := _top_center(a.local_coord, a.elevation)
+	var b_base := _top_center(b.local_coord, b.elevation)
 	if not is_equal_approx(a_base.y, b_base.y):
 		return a_base.y < b_base.y
 	return a_base.x < b_base.x

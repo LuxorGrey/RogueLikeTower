@@ -23,7 +23,12 @@ Los ADR documentan decisiones de terreno, combate, campaña, progresión y UX en
 | [ADR-0036](ADR-0036-parametros-torres-segun-changelog-oficial.md) | Parámetros de torre según changelog oficial | Histórico; Frost Keep y Tesla Coil reciben overrides propios de balance en ADR-0037. |
 | [ADR-0037](ADR-0037-campana-de-45-rondas-y-habilidades.md) | Campaña de 45 rondas, roster, habilidades y nerfs | Aceptado; datos y código integrados, aceptación de gameplay pendiente. Sustituye partes de ADR-0016/0018/0032/0033/0035/0036. |
 | [ADR-0038](ADR-0038-base-sprite-y-feedback-del-hud.md) | Sprite de base y feedback de HUD | Aceptado; implementación integrada, inspección visual pendiente. |
-| [ADR-0039](ADR-0039-panel-torre-y-escalado-individual.md) | Panel lateral de torre y escala visual por objeto | Aceptado; código y Resources actualizados, aceptación visual pendiente. |
+| [ADR-0039](ADR-0039-panel-torre-y-escalado-individual.md) | Panel lateral de torre y escala visual por objeto | Aceptado con apartados de scroll/escalado sustituidos por ADR-0040/0041. |
+| [ADR-0040](ADR-0040-terreno-obstaculos-cofres-y-feedback.md) | Terreno, obstáculos, cofres, VFX/cursor y panel sin scroll | Aceptado; la tasa de cofre fue revisada por ADR-0041. El premio sigue provisional. |
+| [ADR-0041](ADR-0041-occlusion-arte-terreno-y-flujo-de-rutas.md) | Oclusión, ajuste del arte, flujo de rutas, escala y rareza de cofres | Aceptado; código integrado, aceptación visual pendiente. Sustituye parcialmente ADR-0039/0040. |
+| [ADR-0042](ADR-0042-orden-por-elevacion-y-feedback-del-tablero.md) | Oclusión por elevación, grid hover, portales, cursor, botones y catálogo de piezas | Aceptado; el criterio de oclusión de fachadas fue sustituido parcialmente por ADR-0043. Los demás puntos siguen vigentes. |
+| [ADR-0043](ADR-0043-superficies-de-elevacion-y-preview-de-spawns.md) | Oclusión de superficies, portales candidatos y props en cards | Corrección implementada; aceptación visual pendiente. Sustituye parcialmente ADR-0042. |
+| [ADR-0044](ADR-0044-caja-estandar-de-obstaculos.md) | Caja estándar para los sprites de obstáculos | Implementada en el tablero y las cards; aceptación visual pendiente. Sustituye el tamaño/proporción de obstáculos de ADR-0041. |
 
 ## Regla para nuevos ADR
 

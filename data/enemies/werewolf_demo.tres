@@ -17,5 +17,5 @@ regen_per_second = 1.0
 placeholder_color = Color(0.62, 0.34, 0.72, 1)
 placeholder_radius = 18.4
 sprite_texture = ExtResource("3_sprite")
-sprite_extent = 58.9
+sprite_extent = 76.5
 scene = ExtResource("2_enemy_scene")

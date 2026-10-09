@@ -29,6 +29,7 @@ Tipos iniciales:
 - mejora de economía inicial;
 - mejora de Mana;
 - ampliar/alterar pool de cartas.
+- aumentar permanentemente la probabilidad de encontrar cofres.
 
 No introducir support buildings.
 
@@ -41,6 +42,8 @@ M11 implementa cartas dentro de la run, después de la expansión de terreno y a
 M12 implementa `MetaProgression` como propietario del estado permanente y conserva intactos el Gold/Mana de cada `RunEconomyService`. En cada run, `begin_run()` crea un seed que se comparte con la selección aleatoria de cartas y piezas; `finish_run()` entrega moneda una sola vez tanto por derrota como por victoria y persiste un resumen. La fórmula provisional es `5 + 5 × rondas completadas`, más 30 por victoria, limitada a 1000; perder durante ronda 1 todavía concede 5 y progresar aumenta la recompensa. La tienda aparece al terminar la campaña y permite desbloquear torres, mejorar recursos/daño para runs siguientes y comprar el Archivo de cartas. Ballista es el único perfil inicial; los unlocks bloquean tanto la barra como la compra por código y alimentan los filtros de cartas. El archivo versionado JSON usa `user://`, validación, temporal y backup. Si el guardado es corrupto o incompatible se preserva y las compras se desactivan. Roster, precios, fórmula y valores de upgrade son placeholders, documentados en [ADR-0022](../decisions/ADR-0022-meta-progression-y-guardado.md). La aceptación manual todavía está pendiente.
 
 M12A aplica las reglas de torre/capas de HP descritas en [ADR-0023](../decisions/ADR-0023-reglas-de-torres-y-capas-de-vida.md): cada nivel da +1 daño base y +1 al multiplicador Health/Armor/Shield elegido; una torre también sube por XP al retener objetivos, y la capa activa del enemigo asigna esa experiencia. Los upgrades se cobran con Gold de run. Construir una segunda torre del mismo tipo suma su incremento al precio; demoler reduce el precio futuro sin reembolso provisional. El modelo de cada enemigo contiene Health, Armor y Shield; cada perfil configura los máximos, y cero desactiva una capa en esa unidad. La barra dibuja las capas activas en el orden Shield→Armor→Health. Bleed/Burn/Poison bloquean la regeneración correspondiente y aumentan en +1 el multiplicador del ataque en su capa. Los ticks de estado hacen daño completo en su capa asociada y mitad en las otras. El test Health/Armor/Shield vive en DEBUG; el perfil provisional de Ooogie von Ooogovich también porta Shield para mostrar la barra en campaña.
+
+«Suerte del explorador» persiste entre runs: una celda construible sin obstáculo empieza con 1 % de probabilidad de generar cofre. Cuatro niveles añaden +5 puntos porcentuales cada uno; el tope de 20 % limita el último incremento. Los costes 10/20/35/55 y el premio provisional de 25 Gold por abrir un cofre son configurables. El cofre paga Gold de la run, nunca moneda meta.
 
 ## Filosofía
 Las permanentes facilitan progreso y variedad, pero no deben convertir el juego en "ganar por estadísticas" sin estrategia.

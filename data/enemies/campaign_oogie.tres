@@ -34,6 +34,6 @@ kill_reward = 315
 placeholder_color = Color(0.48, 0.34, 0.28, 1)
 placeholder_radius = 20.7
 sprite_texture = ExtResource("3_sprite")
-sprite_extent = 66.2
+sprite_extent = 86.0
 scene = ExtResource("2_enemy_scene")
 abilities = Array[EnemyAbilityData]([SubResource("EnemyAbilityData_0"), SubResource("EnemyAbilityData_1")])

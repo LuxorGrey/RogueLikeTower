@@ -9,4 +9,4 @@ id = &"provisional_base"
 display_name = "Main Tower"
 max_health = 50
 sprite_texture = ExtResource("2_base_sprite")
-sprite_size = Vector2(129, 129)
+sprite_size = Vector2(176, 176)

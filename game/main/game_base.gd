@@ -27,6 +27,7 @@ func _ready() -> void:
 		return
 	_health.initialize(base_data.max_health)
 	_base_sprite.texture = base_data.sprite_texture
+	_base_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	if base_data.sprite_texture != null:
 		_base_sprite.scale = base_data.sprite_size / Vector2(base_data.sprite_texture.get_width(), base_data.sprite_texture.get_height())
 	queue_redraw()

@@ -10,6 +10,16 @@ const GENTLE_TURN_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/g
 const HARD_TURN_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/hard_turn.tres")
 const FORK_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/fork.tres")
 const CONVERGENCE_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/convergence.tres")
+const MEADOW_HILLS_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/meadow_hills.tres")
+const MOUNTAIN_MASSIF_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/mountain_massif.tres")
+const OPEN_GRASSLAND_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/open_grassland.tres")
+const STAGGERED_RIDGE_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/staggered_ridge.tres")
+const MOUNTAIN_ISLET_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/mountain_islet.tres")
+const TWIN_PEAKS_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/twin_peaks.tres")
+const DEAD_END_SPUR_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/dead_end_spur.tres")
+const CLIFF_TURN_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/cliff_turn.tres")
+const MEADOW_SWITCHBACK_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/meadow_switchback.tres")
+const THREE_WAY_RAVINE_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/three_way_ravine.tres")
 const FIRST_WAVE: WaveData = preload("res://data/waves/round_01.tres")
 const DEMO_CAMPAIGN: Resource = preload("res://data/waves/demo_campaign.tres")
 const M7_DAMAGE_TEST_WAVE: WaveData = preload("res://data/waves/m7_damage_test.tres")
@@ -20,6 +30,8 @@ const DEMO_CARD_POOL: Resource = preload("res://data/cards/demo_card_pool.tres")
 const META_SHOP_PANEL_SCRIPT: Script = preload("res://game/progression/meta_shop_panel.gd")
 const HUD_STYLE_SCRIPT: Script = preload("res://game/ui/rogue_hud_style.gd")
 const ICON_CATALOG_SCRIPT: Script = preload("res://game/ui/icon_catalog.gd")
+const IMPACT_VFX_SCRIPT: Script = preload("res://game/vfx/animated_impact.gd")
+const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
 const TOWER_CARD_BUTTON_TEXTURE: Texture2D = preload("res://assets/ui/tower_card_button.png")
 const BALLISTA: TowerData = preload("res://data/towers/ballista.tres")
 const MORTAR: TowerData = preload("res://data/towers/mortar.tres")
@@ -35,6 +47,12 @@ const TOWER_PROFILES: Array[TowerData] = [BALLISTA, MORTAR, TESLA_COIL, FROST_KE
 const MIN_CAMERA_ZOOM: float = 0.45
 const MAX_CAMERA_ZOOM: float = 2.5
 const CAMERA_ZOOM_STEP: float = 1.12
+const CURSOR_DEFAULT_PATH: String = "res://assets/third_party/tiny_swords/cursors/Cursor_01.png"
+const CURSOR_INTERACT_PATH: String = "res://assets/third_party/tiny_swords/cursors/Cursor_02.png"
+const CURSOR_INVALID_PATH: String = "res://assets/third_party/tiny_swords/cursors/Cursor_03.png"
+const CURSOR_BUILD_PATH: String = "res://assets/third_party/tiny_swords/cursors/Cursor_04.png"
+
+enum CursorKind { DEFAULT, INTERACT, INVALID, TOWER_PLACEMENT }
 
 var _board_grid := HexGrid.new()
 var _pieces: Array[TerrainPieceData] = []
@@ -60,6 +78,8 @@ var _combat_debug_timer: float = 0.0
 var _hovered_coord: Vector2i = Vector2i.ZERO
 var _has_hovered_cell: bool = false
 var _terrain_rng := RandomNumberGenerator.new()
+var _run_seed: int = 0
+var _chest_spawn_chance: float = TERRAIN_VISUAL_CATALOG_SCRIPT.BASE_CHEST_CHANCE
 var _offered_terrain_pieces: Array[TerrainPieceData] = []
 var _selected_expansion_piece: TerrainPieceData
 var _pending_expansion_round: int = 0
@@ -76,11 +96,15 @@ var _hud_style: RefCounted
 var _icon_catalog: RefCounted
 var _gold_feedback_tween: Tween
 var _gold_feedback_positions_cached: bool = false
+var _cursor_textures: Dictionary[int, Texture2D] = {}
+var _current_cursor_kind: int = -1
+var _hovered_interactable_control: Control
 var _gold_icon_base_position: Vector2 = Vector2.ZERO
 var _gold_status_base_position: Vector2 = Vector2.ZERO
 var _tower_shortcut_names: Array[Label] = []
 var _tower_shortcut_prices: Array[Label] = []
 var _tower_shortcut_icons: Array[TextureRect] = []
+var _tower_shortcut_icon_tweens: Dictionary[int, Tween] = {}
 var _tower_upgrade_amounts: Array[Label] = []
 var _tower_upgrade_effect_labels: Array[Label] = []
 var _tower_upgrade_cost_icons: Array[TextureRect] = []
@@ -99,8 +123,10 @@ var _hovered_tower: Tower
 @onready var _hud_panel: PanelContainer = %Panel
 @onready var _round_panel: PanelContainer = %RoundPanel
 @onready var _tower_info_panel: PanelContainer = %TowerInfoPanel
+@onready var _tower_info_content: VBoxContainer = %TowerInfoContent
 @onready var _tower_portrait: TextureRect = %TowerPortrait
 @onready var _hud: CanvasLayer = %HUD
+@onready var _build_cursor_overlay: TextureRect = %BuildCursor
 @onready var _terrain_panel: PanelContainer = %TerrainPanel
 @onready var _terrain_card_panel: PanelContainer = %TerrainCardPanel
 @onready var _terrain_card_buttons: Array[Button] = [
@@ -168,6 +194,8 @@ func _ready() -> void:
 	_base_coord = STARTING_BOARD.get("base_coord")
 	MetaProgression.call("configure_tower_catalog", TOWER_PROFILES)
 	var current_run_seed: int = int(MetaProgression.call("begin_run"))
+	_run_seed = current_run_seed
+	_chest_spawn_chance = float(MetaProgression.call("get_chest_spawn_chance"))
 	GameState.run_seed = current_run_seed
 	GameState.current_round = 1
 	_terrain_rng.seed = current_run_seed
@@ -175,12 +203,18 @@ func _ready() -> void:
 	var starting_board_rotation_steps: int = posmod(run_number - 1, HexCoord.DIRECTION_OFFSETS.size())
 	_camera.position = get_viewport_rect().size * 0.5
 	_camera.make_current()
-	_pieces = [STRAIGHT_PIECE, GENTLE_TURN_PIECE, HARD_TURN_PIECE, FORK_PIECE, CONVERGENCE_PIECE]
+	_pieces = [
+		STRAIGHT_PIECE, GENTLE_TURN_PIECE, HARD_TURN_PIECE, FORK_PIECE, CONVERGENCE_PIECE,
+		MEADOW_HILLS_PIECE, MOUNTAIN_MASSIF_PIECE, OPEN_GRASSLAND_PIECE, STAGGERED_RIDGE_PIECE,
+		MOUNTAIN_ISLET_PIECE, TWIN_PEAKS_PIECE, DEAD_END_SPUR_PIECE, CLIFF_TURN_PIECE,
+		MEADOW_SWITCHBACK_PIECE, THREE_WAY_RAVINE_PIECE,
+	]
 	_rotate_left.pressed.connect(_rotate_by.bind(-1))
 	_rotate_right.pressed.connect(_rotate_by.bind(1))
 	_hud_style = HUD_STYLE_SCRIPT.new() as RefCounted
 	_hud_style.call("apply_to_tree", _hud)
 	_configure_hud_visuals()
+	_configure_cursors()
 	_configure_hud_tooltips()
 	for index in _terrain_card_buttons.size():
 		_terrain_card_buttons[index].pressed.connect(_on_terrain_card_selected.bind(index))
@@ -194,6 +228,7 @@ func _ready() -> void:
 		MetaProgression.call("get_permanent_upgrades")
 	)
 	add_child(_meta_shop_panel)
+	_wire_interactable_cursors(_meta_shop_panel)
 	_meta_shop_panel.connect("new_run_requested", _on_new_run_requested)
 	for index in _upgrade_card_buttons.size():
 		_upgrade_card_buttons[index].pressed.connect(_on_upgrade_card_selected.bind(index))
@@ -218,6 +253,7 @@ func _ready() -> void:
 	_wave_director.reward_earned.connect(_on_reward_earned)
 	_build_controller.tower_selected.connect(_on_tower_selected)
 	_build_controller.tower_built.connect(_on_tower_list_changed)
+	_build_controller.tower_built.connect(_on_tower_built_for_vfx)
 	_build_controller.tower_demolished.connect(_on_tower_demolished)
 	_build_controller.tower_upgraded.connect(_on_tower_upgraded)
 	_build_controller.build_mode_changed.connect(_on_build_mode_changed)
@@ -260,10 +296,13 @@ func _ready() -> void:
 		_placement_status.text = "No se pudo crear el tablero inicial."
 		push_error(_placement_status.text)
 		return
+	for cell_variant in starting_cells.values():
+		TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_cell_contents(cell_variant as HexCell, _run_seed, _chest_spawn_chance)
 	_path_graph.rebuild(_board_grid.cells, _base_coord, int(STARTING_BOARD.get("minimum_spawn_route_cells")))
 	if not _path_graph.is_valid:
 		push_error("Grafo PATH inicial inválido: %s" % "; ".join(_path_graph.errors))
 
+	_piece_preview.set_decoration_parent(_entities)
 	_piece_preview.set_board_cells(_board_grid.cells)
 	_piece_preview.set_path_graph(_path_graph)
 	_populate_wave_options()
@@ -299,6 +338,7 @@ func _process(_delta: float) -> void:
 		_refresh_combat_debug()
 		_refresh_tower_controls()
 		_combat_debug_timer = 0.2
+	_refresh_pointer_cursor()
 	if _is_panning or not _placement_enabled or _build_controller.is_build_mode():
 		return
 	_update_anchor_from_mouse()
@@ -430,6 +470,83 @@ func _configure_hud_visuals() -> void:
 	_configure_tower_shortcut_visuals()
 	_configure_tower_upgrade_visuals()
 
+func _configure_cursors() -> void:
+	var cursor_paths: Array[String] = [
+		CURSOR_DEFAULT_PATH,
+		CURSOR_INTERACT_PATH,
+		CURSOR_INVALID_PATH,
+		CURSOR_BUILD_PATH,
+	]
+	for cursor_index in cursor_paths.size():
+		var cursor_path: String = cursor_paths[cursor_index]
+		if ResourceLoader.exists(cursor_path):
+			_cursor_textures[cursor_index] = load(cursor_path) as Texture2D
+	_wire_interactable_cursors(_hud)
+	_set_cursor(CursorKind.DEFAULT)
+
+func _wire_interactable_cursors(root: Node) -> void:
+	for candidate in root.find_children("*", "BaseButton", true, false):
+		var interactable := candidate as BaseButton
+		if interactable == null:
+			continue
+		interactable.mouse_entered.connect(_on_interactable_mouse_entered.bind(interactable))
+		interactable.mouse_exited.connect(_on_interactable_mouse_exited.bind(interactable))
+
+func _on_interactable_mouse_entered(interactable: BaseButton) -> void:
+	_hovered_interactable_control = interactable
+	_refresh_pointer_cursor()
+
+func _on_interactable_mouse_exited(interactable: BaseButton) -> void:
+	if _hovered_interactable_control == interactable:
+		_hovered_interactable_control = null
+	_refresh_pointer_cursor()
+
+func _refresh_pointer_cursor() -> void:
+	if is_instance_valid(_hovered_interactable_control):
+		var hovered_button := _hovered_interactable_control as BaseButton
+		_set_cursor(CursorKind.INVALID if hovered_button.disabled else CursorKind.INTERACT)
+		return
+	if _build_controller != null and _build_controller.is_build_mode():
+		var invalid_placement: bool = false
+		if _has_hovered_cell:
+			invalid_placement = not _build_controller.get_placement_error(_hovered_coord).is_empty()
+		_set_cursor(CursorKind.INVALID if invalid_placement else CursorKind.TOWER_PLACEMENT)
+		return
+	if _hovered_tower != null and is_instance_valid(_hovered_tower):
+		_set_cursor(CursorKind.INTERACT)
+		return
+	if _has_hovered_cell:
+		var hovered_cell: HexCell = _board_grid.cells.get(_hovered_coord) as HexCell
+		if hovered_cell != null and hovered_cell.chest_available:
+			_set_cursor(CursorKind.INTERACT)
+			return
+	_set_cursor(CursorKind.DEFAULT)
+
+func _set_cursor(cursor_kind: int) -> void:
+	var build_mode: bool = _build_controller != null and _build_controller.is_build_mode()
+	var cursor_texture: Texture2D = _cursor_textures.get(cursor_kind) as Texture2D
+	if (
+		build_mode
+		and not is_instance_valid(_hovered_interactable_control)
+		and (cursor_kind == CursorKind.TOWER_PLACEMENT or cursor_kind == CursorKind.INVALID)
+	):
+		_build_cursor_overlay.call("activate", cursor_texture)
+		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+		_current_cursor_kind = cursor_kind
+		return
+	_build_cursor_overlay.call("deactivate")
+	if Input.mouse_mode == Input.MOUSE_MODE_HIDDEN:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	if cursor_kind == _current_cursor_kind:
+		return
+	if cursor_texture == null:
+		return
+	var hotspot := Vector2(13.0, 11.0)
+	if cursor_kind == CursorKind.TOWER_PLACEMENT:
+		hotspot = cursor_texture.get_size() * 0.5
+		Input.set_custom_mouse_cursor(cursor_texture, Input.CURSOR_ARROW, hotspot)
+	_current_cursor_kind = cursor_kind
+
 func _configure_tower_shortcut_visuals() -> void:
 	var icon_names: Array[StringName] = [
 		&"ballista", &"mortar", &"tesla_coil", &"frost_keep", &"flame_thrower", &"poison_sprayer", &"shredder",
@@ -440,7 +557,7 @@ func _configure_tower_shortcut_visuals() -> void:
 	for index in _tower_shortcut_buttons.size():
 		var shortcut_button: Button = _tower_shortcut_buttons[index]
 		shortcut_button.text = ""
-		shortcut_button.custom_minimum_size = Vector2(132.0, 140.0)
+		shortcut_button.custom_minimum_size = Vector2(144.0, 148.0)
 		shortcut_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		shortcut_button.add_theme_stylebox_override("normal", _create_tower_card_style(Color.WHITE))
 		shortcut_button.add_theme_stylebox_override("hover", _create_tower_card_style(Color(1.12, 1.08, 0.92, 1.0)))
@@ -460,7 +577,8 @@ func _configure_tower_shortcut_visuals() -> void:
 		content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		margins.add_child(content)
 		var icon := TextureRect.new()
-		icon.custom_minimum_size = Vector2(56.0, 56.0)
+		icon.custom_minimum_size = Vector2(64.0, 64.0)
+		icon.pivot_offset = Vector2(32.0, 32.0)
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.texture = _icon_catalog.call("get_icon", icon_names[index]) as Texture2D
@@ -615,12 +733,18 @@ func _fit_tower_info_panel() -> void:
 	if not is_instance_valid(_tower_info_panel) or not _tower_info_panel.visible:
 		return
 	var viewport_size: Vector2 = _tower_info_panel.get_viewport_rect().size
-	_tower_info_panel.offset_left = -444.0
+	var panel_width: float = minf(420.0, maxf(240.0, viewport_size.x - 48.0))
+	_tower_info_panel.offset_left = -panel_width - 24.0
 	_tower_info_panel.offset_right = -24.0
-	_tower_info_panel.size.x = 420.0
-	var desired_height: float = _tower_info_panel.get_combined_minimum_size().y
-	var available_height: float = maxf(180.0, viewport_size.y - 48.0)
-	_tower_info_panel.size.y = clampf(desired_height, 150.0, available_height)
+	_tower_info_panel.size.x = panel_width
+	_tower_info_content.pivot_offset = Vector2.ZERO
+	_tower_info_content.scale = Vector2.ONE
+	var desired_height: float = maxf(150.0, ceilf(_tower_info_panel.get_combined_minimum_size().y))
+	var available_height: float = maxf(150.0, viewport_size.y - 48.0)
+	if desired_height > available_height:
+		_tower_info_content.scale = Vector2(1.0, available_height / desired_height)
+		desired_height = available_height
+	_tower_info_panel.size.y = desired_height
 	_tower_info_panel.offset_bottom = _tower_info_panel.offset_top + _tower_info_panel.size.y
 
 func _on_viewport_size_changed() -> void:
@@ -866,6 +990,8 @@ func _confirm_placement() -> void:
 		_rotation_steps,
 		_next_piece_instance_id
 	)
+	for cell_variant in cells.values():
+		TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_cell_contents(cell_variant as HexCell, _run_seed, _chest_spawn_chance)
 	var candidate_board: Dictionary[Vector2i, HexCell] = {}
 	for coord in _board_grid.cells:
 		candidate_board[coord] = _board_grid.cells[coord]
@@ -924,6 +1050,7 @@ func _create_auto_fill_cell(coord: Vector2i) -> HexCell:
 	cell.elevation = 2 if fill_mountain else 1
 	cell.buildable = true
 	cell.visual_variant = &"auto_filled_void"
+	TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_cell_contents(cell, _run_seed, _chest_spawn_chance)
 	return cell
 
 func _cancel_placement() -> void:
@@ -958,6 +1085,11 @@ func _cancel_active_tool() -> void:
 func _handle_board_click() -> void:
 	if RunManager.phase == RunManager.Phase.CARD_OFFER:
 		return
+	if not _placement_enabled and _has_hovered_cell:
+		var hovered_cell: HexCell = _board_grid.cells.get(_hovered_coord) as HexCell
+		if hovered_cell != null and hovered_cell.chest_available:
+			_open_treasure_chest(hovered_cell)
+			return
 	if _build_controller.is_build_mode():
 		if not _has_hovered_cell:
 			_build_status.text = "Coloca el cursor sobre una casilla existente."
@@ -990,6 +1122,23 @@ func _handle_board_click() -> void:
 		_refresh_tower_controls()
 	if _placement_enabled:
 		_confirm_placement()
+
+func _open_treasure_chest(cell: HexCell) -> void:
+	if cell == null or not cell.chest_available:
+		return
+	cell.chest_available = false
+	var gold_awarded: int = int(_run_economy.call(
+		"add_gold",
+		TERRAIN_VISUAL_CATALOG_SCRIPT.CHEST_GOLD_REWARD,
+		&"terrain_chest"
+	))
+	var reward_text: String = "Cofre abierto · +%d Gold." % gold_awarded
+	if gold_awarded <= 0:
+		reward_text = "Cofre abierto · Gold al máximo."
+	_set_rich_text_with_currency_icons(_build_status, reward_text)
+	_piece_preview.refresh_cell_decorations()
+	_piece_preview.queue_redraw()
+	_refresh_tower_controls()
 
 func _select_tower_and_build(index: int) -> void:
 	if index < 0 or index >= TOWER_PROFILES.size():
@@ -1191,6 +1340,85 @@ func _on_demolish_tower_pressed() -> void:
 
 func _on_tower_list_changed(_tower: Tower, _coord: Vector2i) -> void:
 	_refresh_tower_controls()
+
+func _on_tower_built_for_vfx(tower: Tower, _coord: Vector2i) -> void:
+	if tower == null or not is_instance_valid(tower):
+		return
+	tower.impact_effect_requested.connect(_spawn_impact_vfx)
+	_animate_tower_shortcut_icon(tower.get_tower_data().id)
+
+func _animate_tower_shortcut_icon(tower_id: StringName) -> void:
+	for index in TOWER_PROFILES.size():
+		if TOWER_PROFILES[index].id != tower_id or index >= _tower_shortcut_icons.size():
+			continue
+		var icon: TextureRect = _tower_shortcut_icons[index]
+		if not is_instance_valid(icon):
+			return
+		var previous_tween: Tween = _tower_shortcut_icon_tweens.get(index) as Tween
+		if previous_tween != null and previous_tween.is_running():
+			previous_tween.kill()
+		icon.rotation = 0.0
+		icon.scale = Vector2.ONE
+		var tween: Tween = create_tween()
+		_tower_shortcut_icon_tweens[index] = tween
+		tween.tween_property(icon, "rotation", deg_to_rad(10.0), 0.075)
+		tween.parallel().tween_property(icon, "scale", Vector2(1.16, 1.16), 0.075)
+		tween.tween_property(icon, "rotation", deg_to_rad(-9.0), 0.085)
+		tween.parallel().tween_property(icon, "scale", Vector2(0.96, 0.96), 0.085)
+		tween.tween_property(icon, "rotation", deg_to_rad(6.0), 0.075)
+		tween.parallel().tween_property(icon, "scale", Vector2(1.08, 1.08), 0.075)
+		tween.tween_property(icon, "rotation", 0.0, 0.08)
+		tween.parallel().tween_property(icon, "scale", Vector2.ONE, 0.08)
+		return
+
+func _spawn_impact_vfx(effect_id: StringName, world_position: Vector2) -> void:
+	var sheet_path: String = ""
+	var frame_count: int = 1
+	var frames_per_second: float = 12.0
+	var display_size: float = 72.0
+	match effect_id:
+		&"dust_01":
+			sheet_path = "res://assets/third_party/tiny_swords/particle_fx/Dust_01.png"
+			frame_count = 8
+			display_size = 76.0
+		&"explosion_01":
+			sheet_path = "res://assets/third_party/tiny_swords/particle_fx/Explosion_01.png"
+			frame_count = 8
+			frames_per_second = 14.0
+			display_size = 148.0
+		&"tesla_coil":
+			sheet_path = "res://assets/third_party/tiny_swords/particle_fx/TeslaCoil.png"
+			frame_count = 8
+			display_size = 108.0
+		&"ice_01":
+			sheet_path = "res://assets/third_party/tiny_swords/particle_fx/Ice_01.png"
+			frame_count = 10
+			display_size = 82.0
+		&"fire_03":
+			sheet_path = "res://assets/third_party/tiny_swords/particle_fx/Fire_03.png"
+			frame_count = 12
+			display_size = 86.0
+		&"poison":
+			sheet_path = "res://assets/third_party/tiny_swords/particle_fx/Poison.png"
+			frame_count = 9
+			display_size = 142.0
+		&"blood":
+			sheet_path = "res://assets/third_party/tiny_swords/particle_fx/Blood.png"
+			frame_count = 10
+			display_size = 80.0
+		_:
+			return
+	if not ResourceLoader.exists(sheet_path):
+		return
+	var sprite_sheet := load(sheet_path) as Texture2D
+	if sprite_sheet == null:
+		return
+	var effect := IMPACT_VFX_SCRIPT.new() as Sprite2D
+	if effect == null:
+		return
+	_entities.add_child(effect)
+	if not bool(effect.call("configure", sprite_sheet, frame_count, frames_per_second, display_size, world_position)):
+		effect.queue_free()
 
 func _on_tower_demolished(_tower_data: TowerData, _next_build_cost: int) -> void:
 	_tower_status.text = "Torre: ninguna · pulsa 1–7 para construir"
