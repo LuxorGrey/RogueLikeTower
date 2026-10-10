@@ -1,7 +1,10 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://game/board/spawn_portal.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://assets/terrain/spawn_portal.png" id="2_texture"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_portal_hover"]
+size = Vector2(112, 168)
 
 [node name="SpawnPortal" type="Node2D"]
 script = ExtResource("1_script")
@@ -10,3 +13,12 @@ script = ExtResource("1_script")
 unique_name_in_owner = true
 texture = ExtResource("2_texture")
 texture_filter = 2
+
+[node name="HoverArea" type="Area2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(0, -80)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HoverArea"]
+shape = SubResource("RectangleShape2D_portal_hover")

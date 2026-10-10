@@ -20,6 +20,10 @@ Centralizar el cálculo:
 
 No repartir fórmulas entre cada torre.
 
+### Feedback visual de impacto
+
+Un impacto válido muestra su daño en un número flotante con entrada de escala rápida (`punch`), desplazamiento ascendente en arco que alterna izquierda/derecha, contorno oscuro y desvanecimiento. Tres alturas de salida ayudan a que golpes seguidos no coincidan exactamente. Health conserva texto rojo, Armor ámbar y Shield cian. El tamaño se ajusta con límites respecto a la media móvil de daño de ese enemigo; un crítico añade `CRIT`, crece más y conserva el color de la capa afectada. El sprite del enemigo recibe un breve flash del color de la capa. Todo es presentación y no modifica `DamageResult`, HP ni la cadencia de combate. Referencia visual: reel de CapyEmber, «How I make damage numbers that feel good, with hundreds of enemies on screen», Instagram, consultado 2026-10-10; ver [ADR-0052](../decisions/ADR-0052-numeros-de-dano-animados-y-legibles.md).
+
 ## Counters
 El modelo debe permitir que una torre sea:
 - fuerte contra Health;

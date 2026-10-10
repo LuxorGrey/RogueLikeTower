@@ -27,15 +27,11 @@ const M8_STATUS_TEST_WAVE: WaveData = preload("res://data/waves/m8_status_test.t
 const TOWER_LAYER_TEST_WAVE: WaveData = preload("res://data/waves/tower_layer_training_wave.tres")
 const RUN_ECONOMY_DATA: Resource = preload("res://data/run/run_economy_m9.tres")
 const DEMO_CARD_POOL: Resource = preload("res://data/cards/demo_card_pool.tres")
-const META_SHOP_PANEL_SCRIPT: Script = preload("res://game/progression/meta_shop_panel.gd")
-const DEBUG_HACKS_PANEL_SCRIPT: Script = preload("res://game/ui/debug_hacks_panel.gd")
-const HUD_STYLE_SCRIPT: Script = preload("res://game/ui/rogue_hud_style.gd")
-const ICON_CATALOG_SCRIPT: Script = preload("res://game/ui/icon_catalog.gd")
+const META_SHOP_PANEL_SCENE: PackedScene = preload("res://game/progression/meta_shop_panel.tscn")
+const DEBUG_HACKS_PANEL_SCENE: PackedScene = preload("res://game/ui/debug_hacks_panel.tscn")
+const ICON_CATALOG_RESOURCE: Resource = preload("res://game/ui/resources/icon_catalog.tres")
 const IMPACT_VFX_SCRIPT: Script = preload("res://game/vfx/animated_impact.gd")
 const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
-const TOWER_CARD_BUTTON_TEXTURE: Texture2D = preload("res://assets/ui/tower_card_button.png")
-const TERRAIN_EXPANSION_CARD_TEXTURE: Texture2D = preload("res://assets/ui/terrain_expansion_card_frame.png")
-const START_ROUND_BUTTON_TEXTURE: Texture2D = preload("res://assets/ui/start_round_button.png")
 const BALLISTA: TowerData = preload("res://data/towers/ballista.tres")
 const MORTAR: TowerData = preload("res://data/towers/mortar.tres")
 const TESLA_COIL: TowerData = preload("res://data/towers/tesla_coil.tres")
@@ -50,11 +46,8 @@ const TOWER_PROFILES: Array[TowerData] = [BALLISTA, MORTAR, TESLA_COIL, FROST_KE
 const MIN_CAMERA_ZOOM: float = 0.45
 const MAX_CAMERA_ZOOM: float = 2.5
 const CAMERA_ZOOM_STEP: float = 1.12
-const CURSOR_DEFAULT_PATH: String = "res://assets/third_party/tiny_swords/cursors/Cursor_01.png"
-const CURSOR_INTERACT_PATH: String = "res://assets/third_party/tiny_swords/cursors/Cursor_02.png"
-const CURSOR_INVALID_PATH: String = "res://assets/third_party/tiny_swords/cursors/Cursor_03.png"
-const CURSOR_BUILD_PATH: String = "res://assets/third_party/tiny_swords/cursors/Cursor_04.png"
-
+const CAMERA_KEYBOARD_PAN_SPEED: float = 620.0
+const CAMERA_PAN_KEYS: Array[int] = [KEY_W, KEY_A, KEY_S, KEY_D]
 enum CursorKind { DEFAULT, INTERACT, INVALID, TOWER_PLACEMENT }
 
 var _board_grid := HexGrid.new()
@@ -66,6 +59,7 @@ var _next_piece_instance_id: int = 1
 var _latest_placement: TerrainPlacementResult
 var _placement_path_graph: PathGraph
 var _is_panning: bool = false
+var _camera_pan_keys: Dictionary[int, bool] = {}
 var _path_graph := PathGraph.new()
 var _path_debug_visible: bool = false
 var _placement_enabled: bool = false
@@ -92,11 +86,11 @@ var _upgrade_card_titles: Array[RichTextLabel] = []
 var _upgrade_card_descriptions: Array[RichTextLabel] = []
 var _upgrade_card_rarities: Array[Label] = []
 var _upgrade_card_tower_icons: Array[TextureRect] = []
-var _upgrade_card_panel: PanelContainer
 var _upgrade_card_heading: Label
 var _meta_shop_panel: CanvasLayer
-var _hud_style: RefCounted
-var _icon_catalog: RefCounted
+@export var ui_icon_catalog: Resource = ICON_CATALOG_RESOURCE
+
+var _icon_catalog: Resource
 var _gold_feedback_tween: Tween
 var _cursor_textures: Dictionary[int, Texture2D] = {}
 var _current_cursor_kind: int = -1
@@ -109,13 +103,16 @@ var _tower_upgrade_amounts: Array[Label] = []
 var _tower_upgrade_effect_labels: Array[Label] = []
 var _tower_upgrade_cost_icons: Array[TextureRect] = []
 var _tower_upgrade_layer_icons: Array[TextureRect] = []
-var _tower_upgrade_level_labels: Array[Label] = []
+var _tower_upgrade_level_labels: Array[RichTextLabel] = []
 var _tower_upgrade_xp_labels: Array[Label] = []
 var _tower_upgrade_xp_bars: Array[ProgressBar] = []
 var _tower_card_pulse_tween: Tween
 var _tower_card_pulsing_index: int = -1
 var _hovered_tower: Tower
 var _debug_hacks_panel: CanvasLayer
+@onready var _portal_wave_tooltip: PanelContainer = %PortalWaveTooltip
+@onready var _portal_wave_tooltip_label: Label = %PortalWaveTooltipLabel
+var _hovered_spawn_portal: SpawnPortal
 var _visible_target_priority_count: int = 1
 var _priority_visibility_tower_instance_id: int = 0
 
@@ -132,8 +129,11 @@ var _priority_visibility_tower_instance_id: int = 0
 @onready var _round_panel: PanelContainer = %RoundPanel
 @onready var _tower_info_panel: PanelContainer = %TowerInfoPanel
 @onready var _tower_info_content: VBoxContainer = %TowerInfoContent
+@onready var _tower_title: Label = %TowerTitle
+@onready var _tower_level_label: RichTextLabel = %TowerLevel
 @onready var _tower_portrait: TextureRect = %TowerPortrait
 @onready var _hud: CanvasLayer = %HUD
+@onready var _upgrade_card_panel: UpgradeOfferPanel = %UpgradeCardPanel
 @onready var _build_cursor_overlay: TextureRect = %BuildCursor
 @onready var _terrain_panel: PanelContainer = %TerrainPanel
 @onready var _terrain_card_panel: PanelContainer = %TerrainCardPanel
@@ -237,17 +237,13 @@ func _ready() -> void:
 	]
 	_rotate_left.pressed.connect(_rotate_by.bind(-1))
 	_rotate_right.pressed.connect(_rotate_by.bind(1))
-	_hud_style = HUD_STYLE_SCRIPT.new() as RefCounted
-	_hud_style.call("apply_to_tree", _hud)
 	_configure_hud_visuals()
 	_configure_cursors()
 	_configure_hud_tooltips()
 	for index in _terrain_card_buttons.size():
 		_terrain_card_buttons[index].pressed.connect(_on_terrain_card_selected.bind(index))
-		_style_terrain_card_button(_terrain_card_buttons[index])
-	_create_upgrade_card_panel()
-	_hud_style.call("apply_to_tree", _upgrade_card_panel)
-	_meta_shop_panel = META_SHOP_PANEL_SCRIPT.new() as CanvasLayer
+	_configure_upgrade_card_panel()
+	_meta_shop_panel = META_SHOP_PANEL_SCENE.instantiate() as MetaShopPanel
 	_meta_shop_panel.call(
 		"configure",
 		TOWER_PROFILES,
@@ -256,9 +252,8 @@ func _ready() -> void:
 	add_child(_meta_shop_panel)
 	_wire_interactable_cursors(_meta_shop_panel)
 	_meta_shop_panel.connect("new_run_requested", _on_new_run_requested)
-	_debug_hacks_panel = DEBUG_HACKS_PANEL_SCRIPT.new() as CanvasLayer
+	_debug_hacks_panel = DEBUG_HACKS_PANEL_SCENE.instantiate() as DebugHacksPanel
 	add_child(_debug_hacks_panel)
-	_hud_style.call("apply_to_tree", _debug_hacks_panel)
 	_debug_hacks_panel.connect("action_requested", _on_debug_hack_requested)
 	_debug_hacks_panel.call("set_unlock_status", bool(MetaProgression.call("is_debug_unlock_all_enabled")))
 	for index in _upgrade_card_buttons.size():
@@ -339,6 +334,7 @@ func _ready() -> void:
 	_piece_preview.set_board_cells(_board_grid.cells)
 	_piece_preview.set_path_graph(_path_graph)
 	_populate_wave_options()
+	_refresh_spawn_portal_previews()
 	_base.global_position = _piece_preview.global_position + HexMath.axial_to_world(
 		HexCoord.new(_base_coord.x, _base_coord.y),
 		HEX_RADIUS
@@ -366,6 +362,8 @@ func _ready() -> void:
 	_upgrade_card_panel.hide()
 
 func _process(_delta: float) -> void:
+	_update_camera_keyboard_pan(_delta)
+	_position_portal_wave_tooltip()
 	_combat_debug_timer -= _delta
 	if _combat_debug_timer <= 0.0:
 		_refresh_combat_debug()
@@ -377,6 +375,8 @@ func _process(_delta: float) -> void:
 	_update_anchor_from_mouse()
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventKey:
+		_track_camera_pan_key(event as InputEventKey)
 	if event is InputEventKey:
 		var debug_key := event as InputEventKey
 		if debug_key.pressed and not debug_key.echo and debug_key.ctrl_pressed and debug_key.keycode == KEY_K:
@@ -470,6 +470,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		var key_event := event as InputEventKey
 		if key_event == null or not key_event.pressed or key_event.echo:
 			return
+		if key_event.ctrl_pressed and key_event.keycode == KEY_D:
+			_toggle_path_debug()
+			get_viewport().set_input_as_handled()
+			return
 		match key_event.keycode:
 			KEY_Q:
 				_rotate_by(-1)
@@ -479,9 +483,6 @@ func _unhandled_input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 			KEY_R:
 				_reset_camera()
-				get_viewport().set_input_as_handled()
-			KEY_D:
-				_toggle_path_debug()
 				get_viewport().set_input_as_handled()
 			KEY_F3:
 				_toggle_terrain_panel()
@@ -503,8 +504,43 @@ func _unhandled_input(event: InputEvent) -> void:
 			_cancel_active_tool()
 			get_viewport().set_input_as_handled()
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		_camera_pan_keys.clear()
+
+func _track_camera_pan_key(key_event: InputEventKey) -> void:
+	var physical_key: int = int(key_event.physical_keycode)
+	if physical_key == 0:
+		physical_key = int(key_event.keycode)
+	if not CAMERA_PAN_KEYS.has(physical_key) or key_event.echo:
+		return
+	if key_event.ctrl_pressed:
+		_camera_pan_keys.erase(physical_key)
+		return
+	_camera_pan_keys[physical_key] = key_event.pressed
+
+func _update_camera_keyboard_pan(delta: float) -> void:
+	if _camera_pan_keys.is_empty():
+		return
+	if _meta_shop_panel != null and bool(_meta_shop_panel.call("is_open")):
+		return
+	if _debug_hacks_panel != null and _debug_hacks_panel.visible:
+		return
+	var focus_owner: Control = get_viewport().gui_get_focus_owner() as Control
+	if focus_owner is LineEdit or focus_owner is TextEdit:
+		return
+	var direction := Vector2(
+		float(int(_camera_pan_keys.get(KEY_D, false)) - int(_camera_pan_keys.get(KEY_A, false))),
+		float(int(_camera_pan_keys.get(KEY_S, false)) - int(_camera_pan_keys.get(KEY_W, false)))
+	)
+	if direction.is_zero_approx():
+		return
+	_camera.position += direction.normalized() * CAMERA_KEYBOARD_PAN_SPEED * delta / _camera.zoom.x
+
 func _toggle_hud() -> void:
 	_hud.visible = not _hud.visible
+	if not _hud.visible:
+		_hide_portal_wave_tooltip()
 	_refresh_tower_controls()
 
 func _toggle_debug_hacks() -> void:
@@ -537,25 +573,20 @@ func _on_debug_hack_requested(action_id: StringName) -> void:
 	_refresh_tower_controls()
 
 func _configure_hud_visuals() -> void:
-	_icon_catalog = ICON_CATALOG_SCRIPT.new() as RefCounted
-	_gold_icon.texture = _icon_catalog.call("get_icon", &"gold") as Texture2D
-	_mana_icon.texture = _icon_catalog.call("get_icon", &"mana") as Texture2D
-	_style_start_wave_button()
+	_icon_catalog = ui_icon_catalog
 	_configure_tower_shortcut_visuals()
 	_configure_tower_upgrade_visuals()
 	_gold_group.pivot_offset = _gold_group.size * 0.5
 
 func _configure_cursors() -> void:
-	var cursor_paths: Array[String] = [
-		CURSOR_DEFAULT_PATH,
-		CURSOR_INTERACT_PATH,
-		CURSOR_INVALID_PATH,
-		CURSOR_BUILD_PATH,
+	var cursor_icon_ids: Array[StringName] = [
+		&"cursor_default",
+		&"cursor_interact",
+		&"cursor_invalid",
+		&"cursor_build",
 	]
-	for cursor_index in cursor_paths.size():
-		var cursor_path: String = cursor_paths[cursor_index]
-		if ResourceLoader.exists(cursor_path):
-			_cursor_textures[cursor_index] = load(cursor_path) as Texture2D
+	for cursor_index in cursor_icon_ids.size():
+		_cursor_textures[cursor_index] = _icon_catalog.call("get_icon", cursor_icon_ids[cursor_index]) as Texture2D
 	_wire_interactable_cursors(_hud)
 	_set_cursor(CursorKind.DEFAULT)
 
@@ -623,89 +654,19 @@ func _set_cursor(cursor_kind: int) -> void:
 	_current_cursor_kind = cursor_kind
 
 func _configure_tower_shortcut_visuals() -> void:
-	var icon_names: Array[StringName] = [
-		&"ballista", &"mortar", &"tesla_coil", &"frost_keep", &"flame_thrower", &"poison_sprayer", &"shredder",
-	]
 	_tower_shortcut_names.clear()
 	_tower_shortcut_prices.clear()
 	_tower_shortcut_icons.clear()
 	for index in _tower_shortcut_buttons.size():
 		var shortcut_button: Button = _tower_shortcut_buttons[index]
-		shortcut_button.text = ""
-		shortcut_button.custom_minimum_size = Vector2(144.0, 148.0)
-		shortcut_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		shortcut_button.add_theme_stylebox_override("normal", _create_tower_card_style(Color.WHITE))
-		shortcut_button.add_theme_stylebox_override("hover", _create_tower_card_style(Color(1.12, 1.08, 0.92, 1.0)))
-		shortcut_button.add_theme_stylebox_override("pressed", _create_tower_card_style(Color(0.82, 0.88, 0.98, 1.0)))
-		shortcut_button.add_theme_stylebox_override("hover_pressed", _create_tower_card_style(Color(0.92, 0.98, 1.08, 1.0)))
-		shortcut_button.add_theme_stylebox_override("disabled", _create_tower_card_style(Color(0.62, 0.65, 0.70, 0.76)))
-		var margins := MarginContainer.new()
-		margins.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		margins.add_theme_constant_override("margin_left", 4)
-		margins.add_theme_constant_override("margin_top", 4)
-		margins.add_theme_constant_override("margin_right", 4)
-		margins.add_theme_constant_override("margin_bottom", 4)
-		margins.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var content := VBoxContainer.new()
-		content.alignment = BoxContainer.ALIGNMENT_CENTER
-		content.add_theme_constant_override("separation", 2)
-		content.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		margins.add_child(content)
-		var icon := TextureRect.new()
-		icon.custom_minimum_size = Vector2(64.0, 64.0)
-		icon.pivot_offset = Vector2(32.0, 32.0)
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.texture = _icon_catalog.call("get_icon", icon_names[index]) as Texture2D
-		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		content.add_child(icon)
-		var name_label := Label.new()
-		name_label.text = TOWER_PROFILES[index].display_name
-		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		name_label.add_theme_font_size_override("font_size", 11)
-		name_label.add_theme_color_override("font_color", TOWER_PROFILES[index].visual_color.lightened(0.45))
-		name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		content.add_child(name_label)
-		var price_row := HBoxContainer.new()
-		price_row.alignment = BoxContainer.ALIGNMENT_CENTER
-		price_row.add_theme_constant_override("separation", 3)
-		price_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		content.add_child(price_row)
-		var price_icon := TextureRect.new()
-		price_icon.custom_minimum_size = Vector2(17.0, 17.0)
-		price_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		price_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		price_icon.texture = _gold_icon.texture
-		price_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		price_row.add_child(price_icon)
-		var price_label := Label.new()
-		price_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		price_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		price_label.add_theme_font_size_override("font_size", 13)
-		price_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		price_row.add_child(price_label)
-		shortcut_button.add_child(margins)
-		_tower_shortcut_icons.append(icon)
-		_tower_shortcut_names.append(name_label)
-		_tower_shortcut_prices.append(price_label)
-
-func _create_tower_card_style(tint: Color) -> StyleBoxTexture:
-	var style := StyleBoxTexture.new()
-	style.texture = TOWER_CARD_BUTTON_TEXTURE
-	style.texture_margin_left = 4.25
-	style.texture_margin_top = 3.68
-	style.texture_margin_right = 4.25
-	style.texture_margin_bottom = 3.68
-	style.content_margin_left = 9.0
-	style.content_margin_top = 9.0
-	style.content_margin_right = 9.0
-	style.content_margin_bottom = 9.0
-	style.modulate_color = tint
-	return style
+		var shortcut_card := shortcut_button as TowerShortcutCard
+		shortcut_card.set_tower_visuals(
+			TOWER_PROFILES[index].display_name,
+			TOWER_PROFILES[index].visual_color
+		)
+		_tower_shortcut_icons.append(shortcut_card.tower_icon)
+		_tower_shortcut_names.append(shortcut_card.name_label)
+		_tower_shortcut_prices.append(shortcut_card.price_label)
 
 func _configure_tower_upgrade_visuals() -> void:
 	_tower_upgrade_amounts.clear()
@@ -715,38 +676,16 @@ func _configure_tower_upgrade_visuals() -> void:
 	_tower_upgrade_level_labels.clear()
 	_tower_upgrade_xp_labels.clear()
 	_tower_upgrade_xp_bars.clear()
-	var layer_icons: Array[StringName] = [&"health", &"armor", &"shield"]
 	var layer_names: Array[String] = ["Health", "Armor", "Shield"]
 	for layer in _tower_upgrade_buttons.size():
-		var button: Button = _tower_upgrade_buttons[layer]
+		var button := _tower_upgrade_buttons[layer] as TowerLayerUpgradeButton
 		button.text = ""
-		button.custom_minimum_size = Vector2(116.0, 140.0)
-		var content := VBoxContainer.new()
-		content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		content.alignment = BoxContainer.ALIGNMENT_CENTER
-		content.add_theme_constant_override("separation", 1)
-		content.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var layer_icon := TextureRect.new()
-		layer_icon.custom_minimum_size = Vector2(26.0, 26.0)
-		layer_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		layer_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		layer_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		layer_icon.texture = _icon_catalog.call("get_icon", layer_icons[layer]) as Texture2D
-		layer_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		content.add_child(layer_icon)
-		var level_label := Label.new()
-		level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		level_label.add_theme_font_size_override("font_size", 10)
-		level_label.add_theme_color_override("font_color", _hp_layer_color(layer))
-		level_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		content.add_child(level_label)
-		var xp_bar := ProgressBar.new()
-		xp_bar.custom_minimum_size = Vector2(0.0, 7.0)
-		xp_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		xp_bar.min_value = 0.0
-		xp_bar.max_value = 100.0
-		xp_bar.show_percentage = false
-		xp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		button.custom_minimum_size = Vector2(116.0, 148.0)
+		var layer_icon: TextureRect = button.layer_icon
+		layer_icon.custom_minimum_size = Vector2(48.0, 48.0)
+		var level_label: RichTextLabel = button.level_label
+		level_label.add_theme_color_override("default_color", _hp_layer_color(layer))
+		var xp_bar: ProgressBar = button.xp_bar
 		var xp_background := StyleBoxFlat.new()
 		xp_background.bg_color = Color("#1c252b")
 		xp_background.set_corner_radius_all(4)
@@ -755,38 +694,12 @@ func _configure_tower_upgrade_visuals() -> void:
 		xp_fill.set_corner_radius_all(4)
 		xp_bar.add_theme_stylebox_override("background", xp_background)
 		xp_bar.add_theme_stylebox_override("fill", xp_fill)
-		content.add_child(xp_bar)
-		var xp_label := Label.new()
-		xp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		xp_label.add_theme_font_size_override("font_size", 9)
-		xp_label.add_theme_color_override("font_color", Color("#d5dce0"))
-		xp_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		content.add_child(xp_label)
-		var effect_label := Label.new()
+		var xp_label: Label = button.xp_label
+		var effect_label: Label = button.effect_label
 		effect_label.text = "+1 Daño · +1 %s" % layer_names[layer]
-		effect_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		effect_label.add_theme_font_size_override("font_size", 10)
 		effect_label.add_theme_color_override("font_color", _hp_layer_color(layer))
-		effect_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		content.add_child(effect_label)
-		var price_row := HBoxContainer.new()
-		price_row.alignment = BoxContainer.ALIGNMENT_CENTER
-		price_row.add_theme_constant_override("separation", 4)
-		price_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var cost_icon := TextureRect.new()
-		cost_icon.custom_minimum_size = Vector2(18.0, 18.0)
-		cost_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		cost_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		cost_icon.texture = _gold_icon.texture
-		cost_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		price_row.add_child(cost_icon)
-		var amount_label := Label.new()
-		amount_label.add_theme_font_size_override("font_size", 14)
-		amount_label.add_theme_color_override("font_color", Color("#ffe29a"))
-		amount_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		price_row.add_child(amount_label)
-		content.add_child(price_row)
-		button.add_child(content)
+		var cost_icon: TextureRect = button.cost_icon
+		var amount_label: Label = button.amount_label
 		_tower_upgrade_layer_icons.append(layer_icon)
 		_tower_upgrade_effect_labels.append(effect_label)
 		_tower_upgrade_amounts.append(amount_label)
@@ -805,38 +718,6 @@ func _hp_layer_color(layer: int) -> Color:
 			return Color("#72d5f2")
 		_:
 			return Color.WHITE
-
-func _format_tower_summary(source_text: String) -> String:
-	var result := _style_summary_layer(source_text, "Health", "health", "#82df8b")
-	result = _style_summary_layer(result, "Armor", "armor", "#f2bd68")
-	result = _style_summary_layer(result, "Shield", "shield", "#72d5f2")
-	result = result.replace("Daño ", "[b]Daño[/b] ")
-	result = result.replace("Rango ", "[b]Rango[/b] ")
-	result = result.replace("RPM", "[b]RPM[/b]")
-	result = result.replace("Crítico ", "[b]Crítico[/b] ")
-	result = result.replace("XP {icon:health}", "[b]XP[/b] {icon:health}")
-	return result
-
-func _style_summary_layer(source_text: String, layer_name: String, icon_name: String, color_hex: String) -> String:
-	var fragment: String = "%s {icon:%s} " % [layer_name, icon_name]
-	var layer_start: int = source_text.find(fragment)
-	if layer_start < 0:
-		return source_text
-	var value_start: int = layer_start + fragment.length()
-	var separator_end: int = source_text.find(" · ", value_start)
-	var line_end: int = source_text.find("\n", value_start)
-	var value_end: int = separator_end if separator_end >= 0 else line_end
-	if value_end < 0:
-		value_end = source_text.length()
-	var value: String = source_text.substr(value_start, value_end - value_start)
-	var formatted: String = "[b][color=%s]%s[/color][/b] {icon:%s} [color=%s]%s[/color]" % [
-		color_hex,
-		layer_name,
-		icon_name,
-		color_hex,
-		value,
-	]
-	return source_text.substr(0, layer_start) + formatted + source_text.substr(value_end)
 
 func _fit_tower_info_panel() -> void:
 	if not is_instance_valid(_tower_info_panel) or not _tower_info_panel.visible:
@@ -976,6 +857,7 @@ func _refresh_placement() -> void:
 		_latest_placement = null
 		_placement_path_graph = null
 		_piece_preview.set_placement_preview(null, _anchor_coord, _rotation_steps, false, false)
+		_refresh_spawn_portal_previews()
 		_piece_selector.disabled = true
 		_rotate_left.disabled = true
 		_rotate_right.disabled = true
@@ -1000,6 +882,7 @@ func _refresh_placement() -> void:
 		_latest_placement = null
 		_placement_path_graph = null
 		_piece_preview.set_placement_preview(null, _anchor_coord, _rotation_steps, false, false)
+		_refresh_spawn_portal_previews()
 		_confirm_button.disabled = true
 		_piece_status.text = "Tablero confirmado · %d casillas" % _board_grid.cells.size()
 		_rotation_status.text = "Orientación: —"
@@ -1029,6 +912,7 @@ func _refresh_placement() -> void:
 		can_edit_terrain,
 		_placement_path_graph
 	)
+	_refresh_spawn_portal_previews()
 	_confirm_button.disabled = not can_edit_terrain or not placement_is_valid
 	_rotation_status.text = "Orientación: %d° · posición %d/6" % [
 		_rotation_steps * 60,
@@ -1440,6 +1324,7 @@ func _on_wave_profile_selected(index: int) -> void:
 	else:
 		return
 	_set_start_wave_button_text("▶ Iniciar prueba" if _selected_wave_is_debug else "▶ Iniciar ronda %d/45" % _campaign_round_number)
+	_refresh_spawn_portal_previews()
 	_refresh_tower_controls()
 
 func _on_targeting_priority_selected(item_index: int, slot: int) -> void:
@@ -1619,7 +1504,6 @@ func _on_tower_demolished(_tower_data: TowerData, _next_build_cost: int) -> void
 func _on_tower_selected(tower: Tower, _coord: Vector2i) -> void:
 	if tower == null or not is_instance_valid(tower):
 		return
-	_set_rich_text_with_currency_icons(_tower_status, _format_tower_summary(tower.get_summary()))
 	_sync_targeting_priority_menu(tower)
 	_refresh_combat_debug()
 	_refresh_tower_controls()
@@ -1683,10 +1567,21 @@ func _refresh_tower_controls() -> void:
 		and (build_mode or has_selected_tower)
 	)
 	_build_status.visible = (_build_status.get_parsed_text().strip_edges() != "") and (build_mode or has_selected_tower)
-	_tower_portrait.visible = build_mode
+	_tower_portrait.visible = build_mode or has_selected_tower
 	_tower_portrait.texture = null
+	_tower_level_label.visible = has_selected_tower and not build_mode
 	if build_mode:
+		_tower_title.text = _selected_tower_data.display_name
 		_tower_portrait.texture = _icon_catalog.call("get_tower_icon", StringName(_selected_tower_data.id)) as Texture2D
+	elif has_selected_tower:
+		var selected_data: TowerData = selected.get_tower_data()
+		_tower_title.text = selected_data.display_name
+		_tower_portrait.texture = _icon_catalog.call("get_tower_icon", StringName(selected_data.id)) as Texture2D
+		var total_upgrades: int = mini(maxi(selected.level - 1, 0), selected.get_max_total_upgrades())
+		_tower_level_label.text = "[b]NIVEL %d DE %d[/b]" % [total_upgrades, selected.get_max_total_upgrades()]
+	else:
+		_tower_title.text = ""
+		_tower_level_label.text = ""
 	_start_wave_button.disabled = (
 		build_mode
 		or not _path_graph.is_valid
@@ -1709,19 +1604,31 @@ func _refresh_tower_controls() -> void:
 		_tower_upgrade_cost_icons[layer].visible = has_selected_tower and next_upgrade_cost >= 0
 		_tower_upgrade_effect_labels[layer].visible = has_selected_tower
 		_tower_upgrade_level_labels[layer].visible = has_selected_tower
-		_tower_upgrade_xp_labels[layer].visible = has_selected_tower
+		_tower_upgrade_xp_labels[layer].visible = false
 		_tower_upgrade_xp_bars[layer].visible = has_selected_tower and next_upgrade_cost >= 0
-		_tower_upgrade_level_labels[layer].text = "NIVEL %d/%d" % [layer_level, max_layer_upgrades]
+		_tower_upgrade_level_labels[layer].text = "[b]NIVEL %d/%d[/b]" % [layer_level, max_layer_upgrades]
 		if next_upgrade_cost >= 0:
 			_tower_upgrade_amounts[layer].text = "%d" % next_upgrade_cost
-			_tower_upgrade_xp_labels[layer].text = "XP %.0f / %.0f" % [xp_value, xp_required]
 			_tower_upgrade_xp_bars[layer].value = clampf(xp_value / maxf(xp_required, 0.001) * 100.0, 0.0, 100.0)
 		else:
 			_tower_upgrade_amounts[layer].text = "máx."
-			_tower_upgrade_xp_labels[layer].text = "MÁXIMO"
 			_tower_upgrade_xp_bars[layer].value = 100.0
 		upgrade_button.disabled = build_mode or not has_selected_tower or next_upgrade_cost < 0 or not bool(_run_economy.call("can_afford_gold", next_upgrade_cost)) or not _build_controller.can_build_in_current_phase()
-		upgrade_button.tooltip_text = "Nivel %d/%d · cuesta %d Gold · añade +1 al daño base y +1 a %s." % [layer_level, max_layer_upgrades, next_upgrade_cost, _hp_layer_name(layer)] if next_upgrade_cost >= 0 else "%s está al nivel máximo %d/%d." % [_hp_layer_name(layer), layer_level, max_layer_upgrades]
+		if next_upgrade_cost >= 0:
+			upgrade_button.tooltip_text = "Nivel %d/%d · XP %.0f/%.0f · cuesta %d Gold · añade +1 al daño base y +1 a %s." % [
+				layer_level,
+				max_layer_upgrades,
+				xp_value,
+				xp_required,
+				next_upgrade_cost,
+				_hp_layer_name(layer),
+			]
+		else:
+			upgrade_button.tooltip_text = "%s está al nivel máximo %d/%d." % [
+				_hp_layer_name(layer),
+				layer_level,
+				max_layer_upgrades,
+			]
 	_demolish_tower_button.disabled = build_mode or not has_selected_tower or not _build_controller.can_build_in_current_phase()
 	_demolish_tower_button.tooltip_text = "Retira esta torre sin devolución y reduce el precio siguiente de su tipo."
 	if build_mode:
@@ -1729,7 +1636,7 @@ func _refresh_tower_controls() -> void:
 	elif not has_selected_tower:
 		_tower_status.text = "Torre: ninguna · pulsa 1–7 para construir"
 	else:
-		_set_rich_text_with_currency_icons(_tower_status, _format_tower_summary(selected.get_summary()))
+		_set_rich_text_with_currency_icons(_tower_status, _format_selected_tower_summary(selected))
 		_tower_status.tooltip_text = "Consulta F3 para ver el objetivo en alcance, sus capas, regeneración y estados."
 	_build_status.tooltip_text = "Estado de construcción, recompensa reciente o motivo por el que una acción no se puede realizar."
 	_start_wave_button.tooltip_text = "Inicia la ronda activa. La campaña avanza en orden y termina tras la ronda 45."
@@ -1752,18 +1659,30 @@ func _build_tower_description(tower_data: TowerData) -> String:
 		energy_text = "\nConsumo: %.1f Mana/s" % tower_data.mana_cost_per_second
 	elif tower_data.mana_cost_per_attack > 0.0:
 		energy_text = "\nConsumo: %.1f Mana/ataque" % tower_data.mana_cost_per_attack
-	return "[b]%s[/b]\n%s\n[b]Precio:[/b] %d Gold · [b]Daño:[/b] %d · [b]Rango:[/b] %.1f hex · [b]RPM:[/b] %.0f\n[b][color=#82df8b]Health[/color][/b] [color=#82df8b]×%.1f[/color] · [b][color=#f2bd68]Armor[/color][/b] [color=#f2bd68]×%.1f[/color] · [b][color=#72d5f2]Shield[/color][/b] [color=#72d5f2]×%.1f[/color]\n%s%s" % [
-		tower_data.display_name,
+	return "%s\n[b]Precio:[/b] %d Gold · [b]Daño:[/b] %d · [b]Rango:[/b] %.1f hex · [b]RPM:[/b] %.0f\n%s%s" % [
 		tower_data.role_summary,
 		build_cost,
 		tower_data.base_damage,
 		tower_data.range_hexes,
 		tower_data.get_rounds_per_minute(),
-		tower_data.health_damage_multiplier,
-		tower_data.armor_damage_multiplier,
-		tower_data.shield_damage_multiplier,
 		elevation_text,
 		energy_text,
+	]
+
+func _format_selected_tower_summary(tower: Tower) -> String:
+	var tower_data: TowerData = tower.get_tower_data()
+	var mana_summary: String = ""
+	if tower_data.mana_cost_per_second > 0.0:
+		mana_summary = " · %.1f Mana/s" % (tower_data.mana_cost_per_second * float(_run_card_service.call("get_tower_mana_cost_multiplier", tower_data.id)))
+	elif tower.get_mana_cost_per_attack() > 0.0:
+		mana_summary = " · %.1f Mana/ataque" % tower.get_mana_cost_per_attack()
+	return "[b]Daño[/b] %d · [b]Rango[/b] %.1f hex · [b]RPM[/b] %.0f\n[b]Crítico[/b] %.0f%% · %s%s" % [
+		tower.get_current_damage(),
+		tower.get_current_range_hexes(),
+		tower.get_current_rounds_per_minute(),
+		tower.get_current_crit_chance() * 100.0,
+		tower.get_attack_pattern_name(),
+		mana_summary,
 	]
 
 func _tower_attack_description(tower_data: TowerData) -> String:
@@ -1961,6 +1880,117 @@ func _get_wave_enemy_count(wave: WaveData) -> int:
 		if group != null:
 			total += group.count
 	return total
+
+func _refresh_spawn_portal_previews() -> void:
+	if _piece_preview == null or not is_instance_valid(_piece_preview):
+		return
+	var portals: Array[SpawnPortal] = _piece_preview.get_spawn_portals()
+	if portals.is_empty():
+		_hide_portal_wave_tooltip()
+		return
+	var preview_wave: WaveData = _selected_wave if _selected_wave != null else _get_campaign_round(_campaign_round_number)
+	var preview_graph: PathGraph = _path_graph
+	if (
+		_placement_enabled
+		and _latest_placement != null
+		and _latest_placement.is_valid
+		and _placement_path_graph != null
+		and _placement_path_graph.is_valid
+	):
+		preview_graph = _placement_path_graph
+	var reachable_routes: Array[PathRoute] = []
+	if preview_graph != null and preview_graph.is_valid:
+		for route in preview_graph.routes:
+			if route != null and route.is_reachable and route.spawn_endpoint != null:
+				reachable_routes.append(route)
+	var entries_by_endpoint: Dictionary = {}
+	var campaign_spawn_index: int = 0
+	if preview_wave != null and not reachable_routes.is_empty():
+		for group in preview_wave.groups:
+			if group == null or group.enemy_data == null:
+				continue
+			for enemy_index in range(group.count):
+				var route_index: int = 0
+				if not _selected_wave_is_debug:
+					route_index = posmod(campaign_spawn_index, reachable_routes.size())
+					campaign_spawn_index += 1
+				elif group.spawn_endpoint_policy == WaveEnemyGroupData.SpawnEndpointPolicy.ROUND_ROBIN:
+					route_index = posmod(enemy_index, reachable_routes.size())
+				var route: PathRoute = reachable_routes[route_index]
+				var endpoint: PathEndpoint = route.spawn_endpoint
+				var endpoint_key: String = "%d,%d,%d" % [
+					endpoint.cell_coord.x,
+					endpoint.cell_coord.y,
+					endpoint.edge_direction,
+				]
+				var endpoint_entries: Array = entries_by_endpoint.get(endpoint_key, [])
+				var entry_index: int = -1
+				for current_index in endpoint_entries.size():
+					var current_entry: Dictionary = endpoint_entries[current_index] as Dictionary
+					if current_entry.get("enemy_id") == group.enemy_data.id:
+						entry_index = current_index
+						break
+				if entry_index < 0:
+					endpoint_entries.append({
+						"enemy_id": group.enemy_data.id,
+						"display_name": group.enemy_data.display_name,
+						"texture": group.enemy_data.sprite_texture,
+						"count": 1,
+					})
+				else:
+					var updated_entry: Dictionary = endpoint_entries[entry_index] as Dictionary
+					updated_entry["count"] = int(updated_entry.get("count", 0)) + 1
+					endpoint_entries[entry_index] = updated_entry
+				entries_by_endpoint[endpoint_key] = endpoint_entries
+	for portal in portals:
+		if not portal.hover_changed.is_connected(_on_spawn_portal_hover_changed):
+			portal.hover_changed.connect(_on_spawn_portal_hover_changed)
+		var portal_entries: Array[Dictionary] = []
+		var raw_entries: Variant = entries_by_endpoint.get(portal.get_endpoint_key(), [])
+		if raw_entries is Array:
+			for entry_variant in raw_entries:
+				if entry_variant is Dictionary:
+					portal_entries.append(entry_variant as Dictionary)
+		portal.set_wave_preview(portal_entries, preview_wave.round_number if preview_wave != null else 0)
+	if _hovered_spawn_portal != null and not is_instance_valid(_hovered_spawn_portal):
+		_hide_portal_wave_tooltip()
+
+func _on_spawn_portal_hover_changed(portal_node: Node2D, is_hovered: bool) -> void:
+	var portal := portal_node as SpawnPortal
+	if portal == null or not is_instance_valid(portal):
+		return
+	if not is_hovered:
+		if _hovered_spawn_portal == portal:
+			_hide_portal_wave_tooltip()
+		return
+	_hovered_spawn_portal = portal
+	if _portal_wave_tooltip_label != null:
+		_portal_wave_tooltip_label.text = portal.get_wave_preview_tooltip_text()
+	if _portal_wave_tooltip != null:
+		_portal_wave_tooltip.show()
+		_position_portal_wave_tooltip()
+
+func _hide_portal_wave_tooltip() -> void:
+	_hovered_spawn_portal = null
+	if _portal_wave_tooltip != null:
+		_portal_wave_tooltip.hide()
+
+func _position_portal_wave_tooltip() -> void:
+	if _portal_wave_tooltip == null or not _portal_wave_tooltip.visible:
+		return
+	if _hovered_spawn_portal == null:
+		return
+	if not is_instance_valid(_hovered_spawn_portal):
+		_hide_portal_wave_tooltip()
+		return
+	var anchor: Vector2 = _hovered_spawn_portal.get_global_transform_with_canvas() * Vector2(68.0, -150.0)
+	var viewport_size: Vector2 = get_viewport_rect().size
+	var tooltip_size: Vector2 = _portal_wave_tooltip.get_combined_minimum_size()
+	_portal_wave_tooltip.size = tooltip_size
+	var tooltip_position := anchor + Vector2(12.0, -tooltip_size.y * 0.5)
+	tooltip_position.x = clampf(tooltip_position.x, 8.0, maxf(8.0, viewport_size.x - tooltip_size.x - 8.0))
+	tooltip_position.y = clampf(tooltip_position.y, 8.0, maxf(8.0, viewport_size.y - tooltip_size.y - 8.0))
+	_portal_wave_tooltip.position = tooltip_position
 
 func _encounter_label(wave: WaveData) -> String:
 	if wave == null:
@@ -2338,105 +2368,21 @@ func _style_upgrade_card_button(button: Button, rarity: int) -> void:
 	button.add_theme_stylebox_override("pressed", pressed_style)
 	button.add_theme_stylebox_override("focus", hover_style)
 
-func _create_upgrade_card_panel() -> void:
-	_upgrade_card_panel = PanelContainer.new()
-	_upgrade_card_panel.name = "UpgradeCardPanelRuntime"
-	_upgrade_card_panel.anchor_left = 0.5
-	_upgrade_card_panel.anchor_right = 0.5
-	_upgrade_card_panel.anchor_top = 0.5
-	_upgrade_card_panel.anchor_bottom = 0.5
-	_upgrade_card_panel.offset_left = -500.0
-	_upgrade_card_panel.offset_top = -195.0
-	_upgrade_card_panel.offset_right = 500.0
-	_upgrade_card_panel.offset_bottom = 195.0
-	_upgrade_card_panel.custom_minimum_size = Vector2(1000.0, 390.0)
-	_upgrade_card_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	_upgrade_card_panel.z_index = 20
+func _configure_upgrade_card_panel() -> void:
+	_upgrade_card_heading = _upgrade_card_panel.heading_label
+	_upgrade_card_panel.set_card_count(maxi(int(DEMO_CARD_POOL.get("offer_size")), 1))
+	_upgrade_card_buttons.clear()
+	_upgrade_card_titles.clear()
+	_upgrade_card_descriptions.clear()
+	_upgrade_card_rarities.clear()
+	_upgrade_card_tower_icons.clear()
+	for card in _upgrade_card_panel.cards:
+		_upgrade_card_buttons.append(card)
+		_upgrade_card_titles.append(card.title_label)
+		_upgrade_card_descriptions.append(card.description_label)
+		_upgrade_card_rarities.append(card.rarity_label)
+		_upgrade_card_tower_icons.append(card.tower_icon)
 	_upgrade_card_panel.hide()
-	_hud.add_child(_upgrade_card_panel)
-	var background := StyleBoxFlat.new()
-	background.bg_color = Color("121a20")
-	background.border_color = Color("556a72")
-	background.set_border_width_all(2)
-	background.set_corner_radius_all(12)
-	background.content_margin_left = 18.0
-	background.content_margin_right = 18.0
-	background.content_margin_top = 14.0
-	background.content_margin_bottom = 14.0
-	_upgrade_card_panel.add_theme_stylebox_override("panel", background)
-	var content := VBoxContainer.new()
-	content.add_theme_constant_override("separation", 10)
-	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_upgrade_card_panel.add_child(content)
-	_upgrade_card_heading = Label.new()
-	_upgrade_card_heading.text = "MEJORAS DE RUN"
-	_upgrade_card_heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_upgrade_card_heading.add_theme_font_size_override("font_size", 21)
-	content.add_child(_upgrade_card_heading)
-	var subtitle := Label.new()
-	subtitle.text = "Elige una carta. Sus efectos se mantienen durante esta run."
-	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitle.add_theme_font_size_override("font_size", 14)
-	subtitle.add_theme_color_override("font_color", Color("aebbc0"))
-	content.add_child(subtitle)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	content.add_child(row)
-	var offer_card_count: int = maxi(int(DEMO_CARD_POOL.get("offer_size")), 1)
-	for index in offer_card_count:
-		var card_button := Button.new()
-		card_button.name = "UpgradeCard%d" % (index + 1)
-		card_button.custom_minimum_size = Vector2(300.0, 260.0)
-		card_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card_button.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		card_button.text = ""
-		card_button.mouse_filter = Control.MOUSE_FILTER_STOP
-		row.add_child(card_button)
-		var card_content := VBoxContainer.new()
-		card_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		card_content.add_theme_constant_override("separation", 12)
-		card_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		card_button.add_child(card_content)
-		var rarity_label := Label.new()
-		rarity_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		rarity_label.add_theme_font_size_override("font_size", 12)
-		rarity_label.add_theme_color_override("font_color", Color("aac1c6"))
-		rarity_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		card_content.add_child(rarity_label)
-		var tower_icon := TextureRect.new()
-		tower_icon.custom_minimum_size = Vector2(50.0, 50.0)
-		tower_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		tower_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		tower_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		tower_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		tower_icon.hide()
-		card_content.add_child(tower_icon)
-		var title_label := RichTextLabel.new()
-		title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		title_label.fit_content = true
-		title_label.scroll_active = false
-		title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		title_label.add_theme_font_size_override("font_size", 20)
-		title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		card_content.add_child(title_label)
-		var description_label := RichTextLabel.new()
-		description_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		description_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		description_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		description_label.fit_content = false
-		description_label.scroll_active = false
-		description_label.add_theme_font_size_override("font_size", 15)
-		description_label.add_theme_color_override("font_color", Color("d3dcdf"))
-		description_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		card_content.add_child(description_label)
-		_upgrade_card_buttons.append(card_button)
-		_upgrade_card_titles.append(title_label)
-		_upgrade_card_descriptions.append(description_label)
-		_upgrade_card_rarities.append(rarity_label)
-		_upgrade_card_tower_icons.append(tower_icon)
 
 func _get_card_tower_icon_name(card: Resource) -> StringName:
 	if card == null:
@@ -2538,46 +2484,6 @@ func _set_terrain_card_layout(is_inventory: bool) -> void:
 		_terrain_card_titles[index].add_theme_font_size_override("font_size", 14 if is_inventory else 18)
 		_terrain_card_counts[index].add_theme_font_size_override("font_size", 11 if is_inventory else 13)
 
-func _style_terrain_card_button(button: Button) -> void:
-	var normal_style := _make_nine_slice_style(TERRAIN_EXPANSION_CARD_TEXTURE, Color.WHITE)
-	var hover_style := _make_nine_slice_style(TERRAIN_EXPANSION_CARD_TEXTURE, Color(1.12, 1.10, 0.92, 1.0))
-	var selected_style := _make_nine_slice_style(TERRAIN_EXPANSION_CARD_TEXTURE, Color(1.20, 1.10, 0.78, 1.0))
-	button.add_theme_stylebox_override("normal", normal_style)
-	button.add_theme_stylebox_override("hover", hover_style)
-	button.add_theme_stylebox_override("pressed", selected_style)
-	button.add_theme_stylebox_override("focus", selected_style)
-	button.add_theme_stylebox_override("disabled", normal_style)
-	button.add_theme_color_override("font_color", Color("#f3edda"))
-	button.add_theme_color_override("font_pressed_color", Color("#fff2c2"))
-
-func _style_start_wave_button() -> void:
-	var normal_style := _make_start_wave_style(Color.WHITE)
-	var hover_style := _make_start_wave_style(Color(1.12, 1.08, 0.88, 1.0))
-	var pressed_style := _make_start_wave_style(Color(0.78, 0.72, 0.58, 1.0))
-	var disabled_style := _make_start_wave_style(Color(0.54, 0.54, 0.50, 0.85))
-	_start_wave_button.add_theme_stylebox_override("normal", normal_style)
-	_start_wave_button.add_theme_stylebox_override("hover", hover_style)
-	_start_wave_button.add_theme_stylebox_override("pressed", pressed_style)
-	_start_wave_button.add_theme_stylebox_override("focus", hover_style)
-	_start_wave_button.add_theme_stylebox_override("disabled", disabled_style)
-	_start_wave_button.add_theme_color_override("font_color", Color("#342419"))
-	_start_wave_button.add_theme_color_override("font_hover_color", Color("#2d2016"))
-	_start_wave_button.add_theme_color_override("font_pressed_color", Color("#2d2016"))
-	_start_wave_button.custom_minimum_size = Vector2(0.0, 64.0)
-	_start_wave_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_update_start_wave_button_size()
-
-func _make_start_wave_style(tint: Color) -> StyleBoxTexture:
-	var style := StyleBoxTexture.new()
-	style.texture = START_ROUND_BUTTON_TEXTURE
-	style.content_margin_left = 22.0
-	style.content_margin_right = 22.0
-	style.content_margin_top = 8.0
-	style.content_margin_bottom = 8.0
-	style.draw_center = true
-	style.modulate_color = tint
-	return style
-
 func _set_start_wave_button_text(button_text: String) -> void:
 	_start_wave_button.text = button_text
 	_update_start_wave_button_size()
@@ -2593,21 +2499,6 @@ func _update_start_wave_button_size() -> void:
 	).x
 	var target_width: float = maxf(188.0, text_width + 48.0)
 	_start_wave_button.custom_minimum_size = Vector2(target_width, target_width / 3.0)
-
-func _make_nine_slice_style(texture: Texture2D, tint: Color) -> StyleBoxTexture:
-	var style := StyleBoxTexture.new()
-	style.texture = texture
-	style.texture_margin_left = 42.0
-	style.texture_margin_right = 42.0
-	style.texture_margin_top = 42.0
-	style.texture_margin_bottom = 42.0
-	style.content_margin_left = 18.0
-	style.content_margin_right = 18.0
-	style.content_margin_top = 8.0
-	style.content_margin_bottom = 8.0
-	style.draw_center = true
-	style.modulate_color = tint
-	return style
 
 func _on_preview_hover_changed(local_coord: Vector2i, terrain_type: int, elevation: int) -> void:
 	_hovered_coord = local_coord
@@ -2656,7 +2547,7 @@ func _refresh_path_status() -> void:
 			_path_graph.base_endpoint.cell_coord.y,
 		]
 	var debug_state: String = "ON" if _path_debug_visible else "OFF"
-	_path_status.text = "M4 PATH: %d · spawns %d · ramas %d · base* %s · %s · D:%s" % [
+	_path_status.text = "M4 PATH: %d · spawns %d · ramas %d · base* %s · %s · Ctrl+D:%s" % [
 		_path_graph.nodes.size(),
 		_path_graph.spawn_endpoints.size(),
 		_path_graph.get_branch_count(),

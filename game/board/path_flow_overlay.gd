@@ -6,9 +6,7 @@ const FLOW_SPEED: float = 25.0
 const ARROW_SPACING: float = 66.0
 const REDRAW_INTERVAL: float = 1.0 / 30.0
 
-const PATH_LINE_SHADOW: Color = Color(0.015, 0.045, 0.025, 0.25)
 const PATH_LINE_GLOW: Color = Color("#43cf55", 0.34)
-const ARROW_SHADOW: Color = Color(0.015, 0.035, 0.02, 0.40)
 const ARROW_FILL: Color = Color("#52ec62", 0.68)
 const ARROW_HIGHLIGHT: Color = Color("#d6ffd1", 0.58)
 
@@ -58,7 +56,6 @@ func _draw_flow_segment(from_center: Vector2, to_center: Vector2, distance_to_ba
 	if segment_length <= 0.0:
 		return
 	var direction: Vector2 = segment / segment_length
-	draw_line(from_center, to_center, PATH_LINE_SHADOW, 13.0, true)
 	draw_line(from_center, to_center, PATH_LINE_GLOW, 6.0, true)
 	var arrow_distance: float = fposmod(
 		_flow_time * FLOW_SPEED + distance_to_base,
@@ -80,10 +77,6 @@ func _draw_arrow(center: Vector2, direction: Vector2) -> void:
 		center - direction * 2.0 - perpendicular * 3.2,
 		center - direction * 2.0 - perpendicular * 8.0,
 	])
-	var shadow_points := PackedVector2Array()
-	for point in points:
-		shadow_points.append(point + Vector2(1.5, 2.0))
-	draw_colored_polygon(shadow_points, ARROW_SHADOW)
 	draw_colored_polygon(points, ARROW_FILL)
 	var closed_points := points.duplicate()
 	closed_points.append(points[0])

@@ -1,0 +1,56 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://game/ui/components/wave_hover_tooltip.gd" id="1_script"]
+[ext_resource type="Theme" path="res://game/ui/themes/rogue_hud_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="TooltipSurface"]
+bg_color = Color(0.090196, 0.133333, 0.156863, 1)
+border_color = Color(0.505882, 0.564706, 0.545098, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+
+[node name="WaveHoverTooltip" type="PanelContainer"]
+custom_minimum_size = Vector2(226, 0)
+mouse_filter = 0
+z_index = 100
+theme = ExtResource("2_theme")
+theme_override_styles/panel = SubResource("TooltipSurface")
+script = ExtResource("1_script")
+
+[node name="Rows" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 5
+mouse_filter = 2
+
+[node name="HeadingLabel" type="Label" parent="Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.941176, 0.847059, 0.580392, 1)
+theme_override_font_sizes/font_size = 13
+text = "Oleada 01 · 0 unidades"
+mouse_filter = 2
+
+[node name="EnemyRows" type="VBoxContainer" parent="Rows"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 5
+mouse_filter = 2
+
+[node name="EmptyNote" type="Label" parent="Rows"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.670588, 0.701961, 0.67451, 1)
+theme_override_font_sizes/font_size = 11
+text = "Sin grupos repetidos"
+mouse_filter = 2

@@ -1,0 +1,46 @@
+[gd_resource type="Resource" load_steps=22 format=3]
+
+[ext_resource type="Script" path="res://game/ui/icon_catalog_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://game/ui/icons/gold.png" id="2_gold"]
+[ext_resource type="Texture2D" path="res://game/ui/icons/mana.png" id="3_mana"]
+[ext_resource type="Texture2D" path="res://game/ui/icons/health.png" id="4_health"]
+[ext_resource type="Texture2D" path="res://game/ui/icons/armor.png" id="5_armor"]
+[ext_resource type="Texture2D" path="res://game/ui/icons/shield.png" id="6_shield"]
+[ext_resource type="Texture2D" path="res://game/ui/icons/ballista.png" id="7_ballista"]
+[ext_resource type="Texture2D" path="res://game/ui/icons/mortar.png" id="8_mortar"]
+[ext_resource type="Texture2D" path="res://game/ui/icons/tesla_coil.png" id="9_tesla_coil"]
+[ext_resource type="Texture2D" path="res://game/ui/icons/frost_keep.png" id="10_frost_keep"]
+[ext_resource type="Texture2D" path="res://game/ui/icons/flame_thrower.png" id="11_flame_thrower"]
+[ext_resource type="Texture2D" path="res://game/ui/icons/poison_sprayer.png" id="12_poison_sprayer"]
+[ext_resource type="Texture2D" path="res://game/ui/icons/shredder.png" id="13_shredder"]
+[ext_resource type="Texture2D" path="res://game/ui/icons/burn.png" id="14_burn"]
+[ext_resource type="Texture2D" path="res://game/ui/icons/slow.png" id="15_slow"]
+[ext_resource type="Texture2D" path="res://game/ui/icons/poison.png" id="16_poison"]
+[ext_resource type="Texture2D" path="res://game/ui/icons/bleed.png" id="17_bleed"]
+[ext_resource type="Texture2D" path="res://assets/third_party/tiny_swords/cursors/Cursor_01.png" id="18_cursor_default"]
+[ext_resource type="Texture2D" path="res://assets/third_party/tiny_swords/cursors/Cursor_02.png" id="19_cursor_interact"]
+[ext_resource type="Texture2D" path="res://assets/third_party/tiny_swords/cursors/Cursor_03.png" id="20_cursor_invalid"]
+[ext_resource type="Texture2D" path="res://assets/third_party/tiny_swords/cursors/Cursor_04.png" id="21_cursor_build"]
+
+[resource]
+script = ExtResource("1_script")
+gold = ExtResource("2_gold")
+mana = ExtResource("3_mana")
+health = ExtResource("4_health")
+armor = ExtResource("5_armor")
+shield = ExtResource("6_shield")
+ballista = ExtResource("7_ballista")
+mortar = ExtResource("8_mortar")
+tesla_coil = ExtResource("9_tesla_coil")
+frost_keep = ExtResource("10_frost_keep")
+flame_thrower = ExtResource("11_flame_thrower")
+poison_sprayer = ExtResource("12_poison_sprayer")
+shredder = ExtResource("13_shredder")
+burn = ExtResource("14_burn")
+slow = ExtResource("15_slow")
+poison = ExtResource("16_poison")
+bleed = ExtResource("17_bleed")
+cursor_default = ExtResource("18_cursor_default")
+cursor_interact = ExtResource("19_cursor_interact")
+cursor_invalid = ExtResource("20_cursor_invalid")
+cursor_build = ExtResource("21_cursor_build")

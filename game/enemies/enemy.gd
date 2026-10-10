@@ -35,6 +35,12 @@ const STATUS_ICON_IDS: Dictionary = {
 const HIT_JUMP_DURATION: float = 0.32
 const HIT_FLASH_DURATION: float = 0.14
 const VISUAL_ART_OFFSET_Y: float = 6.0
+const DAMAGE_POPUP_SIZE_MIN: int = 12
+const DAMAGE_POPUP_SIZE_MAX: int = 22
+const DAMAGE_POPUP_PUNCH_SCALE: float = 1.75
+const DAMAGE_POPUP_PUNCH_DURATION: float = 0.18
+const DAMAGE_POPUP_ARC_MID_DURATION: float = 0.2
+const DAMAGE_POPUP_ARC_END_DURATION: float = 0.42
 
 var state: State = State.UNCONFIGURED
 var _enemy_data: EnemyData
@@ -52,7 +58,11 @@ var _regen_counter_time_left: float = 0.0
 var _icon_catalog: RefCounted
 var _hit_jump_time_left: float = 0.0
 var _hit_flash_time_left: float = 0.0
+var _hit_flash_color: Color = Color.WHITE
 var _jump_height: float = 0.0
+var _damage_feedback_average: float = 0.0
+var _next_damage_popup_side: int = -1
+var _damage_popup_lane: int = 0
 var _is_facing_left: bool = false
 var _haste_strength: float = 0.0
 var _fortification_strength: float = 0.0
@@ -354,29 +364,52 @@ func show_damage_feedback(layer: int, amount: int, is_critical: bool = false) ->
 		return
 	_hit_jump_time_left = HIT_JUMP_DURATION
 	_hit_flash_time_left = HIT_FLASH_DURATION
+	_hit_flash_color = DAMAGE_TEXT_COLORS.get(layer, Color.WHITE)
 	queue_redraw()
 	var effects_parent: Node = get_parent()
 	if effects_parent == null:
 		return
 	var popup := Label.new()
-	popup.text = "−%d%s" % [amount, "!" if is_critical else ""]
+	popup.text = "%s−%d%s" % ["CRIT " if is_critical else "", amount, "!" if is_critical else ""]
 	popup.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	popup.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	popup.size = Vector2(84.0, 26.0)
+	popup.size = Vector2(128.0, 32.0)
 	popup.pivot_offset = popup.size * 0.5
 	popup.z_index = 100
-	popup.add_theme_font_size_override("font_size", 17 if is_critical else 15)
+	var reference_damage: float = _damage_feedback_average if _damage_feedback_average > 0.0 else float(amount)
+	var relative_damage: float = clampf(float(amount) / reference_damage, 0.65, 1.8)
+	var size_ratio: float = inverse_lerp(0.65, 1.8, relative_damage)
+	var popup_font_size: int = roundi(lerpf(float(DAMAGE_POPUP_SIZE_MIN), float(DAMAGE_POPUP_SIZE_MAX), size_ratio))
+	if is_critical:
+		popup_font_size = mini(popup_font_size + 3, DAMAGE_POPUP_SIZE_MAX + 3)
+	popup.add_theme_font_size_override("font_size", popup_font_size)
 	popup.add_theme_color_override("font_color", DAMAGE_TEXT_COLORS.get(layer, Color.WHITE))
 	popup.add_theme_color_override("font_outline_color", Color("#111820"))
-	popup.add_theme_constant_override("outline_size", 3)
+	popup.add_theme_constant_override("outline_size", 4 if is_critical else 3)
 	effects_parent.add_child(popup)
-	var initial_position: Vector2 = global_position + Vector2(-42.0, -_body_radius - 65.0)
+	var side: int = _next_damage_popup_side
+	_next_damage_popup_side *= -1
+	var lane: int = _damage_popup_lane
+	_damage_popup_lane = (_damage_popup_lane + 1) % 3
+	var initial_position: Vector2 = global_position + Vector2(
+		-64.0 + float(side * 8),
+		-_body_radius - 58.0 - float(lane * 9)
+	)
 	popup.global_position = initial_position
-	var tween: Tween = popup.create_tween()
+	popup.scale = Vector2.ONE * DAMAGE_POPUP_PUNCH_SCALE if not is_critical else Vector2.ONE * 2.0
+	popup.modulate.a = 0.0
+	var middle_position: Vector2 = initial_position + Vector2(float(side * 18), -25.0)
+	var end_position: Vector2 = initial_position + Vector2(float(side * 42), -49.0)
+	var tween: Tween = popup.create_tween().bind_node(popup)
 	tween.set_parallel(true)
-	tween.tween_property(popup, "global_position", initial_position + Vector2(0.0, -31.0), 0.58).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.tween_property(popup, "modulate:a", 0.0, 0.58).set_delay(0.16)
+	tween.tween_property(popup, "modulate:a", 1.0, 0.06)
+	tween.tween_property(popup, "scale", Vector2.ONE, DAMAGE_POPUP_PUNCH_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.chain()
+	tween.tween_property(popup, "global_position", middle_position, DAMAGE_POPUP_ARC_MID_DURATION).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(popup, "global_position", end_position, DAMAGE_POPUP_ARC_END_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.parallel().tween_property(popup, "modulate:a", 0.0, 0.24).set_delay(0.12)
 	tween.chain().tween_callback(popup.queue_free)
+	_damage_feedback_average = float(amount) if _damage_feedback_average <= 0.0 else lerpf(_damage_feedback_average, float(amount), 0.12)
 
 func get_display_name() -> String:
 	return _enemy_data.display_name if _enemy_data != null else "Enemigo"
@@ -475,8 +508,6 @@ func teleport_forward_tiles(tile_count: int) -> bool:
 	return _path_follower.advance_tiles(tile_count)
 
 func _draw() -> void:
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.42))
-	draw_circle(Vector2.ZERO, _body_radius + 2.0, Color(0.02, 0.03, 0.04, 0.28))
 	draw_set_transform(Vector2(0.0, -_jump_height + VISUAL_ART_OFFSET_Y), 0.0, Vector2.ONE)
 	var flash_ratio: float = _hit_flash_time_left / HIT_FLASH_DURATION
 	if _sprite_texture != null:
@@ -485,13 +516,13 @@ func _draw() -> void:
 			Vector2(-sprite_extent * 0.5, -sprite_extent * 0.5),
 			Vector2(sprite_extent, sprite_extent)
 		)
-		var sprite_tint: Color = Color.WHITE.lerp(Color(1.0, 0.52, 0.52), clampf(flash_ratio, 0.0, 1.0))
+		var sprite_tint: Color = Color.WHITE.lerp(_hit_flash_color, clampf(flash_ratio, 0.0, 1.0))
 		draw_set_transform(Vector2(0.0, -_jump_height + VISUAL_ART_OFFSET_Y), 0.0, Vector2(-1.0, 1.0) if _is_facing_left else Vector2.ONE)
 		draw_texture_rect(_sprite_texture, sprite_rect, false, sprite_tint)
 		draw_set_transform(Vector2(0.0, -_jump_height + VISUAL_ART_OFFSET_Y), 0.0, Vector2.ONE)
 	else:
 		draw_circle(Vector2.ZERO, _body_radius + 3.0, BODY_OUTLINE)
-		var body_color: Color = _body_color.lerp(Color.WHITE, clampf(flash_ratio, 0.0, 1.0))
+		var body_color: Color = _body_color.lerp(_hit_flash_color, clampf(flash_ratio, 0.0, 1.0))
 		draw_circle(Vector2.ZERO, _body_radius, body_color)
 		draw_arc(Vector2.ZERO, _body_radius + 2.0, 0.0, TAU, 20, Color(1.0, 0.82, 0.62), 1.5, true)
 	var active_status_ids: PackedStringArray = _get_all_active_status_ids()

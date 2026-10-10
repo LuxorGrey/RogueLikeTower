@@ -11,7 +11,7 @@ La base se dibujaba con polígonos dentro de `GameBase`, así que cambiar su asp
 
 ## Decisiones
 
-1. El aspecto de la base se carga desde `BaseData.sprite_texture` con un tamaño visual configurable. El PNG `assets/base/main_tower.png` es arte original generado para este proyecto; la huella lógica hexagonal permanece independiente y el recurso permite intercambiar la imagen sin modificar `GameBase`.
+1. El aspecto de la base se carga desde `BaseData.sprite_texture` con un tamaño visual configurable. El PNG `assets/base/main_tower.png` es arte original generado para este proyecto; la huella lógica hexagonal permanece independiente y el recurso permite intercambiar la imagen sin modificar `GameBase`. El sprite se renovó el 2026-10-10 con una fortaleza de cómic 2D, contorno oscuro sencillo, colores planos y entrada visible en el frente orientado a la derecha. La propuesta alternativa está en `assets/base/proposals/adventure_comic/main_tower_alt.png`.
 2. La barra de Health de base dibuja un segmento por cada 10 puntos, con el último segmento parcial cuando el máximo no es múltiplo de diez. El valor actual/máximo permanece centrado sobre la barra.
 3. Al comenzar cada ronda de campaña, `RunEconomyService.refill_mana_to_max()` restaura Mana hasta su capacidad efectiva. La vista lo redondea a enteros, sin alterar precisión del saldo runtime.
 4. Cada cambio no nulo de Gold anima el icono y la cifra mediante escalado y rebote vertical, tanto al ganar como al gastar.
@@ -27,4 +27,4 @@ La base se dibujaba con polígonos dentro de `GameBase`, así que cambiar su asp
 ## Fuentes
 
 - Petición directa del usuario en la sesión del 2026-10-09.
-- `assets/base/main_tower.png` y `assets/ui/tower_card_button.png`, arte original generado para el proyecto el 2026-10-09.
+- `assets/base/main_tower.png` y `assets/ui/tower_card_button.png`, arte original generado para el proyecto el 2026-10-09; sprite de base actualizado el 2026-10-10 por petición directa del usuario.

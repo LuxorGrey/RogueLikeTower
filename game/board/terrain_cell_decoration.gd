@@ -5,7 +5,6 @@ const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_
 const OBSTACLE_HOVER_SHADER: Shader = preload("res://game/board/obstacle_hover_glow.gdshader")
 
 const CHEST_DISPLAY_SIZE: Vector2 = Vector2(84.0, 84.0)
-const ART_SHADOW_COLOR: Color = Color(0.025, 0.035, 0.025, 0.40)
 const ART_OFFSET_Y: float = 6.0
 const OBSTACLE_CENTER_OFFSET: Vector2 = Vector2.ZERO
 
@@ -72,22 +71,18 @@ func _draw() -> void:
 	var visual_size: Vector2 = _get_visual_size()
 	if visual_size == Vector2.ZERO:
 		return
-	draw_set_transform(Vector2(0.0, ART_OFFSET_Y + 1.0), 0.0, Vector2(1.0, 0.34))
-	draw_circle(Vector2.ZERO, maxf(visual_size.x * 0.37, 24.0), ART_SHADOW_COLOR)
-	draw_set_transform(Vector2(0.0, ART_OFFSET_Y), 0.0, Vector2.ONE)
 	if _obstacle_type >= 0 and _obstacle_type < TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_COUNT:
 		draw_texture_rect(
 			TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_texture(_obstacle_type),
-			Rect2(-visual_size * 0.5 + OBSTACLE_CENTER_OFFSET, visual_size),
+			Rect2(-visual_size * 0.5 + OBSTACLE_CENTER_OFFSET + Vector2(0.0, ART_OFFSET_Y), visual_size),
 			false
 		)
 	elif _chest_available:
 		draw_texture_rect(
 			TERRAIN_VISUAL_CATALOG_SCRIPT.TREASURE_CHEST,
-			Rect2(Vector2(-CHEST_DISPLAY_SIZE.x * 0.5, -CHEST_DISPLAY_SIZE.y), CHEST_DISPLAY_SIZE),
+			Rect2(Vector2(-CHEST_DISPLAY_SIZE.x * 0.5, -CHEST_DISPLAY_SIZE.y + ART_OFFSET_Y), CHEST_DISPLAY_SIZE),
 			false
 		)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _get_visual_size() -> Vector2:
 	if _obstacle_type >= 0 and _obstacle_type < TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_COUNT:

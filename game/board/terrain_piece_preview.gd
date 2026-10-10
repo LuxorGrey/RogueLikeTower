@@ -114,6 +114,14 @@ func set_path_graph(path_graph: PathGraph) -> void:
 	_sync_spawn_portals()
 	queue_redraw()
 
+func get_spawn_portals() -> Array[SpawnPortal]:
+	var portals: Array[SpawnPortal] = []
+	for portal_variant in _spawn_portals_by_key.values():
+		var portal := portal_variant as SpawnPortal
+		if portal != null and is_instance_valid(portal):
+			portals.append(portal)
+	return portals
+
 func set_path_debug_visible(debug_enabled: bool) -> void:
 	_path_debug_visible = debug_enabled
 	queue_redraw()
@@ -470,14 +478,17 @@ func _sync_spawn_portals() -> void:
 			var endpoint: PathEndpoint = route.spawn_endpoint
 			var key: String = "%d,%d,%d" % [endpoint.cell_coord.x, endpoint.cell_coord.y, endpoint.edge_direction]
 			active_keys[key] = true
-			var portal: Node2D = _spawn_portals_by_key.get(key) as Node2D
+			var portal: SpawnPortal = _spawn_portals_by_key.get(key) as SpawnPortal
 			if portal == null or not is_instance_valid(portal):
-				portal = SPAWN_PORTAL_SCENE.instantiate() as Node2D
+				portal = SPAWN_PORTAL_SCENE.instantiate() as SpawnPortal
+				if portal == null:
+					continue
 				portal.name = "SpawnPortal_%d_%d_%d" % [endpoint.cell_coord.x, endpoint.cell_coord.y, endpoint.edge_direction]
 				_decoration_parent.add_child(portal)
 				_spawn_portals_by_key[key] = portal
 			portal.global_position = global_position + _top_center(endpoint.outside_coord, 0)
-			portal.call("set_candidate_preview", using_candidate_graph)
+			portal.set_endpoint_key(key)
+			portal.set_candidate_preview(using_candidate_graph)
 	for key in _spawn_portals_by_key.keys():
 		if active_keys.has(key):
 			continue

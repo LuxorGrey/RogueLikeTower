@@ -1,0 +1,46 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Theme" path="res://game/ui/themes/rogue_hud_theme.tres" id="1_theme"]
+
+[node name="MetaShopRow" type="PanelContainer"]
+custom_minimum_size = Vector2(0, 68)
+theme = ExtResource("1_theme")
+
+[node name="Body" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Accent" type="ColorRect" parent="Body"]
+custom_minimum_size = Vector2(4, 40)
+layout_mode = 2
+size_flags_vertical = 4
+color = Color(0.85098, 0.721569, 0.435294, 1)
+
+[node name="Labels" type="VBoxContainer" parent="Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="Title" type="RichTextLabel" parent="Body/Labels"]
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 15
+bbcode_enabled = true
+text = "Nombre de mejora"
+fit_content = true
+scroll_active = false
+autowrap_mode = 2
+
+[node name="Description" type="RichTextLabel" parent="Body/Labels"]
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 13
+theme_override_colors/default_color = Color(0.682353, 0.733333, 0.752941, 1)
+bbcode_enabled = true
+text = "Descripción breve de la mejora."
+fit_content = true
+scroll_active = false
+autowrap_mode = 2
+
+[node name="ActionButton" type="Button" parent="Body"]
+custom_minimum_size = Vector2(205, 42)
+layout_mode = 2
+text = "DESBLOQUEAR · 0"

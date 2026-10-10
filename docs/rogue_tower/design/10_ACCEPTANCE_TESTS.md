@@ -31,7 +31,7 @@
 - El snapshot activo se reconstruye al iniciar y confirmar. Al mover un ghost legal, se deriva un snapshot candidato independiente para actualizar en vivo la vista previa de spawns; no muta ni sustituye el snapshot activo hasta confirmar.
 - No se confirma una pieza que dejaría un endpoint o subred PATH sin ruta a base.
 - Cada endpoint spawn alcanzable muestra siempre un portal PNG pulsante en su coordenada exterior, sin texto `SPAWN`; debe coincidir con los lugares de aparición de enemigos.
-- `D` alterna el overlay con rutas por spawn y marcador de base; los portales y el flujo de flechas permanecen visibles con el overlay apagado.
+- `Ctrl+D` alterna el overlay con rutas por spawn y marcador de base; los portales y el flujo de flechas permanecen visibles con el overlay apagado.
 - Ningún spawn activo puede iniciar ronda sin ruta a base; `WaveDirector` selecciona únicamente entre rutas válidas según la política configurada en el grupo.
 - Smoke M4: siete escenarios automatizados cubren ruta inicial, pareja exacta-flexible, flexible sin endpoint, salida inválida hacia GRASS, socket exacto sin pareja, PATH desconectado y bifurcación/convergencia con BFS determinista.
 
@@ -326,7 +326,7 @@ El código y los assets están integrados. M14 requiere ejecutar este procedimie
 
 1. Coloca una torre y un obstáculo en hexes con distintas posiciones Y y mueve enemigos por PATH delante y detrás de ellos. Confirma que el elemento más cercano a la parte frontal del tablero aparece delante, que los props pueden quedar detrás de torres/enemigos y que la base también participa en el orden por profundidad. El orden debe seguir el pie visual de cada elemento, no su centro gráfico.
 2. Inspecciona cada tipo y variante de terreno. El borde pintado del PNG debe coincidir con el contorno de la cara hexagonal, sin desplazamiento lateral o vertical visible y sin tapar de más las celdas vecinas.
-3. Con `D` desactivado, confirma que cada rama y convergencia de PATH muestra flechas con movimiento continuo hacia la base. Cambia una colocación válida para revisar el grafo candidato; cancélala y comprueba que vuelve a fluir el grafo activo. Los portales pulsantes siguen visibles y no muestran carteles.
+3. Con `Ctrl+D` desactivado, confirma que cada rama y convergencia de PATH muestra flechas con movimiento continuo hacia la base. Cambia una colocación válida para revisar el grafo candidato; cancélala y comprueba que vuelve a fluir el grafo activo. Los portales pulsantes siguen visibles y no muestran carteles.
 4. Comprueba las dimensiones por recurso (torres 84 px, enemigos estándar 72 px y base 176×176) a zoom 1× y 0,75×. Deben conservar proporción y su arte debe quedar unos 6 px por debajo del centro lógico. La ampliación no debe alterar selección, ocupación, alcance, hitboxes de combate ni navegación.
 
 ADR-0041 y ADR-0042 implementan en código la ordenación de props, la alineación del arte, el flujo animado por aristas, la profundidad por elevación, el hover selectivo del grid y el portal de spawn. Esta revisión no marca M17/M18 aceptados hasta completar las comprobaciones visuales en una ventana Godot.
@@ -399,6 +399,29 @@ M21 queda aceptado cuando los cheats sirven para preparar una sesión, no altera
 
 M22 queda aceptado tras pasar esta revisión manual en ventana Godot. La integración de código y arte está registrada en [ADR-0048](../decisions/ADR-0048-hud-oleadas-cards-y-paredes-texturizadas.md).
 
+## M23 Navegación, preview de portales, ghost y Tower Info
+
+### Revisión manual en ventana
+
+1. Ejecuta `game/main/main.tscn`. Mantén `W`, `A`, `S`, `D` y prueba diagonales; la cámara debe moverse continuo sin aceleración diagonal extra y mantener velocidad visual al acercar/alejar. Comprueba que `D` panea a la derecha y que `Ctrl+D` alterna el overlay diagnóstico. Suelta las teclas y cambia el foco de ventana mientras una está pulsada: la cámara no debe quedarse moviéndose. Los controles con foco de interfaz deben conservar su entrada.
+2. Inspecciona las salidas PATH de una ronda mixta con varios endpoints. Encima de cada portal deben aparecer los tipos de enemigo asignados a ese endpoint y una cifra en los grupos repetidos. Al hacer hover aparece el contorno que sigue el alfa del portal y un tooltip con ronda, total y cantidades por tipo. Suma todos los portales y compara con la composición directa de esa `WaveData`.
+3. Repite para una ronda siguiente, un fixture DEBUG con `ROUND_ROBIN` y otro con `FIRST`; confirma que los iconos y conteos cambian con la ronda/política. Selecciona una expansión válida y mueve/rota su preview: la vista por portal debe usar los endpoints del grafo candidato. Al cancelar o invalidar, debe volver al grafo activo. El tooltip no debe quedarse visible cuando se oculta el HUD ni capturar clics.
+4. Entra en colocación de torre y mueve el cursor por celdas legales e ilegales, elevadas y con obstáculos. El sprite fantasma debe quedar encima de terreno y props y recibir tinte verde translúcido si es válido o rojo si no. Al cancelar no debe permanecer el sprite fantasma.
+5. Revisa torres, enemigos, base, cofres y obstáculos en profundidad: no deben aparecer elipses ni trazos de sombra proyectada generados por el juego debajo de ellos. El arte que venga dibujado dentro de sus PNG no se elimina.
+6. Selecciona una torre y revisa Tower Info a 1280×720 y 1440×900. El marco PNG debe conservar las esquinas; el retrato aparece grande debajo del encabezado, el título queda junto a `NIVEL X DE 45` y el panel ajusta su altura sin scroll ni recorte. Las mejoras H/A/S muestran iconos mayores, nivel en negrita y XP como barra con progreso/restante; el tooltip de cada botón incluye las cifras de XP. Demoler es cuadrado de 64×64, su icono queda limitado a 36×36 y no estira el panel; conserva su comportamiento. Comprueba que el nivel acumulado avanza tras comprar capas y llega como máximo a 45.
+
+M23 queda aceptado tras completar esta revisión manual en ventana. El cambio está registrado en [ADR-0051](../decisions/ADR-0051-navegacion-prevision-portales-y-panel-torre.md).
+
+## M24 Feedback legible de daño
+
+### Revisión manual en ventana
+
+1. En una oleada de combate, observa impactos repetidos en enemigos con Health, Armor y Shield. Cada número debe entrar con un golpe breve de escala, desplazarse hacia arriba por un arco alternando los lados, variar su tamaño de forma moderada y desaparecer con un contorno oscuro que mantenga legibilidad sobre el mapa.
+2. Confirma que el texto y el flash del enemigo identifican Health en rojo, Armor en ámbar y Shield en cian. Compara golpes pequeños y grandes al mismo enemigo: el tamaño relativo debe notarse sin producir números desproporcionados.
+3. Genera un crítico y confirma que su etiqueta `CRIT`, tamaño/contorno y punch destacan sin ocultar el color de la capa afectada. Comprueba grupos de muchos enemigos y torres rápidas: los números deben separarse lo suficiente para leerse y no afectar HP ni el resultado de combate.
+
+M24 queda aceptado tras completar esta revisión manual en ventana. La decisión está registrada en [ADR-0052](../decisions/ADR-0052-numeros-de-dano-animados-y-legibles.md).
+
 ## Loop
 - Al terminar oleada se entra en expansión.
 - No empieza siguiente ronda hasta colocar pieza válida.
@@ -410,6 +433,27 @@ M22 queda aceptado tras pasar esta revisión manual en ventana Godot. La integra
 - Compra persiste tras reiniciar.
 - Torre desbloqueada aparece en siguiente run.
 - Save corrupto/versión desconocida falla de forma segura.
+
+## UI — migración híbrida (2026-10-10)
+
+### Smoke de escenas y contratos
+
+Ejecutar `tests/ui_migration_smoke.tscn` en Godot 4.7. Debe completar e imprimir `UI migration smoke: PASS` sin errores de script/escena. El smoke verifica carga/instanciación de `main.tscn`, emisión única del ID `start_wave` por el menú debug, configuración de tarjetas de torre, controles de capa, oferta de tres y cinco cartas, filas de tienda de torre/mejora, `new_run_requested`, y filas de tooltip desde `WaveData`. No sustituye la navegación por la partida ni la revisión visual.
+
+### Revisión visual e interactiva en ventana
+
+1. Abre `game/main/main.tscn` a 1440×900 y después a 1280×720. Compara posiciones, dimensiones, tipografía, iconos, colores, fondos y escalado con la implementación anterior; ningún panel debe quedar cortado ni cubrir Gold/Mana.
+2. Usa `Ctrl+K` y cada acción debug disponible. Comprueba que el panel aparece en la misma capa, no bloquea controles fuera de su superficie, emite una sola acción y se cierra/togglea igual. Comprueba que `H` oculta/restaura el HUD como antes.
+3. Construye/selecciona una torre, cambia la selección, mejora por Health/Armor/Shield y demuele. Revisa hover, foco, disabled/pressed, el pulso del icono, cantidades/XP/costes y propagación de clics al tablero.
+4. Completa una ronda que ofrezca mejoras: abre/cierra la oferta, inspecciona tres cartas y elige una. Confirma orden, contenido, animación y estado de la run; comprueba también que el número sigue el `offer_size` configurado.
+5. Abre la tienda terminal y cambia entre pestañas. Desplaza listas largas, compra contenido disponible/no disponible, verifica monedas/mensajes, resultado y «Nueva run». Confirma que el guardado y los unlocks conservan el comportamiento anterior.
+6. Pasa el cursor por varios puntos de `RoundProgressStrip`. El tooltip debe conservar anclaje/ocultación y total; una sola fila por tipo repetido, mismo retrato y conteo. Comprueba cursor y hover al salir del strip.
+7. Selecciona `Main` y expande `ui_icon_catalog`: deben verse las 20 texturas del catálogo, agrupadas por recursos, capas, torres, estados y cursor. Cambia un icono de torre y confirma que se refleja en el retrato/cards que consultan el catálogo. Selecciona `TowerShortcut1…7` y `UpgradeHealth/Armor/Shield`; cada instancia debe exponer su `tower_icon_texture` o `layer_icon_texture` y previsualizarla en el `TextureRect` hijo. Comprueba también en esta propiedad los cuatro cursores usados por `BuildCursorOverlay`.
+8. Selecciona `StartWave` y las tres `TerrainCard` en `main.tscn`; expande `Theme Overrides > Styles` y comprueba que sus StyleBoxTexture exponen el PNG, nueve cortes, márgenes y tintes de normal/hover/pressed/disabled. Cambia la textura para comprobar la vista previa. Abre `tower_shortcut_card.tscn` y revisa el marco 9-slice del botón.
+9. Abre `game/ui/themes/rogue_hud_theme.tres` y edita `Panel`/`PanelContainer`. Las superficies generales son StyleBoxFlat y no usan sprite; los cambios se deben ver en HUD, tienda, oferta y debug sin cambiar su jerarquía.
+10. Abre por separado las escenas de componentes en `game/ui/components/` y `game/progression/`. Ajusta tamaños en `custom_minimum_size`, márgenes y separación en sus `Container`, sustituye una textura en el `TextureRect` y confirma que los cambios se reflejan al instanciarlas desde `Main`.
+
+M13 requiere además revisar los estados de selección/build mode del HUD y legibilidad a ambas resoluciones. El smoke headless y el escaneo del editor pasaron en Godot 4.7 el 2026-10-10; la inspección visual, el recorrido funcional completo y la comparación frente al baseline quedan pendientes. Ver [ADR-0049](../decisions/ADR-0049-arquitectura-hibrida-ui-editable.md) y [ADR-0050](../decisions/ADR-0050-recursos-visuales-ui-en-inspector.md).
 
 ## Scope
 - No existe support building.

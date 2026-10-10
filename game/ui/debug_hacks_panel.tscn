@@ -1,0 +1,113 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/ui/debug_hacks_panel.gd" id="1_script"]
+[ext_resource type="Theme" path="res://game/ui/themes/rogue_hud_theme.tres" id="2_theme"]
+
+[node name="DebugHacksPanel" type="CanvasLayer"]
+script = ExtResource("1_script")
+
+[node name="Root" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+
+[node name="Backdrop" type="ColorRect" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.015, 0.02, 0.025, 0.74)
+
+[node name="Center" type="CenterContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Panel" type="PanelContainer" parent="Root/Center"]
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="Root/Center/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 16
+
+[node name="Content" type="VBoxContainer" parent="Root/Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Heading" type="HBoxContainer" parent="Root/Center/Panel/Margin/Content"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Root/Center/Panel/Margin/Content/Heading"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "HERRAMIENTAS DE DEPURACIÓN"
+
+[node name="CloseButton" type="Button" parent="Root/Center/Panel/Margin/Content/Heading"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Cerrar"
+
+[node name="AddGoldButton" type="Button" parent="Root/Center/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+text = "Gold +1.000"
+
+[node name="AddManaButton" type="Button" parent="Root/Center/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+text = "Mana +100"
+
+[node name="RefillManaButton" type="Button" parent="Root/Center/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+text = "Restaurar Mana al máximo"
+
+[node name="HealBaseButton" type="Button" parent="Root/Center/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+text = "Curar la base"
+
+[node name="UnlockButton" type="Button" parent="Root/Center/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+text = "Desbloquear todo (solo esta run): no"
+
+[node name="StartWaveButton" type="Button" parent="Root/Center/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+text = "Iniciar la ronda seleccionada"
+
+[node name="RestartRunButton" type="Button" parent="Root/Center/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+text = "Empezar una run desde cero"
+
+[node name="Note" type="Label" parent="Root/Center/Panel/Margin/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Ctrl+K abre o cierra este menú. Los desbloqueos de depuración no se guardan."
+autowrap_mode = 3
