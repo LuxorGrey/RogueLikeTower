@@ -19,6 +19,7 @@ var _upgrade_catalog: Dictionary[StringName, PermanentUpgradeData] = {}
 var _active_run: bool = false
 var _active_run_id: String = ""
 var _save_blocked: bool = false
+var _debug_unlock_all: bool = false
 
 func _ready() -> void:
 	var profile_errors := PROGRESSION_DATA.validate()
@@ -117,7 +118,16 @@ func get_best_round_reached() -> int:
 func is_tower_unlocked(tower_data: TowerData) -> bool:
 	if tower_data == null or tower_data.unlock_id == &"":
 		return true
-	return _save_data.unlocked_towers.has(tower_data.unlock_id)
+	return _debug_unlock_all or _save_data.unlocked_towers.has(tower_data.unlock_id)
+
+func is_debug_unlock_all_enabled() -> bool:
+	return _debug_unlock_all
+
+func set_debug_unlock_all_enabled(enabled: bool) -> void:
+	if _debug_unlock_all == enabled:
+		return
+	_debug_unlock_all = enabled
+	progress_changed.emit()
 
 func is_content_unlocked(content_id: StringName) -> bool:
 	return get_unlocked_content_ids().has(content_id)

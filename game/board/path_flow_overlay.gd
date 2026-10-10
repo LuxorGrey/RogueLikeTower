@@ -2,15 +2,15 @@ class_name PathFlowOverlay
 extends Node2D
 
 const HEX_RADIUS: float = 52.0
-const FLOW_SPEED: float = 54.0
-const ARROW_SPACING: float = 40.0
+const FLOW_SPEED: float = 25.0
+const ARROW_SPACING: float = 66.0
 const REDRAW_INTERVAL: float = 1.0 / 30.0
 
-const PATH_LINE_SHADOW: Color = Color(0.015, 0.045, 0.025, 0.46)
-const PATH_LINE_GLOW: Color = Color("#43cf55", 0.56)
-const ARROW_SHADOW: Color = Color(0.015, 0.035, 0.02, 0.92)
-const ARROW_FILL: Color = Color("#52ec62")
-const ARROW_HIGHLIGHT: Color = Color("#d6ffd1")
+const PATH_LINE_SHADOW: Color = Color(0.015, 0.045, 0.025, 0.25)
+const PATH_LINE_GLOW: Color = Color("#43cf55", 0.34)
+const ARROW_SHADOW: Color = Color(0.015, 0.035, 0.02, 0.40)
+const ARROW_FILL: Color = Color("#52ec62", 0.68)
+const ARROW_HIGHLIGHT: Color = Color("#d6ffd1", 0.58)
 
 var _active_graph: PathGraph
 var _candidate_graph: PathGraph

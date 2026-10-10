@@ -170,12 +170,12 @@ Contrato M12 implementado: `MetaProgression` conserva su estado fuera de las esc
 M12A está implementado en código; la aceptación manual sigue pendiente. Las reglas de capas y estados coinciden con las páginas de referencia indicadas en ADR-0023 y con la confirmación del usuario. Las cifras del roster y el pool siguen siendo configurables/provisionales. El exceso de daño al vaciar una capa se descarta según la implementación; la página de referencia no describe expresamente el overkill, por lo que esa decisión permanece provisional. Los criterios están en `10_ACCEPTANCE_TESTS.md` y [ADR-0023](../decisions/ADR-0023-reglas-de-torres-y-capas-de-vida.md).
 
 ## M13 — UX/UI
-- HUD en tres paneles: recursos arriba a la izquierda, ronda/progreso/acción arriba al centro y estadísticas/acciones de torre a la derecha.
+- HUD final según M22: salud y atajos arriba a la izquierda; Gold/Mana arriba a la derecha; oleada centrada con una línea de 45 puntos y botón responsivo. Salud, recursos y ronda no tienen un panel compartido; la información de torre comienza bajo los recursos. Ver [ADR-0048](../decisions/ADR-0048-hud-oleadas-cards-y-paredes-texturizadas.md).
 - Barra de Health de base con valor superpuesto y segmentos de 10; sprite de base intercambiable desde `BaseData`. Gold y Mana usan iconos reutilizables, con mayor énfasis para Gold; al cambiar, su icono y cifra escalan y rebotan.
 - El Mana se repone al máximo efectivo cuando empieza cada ronda de campaña, y se presenta como entero sin alterar la precisión de los cálculos internos.
 - Al seleccionar una torre, mostrar en líneas legibles nivel, daño, multiplicadores H/A/S con iconos de Health/Armor/Shield, alcance, RPM, crítico, patrón, Mana y XP; conservar prioridades, mejoras y demolición en el panel derecho, que desaparece al deseleccionar.
 - PNG RGBA transparentes e independientes, uno por objeto, para moneda, energía, Health/Armor/Shield, siete torres y cuatro estados; no se usa atlas. Los atajos inferiores usan un fondo individual estilo carta y los mismos iconos de la selección, preview y torre colocada; el contenedor no dibuja un panel común.
-- Hover/selección de torre muestra alcance y contorno; el panel lateral ajusta su altura al contenido, nunca usa scroll, y un menú de prioridades permite seleccionar hasta tres criterios.
+- Hover/selección de torre muestra alcance y contorno; el panel lateral ajusta su altura al contenido y nunca usa scroll. Tres selectores numerados ordenan hasta tres criterios de targeting sin duplicados.
 - Enemigos muestran barras apiladas por Shield/Armor/Health con Health fragmentada, iconos de estados y contador de acumulaciones; el daño tiene destello, salto y texto flotante coloreado por capa.
 - Las cards de mejora incluyen el icono de torre afectada. Los textos de economía/campaña y descripciones convierten Gold/Mana en iconos PNG reutilizables.
 - La inspección técnica de enemigos y la selección de fixtures DEBUG se pliegan bajo `F3`; las estadísticas de objetivo siguen accesibles como tooltip de la torre seleccionada.
@@ -236,3 +236,23 @@ Estas cantidades NO son compromiso de diseño final.
 - Añadir diez piezas de terreno equilibradas sobre la huella estándar de siete hexes.
 - Actualizar diseño, aceptación, ADR y progreso; revisar visualmente profundidad y navegación.
 - Resultado: lectura del tablero clara con variedad de composición y sin cambiar la topología lógica.
+
+## M19 — Auditoría de torres y detalle visual
+- Documentar fórmulas runtime frente a la referencia, distinguiendo progresión, Mana, cadencia, crítico, status y capas de daño; mantener las discrepancias propias configurables.
+- Corregir la representación de Frost Keep para que Resource/UI describan el cuadrado de alcance que ya aplica el código.
+- Añadir pulso de selección en panel, icono, brillo alpha y rango; asegurar que la torre seleccionada se dibuje al frente con celdas elevadas.
+- Colocar el hover del tablero sobre superficies por elevación; bajar velocidad, densidad y opacidad de flechas.
+- Reforzar feedback de Gold, pulsar cofres al aparecer y desfasar el ciclo de los portales.
+- Reducir el almacenamiento de cuatro PNG conservando su dimensión de dibujo y separar 9 tiles + 5 obstáculos en PNG runtime; conservar los atlas fuente.
+- Resultado: sistema de torres auditable y respuesta visual inequívoca; aceptación visual manual pendiente.
+
+## M20 — Progresión independiente y selección de torre
+- Separar el nivel de Health, Armor y Shield: 15 mejoras posibles por capa, 45 por torre.
+- Mantener +1 de daño base por mejora y sumar +1 solo al multiplicador de la capa elegida; compras Gold y XP automática incrementan el mismo nivel individual.
+- Aplicar curvas exponenciales configurables para coste y XP, con factores iniciales provisionales de 1,15.
+- Mostrar bajo cada mejora el nivel, XP actual/umbral en una barra teñida por capa y el coste de esa capa.
+- Sustituir el control de targeting por tres selectores ordenados, con criterios únicos e intercambio visible al reordenarlos.
+- Dibujar el preview de construcción delante de todos los sprites; rojo indica colocación inválida y verde una ubicación válida. Pulsar la card inferior activa de torre.
+- Estandarizar obstáculos en caja 86×86 px, centrada con un pequeño offset visual, en tablero y cards.
+- Validar que las seis celdas junto a la base tienen elevación 0.
+- Resultado: progresión por capa legible, máximo de 45 subidas y selección/colocación sin feedback contradictorio.

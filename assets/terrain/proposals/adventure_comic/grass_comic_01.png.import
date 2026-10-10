@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://baf7hy04ll8sd"
-path="res://.godot/imported/terrain_atlas.png-5d86a9bd728576a9ab035466b691463f.ctex"
+uid="uid://b4ur6uuk083l6"
+path="res://.godot/imported/grass_comic_01.png-d2aafb25620d4d6293d4850021f7bde5.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/terrain/terrain_atlas.png"
-dest_files=["res://.godot/imported/terrain_atlas.png-5d86a9bd728576a9ab035466b691463f.ctex"]
+source_file="res://assets/terrain/proposals/adventure_comic/grass_comic_01.png"
+dest_files=["res://.godot/imported/grass_comic_01.png-d2aafb25620d4d6293d4850021f7bde5.ctex"]
 
 [params]
 

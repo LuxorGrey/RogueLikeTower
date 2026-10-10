@@ -32,7 +32,7 @@ const ALL_DAMAGE_TAGS: int = DAMAGE_TAG_PHYSICAL | DAMAGE_TAG_FIRE | DAMAGE_TAG_
 @export_range(0, 1000000, 1) var meta_unlock_cost: int = 0
 @export_range(0, 1000000, 1) var build_cost: int = 0
 @export_range(0, 1000000, 1) var build_cost_increment: int = 0
-@export var upgrade_costs: Array[int] = [20, 35]
+@export var upgrade_base_cost_by_layer: Array[int] = [20, 20, 20]
 @export_range(0.0, 100000.0, 0.5) var mana_cost_per_attack: float = 0.0
 @export_range(0.0, 100000.0, 0.1) var mana_cost_per_second: float = 0.0
 @export var mana_cost_scales_with_damage: bool = false
@@ -66,12 +66,11 @@ var targeting_mode: int = TargetingMode.FIRST_PROGRESS
 @export_range(0.0, 2.0, 0.05) var height_range_bonus_per_level: float = 0.5
 @export_range(0.0, 100.0, 0.1) var elevation_damage_bonus_per_level: float = 1.0
 @export_range(0.0, 1000.0, 1.0) var targeting_xp_required_per_level: float = 100.0
+@export_range(1.0, 2.0, 0.01) var upgrade_cost_growth_factor: float = 1.15
+@export_range(1.0, 2.0, 0.01) var targeting_xp_growth_factor: float = 1.15
 @export_range(0.0, 1000.0, 1.0) var frost_rpm_per_path_cell: float = 18.0
 @export_range(0.0, 1.0, 0.05) var frost_slow_fraction: float = 0.5
-@export_range(1, 10, 1) var max_level: int = 3
-@export_range(0, 100000, 1) var upgrade_damage_per_level: int = 5
-@export_range(0.0, 10.0, 0.05) var upgrade_range_per_level: float = 0.25
-@export_range(0.0, 10.0, 0.05) var upgrade_attack_rate_per_level: float = 0.0
+@export_range(0, 15, 1) var max_layer_upgrades: int = 15
 @export_enum("Ballista", "Mortar", "Tesla Coil", "Frost Keep", "Flame Thrower", "Poison Sprayer", "Shredder")
 var visual_archetype: int = VisualArchetype.BALLISTA
 ## Visual width/height of the tower icon; independent from hex occupancy and range.
@@ -148,18 +147,18 @@ func validate() -> PackedStringArray:
 		errors.append("La torre debe permitir al menos un tipo de terreno construible.")
 	if targeting_mode < TargetingMode.FIRST_PROGRESS or targeting_mode > TargetingMode.FASTEST:
 		errors.append("La prioridad de objetivo configurada no existe.")
-	if max_level < 1:
-		errors.append("La torre debe tener al menos un nivel.")
-	if upgrade_costs.size() < maxi(max_level - 1, 0):
-		errors.append("TowerData requiere un coste de mejora por cada nivel alcanzable.")
-	for upgrade_cost in upgrade_costs:
+	if max_layer_upgrades < 0 or max_layer_upgrades > 15:
+		errors.append("Cada capa admite entre 0 y 15 mejoras.")
+	if upgrade_base_cost_by_layer.size() != 3:
+		errors.append("TowerData requiere un coste base para Health, Armor y Shield.")
+	for upgrade_cost in upgrade_base_cost_by_layer:
 		if upgrade_cost < 0:
-			errors.append("Los costes de mejora no pueden ser negativos.")
+			errors.append("Los costes base de mejora no pueden ser negativos.")
 			break
-	if upgrade_damage_per_level < 0 or upgrade_range_per_level < 0.0 or upgrade_attack_rate_per_level < 0.0:
-		errors.append("Los incrementos de mejora no pueden ser negativos.")
+	if max_layer_upgrades > 0 and (upgrade_cost_growth_factor <= 1.0 or targeting_xp_growth_factor <= 1.0):
+		errors.append("Las curvas de coste y XP deben crecer exponencialmente (factor > 1).")
 	if targeting_xp_required_per_level <= 0.0:
-		errors.append("La experiencia requerida para subir de nivel debe ser positiva.")
+		errors.append("La XP base requerida por mejora debe ser positiva.")
 	if scene == null:
 		errors.append("TowerData requiere una escena de torre.")
 	return errors
@@ -169,13 +168,24 @@ func allows_terrain(terrain_type: int) -> bool:
 		return false
 	return (allowed_terrain_mask & (1 << terrain_type)) != 0
 
-func get_upgrade_cost(current_level: int) -> int:
-	if current_level < 1 or current_level >= max_level:
+func get_upgrade_cost(hit_point_layer: int, current_layer_upgrades: int) -> int:
+	if (
+		hit_point_layer < Enemy.HitPointLayer.HEALTH
+		or hit_point_layer > Enemy.HitPointLayer.SHIELD
+		or current_layer_upgrades < 0
+		or current_layer_upgrades >= max_layer_upgrades
+		or hit_point_layer >= upgrade_base_cost_by_layer.size()
+	):
 		return -1
-	var cost_index: int = current_level - 1
-	if cost_index >= upgrade_costs.size():
-		return -1
-	return upgrade_costs[cost_index]
+	return roundi(float(upgrade_base_cost_by_layer[hit_point_layer]) * pow(upgrade_cost_growth_factor, current_layer_upgrades))
+
+func get_targeting_xp_required_for_upgrade(current_layer_upgrades: int) -> float:
+	if current_layer_upgrades < 0 or current_layer_upgrades >= max_layer_upgrades:
+		return 0.0
+	return targeting_xp_required_per_level * pow(targeting_xp_growth_factor, current_layer_upgrades)
+
+func get_max_total_upgrades() -> int:
+	return max_layer_upgrades * 3
 
 func get_rounds_per_minute() -> float:
 	return rounds_per_minute if rounds_per_minute > 0.0 else attack_rate * 60.0

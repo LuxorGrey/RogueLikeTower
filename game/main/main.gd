@@ -28,11 +28,14 @@ const TOWER_LAYER_TEST_WAVE: WaveData = preload("res://data/waves/tower_layer_tr
 const RUN_ECONOMY_DATA: Resource = preload("res://data/run/run_economy_m9.tres")
 const DEMO_CARD_POOL: Resource = preload("res://data/cards/demo_card_pool.tres")
 const META_SHOP_PANEL_SCRIPT: Script = preload("res://game/progression/meta_shop_panel.gd")
+const DEBUG_HACKS_PANEL_SCRIPT: Script = preload("res://game/ui/debug_hacks_panel.gd")
 const HUD_STYLE_SCRIPT: Script = preload("res://game/ui/rogue_hud_style.gd")
 const ICON_CATALOG_SCRIPT: Script = preload("res://game/ui/icon_catalog.gd")
 const IMPACT_VFX_SCRIPT: Script = preload("res://game/vfx/animated_impact.gd")
 const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
 const TOWER_CARD_BUTTON_TEXTURE: Texture2D = preload("res://assets/ui/tower_card_button.png")
+const TERRAIN_EXPANSION_CARD_TEXTURE: Texture2D = preload("res://assets/ui/terrain_expansion_card_frame.png")
+const START_ROUND_BUTTON_TEXTURE: Texture2D = preload("res://assets/ui/start_round_button.png")
 const BALLISTA: TowerData = preload("res://data/towers/ballista.tres")
 const MORTAR: TowerData = preload("res://data/towers/mortar.tres")
 const TESLA_COIL: TowerData = preload("res://data/towers/tesla_coil.tres")
@@ -95,12 +98,9 @@ var _meta_shop_panel: CanvasLayer
 var _hud_style: RefCounted
 var _icon_catalog: RefCounted
 var _gold_feedback_tween: Tween
-var _gold_feedback_positions_cached: bool = false
 var _cursor_textures: Dictionary[int, Texture2D] = {}
 var _current_cursor_kind: int = -1
 var _hovered_interactable_control: Control
-var _gold_icon_base_position: Vector2 = Vector2.ZERO
-var _gold_status_base_position: Vector2 = Vector2.ZERO
 var _tower_shortcut_names: Array[Label] = []
 var _tower_shortcut_prices: Array[Label] = []
 var _tower_shortcut_icons: Array[TextureRect] = []
@@ -109,7 +109,15 @@ var _tower_upgrade_amounts: Array[Label] = []
 var _tower_upgrade_effect_labels: Array[Label] = []
 var _tower_upgrade_cost_icons: Array[TextureRect] = []
 var _tower_upgrade_layer_icons: Array[TextureRect] = []
+var _tower_upgrade_level_labels: Array[Label] = []
+var _tower_upgrade_xp_labels: Array[Label] = []
+var _tower_upgrade_xp_bars: Array[ProgressBar] = []
+var _tower_card_pulse_tween: Tween
+var _tower_card_pulsing_index: int = -1
 var _hovered_tower: Tower
+var _debug_hacks_panel: CanvasLayer
+var _visible_target_priority_count: int = 1
+var _priority_visibility_tower_instance_id: int = 0
 
 @onready var _piece_preview: TerrainPiecePreview = %PiecePreview
 @onready var _piece_status: Label = %PieceStatus
@@ -139,6 +147,11 @@ var _hovered_tower: Tower
 	%CardTitle2,
 	%CardTitle3,
 ]
+@onready var _terrain_card_counts: Array[Label] = [
+	%CardCount1,
+	%CardCount2,
+	%CardCount3,
+]
 @onready var _terrain_card_previews: Array[Control] = [
 	%CardPreview1,
 	%CardPreview2,
@@ -162,7 +175,9 @@ var _hovered_tower: Tower
 @onready var _wave_director: WaveDirector = %WaveDirector
 @onready var _base_health_bar: Control = %BaseHealthBar
 @onready var _base_status: Label = %BaseStatus
+@onready var _resources_row: Control = %ResourcesRow
 @onready var _gold_icon: TextureRect = %GoldIcon
+@onready var _gold_group: HBoxContainer = %GoldGroup
 @onready var _gold_status: Label = %GoldStatus
 @onready var _mana_icon: TextureRect = %ManaIcon
 @onready var _mana_status: Label = %ManaStatus
@@ -174,7 +189,17 @@ var _hovered_tower: Tower
 @onready var _tower_status: RichTextLabel = %TowerStatus
 @onready var _combat_debug: RichTextLabel = %CombatDebug
 @onready var _tower_actions: VBoxContainer = %TowerActions
-@onready var _tower_priority_menu: MenuButton = %TowerPriorityMenu
+@onready var _tower_priority_buttons: Array[OptionButton] = [
+	%TowerPriority1,
+	%TowerPriority2,
+	%TowerPriority3,
+]
+@onready var _tower_priority_rows: Array[Control] = [
+	%PrioritySlot1,
+	%PrioritySlot2,
+	%PrioritySlot3,
+]
+@onready var _tower_priority_add_button: Button = %AddPriority
 @onready var _tower_upgrade_buttons: Array[Button] = [
 	%UpgradeHealth,
 	%UpgradeArmor,
@@ -193,6 +218,7 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	_base_coord = STARTING_BOARD.get("base_coord")
 	MetaProgression.call("configure_tower_catalog", TOWER_PROFILES)
+	MetaProgression.call("set_debug_unlock_all_enabled", false)
 	var current_run_seed: int = int(MetaProgression.call("begin_run"))
 	_run_seed = current_run_seed
 	_chest_spawn_chance = float(MetaProgression.call("get_chest_spawn_chance"))
@@ -230,6 +256,11 @@ func _ready() -> void:
 	add_child(_meta_shop_panel)
 	_wire_interactable_cursors(_meta_shop_panel)
 	_meta_shop_panel.connect("new_run_requested", _on_new_run_requested)
+	_debug_hacks_panel = DEBUG_HACKS_PANEL_SCRIPT.new() as CanvasLayer
+	add_child(_debug_hacks_panel)
+	_hud_style.call("apply_to_tree", _debug_hacks_panel)
+	_debug_hacks_panel.connect("action_requested", _on_debug_hack_requested)
+	_debug_hacks_panel.call("set_unlock_status", bool(MetaProgression.call("is_debug_unlock_all_enabled")))
 	for index in _upgrade_card_buttons.size():
 		_upgrade_card_buttons[index].pressed.connect(_on_upgrade_card_selected.bind(index))
 	_start_wave_button.pressed.connect(_start_selected_wave)
@@ -257,7 +288,9 @@ func _ready() -> void:
 	_build_controller.tower_demolished.connect(_on_tower_demolished)
 	_build_controller.tower_upgraded.connect(_on_tower_upgraded)
 	_build_controller.build_mode_changed.connect(_on_build_mode_changed)
-	_tower_priority_menu.get_popup().id_pressed.connect(_on_targeting_mode_toggled)
+	for slot in _tower_priority_buttons.size():
+		_tower_priority_buttons[slot].item_selected.connect(_on_targeting_priority_selected.bind(slot))
+	_tower_priority_add_button.pressed.connect(_on_add_targeting_priority_pressed)
 	for layer in _tower_upgrade_buttons.size():
 		_tower_upgrade_buttons[layer].pressed.connect(_on_upgrade_tower_pressed.bind(layer))
 	_demolish_tower_button.pressed.connect(_on_demolish_tower_pressed)
@@ -344,6 +377,17 @@ func _process(_delta: float) -> void:
 	_update_anchor_from_mouse()
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventKey:
+		var debug_key := event as InputEventKey
+		if debug_key.pressed and not debug_key.echo and debug_key.ctrl_pressed and debug_key.keycode == KEY_K:
+			_toggle_debug_hacks()
+			get_viewport().set_input_as_handled()
+			return
+		if _debug_hacks_panel != null and _debug_hacks_panel.visible:
+			if debug_key.pressed and not debug_key.echo and debug_key.keycode == KEY_ESCAPE:
+				_debug_hacks_panel.hide()
+			get_viewport().set_input_as_handled()
+			return
 	if _meta_shop_panel != null and bool(_meta_shop_panel.call("is_open")):
 		if event is InputEventKey:
 			var overlay_key := event as InputEventKey
@@ -463,12 +507,43 @@ func _toggle_hud() -> void:
 	_hud.visible = not _hud.visible
 	_refresh_tower_controls()
 
+func _toggle_debug_hacks() -> void:
+	if _debug_hacks_panel == null:
+		return
+	_debug_hacks_panel.visible = not _debug_hacks_panel.visible
+	if _debug_hacks_panel.visible:
+		_debug_hacks_panel.call("set_unlock_status", bool(MetaProgression.call("is_debug_unlock_all_enabled")))
+
+func _on_debug_hack_requested(action_id: StringName) -> void:
+	match action_id:
+		&"add_gold":
+			_run_economy.call("add_gold", 1000, &"debug")
+		&"add_mana":
+			_run_economy.call("debug_add_mana", 100.0)
+		&"refill_mana":
+			_run_economy.call("refill_mana_to_max")
+		&"heal_base":
+			_base.heal(_base.get_maximum_health())
+		&"toggle_unlocks":
+			var unlock_all: bool = not bool(MetaProgression.call("is_debug_unlock_all_enabled"))
+			MetaProgression.call("set_debug_unlock_all_enabled", unlock_all)
+			_run_card_service.call("set_debug_unlock_all_enabled", unlock_all)
+			_debug_hacks_panel.call("set_unlock_status", unlock_all)
+			_refresh_tower_controls()
+		&"start_wave":
+			_start_selected_wave()
+		&"restart_run":
+			_on_new_run_requested()
+	_refresh_tower_controls()
+
 func _configure_hud_visuals() -> void:
 	_icon_catalog = ICON_CATALOG_SCRIPT.new() as RefCounted
 	_gold_icon.texture = _icon_catalog.call("get_icon", &"gold") as Texture2D
 	_mana_icon.texture = _icon_catalog.call("get_icon", &"mana") as Texture2D
+	_style_start_wave_button()
 	_configure_tower_shortcut_visuals()
 	_configure_tower_upgrade_visuals()
+	_gold_group.pivot_offset = _gold_group.size * 0.5
 
 func _configure_cursors() -> void:
 	var cursor_paths: Array[String] = [
@@ -621,10 +696,10 @@ func _configure_tower_shortcut_visuals() -> void:
 func _create_tower_card_style(tint: Color) -> StyleBoxTexture:
 	var style := StyleBoxTexture.new()
 	style.texture = TOWER_CARD_BUTTON_TEXTURE
-	style.texture_margin_left = 16.0
-	style.texture_margin_top = 18.0
-	style.texture_margin_right = 16.0
-	style.texture_margin_bottom = 18.0
+	style.texture_margin_left = 4.25
+	style.texture_margin_top = 3.68
+	style.texture_margin_right = 4.25
+	style.texture_margin_bottom = 3.68
 	style.content_margin_left = 9.0
 	style.content_margin_top = 9.0
 	style.content_margin_right = 9.0
@@ -637,29 +712,60 @@ func _configure_tower_upgrade_visuals() -> void:
 	_tower_upgrade_effect_labels.clear()
 	_tower_upgrade_cost_icons.clear()
 	_tower_upgrade_layer_icons.clear()
+	_tower_upgrade_level_labels.clear()
+	_tower_upgrade_xp_labels.clear()
+	_tower_upgrade_xp_bars.clear()
 	var layer_icons: Array[StringName] = [&"health", &"armor", &"shield"]
 	var layer_names: Array[String] = ["Health", "Armor", "Shield"]
 	for layer in _tower_upgrade_buttons.size():
 		var button: Button = _tower_upgrade_buttons[layer]
 		button.text = ""
-		button.custom_minimum_size = Vector2(116.0, 116.0)
+		button.custom_minimum_size = Vector2(116.0, 140.0)
 		var content := VBoxContainer.new()
 		content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		content.alignment = BoxContainer.ALIGNMENT_CENTER
-		content.add_theme_constant_override("separation", 2)
+		content.add_theme_constant_override("separation", 1)
 		content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var layer_icon := TextureRect.new()
-		layer_icon.custom_minimum_size = Vector2(29.0, 29.0)
+		layer_icon.custom_minimum_size = Vector2(26.0, 26.0)
 		layer_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		layer_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		layer_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		layer_icon.texture = _icon_catalog.call("get_icon", layer_icons[layer]) as Texture2D
 		layer_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		content.add_child(layer_icon)
+		var level_label := Label.new()
+		level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		level_label.add_theme_font_size_override("font_size", 10)
+		level_label.add_theme_color_override("font_color", _hp_layer_color(layer))
+		level_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		content.add_child(level_label)
+		var xp_bar := ProgressBar.new()
+		xp_bar.custom_minimum_size = Vector2(0.0, 7.0)
+		xp_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		xp_bar.min_value = 0.0
+		xp_bar.max_value = 100.0
+		xp_bar.show_percentage = false
+		xp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var xp_background := StyleBoxFlat.new()
+		xp_background.bg_color = Color("#1c252b")
+		xp_background.set_corner_radius_all(4)
+		var xp_fill := StyleBoxFlat.new()
+		xp_fill.bg_color = _hp_layer_color(layer)
+		xp_fill.set_corner_radius_all(4)
+		xp_bar.add_theme_stylebox_override("background", xp_background)
+		xp_bar.add_theme_stylebox_override("fill", xp_fill)
+		content.add_child(xp_bar)
+		var xp_label := Label.new()
+		xp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		xp_label.add_theme_font_size_override("font_size", 9)
+		xp_label.add_theme_color_override("font_color", Color("#d5dce0"))
+		xp_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		content.add_child(xp_label)
 		var effect_label := Label.new()
-		effect_label.text = "+1 Daño\n+1 %s" % layer_names[layer]
+		effect_label.text = "+1 Daño · +1 %s" % layer_names[layer]
 		effect_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		effect_label.add_theme_font_size_override("font_size", 11)
+		effect_label.add_theme_font_size_override("font_size", 10)
 		effect_label.add_theme_color_override("font_color", _hp_layer_color(layer))
 		effect_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		content.add_child(effect_label)
@@ -685,6 +791,9 @@ func _configure_tower_upgrade_visuals() -> void:
 		_tower_upgrade_effect_labels.append(effect_label)
 		_tower_upgrade_amounts.append(amount_label)
 		_tower_upgrade_cost_icons.append(cost_icon)
+		_tower_upgrade_level_labels.append(level_label)
+		_tower_upgrade_xp_labels.append(xp_label)
+		_tower_upgrade_xp_bars.append(xp_bar)
 
 func _hp_layer_color(layer: int) -> Color:
 	match layer:
@@ -733,19 +842,38 @@ func _fit_tower_info_panel() -> void:
 	if not is_instance_valid(_tower_info_panel) or not _tower_info_panel.visible:
 		return
 	var viewport_size: Vector2 = _tower_info_panel.get_viewport_rect().size
+	var panel_top: float = 76.0
 	var panel_width: float = minf(420.0, maxf(240.0, viewport_size.x - 48.0))
 	_tower_info_panel.offset_left = -panel_width - 24.0
 	_tower_info_panel.offset_right = -24.0
+	_tower_info_panel.offset_top = panel_top
 	_tower_info_panel.size.x = panel_width
 	_tower_info_content.pivot_offset = Vector2.ZERO
 	_tower_info_content.scale = Vector2.ONE
 	var desired_height: float = maxf(150.0, ceilf(_tower_info_panel.get_combined_minimum_size().y))
-	var available_height: float = maxf(150.0, viewport_size.y - 48.0)
-	if desired_height > available_height:
-		_tower_info_content.scale = Vector2(1.0, available_height / desired_height)
-		desired_height = available_height
+	var available_height: float = maxf(96.0, viewport_size.y - panel_top - 24.0)
+	var vertical_scale: float = minf(1.0, available_height / desired_height)
 	_tower_info_panel.size.y = desired_height
-	_tower_info_panel.offset_bottom = _tower_info_panel.offset_top + _tower_info_panel.size.y
+	_tower_info_panel.offset_bottom = _tower_info_panel.offset_top + desired_height
+	_tower_info_panel.pivot_offset = Vector2(panel_width * 0.5, 0.0)
+	_tower_info_panel.scale = Vector2(1.0, vertical_scale)
+
+func _update_tower_card_pulse(index: int) -> void:
+	if _tower_card_pulsing_index == index and _tower_card_pulse_tween != null and _tower_card_pulse_tween.is_running():
+		return
+	if _tower_card_pulse_tween != null and _tower_card_pulse_tween.is_running():
+		_tower_card_pulse_tween.kill()
+	if _tower_card_pulsing_index >= 0 and _tower_card_pulsing_index < _tower_shortcut_buttons.size():
+		_tower_shortcut_buttons[_tower_card_pulsing_index].scale = Vector2.ONE
+	_tower_card_pulsing_index = index
+	if index < 0 or index >= _tower_shortcut_buttons.size():
+		return
+	var selected_card: Button = _tower_shortcut_buttons[index]
+	selected_card.pivot_offset = selected_card.size * 0.5
+	selected_card.scale = Vector2.ONE
+	_tower_card_pulse_tween = create_tween().set_loops()
+	_tower_card_pulse_tween.tween_property(selected_card, "scale", Vector2(1.045, 1.045), 0.48).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_tower_card_pulse_tween.tween_property(selected_card, "scale", Vector2.ONE, 0.48).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _on_viewport_size_changed() -> void:
 	call_deferred("_fit_tower_info_panel")
@@ -755,7 +883,7 @@ func _configure_hud_tooltips() -> void:
 	_gold_status.tooltip_text = "Gold disponible para construir y mejorar torres."
 	_mana_status.tooltip_text = "Mana disponible para activar algunas torres."
 	_wave_status.tooltip_text = "Fase y actividad de la ronda de campaña actual."
-	_round_progress.tooltip_text = "45 segmentos: rondas completadas, ronda actual y rondas pendientes."
+	_round_progress.tooltip_text = "Cada punto representa una oleada. Pasa el cursor para ver su composición."
 	_wave_selector.tooltip_text = "Selector técnico de rondas y perfiles DEBUG. Solo aparece en el panel F3."
 	_piece_selector.tooltip_text = "Selecciona una pieza disponible para inspeccionar o colocar."
 	_rotate_left.tooltip_text = "Gira la pieza 60 grados en sentido antihorario. Atajo: Q."
@@ -765,7 +893,8 @@ func _configure_hud_tooltips() -> void:
 	_combat_debug.tooltip_text = "Inspección técnica de capas, regeneración, daño previsto y estados del objetivo."
 	_build_status.tooltip_text = "Estado de construcción, recompensa reciente o motivo de rechazo."
 	_start_wave_button.tooltip_text = "Inicia la ronda activa de la campaña."
-	_tower_priority_menu.tooltip_text = "Selecciona hasta tres criterios. El orden determina prioridad y desempates."
+	for slot in _tower_priority_buttons.size():
+		_tower_priority_buttons[slot].tooltip_text = "Criterio de prioridad %d. El siguiente criterio solo decide empates." % (slot + 1)
 	for layer in _tower_upgrade_buttons.size():
 		_tower_upgrade_buttons[layer].tooltip_text = "Mejora el multiplicador de daño de %s." % _hp_layer_name(layer)
 	_demolish_tower_button.tooltip_text = "Retira la torre seleccionada sin reembolso y reduce el coste futuro de ese tipo."
@@ -777,6 +906,7 @@ func _is_mouse_over_hud(mouse_position: Vector2) -> bool:
 		return false
 	return (
 		(_hud_panel.visible and _hud_panel.get_global_rect().has_point(mouse_position))
+		or (_resources_row.visible and _resources_row.get_global_rect().has_point(mouse_position))
 		or (_round_panel.visible and _round_panel.get_global_rect().has_point(mouse_position))
 		or (_tower_info_panel.visible and _tower_info_panel.get_global_rect().has_point(mouse_position))
 		or (_tower_toolbar.visible and _tower_toolbar.get_global_rect().has_point(mouse_position))
@@ -1196,32 +1326,65 @@ func _refresh_build_preview() -> void:
 
 func _populate_targeting_modes() -> void:
 	var labels: PackedStringArray = [
-		"Más avanzado", "Menos avanzado", "Casi sin Health/capa", "Más Health",
+		"Más avanzado", "Menos avanzado", "Menos HP total", "Más Health",
 		"Más Armor", "Más Shield", "Menos Health", "Menos Armor",
 		"Menos Shield", "Más lento", "Más rápido",
 	]
-	var popup: PopupMenu = _tower_priority_menu.get_popup()
-	popup.clear()
-	for mode in labels.size():
-		popup.add_check_item(labels[mode], mode)
-		popup.set_item_metadata(popup.item_count - 1, labels[mode])
-	_tower_priority_menu.text = "Criterios · 1/3"
+	for slot in _tower_priority_buttons.size():
+		var selector: OptionButton = _tower_priority_buttons[slot]
+		selector.clear()
+		var popup: PopupMenu = selector.get_popup()
+		if slot > 0:
+			selector.add_item("Sin criterio", -1)
+			popup.set_item_tooltip(0, "Deja vacía esta posición de desempate.")
+		for mode in labels.size():
+			var item_index: int = selector.item_count
+			selector.add_item(labels[mode], mode)
+			popup.set_item_tooltip(item_index, _targeting_mode_tooltip(mode))
+		selector.select(0)
+	_sync_targeting_priority_menu(null)
+
+func _targeting_mode_tooltip(mode: int) -> String:
+	match mode:
+		TowerData.TargetingMode.FIRST_PROGRESS:
+			return "El enemigo con más progreso por su ruta, más cerca de la base."
+		TowerData.TargetingMode.LAST_PROGRESS:
+			return "El enemigo con menos progreso por su ruta, más lejos de la base."
+		TowerData.TargetingMode.LOWEST_TOTAL_HIT_POINTS:
+			return "Menor suma de puntos restantes de Health, Armor y Shield."
+		TowerData.TargetingMode.HIGHEST_HEALTH:
+			return "Mayor cantidad actual de puntos Health restantes."
+		TowerData.TargetingMode.HIGHEST_ARMOR:
+			return "Mayor cantidad actual de puntos Armor restantes."
+		TowerData.TargetingMode.HIGHEST_SHIELD:
+			return "Mayor cantidad actual de puntos Shield restantes."
+		TowerData.TargetingMode.LOWEST_HEALTH:
+			return "Menor cantidad actual de puntos Health restantes."
+		TowerData.TargetingMode.LOWEST_ARMOR:
+			return "Menor cantidad actual de puntos Armor restantes."
+		TowerData.TargetingMode.LOWEST_SHIELD:
+			return "Menor cantidad actual de puntos Shield restantes."
+		TowerData.TargetingMode.SLOWEST:
+			return "El enemigo que se mueve más despacio."
+		TowerData.TargetingMode.FASTEST:
+			return "El enemigo que se mueve más rápido."
+		_:
+			return "Criterio de selección de objetivo."
 
 func _populate_wave_options() -> void:
 	_selected_tower_data = BALLISTA
 	_wave_selector.clear()
-	var boss_rounds := PackedInt32Array()
+	var campaign_waves: Array[WaveData] = []
 	for round_index in range(CAMPAIGN_ROUND_COUNT):
 		var wave: WaveData = _get_campaign_round(round_index + 1)
+		campaign_waves.append(wave)
 		var encounter_label: String = _encounter_label(wave)
 		_wave_selector.add_item("Ronda %02d/45 · %s · %d enemigos" % [
 			round_index + 1,
 			encounter_label,
 			_get_wave_enemy_count(wave),
 		])
-		if wave != null and wave.encounter_type in [WaveData.EncounterType.BOSS, WaveData.EncounterType.TIER_2_BOSS]:
-			boss_rounds.append(wave.round_number)
-	_round_progress.call("set_boss_rounds", boss_rounds)
+	_round_progress.call("set_campaign_waves", campaign_waves)
 	_wave_selector.add_item("DEBUG · Armored Regenerator")
 	_wave_selector.add_item("DEBUG · Status Training Target")
 	_wave_selector.add_item("DEBUG · Health/Armor/Shield target")
@@ -1233,7 +1396,7 @@ func _populate_wave_options() -> void:
 		_campaign_round_number,
 		_get_wave_enemy_count(_selected_wave),
 	]
-	_start_wave_button.text = "▶ Iniciar ronda %d/45" % _campaign_round_number
+	_set_start_wave_button_text("▶ Iniciar ronda %d/45" % _campaign_round_number)
 	_refresh_tower_controls()
 
 func _refresh_campaign_option_counts() -> void:
@@ -1276,54 +1439,83 @@ func _on_wave_profile_selected(index: int) -> void:
 		_wave_status.text = "DEBUG · Shield 40 · Armor 60 · Health 120 · regeneración 1/s por capa"
 	else:
 		return
-	_start_wave_button.text = "▶ Iniciar prueba" if _selected_wave_is_debug else "▶ Iniciar ronda %d/45" % _campaign_round_number
+	_set_start_wave_button_text("▶ Iniciar prueba" if _selected_wave_is_debug else "▶ Iniciar ronda %d/45" % _campaign_round_number)
 	_refresh_tower_controls()
 
-func _on_targeting_mode_toggled(mode: int) -> void:
+func _on_targeting_priority_selected(item_index: int, slot: int) -> void:
 	var tower: Tower = _build_controller.selected_tower
 	if tower == null or not is_instance_valid(tower):
 		return
-	var current: Array[int] = tower.get_targeting_priorities()
-	var next_priorities: Array[int] = []
-	var was_selected: bool = current.has(mode)
-	for current_mode in current:
-		if current_mode >= 0 and current_mode != mode and not next_priorities.has(current_mode):
-			next_priorities.append(current_mode)
-	if not was_selected:
-		if next_priorities.size() >= 3:
-			_build_status.text = "Puedes activar hasta tres criterios de objetivo."
-			_sync_targeting_priority_menu(tower)
-			return
-		next_priorities.append(mode)
-	for slot in range(3):
-		var next_mode: int = next_priorities[slot] if slot < next_priorities.size() else -1
-		_build_controller.set_selected_targeting_priority(slot, next_mode)
+	var selector: OptionButton = _tower_priority_buttons[slot]
+	var mode: int = selector.get_item_id(item_index)
+	var next_priorities: Array[int] = tower.get_targeting_priorities()
+	while next_priorities.size() < 3:
+		next_priorities.append(-1)
+	if slot == 0 and mode < 0:
+		_sync_targeting_priority_menu(tower)
+		return
+	var previous_mode: int = next_priorities[slot]
+	if mode >= 0:
+		var duplicate_slot: int = next_priorities.find(mode)
+		if duplicate_slot >= 0 and duplicate_slot != slot:
+			if previous_mode < 0:
+				_sync_targeting_priority_menu(tower)
+				return
+			next_priorities[duplicate_slot] = previous_mode
+	next_priorities[slot] = mode
+	if not _build_controller.set_selected_targeting_priorities(next_priorities):
+		_sync_targeting_priority_menu(tower)
+		return
 	_sync_targeting_priority_menu(tower)
 	_refresh_tower_controls()
 
 func _sync_targeting_priority_menu(tower: Tower) -> void:
-	if tower == null or not is_instance_valid(tower):
-		_tower_priority_menu.text = "Criterios · 0/3"
+	var selected_modes: Array[int] = []
+	if tower != null and is_instance_valid(tower):
+		selected_modes = tower.get_targeting_priorities()
+		var tower_instance_id: int = tower.get_instance_id()
+		if tower_instance_id != _priority_visibility_tower_instance_id:
+			_priority_visibility_tower_instance_id = tower_instance_id
+			_visible_target_priority_count = 1
+			for slot in range(selected_modes.size() - 1, -1, -1):
+				if selected_modes[slot] >= 0:
+					_visible_target_priority_count = slot + 1
+					break
+	else:
+		selected_modes = [TowerData.TargetingMode.FIRST_PROGRESS, -1, -1]
+		_priority_visibility_tower_instance_id = 0
+		_visible_target_priority_count = 1
+	while selected_modes.size() < 3:
+		selected_modes.append(-1)
+	for slot in _tower_priority_buttons.size():
+		var selector: OptionButton = _tower_priority_buttons[slot]
+		_tower_priority_rows[slot].visible = slot < _visible_target_priority_count
+		var selected_mode: int = selected_modes[slot]
+		for item_index in selector.item_count:
+			if selector.get_item_id(item_index) == selected_mode:
+				selector.select(item_index)
+				break
+		selector.tooltip_text = "Elige el criterio de prioridad %d. Si hay empate, se usa el siguiente." % (slot + 1)
+	_tower_priority_add_button.visible = tower != null and is_instance_valid(tower) and _visible_target_priority_count < 3
+	_tower_priority_add_button.disabled = not _build_controller.can_build_in_current_phase()
+	if _tower_info_panel.visible:
+		call_deferred("_fit_tower_info_panel")
+
+func _on_add_targeting_priority_pressed() -> void:
+	if _visible_target_priority_count >= _tower_priority_rows.size():
 		return
-	var selected_modes: Array[int] = tower.get_targeting_priorities()
-	var selected_count: int = 0
-	var popup: PopupMenu = _tower_priority_menu.get_popup()
-	for item_index in popup.item_count:
-		var mode: int = popup.get_item_id(item_index)
-		var priority_order: int = selected_modes.find(mode)
-		var is_selected: bool = priority_order >= 0
-		popup.set_item_checked(item_index, is_selected)
-		var base_label: String = String(popup.get_item_metadata(item_index))
-		popup.set_item_text(item_index, "%d · %s" % [priority_order + 1, base_label] if is_selected else base_label)
-		if is_selected:
-			selected_count += 1
-	_tower_priority_menu.text = "Criterios · %d/3" % selected_count
+	var tower: Tower = _build_controller.selected_tower
+	if tower == null or not is_instance_valid(tower):
+		return
+	_visible_target_priority_count += 1
+	_sync_targeting_priority_menu(tower)
 
 func _on_upgrade_tower_pressed(layer: int) -> void:
 	var tower: Tower = _build_controller.selected_tower
-	var upgrade_cost: int = tower.get_next_upgrade_cost() if tower != null and is_instance_valid(tower) else -1
+	var upgrade_cost: int = tower.get_next_upgrade_cost(layer) if tower != null and is_instance_valid(tower) else -1
 	if _build_controller.upgrade_selected_tower(layer):
-		_set_rich_text_with_currency_icons(_build_status, "Torre mejorada: +1 daño base y +1 %s · −%d Gold." % [
+		_set_rich_text_with_currency_icons(_build_status, "%s mejorado: +1 daño base y +1 %s · −%d Gold." % [
+			_hp_layer_name(layer),
 			_hp_layer_name(layer),
 			upgrade_cost,
 		])
@@ -1438,9 +1630,11 @@ func _on_tower_upgraded(tower: Tower, _new_level: int) -> void:
 func _refresh_tower_controls() -> void:
 	var build_mode: bool = _build_controller.is_build_mode()
 	var selected: Tower = _build_controller.selected_tower
+	var has_selected_tower: bool = selected != null and is_instance_valid(selected)
 	var waiting_for_terrain_card: bool = _awaiting_campaign_expansion and _selected_expansion_piece == null
 	var can_build: bool = _build_controller.can_build_in_current_phase() and not waiting_for_terrain_card
 	var is_run_ended: bool = RunManager.phase == RunManager.Phase.RUN_DEFEAT or RunManager.phase == RunManager.Phase.RUN_VICTORY
+	var selected_card_index: int = -1
 	for index in _tower_shortcut_buttons.size():
 		var shortcut_button: Button = _tower_shortcut_buttons[index]
 		var tower_data: TowerData = TOWER_PROFILES[index]
@@ -1473,12 +1667,15 @@ func _refresh_tower_controls() -> void:
 		shortcut_button.modulate = Color("#778187") if shortcut_button.disabled else Color.WHITE
 		if can_build and not can_afford:
 			shortcut_button.tooltip_text += "\nNo hay Gold suficiente para comprar esta torre."
-		shortcut_button.set_pressed_no_signal(
-			build_mode and TOWER_PROFILES[index] == _selected_tower_data
-		)
+		var matches_build_selection: bool = build_mode and TOWER_PROFILES[index] == _selected_tower_data
+		var matches_placed_selection: bool = has_selected_tower and selected.get_tower_data().id == tower_data.id
+		var is_active_card: bool = matches_build_selection or matches_placed_selection
+		shortcut_button.set_pressed_no_signal(is_active_card)
+		if is_active_card:
+			selected_card_index = index
+	_update_tower_card_pulse(selected_card_index)
 	_refresh_wave_option_states()
 	_wave_selector.disabled = build_mode or not _can_start_wave() or is_run_ended
-	var has_selected_tower: bool = selected != null and is_instance_valid(selected)
 	_tower_actions.visible = has_selected_tower and not build_mode
 	_tower_info_panel.visible = (
 		_hud.visible
@@ -1496,19 +1693,35 @@ func _refresh_tower_controls() -> void:
 		or not _can_start_selected_wave()
 		or is_run_ended
 	)
-	_tower_priority_menu.disabled = build_mode or not has_selected_tower or not _build_controller.can_build_in_current_phase()
-	var next_upgrade_cost: int = selected.get_next_upgrade_cost() if has_selected_tower else -1
+	for selector in _tower_priority_buttons:
+		selector.disabled = build_mode or not has_selected_tower or not _build_controller.can_build_in_current_phase()
+	_sync_targeting_priority_menu(selected if has_selected_tower else null)
+	if _tower_info_panel.visible:
+		call_deferred("_fit_tower_info_panel")
 	for layer in _tower_upgrade_buttons.size():
 		var upgrade_button: Button = _tower_upgrade_buttons[layer]
+		var next_upgrade_cost: int = selected.get_next_upgrade_cost(layer) if has_selected_tower else -1
+		var layer_level: int = selected.get_layer_upgrade_level(layer) if has_selected_tower else 0
+		var max_layer_upgrades: int = selected.get_tower_data().max_layer_upgrades if has_selected_tower else 0
+		var xp_value: float = selected.get_targeting_xp(layer) if has_selected_tower else 0.0
+		var xp_required: float = selected.get_xp_required_for_next_upgrade(layer) if has_selected_tower else 0.0
 		_tower_upgrade_layer_icons[layer].visible = has_selected_tower
 		_tower_upgrade_cost_icons[layer].visible = has_selected_tower and next_upgrade_cost >= 0
 		_tower_upgrade_effect_labels[layer].visible = has_selected_tower
+		_tower_upgrade_level_labels[layer].visible = has_selected_tower
+		_tower_upgrade_xp_labels[layer].visible = has_selected_tower
+		_tower_upgrade_xp_bars[layer].visible = has_selected_tower and next_upgrade_cost >= 0
+		_tower_upgrade_level_labels[layer].text = "NIVEL %d/%d" % [layer_level, max_layer_upgrades]
 		if next_upgrade_cost >= 0:
 			_tower_upgrade_amounts[layer].text = "%d" % next_upgrade_cost
+			_tower_upgrade_xp_labels[layer].text = "XP %.0f / %.0f" % [xp_value, xp_required]
+			_tower_upgrade_xp_bars[layer].value = clampf(xp_value / maxf(xp_required, 0.001) * 100.0, 0.0, 100.0)
 		else:
 			_tower_upgrade_amounts[layer].text = "máx."
+			_tower_upgrade_xp_labels[layer].text = "MÁXIMO"
+			_tower_upgrade_xp_bars[layer].value = 100.0
 		upgrade_button.disabled = build_mode or not has_selected_tower or next_upgrade_cost < 0 or not bool(_run_economy.call("can_afford_gold", next_upgrade_cost)) or not _build_controller.can_build_in_current_phase()
-		upgrade_button.tooltip_text = "Precio %d. Suma +1 al daño base y +1 al multiplicador de %s." % [next_upgrade_cost, _hp_layer_name(layer)] if next_upgrade_cost >= 0 else "La torre alcanzó su nivel máximo."
+		upgrade_button.tooltip_text = "Nivel %d/%d · cuesta %d Gold · añade +1 al daño base y +1 a %s." % [layer_level, max_layer_upgrades, next_upgrade_cost, _hp_layer_name(layer)] if next_upgrade_cost >= 0 else "%s está al nivel máximo %d/%d." % [_hp_layer_name(layer), layer_level, max_layer_upgrades]
 	_demolish_tower_button.disabled = build_mode or not has_selected_tower or not _build_controller.can_build_in_current_phase()
 	_demolish_tower_button.tooltip_text = "Retira esta torre sin devolución y reduce el precio siguiente de su tipo."
 	if build_mode:
@@ -1518,7 +1731,6 @@ func _refresh_tower_controls() -> void:
 	else:
 		_set_rich_text_with_currency_icons(_tower_status, _format_tower_summary(selected.get_summary()))
 		_tower_status.tooltip_text = "Consulta F3 para ver el objetivo en alcance, sus capas, regeneración y estados."
-	_tower_priority_menu.tooltip_text = "Selecciona hasta tres criterios. El orden de selección resuelve los empates."
 	_build_status.tooltip_text = "Estado de construcción, recompensa reciente o motivo por el que una acción no se puede realizar."
 	_start_wave_button.tooltip_text = "Inicia la ronda activa. La campaña avanza en orden y termina tras la ronda 45."
 	call_deferred("_fit_tower_info_panel")
@@ -1555,6 +1767,8 @@ func _build_tower_description(tower_data: TowerData) -> String:
 	]
 
 func _tower_attack_description(tower_data: TowerData) -> String:
+	if tower_data.visual_archetype == TowerData.VisualArchetype.FROST:
+		return "enemigos en un cuadrado hasta su alcance"
 	match tower_data.attack_pattern:
 		TowerData.AttackPattern.SINGLE_TARGET:
 			return "objetivo único"
@@ -1646,7 +1860,7 @@ func _on_wave_completed(round_number: int) -> void:
 		round_number,
 		round_reward,
 	])
-	_start_wave_button.text = "Procesando recompensa…"
+	_set_start_wave_button_text("Procesando…")
 	_refresh_tower_controls()
 	await get_tree().create_timer(0.8).timeout
 	if transition_token != _reward_transition_token or RunManager.phase != RunManager.Phase.ROUND_REWARD:
@@ -1660,7 +1874,7 @@ func _on_wave_completed(round_number: int) -> void:
 		else:
 			RunManager.transition_to(RunManager.Phase.ROUND_PREP)
 		_wave_status.text = "Prueba de diagnóstico completada · campaña detenida en ronda %d/45" % _campaign_round_number
-		_start_wave_button.text = "▶ Iniciar prueba"
+		_set_start_wave_button_text("▶ Iniciar prueba")
 	else:
 		_selected_wave_is_debug = false
 		if round_number >= CAMPAIGN_ROUND_COUNT:
@@ -1668,7 +1882,7 @@ func _on_wave_completed(round_number: int) -> void:
 			_awaiting_campaign_expansion = false
 			RunManager.transition_to(RunManager.Phase.RUN_VICTORY)
 			_set_rich_text_with_currency_icons(_wave_status, "¡CAMPAÑA COMPLETADA! · 45/45 rondas superadas · +%d Gold" % round_reward)
-			_start_wave_button.text = "DEMO COMPLETADA"
+			_set_start_wave_button_text("DEMO COMPLETADA")
 			_show_run_end(&"VICTORY", round_number)
 		else:
 			_placement_enabled = false
@@ -1783,7 +1997,7 @@ func _on_gold_changed(_current_gold: int, delta: int, _reason: StringName) -> vo
 	_refresh_economy_status()
 	_refresh_tower_controls()
 	if delta != 0:
-		_play_gold_feedback()
+		_play_gold_feedback(delta > 0)
 
 func _on_mana_changed(_current_mana: float, _maximum_mana: float) -> void:
 	_refresh_economy_status()
@@ -1815,36 +2029,40 @@ func _refresh_economy_status() -> void:
 		float(_run_economy.call("get_mana_regen_per_second"))
 	)
 
-func _play_gold_feedback() -> void:
-	if not _gold_feedback_positions_cached:
-		_gold_icon_base_position = _gold_icon.position
-		_gold_status_base_position = _gold_status.position
-		_gold_feedback_positions_cached = true
+func _play_gold_feedback(is_reward: bool = true) -> void:
 	if _gold_feedback_tween != null and _gold_feedback_tween.is_running():
 		_gold_feedback_tween.kill()
-	_gold_icon.position = _gold_icon_base_position
-	_gold_status.position = _gold_status_base_position
-	_gold_icon.scale = Vector2.ONE
-	_gold_status.scale = Vector2.ONE
-	_gold_icon.pivot_offset = _gold_icon.size * 0.5
-	_gold_status.pivot_offset = _gold_status.size * 0.5
-	var tween_targets: Array[Control] = [_gold_icon, _gold_status]
+	_gold_group.scale = Vector2.ONE
+	_gold_group.self_modulate = Color.WHITE
+	_gold_icon.rotation = 0.0
+	_gold_group.pivot_offset = _gold_group.size * 0.5
 	_gold_feedback_tween = create_tween()
 	_gold_feedback_tween.set_parallel(true)
-	for target in tween_targets:
-		var base_y: float = _gold_icon_base_position.y if target == _gold_icon else _gold_status_base_position.y
-		_gold_feedback_tween.tween_property(target, "scale", Vector2(1.22, 1.22), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		_gold_feedback_tween.tween_property(target, "position:y", base_y - 6.0, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var peak_scale: Vector2 = Vector2(1.48, 1.48) if is_reward else Vector2(1.18, 1.18)
+	var flash_color := Color("#fff0a6") if is_reward else Color("#f5e2a8")
+	var first_duration: float = 0.18 if is_reward else 0.12
+	_gold_feedback_tween.tween_property(_gold_group, "scale", peak_scale, first_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_gold_feedback_tween.tween_property(_gold_group, "self_modulate", flash_color, first_duration * 0.75).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if is_reward:
+		_gold_feedback_tween.tween_property(_gold_icon, "rotation", 0.16, first_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	_gold_feedback_tween.chain().set_parallel(true)
-	for target in tween_targets:
-		var base_y: float = _gold_icon_base_position.y if target == _gold_icon else _gold_status_base_position.y
-		_gold_feedback_tween.tween_property(target, "scale", Vector2(0.94, 0.94), 0.09).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
-		_gold_feedback_tween.tween_property(target, "position:y", base_y + 1.5, 0.09).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	var squash_scale: Vector2 = Vector2(0.82, 0.82) if is_reward else Vector2(0.94, 0.94)
+	var squash_duration: float = 0.12 if is_reward else 0.09
+	_gold_feedback_tween.tween_property(_gold_group, "scale", squash_scale, squash_duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	if is_reward:
+		_gold_feedback_tween.tween_property(_gold_icon, "rotation", -0.10, squash_duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 	_gold_feedback_tween.chain().set_parallel(true)
-	for target in tween_targets:
-		var base_y: float = _gold_icon_base_position.y if target == _gold_icon else _gold_status_base_position.y
-		_gold_feedback_tween.tween_property(target, "scale", Vector2.ONE, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		_gold_feedback_tween.tween_property(target, "position:y", base_y, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var settle_scale: Vector2 = Vector2(1.12, 1.12) if is_reward else Vector2.ONE
+	var settle_duration: float = 0.13 if is_reward else 0.14
+	_gold_feedback_tween.tween_property(_gold_group, "scale", settle_scale, settle_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_gold_feedback_tween.tween_property(_gold_group, "self_modulate", Color.WHITE, settle_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if is_reward:
+		_gold_feedback_tween.tween_property(_gold_icon, "rotation", 0.025, settle_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_gold_feedback_tween.chain().set_parallel(true)
+	var final_duration: float = 0.20 if is_reward else 0.14
+	_gold_feedback_tween.tween_property(_gold_group, "scale", Vector2.ONE, final_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_gold_feedback_tween.tween_property(_gold_group, "self_modulate", Color.WHITE, final_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_gold_feedback_tween.tween_property(_gold_icon, "rotation", 0.0, final_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _format_mana_regeneration(rate_per_second: float) -> String:
 	var numerator: int = int(roundf(maxf(rate_per_second, 0.0) * 100.0))
@@ -1947,6 +2165,14 @@ func _on_base_damaged(amount: int, current_health: int, maximum_health: int) -> 
 		]
 
 func _piece_summary(piece: TerrainPieceData) -> String:
+	var terrain_counts: String = _piece_terrain_counts(piece)
+	return "%s · %d hexágonos\n%s" % [
+		piece.display_name,
+		piece.cells.size(),
+		terrain_counts,
+	]
+
+func _piece_terrain_counts(piece: TerrainPieceData) -> String:
 	var path_count: int = 0
 	var grass_count: int = 0
 	var mountain_count: int = 0
@@ -1958,13 +2184,14 @@ func _piece_summary(piece: TerrainPieceData) -> String:
 				grass_count += 1
 			HexCell.TerrainType.MOUNTAIN:
 				mountain_count += 1
-	return "%s · %d hexágonos\nPath %d · Grass %d · Mountain %d" % [
-		piece.display_name,
-		piece.cells.size(),
-		path_count,
-		grass_count,
-		mountain_count,
-	]
+	var parts: PackedStringArray = PackedStringArray()
+	if path_count > 0:
+		parts.append("%d Path" % path_count)
+	if grass_count > 0:
+		parts.append("%d Grass" % grass_count)
+	if mountain_count > 0:
+		parts.append("%d Mountain" % mountain_count)
+	return " ".join(parts)
 
 func _present_terrain_card_offer() -> void:
 	if _offered_terrain_pieces.is_empty():
@@ -1988,6 +2215,7 @@ func _present_terrain_card_offer() -> void:
 		_terrain_card_buttons[index].disabled = false
 		_terrain_card_buttons[index].set_pressed_no_signal(false)
 		_terrain_card_titles[index].text = piece.display_name
+		_terrain_card_counts[index].text = _piece_terrain_counts(piece)
 		_terrain_card_previews[index].call("set_piece", piece)
 	_set_terrain_card_layout(false)
 	_terrain_card_panel.show()
@@ -1997,7 +2225,7 @@ func _present_terrain_card_offer() -> void:
 	_piece_selector.select(0)
 	_refresh_placement()
 	_start_wave_button.disabled = true
-	_start_wave_button.text = "Elige terreno para continuar"
+	_set_start_wave_button_text("Elige terreno")
 	_refresh_tower_controls()
 
 func _begin_campaign_terrain_expansion(round_number: int, round_reward: int) -> void:
@@ -2043,7 +2271,7 @@ func _present_upgrade_card_offer(round_number: int, cards: Array[Resource]) -> v
 		_pending_expansion_reward,
 	])
 	_start_wave_button.disabled = true
-	_start_wave_button.text = "Elige una carta de mejora"
+	_set_start_wave_button_text("Elige mejora")
 	_refresh_tower_controls()
 
 func _on_upgrade_card_selected(index: int) -> void:
@@ -2072,7 +2300,7 @@ func _prepare_next_campaign_round() -> void:
 		_campaign_round_number,
 		_get_wave_enemy_count(_selected_wave),
 	]
-	_start_wave_button.text = "▶ Iniciar ronda %d/45" % _campaign_round_number
+	_set_start_wave_button_text("▶ Iniciar ronda %d/45" % _campaign_round_number)
 	_refresh_placement()
 	_refresh_tower_controls()
 
@@ -2266,7 +2494,7 @@ func _on_terrain_card_selected(index: int) -> void:
 	_terrain_card_panel.show()
 	_wave_status.text = "Expansión · %s seleccionada · coloca una posición válida" % _selected_piece.display_name
 	_start_wave_button.disabled = true
-	_start_wave_button.text = "Coloca terreno para continuar"
+	_set_start_wave_button_text("Coloca terreno")
 	_refresh_placement()
 	_refresh_tower_controls()
 
@@ -2292,43 +2520,94 @@ func _set_terrain_card_layout(is_inventory: bool) -> void:
 	else:
 		_terrain_card_panel.anchor_top = 0.5
 		_terrain_card_panel.anchor_bottom = 0.5
-		_terrain_card_panel.offset_left = -390.0
-		_terrain_card_panel.offset_top = -170.0
-		_terrain_card_panel.offset_right = 390.0
-		_terrain_card_panel.offset_bottom = 170.0
-		_terrain_card_panel.custom_minimum_size = Vector2(780.0, 340.0)
+		_terrain_card_panel.offset_left = -540.0
+		_terrain_card_panel.offset_top = -230.0
+		_terrain_card_panel.offset_right = 540.0
+		_terrain_card_panel.offset_bottom = 230.0
+		_terrain_card_panel.custom_minimum_size = Vector2(1080.0, 460.0)
 	var margin: MarginContainer = _terrain_card_panel.get_node("Margin") as MarginContainer
 	margin.add_theme_constant_override("margin_left", 10 if is_inventory else 18)
 	margin.add_theme_constant_override("margin_right", 10 if is_inventory else 18)
 	margin.add_theme_constant_override("margin_top", 8 if is_inventory else 14)
 	margin.add_theme_constant_override("margin_bottom", 8 if is_inventory else 14)
-	var card_size: Vector2 = Vector2(184.0, 126.0) if is_inventory else Vector2(232.0, 278.0)
-	var preview_size: Vector2 = Vector2(168.0, 82.0) if is_inventory else Vector2(208.0, 230.0)
+	var card_size: Vector2 = Vector2(184.0, 126.0) if is_inventory else Vector2(320.0, 420.0)
+	var preview_size: Vector2 = Vector2(132.0, 54.0) if is_inventory else Vector2(264.0, 340.0)
 	for index in _terrain_card_buttons.size():
 		_terrain_card_buttons[index].custom_minimum_size = card_size
 		_terrain_card_previews[index].custom_minimum_size = preview_size
 		_terrain_card_titles[index].add_theme_font_size_override("font_size", 14 if is_inventory else 18)
+		_terrain_card_counts[index].add_theme_font_size_override("font_size", 11 if is_inventory else 13)
 
 func _style_terrain_card_button(button: Button) -> void:
-	var normal_style := StyleBoxFlat.new()
-	normal_style.bg_color = Color(0.10, 0.14, 0.16, 0.98)
-	normal_style.border_color = Color(0.37, 0.47, 0.49, 1.0)
-	normal_style.set_border_width_all(2)
-	normal_style.set_corner_radius_all(10)
-	normal_style.content_margin_left = 8.0
-	normal_style.content_margin_top = 8.0
-	normal_style.content_margin_right = 8.0
-	normal_style.content_margin_bottom = 8.0
-	var hover_style := normal_style.duplicate() as StyleBoxFlat
-	hover_style.bg_color = Color(0.15, 0.21, 0.22, 1.0)
-	hover_style.border_color = Color(0.70, 0.84, 0.75, 1.0)
-	var selected_style := normal_style.duplicate() as StyleBoxFlat
-	selected_style.bg_color = Color(0.16, 0.22, 0.19, 1.0)
-	selected_style.border_color = Color(0.94, 0.78, 0.34, 1.0)
-	selected_style.set_border_width_all(3)
+	var normal_style := _make_nine_slice_style(TERRAIN_EXPANSION_CARD_TEXTURE, Color.WHITE)
+	var hover_style := _make_nine_slice_style(TERRAIN_EXPANSION_CARD_TEXTURE, Color(1.12, 1.10, 0.92, 1.0))
+	var selected_style := _make_nine_slice_style(TERRAIN_EXPANSION_CARD_TEXTURE, Color(1.20, 1.10, 0.78, 1.0))
 	button.add_theme_stylebox_override("normal", normal_style)
 	button.add_theme_stylebox_override("hover", hover_style)
 	button.add_theme_stylebox_override("pressed", selected_style)
+	button.add_theme_stylebox_override("focus", selected_style)
+	button.add_theme_stylebox_override("disabled", normal_style)
+	button.add_theme_color_override("font_color", Color("#f3edda"))
+	button.add_theme_color_override("font_pressed_color", Color("#fff2c2"))
+
+func _style_start_wave_button() -> void:
+	var normal_style := _make_start_wave_style(Color.WHITE)
+	var hover_style := _make_start_wave_style(Color(1.12, 1.08, 0.88, 1.0))
+	var pressed_style := _make_start_wave_style(Color(0.78, 0.72, 0.58, 1.0))
+	var disabled_style := _make_start_wave_style(Color(0.54, 0.54, 0.50, 0.85))
+	_start_wave_button.add_theme_stylebox_override("normal", normal_style)
+	_start_wave_button.add_theme_stylebox_override("hover", hover_style)
+	_start_wave_button.add_theme_stylebox_override("pressed", pressed_style)
+	_start_wave_button.add_theme_stylebox_override("focus", hover_style)
+	_start_wave_button.add_theme_stylebox_override("disabled", disabled_style)
+	_start_wave_button.add_theme_color_override("font_color", Color("#342419"))
+	_start_wave_button.add_theme_color_override("font_hover_color", Color("#2d2016"))
+	_start_wave_button.add_theme_color_override("font_pressed_color", Color("#2d2016"))
+	_start_wave_button.custom_minimum_size = Vector2(0.0, 64.0)
+	_start_wave_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_update_start_wave_button_size()
+
+func _make_start_wave_style(tint: Color) -> StyleBoxTexture:
+	var style := StyleBoxTexture.new()
+	style.texture = START_ROUND_BUTTON_TEXTURE
+	style.content_margin_left = 22.0
+	style.content_margin_right = 22.0
+	style.content_margin_top = 8.0
+	style.content_margin_bottom = 8.0
+	style.draw_center = true
+	style.modulate_color = tint
+	return style
+
+func _set_start_wave_button_text(button_text: String) -> void:
+	_start_wave_button.text = button_text
+	_update_start_wave_button_size()
+
+func _update_start_wave_button_size() -> void:
+	var button_font: Font = _start_wave_button.get_theme_font("font")
+	var font_size: int = maxi(_start_wave_button.get_theme_font_size("font_size"), 1)
+	var text_width: float = button_font.get_string_size(
+		_start_wave_button.text,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1.0,
+		font_size
+	).x
+	var target_width: float = maxf(188.0, text_width + 48.0)
+	_start_wave_button.custom_minimum_size = Vector2(target_width, target_width / 3.0)
+
+func _make_nine_slice_style(texture: Texture2D, tint: Color) -> StyleBoxTexture:
+	var style := StyleBoxTexture.new()
+	style.texture = texture
+	style.texture_margin_left = 42.0
+	style.texture_margin_right = 42.0
+	style.texture_margin_top = 42.0
+	style.texture_margin_bottom = 42.0
+	style.content_margin_left = 18.0
+	style.content_margin_right = 18.0
+	style.content_margin_top = 8.0
+	style.content_margin_bottom = 8.0
+	style.draw_center = true
+	style.modulate_color = tint
+	return style
 
 func _on_preview_hover_changed(local_coord: Vector2i, terrain_type: int, elevation: int) -> void:
 	_hovered_coord = local_coord

@@ -39,9 +39,9 @@ var _icon_catalog: RefCounted
 var _tower_icon: Texture2D
 var _current_target: Enemy
 var _targeting_mode: int = TowerData.TargetingMode.FIRST_PROGRESS
-var _targeting_priorities: Array[int] = [TowerData.TargetingMode.FIRST_PROGRESS]
+var _targeting_priorities: Array[int] = [TowerData.TargetingMode.FIRST_PROGRESS, -1, -1]
 var _targeting_xp_by_layer: Dictionary[int, float] = {}
-var _layer_upgrade_bonus: Dictionary[int, float] = {}
+var _layer_upgrade_levels: Dictionary[int, int] = {}
 var _scan_timer: float = 0.0
 var _attack_cooldown: float = 0.0
 var _ballista_shot_cycle_id: int = 0
@@ -52,6 +52,7 @@ var _shot_target_position: Vector2 = Vector2.ZERO
 var _shot_target_positions: Array[Vector2] = []
 var _turret_angle: float = -PI * 0.5
 var _is_mana_blocked: bool = false
+var _selection_pulse_time: float = 0.0
 var _critical_rng := RandomNumberGenerator.new()
 
 func configure(
@@ -70,6 +71,7 @@ func configure(
 	if tower_data == null or damage_service == null or hex_radius <= 0.0 or cell_elevation < 0 or cell_elevation > 2:
 		last_error = "La torre recibió datos inválidos o no tiene DamageService."
 		return false
+	set_process(false)
 	var errors := tower_data.validate()
 	if not errors.is_empty():
 		last_error = "; ".join(errors)
@@ -89,17 +91,17 @@ func configure(
 	elevation = cell_elevation
 	_hex_radius = hex_radius
 	_targeting_mode = tower_data.targeting_mode
-	_targeting_priorities = [tower_data.targeting_mode]
+	_targeting_priorities = [tower_data.targeting_mode, -1, -1]
 	_critical_rng.seed = int(GameState.run_seed) ^ int(get_instance_id())
 	_targeting_xp_by_layer = {
 		Enemy.HitPointLayer.HEALTH: 0.0,
 		Enemy.HitPointLayer.ARMOR: 0.0,
 		Enemy.HitPointLayer.SHIELD: 0.0,
 	}
-	_layer_upgrade_bonus = {
-		Enemy.HitPointLayer.HEALTH: 0.0,
-		Enemy.HitPointLayer.ARMOR: 0.0,
-		Enemy.HitPointLayer.SHIELD: 0.0,
+	_layer_upgrade_levels = {
+		Enemy.HitPointLayer.HEALTH: 0,
+		Enemy.HitPointLayer.ARMOR: 0,
+		Enemy.HitPointLayer.SHIELD: 0,
 	}
 	global_position = map_origin + HexMath.axial_to_world(
 		HexCoord.new(coord.x, coord.y),
@@ -114,7 +116,13 @@ func _on_run_card_modifiers_changed() -> void:
 	stats_changed.emit(level)
 
 func set_selected(is_selected: bool) -> void:
+	if _is_selected == is_selected:
+		return
 	_is_selected = is_selected
+	_selection_pulse_time = 0.0
+	set_process(is_selected)
+	z_as_relative = not is_selected
+	z_index = 100 if is_selected else 0
 	queue_redraw()
 
 func set_hovered(is_hovered: bool) -> void:
@@ -129,7 +137,7 @@ func set_targeting_mode(mode: int) -> bool:
 	if mode < TowerData.TargetingMode.FIRST_PROGRESS or mode > TowerData.TargetingMode.FASTEST:
 		return false
 	_targeting_mode = mode
-	_targeting_priorities = [mode]
+	_targeting_priorities = [mode, -1, -1]
 	_current_target = null
 	_scan_timer = 0.0
 	return true
@@ -138,6 +146,8 @@ func set_targeting_priority(slot: int, mode: int) -> bool:
 	if _tower_data == null or slot < 0 or slot >= 3:
 		return false
 	if mode < -1 or mode > TowerData.TargetingMode.FASTEST:
+		return false
+	if slot == 0 and mode < 0:
 		return false
 	if mode >= 0:
 		for existing_slot in _targeting_priorities.size():
@@ -155,13 +165,33 @@ func set_targeting_priority(slot: int, mode: int) -> bool:
 func get_targeting_priorities() -> Array[int]:
 	return _targeting_priorities.duplicate()
 
-func upgrade(hit_point_layer: int = Enemy.HitPointLayer.HEALTH) -> bool:
-	if _tower_data == null or level >= _tower_data.max_level:
+func set_targeting_priorities(priorities: Array[int]) -> bool:
+	if _tower_data == null or priorities.size() != 3:
 		return false
-	if hit_point_layer < Enemy.HitPointLayer.HEALTH or hit_point_layer > Enemy.HitPointLayer.SHIELD:
+	if priorities[0] < 0:
+		return false
+	var seen_modes: Dictionary[int, bool] = {}
+	for mode in priorities:
+		if mode < -1 or mode > TowerData.TargetingMode.FASTEST:
+			return false
+		if mode < 0:
+			continue
+		if seen_modes.has(mode):
+			return false
+		seen_modes[mode] = true
+	_targeting_priorities = priorities.duplicate()
+	_targeting_mode = _targeting_priorities[0] if _targeting_priorities[0] >= 0 else _tower_data.targeting_mode
+	_current_target = null
+	_scan_timer = 0.0
+	return true
+
+func upgrade(hit_point_layer: int = Enemy.HitPointLayer.HEALTH) -> bool:
+	if _tower_data == null or hit_point_layer < Enemy.HitPointLayer.HEALTH or hit_point_layer > Enemy.HitPointLayer.SHIELD:
+		return false
+	if get_layer_upgrade_level(hit_point_layer) >= _tower_data.max_layer_upgrades:
 		return false
 	level += 1
-	_layer_upgrade_bonus[hit_point_layer] = float(_layer_upgrade_bonus.get(hit_point_layer, 0.0)) + 1.0
+	_layer_upgrade_levels[hit_point_layer] = get_layer_upgrade_level(hit_point_layer) + 1
 	stats_changed.emit(level)
 	queue_redraw()
 	return true
@@ -169,10 +199,21 @@ func upgrade(hit_point_layer: int = Enemy.HitPointLayer.HEALTH) -> bool:
 func get_tower_data() -> TowerData:
 	return _tower_data
 
-func get_next_upgrade_cost() -> int:
-	if _tower_data == null:
+func get_next_upgrade_cost(hit_point_layer: int) -> int:
+	if _tower_data == null or hit_point_layer < Enemy.HitPointLayer.HEALTH or hit_point_layer > Enemy.HitPointLayer.SHIELD:
 		return -1
-	return _tower_data.get_upgrade_cost(level)
+	return _tower_data.get_upgrade_cost(hit_point_layer, get_layer_upgrade_level(hit_point_layer))
+
+func get_layer_upgrade_level(hit_point_layer: int) -> int:
+	return int(_layer_upgrade_levels.get(hit_point_layer, 0))
+
+func get_xp_required_for_next_upgrade(hit_point_layer: int) -> float:
+	if _tower_data == null or hit_point_layer < Enemy.HitPointLayer.HEALTH or hit_point_layer > Enemy.HitPointLayer.SHIELD:
+		return 0.0
+	return _tower_data.get_targeting_xp_required_for_upgrade(get_layer_upgrade_level(hit_point_layer))
+
+func get_max_total_upgrades() -> int:
+	return _tower_data.get_max_total_upgrades() if _tower_data != null else 0
 
 func get_mana_cost_per_attack() -> float:
 	return get_current_mana_cost()
@@ -209,7 +250,7 @@ func get_hit_point_damage_multiplier(layer: int) -> float:
 			multiplier = _tower_data.armor_damage_multiplier
 		Enemy.HitPointLayer.SHIELD:
 			multiplier = _tower_data.shield_damage_multiplier
-	multiplier += float(_layer_upgrade_bonus.get(layer, 0.0))
+	multiplier += float(get_layer_upgrade_level(layer))
 	if _run_card_service != null and is_instance_valid(_run_card_service) and _run_card_service.has_method("get_tower_hit_point_multiplier_add"):
 		multiplier += float(_run_card_service.call("get_tower_hit_point_multiplier_add", _tower_data.id, layer))
 	return maxf(multiplier, 0.0)
@@ -296,6 +337,8 @@ func get_current_rounds_per_minute() -> float:
 	var rounds_per_minute: float = _tower_data.get_rounds_per_minute()
 	if _tower_data.visual_archetype == TowerData.VisualArchetype.FROST:
 		rounds_per_minute += float(get_covered_path_cell_count()) * _tower_data.frost_rpm_per_path_cell
+	if _run_card_service != null and is_instance_valid(_run_card_service) and _run_card_service.has_method("get_tower_attack_rate_multiplier"):
+		rounds_per_minute *= float(_run_card_service.call("get_tower_attack_rate_multiplier", _tower_data.id))
 	return maxf(rounds_per_minute, 0.0)
 
 func get_current_range_hexes() -> float:
@@ -355,27 +398,41 @@ func get_summary() -> String:
 		mana_summary = " · %.1f Mana/s" % current_mana_per_second
 	elif get_current_mana_cost() > 0.0:
 		mana_summary = " · %.1f Mana/ataque" % get_current_mana_cost()
-	return "%s · NIVEL %d/%d\nDaño %d · Rango %.1f hex · %.0f RPM\nHealth {icon:health} %.1f · Armor {icon:armor} %.1f · Shield {icon:shield} %.1f\nCrítico %.0f%% · %s%s\nXP {icon:health} %.0f · {icon:armor} %.0f · {icon:shield} %.0f" % [
+	return "%s · MEJORAS %d/%d\nDaño %d · Rango %.1f hex · %.0f RPM\nHealth {icon:health} %.1f · %s\nArmor {icon:armor} %.1f · %s\nShield {icon:shield} %.1f · %s\nCrítico %.0f%% · %s%s" % [
 		_tower_data.display_name,
-		level,
-		_tower_data.max_level,
+		level - 1,
+		get_max_total_upgrades(),
 		get_current_damage(),
 		get_current_range_hexes(),
 		get_current_rounds_per_minute(),
 		get_hit_point_damage_multiplier(Enemy.HitPointLayer.HEALTH),
+		_get_layer_progress_summary(Enemy.HitPointLayer.HEALTH),
 		get_hit_point_damage_multiplier(Enemy.HitPointLayer.ARMOR),
+		_get_layer_progress_summary(Enemy.HitPointLayer.ARMOR),
 		get_hit_point_damage_multiplier(Enemy.HitPointLayer.SHIELD),
+		_get_layer_progress_summary(Enemy.HitPointLayer.SHIELD),
 		get_current_crit_chance() * 100.0,
 		get_attack_pattern_name(),
 		mana_summary,
-		get_targeting_xp(Enemy.HitPointLayer.HEALTH),
-		get_targeting_xp(Enemy.HitPointLayer.ARMOR),
-		get_targeting_xp(Enemy.HitPointLayer.SHIELD),
+	]
+
+func _get_layer_progress_summary(layer: int) -> String:
+	var layer_level: int = get_layer_upgrade_level(layer)
+	var maximum: int = _tower_data.max_layer_upgrades
+	if layer_level >= maximum:
+		return "Nv %d/%d · MÁX" % [layer_level, maximum]
+	return "Nv %d/%d · XP %.0f/%.0f" % [
+		layer_level,
+		maximum,
+		get_targeting_xp(layer),
+		get_xp_required_for_next_upgrade(layer),
 	]
 
 func get_attack_pattern_name() -> String:
 	if _tower_data == null:
 		return "sin ataque"
+	if _tower_data.visual_archetype == TowerData.VisualArchetype.FROST:
+		return "todos los enemigos en cuadrado de alcance"
 	match _tower_data.attack_pattern:
 		TowerData.AttackPattern.SINGLE_TARGET:
 			return "objetivo único"
@@ -497,7 +554,11 @@ func _get_priority_value(target: Enemy, mode: int) -> float:
 		TowerData.TargetingMode.FIRST_PROGRESS, TowerData.TargetingMode.LAST_PROGRESS:
 			return target.get_route_progress()
 		TowerData.TargetingMode.LOWEST_TOTAL_HIT_POINTS:
-			return float(target.get_hit_point_value(target.get_active_hit_point_layer()))
+			return float(
+				target.get_current_health()
+				+ target.get_armor_value()
+				+ target.get_shield_value()
+			)
 		TowerData.TargetingMode.HIGHEST_HEALTH, TowerData.TargetingMode.LOWEST_HEALTH:
 			return float(target.get_current_health())
 		TowerData.TargetingMode.HIGHEST_ARMOR, TowerData.TargetingMode.LOWEST_ARMOR:
@@ -703,16 +764,19 @@ func _get_attack_targets(primary_target: Enemy) -> Array[Enemy]:
 func _gain_targeting_xp(target: Enemy, delta: float) -> void:
 	if _tower_data == null or target == null or not is_instance_valid(target) or delta <= 0.0:
 		return
-	if level >= _tower_data.max_level:
-		return
 	var layer: int = target.get_active_hit_point_layer()
+	if get_layer_upgrade_level(layer) >= _tower_data.max_layer_upgrades:
+		return
 	var range_hexes: float = maxf(get_current_range_hexes(), 0.25)
 	var earned_xp: float = (0.5 + 1.0 / (2.0 * range_hexes)) * delta
 	var new_total: float = float(_targeting_xp_by_layer.get(layer, 0.0)) + earned_xp
-	while new_total >= _tower_data.targeting_xp_required_per_level and level < _tower_data.max_level:
-		new_total -= _tower_data.targeting_xp_required_per_level
+	while get_layer_upgrade_level(layer) < _tower_data.max_layer_upgrades:
+		var required_xp: float = get_xp_required_for_next_upgrade(layer)
+		if required_xp <= 0.0 or new_total < required_xp:
+			break
+		new_total -= required_xp
 		level += 1
-		_layer_upgrade_bonus[layer] = float(_layer_upgrade_bonus.get(layer, 0.0)) + 1.0
+		_layer_upgrade_levels[layer] = get_layer_upgrade_level(layer) + 1
 		stats_changed.emit(level)
 		queue_redraw()
 	_targeting_xp_by_layer[layer] = new_total
@@ -783,13 +847,20 @@ func _emit_impact_effect(world_position: Vector2) -> void:
 func _hex_neighbor_distance() -> float:
 	return HexMath.axial_to_world(HexCoord.new(1, 0), _hex_radius).length()
 
+func _process(delta: float) -> void:
+	if not _is_selected:
+		return
+	_selection_pulse_time += delta
+	queue_redraw()
+
 func _draw() -> void:
 	if _tower_data == null:
 		return
-	if _is_selected or _is_hovered:
-		var range_color: Color = Color(0.36, 0.86, 1.0, 0.36) if _is_selected else Color(0.65, 0.9, 1.0, 0.2)
-		draw_arc(Vector2.ZERO, get_current_range_pixels(), 0.0, TAU, 72, range_color, 2.0 if _is_selected else 1.4, true)
-	var visual_scale: float = _tower_data.visual_icon_size / 54.0
+	var pulse: float = 0.5 + 0.5 * sin(_selection_pulse_time * TAU / 1.15) if _is_selected else 0.0
+	if _is_hovered and not _is_selected:
+		draw_arc(Vector2.ZERO, get_current_range_pixels(), 0.0, TAU, 72, Color(0.65, 0.9, 1.0, 0.2), 1.4, true)
+	var icon_scale: float = 1.0 + pulse * 0.055 if _is_selected else 1.0
+	var visual_scale: float = _tower_data.visual_icon_size * icon_scale / 54.0
 	var pedestal := PackedVector2Array([
 		Vector2(-16.0, -2.0),
 		Vector2(-11.0, -12.0),
@@ -802,14 +873,34 @@ func _draw() -> void:
 		pedestal[point_index] = pedestal[point_index] * visual_scale + Vector2(0.0, VISUAL_ART_OFFSET_Y)
 	var body_color: Color = _tower_data.visual_color
 	var dark_color: Color = body_color.darkened(0.55)
-	var icon_center := Vector2(0.0, -_tower_data.visual_icon_size * 0.5 + VISUAL_ART_OFFSET_Y)
-	if _is_selected or _is_hovered:
-		var outline_color: Color = Color(1.0, 0.92, 0.56, 0.98) if _is_selected else Color(0.82, 0.94, 1.0, 0.8)
-		draw_arc(icon_center, _tower_data.visual_icon_size * 0.5, 0.0, TAU, 48, outline_color, 3.2 if _is_selected else 2.0, true)
+	var icon_size: float = _tower_data.visual_icon_size * icon_scale
+	var icon_center := Vector2(0.0, -icon_size * 0.5 + VISUAL_ART_OFFSET_Y)
 	draw_colored_polygon(pedestal, dark_color)
 	if _tower_icon != null:
-		var icon_size := Vector2.ONE * _tower_data.visual_icon_size
-		draw_texture_rect(_tower_icon, Rect2(icon_center - icon_size * 0.5, icon_size), false)
+		var icon_rect := Rect2(icon_center - Vector2.ONE * icon_size * 0.5, Vector2.ONE * icon_size)
+		if _is_selected:
+			var glow_size: Vector2 = icon_rect.size * (1.075 + pulse * 0.035)
+			var glow_alpha: float = 0.075 + pulse * 0.055
+			for glow_index in range(16):
+				var angle: float = TAU * float(glow_index) / 16.0
+				var glow_offset := Vector2(cos(angle), sin(angle)) * (2.5 + pulse * 2.0)
+				draw_texture_rect(
+					_tower_icon,
+					Rect2(icon_center + glow_offset - glow_size * 0.5, glow_size),
+					false,
+					Color(0.42, 0.78, 1.0, glow_alpha)
+				)
+		elif _is_hovered:
+			var hover_size: Vector2 = icon_rect.size * 1.045
+			draw_texture_rect(
+				_tower_icon,
+				Rect2(icon_center - hover_size * 0.5, hover_size),
+				false,
+				Color(0.82, 0.94, 1.0, 0.18)
+			)
+		if _is_hovered and not _is_selected:
+			draw_arc(icon_center, icon_size * 0.56, 0.0, TAU, 48, Color(0.82, 0.94, 1.0, 0.68), 1.6, true)
+		draw_texture_rect(_tower_icon, icon_rect, false)
 	if _shot_flash_timer > 0.0:
 		for target_offset in _shot_target_positions:
 			draw_line(icon_center, target_offset, SHOT_COLOR, 2.0, true)

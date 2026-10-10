@@ -26,7 +26,11 @@ func _visit(
 	disabled_style: StyleBoxFlat
 ) -> void:
 	if node is PanelContainer or node is Panel:
-		(node as Control).add_theme_stylebox_override("panel", panel_style)
+		var panel_control := node as Control
+		if bool(panel_control.get_meta("transparent_panel", false)):
+			panel_control.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+		else:
+			panel_control.add_theme_stylebox_override("panel", panel_style)
 	elif node is Button:
 		var button := node as Button
 		button.add_theme_stylebox_override("normal", normal_style)

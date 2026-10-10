@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dr53r505u4yvk"
-path="res://.godot/imported/obstacles_atlas.png-96a45fb70e63671388b8e979e86830ab.ctex"
+uid="uid://daix347tuf47t"
+path="res://.godot/imported/mountain_02.png-8800f2d871ce8a5a96c0863f21b99965.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/terrain/obstacles_atlas.png"
-dest_files=["res://.godot/imported/obstacles_atlas.png-96a45fb70e63671388b8e979e86830ab.ctex"]
+source_file="res://assets/terrain/tiles/mountain_02.png"
+dest_files=["res://.godot/imported/mountain_02.png-8800f2d871ce8a5a96c0863f21b99965.ctex"]
 
 [params]
 

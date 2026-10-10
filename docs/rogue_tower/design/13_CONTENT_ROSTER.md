@@ -1,20 +1,22 @@
 # Catálogo activo de torres, mejoras, enemigos y estados
 
-Este catálogo resume el contenido ejecutable. Los Resources enlazados son la configuración numérica cargada; las reglas de campaña están en [45 rondas](14_CAMPANA_45_RONDAS.md), el vocabulario en [Nomenclatura](12_NOMENCLATURE.md), las fuentes en [Referencias](../references/02_monstruos.md) y los cambios aprobados en [ADR-0037](../decisions/ADR-0037-campana-de-45-rondas-y-habilidades.md). Los datos copiados de la wiki son referencia comunitaria configurable. El balance propio está marcado **provisional**.
+Este catálogo resume el contenido ejecutable. Los Resources enlazados son la configuración numérica cargada; las reglas de campaña están en [45 rondas](14_CAMPANA_45_RONDAS.md), el vocabulario en [Nomenclatura](12_NOMENCLATURE.md), las fuentes en [Referencias](../references/02_monstruos.md) y los cambios aprobados en [ADR-0037](../decisions/ADR-0037-campana-de-45-rondas-y-habilidades.md). Para las fórmulas, las mejoras y sus diferencias con Rogue Tower, consulta la [auditoría del sistema](15_AUDITORIA_SISTEMA_DE_TORRES.md). Los datos copiados de la wiki son referencia comunitaria configurable. El balance propio está marcado **provisional**.
 
 ## Torres
 
-Multiplicadores en orden Health / Armor / Shield. El coste de construcción es Gold base más el incremento por cada torre previa del mismo tipo. Todas tienen nivel máximo 3. Cada nivel añade +1 daño base y +1 a un multiplicador de capa elegido; la elevación añade +1 daño base y +0,5 hex de alcance por nivel de altura.
+Multiplicadores en orden Health / Armor / Shield. El coste de construcción es Gold base más el incremento por cada torre previa del mismo tipo. Cada torre puede recibir hasta 15 mejoras independientes por capa (Health, Armor, Shield), 45 en total. Cada mejora manual o automática añade +1 daño base y +1 solo al multiplicador de la capa correspondiente; los otros dos niveles y sus barras de XP permanecen intactos. La elevación añade +1 daño base y +0,5 hex de alcance por nivel de altura.
 
-| Torre | Función | Daño base; H/A/S | Alcance; cadencia | Mana | Construcción; mejora manual 2/3 |
+| Torre | Función | Daño base; H/A/S | Alcance; cadencia | Mana | Construcción; coste inicial de mejora por capa |
 |---|---|---:|---:|---:|---:|
-| Ballista | Proyectil de objetivo único | 10; 10/5/5 | 5 hex; 20 RPM | — | 10 (+15); 10 / 20 |
-| Mortar | Proyectil explosivo, radio 1,6 hex | 20; 10/15/5 | 10 hex; 10 RPM | — | 200 (+75); 10 / 20 |
-| Tesla Coil | Descarga a todos los objetivos en rango | **9**; 6/3/10 | 2 hex; 30 RPM | 5 por ataque | 200 (+75); 20 / 40 |
-| Frost Keep | Área de 1,2 hex; aplica Slow | **2**; 10/5/5 | 2 hex; **120 RPM** base | 2/s | 250 (+100); 20 / 40 |
-| Flame Thrower | Cono de fuego de 58°; aplica Burn | 6; 6/9/3 | 4 hex; 60 RPM | 1 por ataque | 300 (+75); 30 / 60 |
-| Poison Sprayer | Cono de veneno de 48°; aplica Poison | 5; 6/3/9 | 4 hex; 60 RPM | 1 por ataque | 300 (+75); 30 / 60 |
-| Shredder | Hoja por Path; perfora y aplica Bleed | 10; 20/10/10 | 5 hex; 5 RPM | — | 500 (+100); 30 / 60 |
+| Ballista | Proyectil de objetivo único | 10; 10/5/5 | 5 hex; 20 RPM | — | 10 (+15); 10 Gold |
+| Mortar | Proyectil explosivo, radio 1,6 hex | 20; 10/15/5 | 10 hex; 10 RPM | — | 200 (+75); 10 Gold |
+| Tesla Coil | Descarga a todos los objetivos en rango | **9**; 6/3/10 | 2 hex; 30 RPM | 5 por ataque | 200 (+75); 20 Gold |
+| Frost Keep | Todos los enemigos en un cuadrado de alcance; aplica Slow | **2**; 10/5/5 | 2 hex; **120 RPM** base +18 por Path cubierto | 2/s mientras dispara | 250 (+100); 20 Gold |
+| Flame Thrower | Cono de fuego de 58°; aplica Burn | 6; 6/9/3 | 4 hex; 60 RPM | 1 por ataque | 300 (+75); 30 Gold |
+| Poison Sprayer | Cono de veneno de 48°; aplica Poison | 5; 6/3/9 | 4 hex; 60 RPM | 1 por ataque | 300 (+75); 30 Gold |
+| Shredder | Hoja por Path; perfora y aplica Bleed | 10; 20/10/10 | 5 hex; 5 RPM | — | 500 (+100); 30 Gold |
+
+Ese es el coste base para la primera subida de cada una de las tres capas. En cada mejora posterior se multiplica por `upgrade_cost_growth_factor`; el XP necesario para la siguiente subida parte de 100 y se multiplica por `targeting_xp_growth_factor`. Ambos factores empiezan en 1,15 y son configurables/provisionales. El XP solo avanza en la capa del tipo de HP que tiene el objetivo actual; ver [ADR-0046](../decisions/ADR-0046-progresion-de-mejoras-y-feedback-de-seleccion.md).
 
 Frost Keep reduce su daño por segundo de 18 a 4 en nivel 1, antes de upgrades y cobertura Path: base 6→2 y cadencia 180→120 RPM. Su Slow pasa de 50% durante 2,5 s a **15% durante 1 s** (multiplicador 0,85). Tesla Coil baja el daño base de 10 a 9 (−10%). Estos son balances propios provisionales; ver ADR-0037. Frost Keep suma provisionalmente 18 RPM por cada celda Path cubierta. Tesla Coil, Flame Thrower y Poison Sprayer escalan el gasto de Mana con el daño.
 

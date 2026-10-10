@@ -18,6 +18,8 @@ Este directorio define el diseño propio vigente de Rogue Tower. El índice de a
 | [12 — Nomenclatura](12_NOMENCLATURE.md) | Nombres canónicos y límites de las equivalencias con Rogue Tower. |
 | [13 — Catálogo y escalado](13_CONTENT_ROSTER.md) | Lista legible de torres, cards, mejoras permanentes, enemigos, estados y fórmulas de escalado actuales. |
 | [14 — Campaña de 45 rondas](14_CAMPANA_45_RONDAS.md) | Tabla única de cantidades directas, orden, ritmo y clasificación de las rondas. |
+| [15 — Auditoría del sistema de torres](15_AUDITORIA_SISTEMA_DE_TORRES.md) | Comparación de fórmulas, mejoras y balance runtime con Rogue Tower; discrepancias y límites pendientes de verificar. |
+| [16 — Progresión y selección de torres](16_PROGRESION_Y_SELECCION_DE_TORRES.md) | Regla activa de 15 mejoras independientes por capa, XP, controles de prioridad y feedback de colocación. |
 
 ## Interpretación
 

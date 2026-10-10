@@ -49,6 +49,14 @@ func validate() -> PackedStringArray:
 		errors.append("La coordenada de base %s no pertenece al tablero inicial." % base_coord)
 	elif cells_by_coord[base_coord].terrain_type != HexCell.TerrainType.PATH:
 		errors.append("La base inicial debe ocupar una celda PATH (%s)." % base_coord)
+	else:
+		for direction in HexCoord.DIRECTION_OFFSETS:
+			var neighbor_coord: Vector2i = base_coord + direction
+			var neighbor_cell: TerrainPieceCellData = cells_by_coord.get(neighbor_coord) as TerrainPieceCellData
+			if neighbor_cell == null:
+				errors.append("Falta el hexágono %s alrededor de la base." % neighbor_coord)
+			elif neighbor_cell.elevation != 0:
+				errors.append("El anillo inmediato de la base debe tener elevación 0 (%s)." % neighbor_coord)
 	if not cells_by_coord.is_empty() and not _is_connected(cells_by_coord):
 		errors.append("Las celdas del tablero inicial deben formar una sola región conectada.")
 	return errors

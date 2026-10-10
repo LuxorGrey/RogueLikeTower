@@ -22,25 +22,12 @@ func _draw() -> void:
 	var tile_size := Vector2(HEX_RADIUS * sqrt(3.0), HEX_RADIUS * 2.0)
 	var corners := _hex_corners(radius)
 	draw_colored_polygon(corners, _terrain_color(_terrain_type))
-
-	var tile_region: Rect2 = TERRAIN_VISUAL_CATALOG_SCRIPT.get_terrain_art_region(
+	var texture: Texture2D = TERRAIN_VISUAL_CATALOG_SCRIPT.get_terrain_texture(
 		_terrain_type,
 		_visual_variant,
 		_coord
 	)
-	var texture: Texture2D = TERRAIN_VISUAL_CATALOG_SCRIPT.TERRAIN_ATLAS
-	var atlas_size := Vector2(texture.get_size())
-	var texture_uvs := PackedVector2Array()
-	var tile_rect := Rect2(-tile_size * 0.5, tile_size)
-	for point in corners:
-		var tile_uv: Vector2 = (point - tile_rect.position) / tile_rect.size
-		texture_uvs.append((tile_region.position + tile_uv * tile_region.size) / atlas_size)
-	draw_polygon(
-		corners,
-		PackedColorArray([Color.WHITE, Color.WHITE, Color.WHITE, Color.WHITE, Color.WHITE, Color.WHITE]),
-		texture_uvs,
-		texture
-	)
+	draw_texture_rect(texture, Rect2(-tile_size * 0.5, tile_size), false)
 
 func _hex_corners(radius: float) -> PackedVector2Array:
 	var corners := PackedVector2Array()

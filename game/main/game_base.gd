@@ -35,6 +35,9 @@ func _ready() -> void:
 func apply_damage(amount: int) -> int:
 	return _health.apply_damage(amount)
 
+func heal(amount: int) -> int:
+	return _health.heal(amount)
+
 func get_current_health() -> int:
 	return _health.current_health
 

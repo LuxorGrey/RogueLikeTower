@@ -86,6 +86,16 @@ func refill_mana_to_max() -> void:
 	_mana_signal_timer = 0.0
 	mana_changed.emit(_mana, effective_maximum)
 
+func debug_add_mana(amount: float) -> float:
+	if not _is_configured or amount <= 0.0:
+		return 0.0
+	var previous_mana: float = _mana
+	_mana = minf(_mana + amount, get_maximum_mana())
+	var accepted_amount: float = _mana - previous_mana
+	if accepted_amount > 0.0:
+		mana_changed.emit(_mana, get_maximum_mana())
+	return accepted_amount
+
 func can_afford_gold(amount: int) -> bool:
 	return amount >= 0 and _is_configured and _gold >= amount
 

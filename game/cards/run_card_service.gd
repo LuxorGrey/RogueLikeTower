@@ -27,6 +27,7 @@ var _active_operations: Array[Resource] = []
 var _selected_counts: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 var _is_configured: bool = false
+var _debug_unlock_all: bool = false
 
 func configure(
 	card_pool: Resource,
@@ -56,6 +57,9 @@ func configure(
 		_rng.randomize()
 	_is_configured = true
 	return true
+
+func set_debug_unlock_all_enabled(enabled: bool) -> void:
+	_debug_unlock_all = enabled
 
 func should_offer_after(round_number: int) -> bool:
 	return _is_configured and bool(_pool.call("should_offer_after", round_number))
@@ -162,7 +166,7 @@ func _is_card_available(card: Resource) -> bool:
 	if int(_selected_counts.get(card_id, 0)) >= int(card.get("max_per_run")):
 		return false
 	var requirement: StringName = StringName(card.get("unlock_requirement"))
-	return requirement == &"" or _unlocked_content_ids.has(requirement)
+	return _debug_unlock_all or requirement == &"" or _unlocked_content_ids.has(requirement)
 
 func _pick_weighted_index(candidates: Array[Resource]) -> int:
 	var total_weight: float = 0.0

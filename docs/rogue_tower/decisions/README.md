@@ -29,6 +29,10 @@ Los ADR documentan decisiones de terreno, combate, campaña, progresión y UX en
 | [ADR-0042](ADR-0042-orden-por-elevacion-y-feedback-del-tablero.md) | Oclusión por elevación, grid hover, portales, cursor, botones y catálogo de piezas | Aceptado; el criterio de oclusión de fachadas fue sustituido parcialmente por ADR-0043. Los demás puntos siguen vigentes. |
 | [ADR-0043](ADR-0043-superficies-de-elevacion-y-preview-de-spawns.md) | Oclusión de superficies, portales candidatos y props en cards | Corrección implementada; aceptación visual pendiente. Sustituye parcialmente ADR-0042. |
 | [ADR-0044](ADR-0044-caja-estandar-de-obstaculos.md) | Caja estándar para los sprites de obstáculos | Implementada en el tablero y las cards; aceptación visual pendiente. Sustituye el tamaño/proporción de obstáculos de ADR-0041. |
+| [ADR-0045](ADR-0045-auditoria-torres-y-feedback-visual.md) | Auditoría de torres, pulso de selección, hover elevado y assets compactos | Auditoría documentada y cambios visuales integrados; aceptación manual pendiente. |
+| [ADR-0046](ADR-0046-progresion-de-mejoras-y-feedback-de-seleccion.md) | Progresión independiente de mejoras, targeting, preview y terreno inicial | Código integrado; aceptación manual pendiente. Sustituye la caja visual de obstáculos de ADR-0044 y actualiza UX de mejoras/prioridades de ADR-0028/0039/0045. |
+| [ADR-0047](ADR-0047-herramientas-de-depuracion-y-claridad-de-seleccion.md) | Hacks temporales, prioridades bajo demanda y claridad visual de selección | Código y documentación integrados; aceptación manual pendiente. |
+| [ADR-0048](ADR-0048-hud-oleadas-cards-y-paredes-texturizadas.md) | HUD sin paneles compartidos, progreso de oleadas, cards con marco y fachadas con sprites | Código y arte integrados; aceptación visual pendiente. |
 
 ## Regla para nuevos ADR
 

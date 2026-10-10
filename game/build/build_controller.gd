@@ -195,7 +195,7 @@ func upgrade_selected_tower(hit_point_layer: int = Enemy.HitPointLayer.HEALTH) -
 	if selected_tower == null or not is_instance_valid(selected_tower):
 		last_error = "Selecciona una torre antes de mejorarla."
 		return false
-	var upgrade_cost: int = selected_tower.get_next_upgrade_cost()
+	var upgrade_cost: int = selected_tower.get_next_upgrade_cost(hit_point_layer)
 	if upgrade_cost < 0:
 		last_error = "La torre ya está en su nivel máximo."
 		return false
@@ -251,6 +251,14 @@ func set_selected_targeting_priority(slot: int, mode: int) -> bool:
 	if not can_build_in_current_phase() or selected_tower == null or not is_instance_valid(selected_tower):
 		return false
 	if not selected_tower.set_targeting_priority(slot, mode):
+		return false
+	tower_selected.emit(selected_tower, selected_tower.cell_coord)
+	return true
+
+func set_selected_targeting_priorities(priorities: Array[int]) -> bool:
+	if not can_build_in_current_phase() or selected_tower == null or not is_instance_valid(selected_tower):
+		return false
+	if not selected_tower.set_targeting_priorities(priorities):
 		return false
 	tower_selected.emit(selected_tower, selected_tower.cell_coord)
 	return true

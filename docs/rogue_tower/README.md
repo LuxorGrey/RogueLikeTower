@@ -37,6 +37,8 @@ Para implementación, usa etiquetas concretas como **implementado en código**, 
 - [Nomenclatura canónica](design/12_NOMENCLATURE.md): nombres vigentes de entidades, estados, capas, recursos, cards y equivalencias propias.
 - [Catálogo y escalado](design/13_CONTENT_ROSTER.md): roster activo y efectos/escalado configurados para torres, mejoras, enemigos y estados.
 - [Campaña de 45 rondas](design/14_CAMPANA_45_RONDAS.md): tabla única de composición y 1.093 enemigos directos.
+- [Auditoría de torres](design/15_AUDITORIA_SISTEMA_DE_TORRES.md): revisión del daño, mejoras, XP, Mana, cadencia, alcance, crítico y estados frente a la wiki.
+- [Progresión de mejoras](design/16_PROGRESION_Y_SELECCION_DE_TORRES.md): límites, curvas, niveles por capa, prioridades y feedback de selección.
 - [Importación archivada](archive/initial_import/README.md): snapshot del paquete recibido, incluido el JSON espejo.
 
 ## Incorporar un cambio

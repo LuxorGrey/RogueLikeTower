@@ -1,7 +1,7 @@
 # ADR-0044: Caja estándar para los sprites de obstáculos
 
 - Fecha: 2026-10-09.
-- Estado: implementado en el tablero y las cards; aceptación visual pendiente.
+- Estado: sustituido parcialmente por ADR-0046; la caja común sigue vigente, el tamaño 104×104 px ya no.
 - Ámbito: tamaño de dibujo para roca, esquirla, hierba alta, tótem y piedras.
 - Sustituye parcialmente: ADR-0041, punto 3, sobre conservar la proporción original de los obstáculos.
 

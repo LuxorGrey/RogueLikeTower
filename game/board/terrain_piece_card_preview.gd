@@ -61,15 +61,14 @@ func _draw() -> void:
 		closed_corners.append(corners[0])
 		draw_colored_polygon(corners, _terrain_color(cell.terrain_type))
 		var tile_size := Vector2(HEX_RADIUS * sqrt(3.0), HEX_RADIUS * 2.0) * render_scale
-		var tile_region: Rect2 = TERRAIN_VISUAL_CATALOG_SCRIPT.get_terrain_art_region(
-			cell.terrain_type,
-			cell.visual_variant,
-			cell.local_coord
-		)
-		draw_texture_rect_region(
-			TERRAIN_VISUAL_CATALOG_SCRIPT.TERRAIN_ATLAS,
+		draw_texture_rect(
+			TERRAIN_VISUAL_CATALOG_SCRIPT.get_terrain_texture(
+				cell.terrain_type,
+				cell.visual_variant,
+				cell.local_coord
+			),
 			Rect2(center - tile_size * 0.5, tile_size),
-			tile_region
+			false
 		)
 		draw_polyline(closed_corners, HEX_OUTLINE, maxf(1.0, 1.8 * render_scale), true)
 		_draw_path_edges(cell, center, corners, render_scale)
@@ -119,13 +118,12 @@ func _draw_obstacles(
 		if not obstacle_by_coord.has(cell.local_coord):
 			continue
 		var obstacle_type: int = obstacle_by_coord[cell.local_coord]
-		var source_region: Rect2 = TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_art_region(obstacle_type)
 		var obstacle_size: Vector2 = TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_DISPLAY_SIZE * render_scale
 		var center: Vector2 = centers[cell.local_coord] + Vector2(0.0, 6.0 * render_scale)
-		draw_texture_rect_region(
-			TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLES_ATLAS,
+		draw_texture_rect(
+			TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_texture(obstacle_type),
 			Rect2(Vector2(center.x - obstacle_size.x * 0.5, center.y - obstacle_size.y), obstacle_size),
-			source_region
+			false
 		)
 
 func _draw_cliffs(

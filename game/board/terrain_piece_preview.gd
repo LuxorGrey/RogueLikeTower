@@ -5,7 +5,11 @@ const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_
 const TERRAIN_CELL_DECORATION_SCRIPT: Script = preload("res://game/board/terrain_cell_decoration.gd")
 const TERRAIN_SURFACE_OCCLUDER_SCRIPT: Script = preload("res://game/board/terrain_surface_occluder.gd")
 const PATH_FLOW_OVERLAY_SCRIPT: Script = preload("res://game/board/path_flow_overlay.gd")
+const TERRAIN_HOVER_OVERLAY_SCRIPT: Script = preload("res://game/board/terrain_hover_overlay.gd")
+const TOWER_BUILD_GHOST_SCRIPT: Script = preload("res://game/board/tower_build_ghost.gd")
 const SPAWN_PORTAL_SCENE: PackedScene = preload("res://game/board/spawn_portal.tscn")
+const MOUNTAIN_CLIFF_TEXTURE: Texture2D = preload("res://assets/terrain/tiles/mountain_cliff_face.png")
+const GRASS_CLIFF_TEXTURE: Texture2D = preload("res://assets/terrain/tiles/grass_cliff_face.png")
 
 signal hover_changed(local_coord: Vector2i, terrain_type: int, elevation: int)
 signal hover_cleared
@@ -20,8 +24,8 @@ const MOUNTAIN_COLOR: Color = Color(0.63, 0.58, 0.48)
 const PATH_HOVER_COLOR: Color = Color(0.51, 0.75, 0.90)
 const GRASS_HOVER_COLOR: Color = Color(0.50, 0.88, 0.52)
 const MOUNTAIN_HOVER_COLOR: Color = Color(0.96, 0.76, 0.36)
-const CLIFF_DARKEN_FACTOR: float = 0.38
 const CLIFF_MIN_SCREEN_DEPTH: float = 6.0
+const CLIFF_TEXTURE_PIXEL_DENSITY: float = 20.0
 const ROUTE_DEBUG_COLORS: Array[Color] = [
 	Color(0.25, 0.78, 1.0, 0.92),
 	Color(1.0, 0.76, 0.25, 0.92),
@@ -38,6 +42,8 @@ var _decorations_by_coord: Dictionary[Vector2i, Node2D] = {}
 var _terrain_surface_occluders_by_coord: Dictionary[Vector2i, Node2D] = {}
 var _spawn_portals_by_key: Dictionary[String, Node2D] = {}
 var _path_flow_overlay: Node2D
+var _terrain_hover_overlay: Node2D
+var _tower_build_ghost: Node2D
 var _board_mode: bool = false
 var _placement_active: bool = false
 var _placement_anchor: Vector2i = Vector2i.ZERO
@@ -48,18 +54,16 @@ var _hovered_cell: TerrainPieceCellData
 var _path_graph: PathGraph
 var _placement_path_graph: PathGraph
 var _path_debug_visible: bool = false
-var _tower_build_preview_active: bool = false
-var _tower_preview_coord: Vector2i = Vector2i.ZERO
-var _tower_preview_is_valid: bool = false
-var _tower_preview_range_pixels: float = 0.0
-var _tower_preview_icon: Texture2D
-var _tower_preview_icon_size: float = 54.0
 var _combo_strength_by_coord: Dictionary[Vector2i, int] = {}
 var _combo_animation_time: float = 0.0
 var _combo_redraw_timer: float = 0.0
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	texture_repeat = CanvasItem.TEXTURE_REPEAT_DISABLED
+	_tower_build_ghost = TOWER_BUILD_GHOST_SCRIPT.new() as Node2D
+	_tower_build_ghost.name = "TowerBuildGhost"
+	add_child(_tower_build_ghost)
 
 func set_piece(piece_data: TerrainPieceData) -> void:
 	_piece_data = piece_data
@@ -78,18 +82,28 @@ func set_board_cells(board_cells: Dictionary[Vector2i, HexCell]) -> void:
 
 func set_decoration_parent(parent: Node2D) -> void:
 	_decoration_parent = parent
-	if _path_flow_overlay == null and parent != null and parent.get_parent() != null:
+	if parent == null or parent.get_parent() == null:
+		return
+	var board_parent: Node = parent.get_parent()
+	if _path_flow_overlay == null:
 		_path_flow_overlay = PATH_FLOW_OVERLAY_SCRIPT.new() as Node2D
 		_path_flow_overlay.name = "PathFlowOverlay"
-		var board_parent: Node = parent.get_parent()
 		board_parent.add_child(_path_flow_overlay)
 		board_parent.move_child(_path_flow_overlay, parent.get_index())
+	if _terrain_hover_overlay == null:
+		_terrain_hover_overlay = TERRAIN_HOVER_OVERLAY_SCRIPT.new() as Node2D
+		_terrain_hover_overlay.name = "TerrainHoverOverlay"
+		board_parent.add_child(_terrain_hover_overlay)
+		_terrain_hover_overlay.z_index = 1
 	if _path_flow_overlay != null:
 		_path_flow_overlay.global_position = global_position
+	if _terrain_hover_overlay != null:
+		_terrain_hover_overlay.global_position = global_position
 	_sync_path_flow_overlay()
 	_sync_elevation_surface_occluders()
 	_sync_cell_decorations()
 	_sync_spawn_portals()
+	_sync_terrain_hover_overlay()
 
 func refresh_cell_decorations() -> void:
 	_sync_cell_decorations()
@@ -112,13 +126,17 @@ func set_tower_build_preview(
 	icon_texture: Texture2D = null,
 	icon_size: float = 54.0
 ) -> void:
-	_tower_build_preview_active = active
-	_tower_preview_coord = coord
-	_tower_preview_is_valid = is_valid
-	_tower_preview_range_pixels = maxf(range_pixels, 0.0)
-	_tower_preview_icon = icon_texture
-	_tower_preview_icon_size = maxf(icon_size, 1.0)
-	queue_redraw()
+	if _tower_build_ghost != null:
+		_tower_build_ghost.call(
+			"set_preview",
+			active,
+			coord,
+			is_valid,
+			range_pixels,
+			icon_texture,
+			icon_size,
+			_board_cells
+		)
 
 func set_placement_preview(
 	piece_data: TerrainPieceData,
@@ -172,29 +190,6 @@ func _draw() -> void:
 	if _board_mode and _path_graph != null:
 		if _path_debug_visible:
 			_draw_path_debug_overlay()
-	if _tower_build_preview_active:
-		_draw_tower_build_preview()
-
-func _draw_tower_build_preview() -> void:
-	var cell: HexCell = _board_cells.get(_tower_preview_coord) as HexCell
-	if cell == null:
-		return
-	var center := _top_center(_tower_preview_coord, cell.elevation)
-	var tint: Color = Color(0.26, 0.95, 0.43, 0.78) if _tower_preview_is_valid else Color(1.0, 0.25, 0.20, 0.78)
-	if _tower_preview_range_pixels > 0.0:
-		draw_arc(center, _tower_preview_range_pixels, 0.0, TAU, 72, Color(tint.r, tint.g, tint.b, 0.28), 2.0, true)
-	var corners := _hex_corners(center)
-	corners.append(corners[0])
-	draw_polyline(corners, tint, 3.0, true)
-	if _tower_preview_icon != null:
-		var icon_size := Vector2.ONE * _tower_preview_icon_size
-		draw_texture_rect(
-			_tower_preview_icon,
-			Rect2(center + Vector2(-icon_size.x * 0.5, -icon_size.y + WORLD_ART_OFFSET_Y), icon_size),
-			false
-	)
-	else:
-		draw_circle(center + Vector2(0.0, -7.0 + WORLD_ART_OFFSET_Y), 9.0, tint)
 
 func _draw_path_debug_overlay() -> void:
 	for route_index in range(_path_graph.routes.size()):
@@ -220,6 +215,7 @@ func _draw_cliffs(
 	cells: Array[TerrainPieceCellData],
 	cells_by_coord: Dictionary[Vector2i, TerrainPieceCellData]
 ) -> void:
+	var corner_fills: Dictionary = {}
 	for cell in cells:
 		for direction_index in range(HexCoord.DIRECTION_OFFSETS.size()):
 			# Las aristas traseras (noroeste/noreste) quedan debajo del terreno.
@@ -250,13 +246,79 @@ func _draw_cliffs(
 				face_offset += (edge_midpoint - high_center).normalized() * CLIFF_MIN_SCREEN_DEPTH
 			var lower_start: Vector2 = upper_start + face_offset
 			var lower_end: Vector2 = upper_end + face_offset
-			var cliff_color := _terrain_color(cell.terrain_type).darkened(CLIFF_DARKEN_FACTOR)
-			# El grosor mínimo evita caras degeneradas cuando la arista y la altura
-			# proyectan en la misma dirección de pantalla.
-			draw_colored_polygon(PackedVector2Array([upper_start, upper_end, lower_end]), cliff_color)
-			draw_colored_polygon(PackedVector2Array([upper_start, lower_end, lower_start]), cliff_color)
-			var closed_cliff := PackedVector2Array([upper_start, upper_end, lower_end, lower_start, upper_start])
-			draw_polyline(closed_cliff, _terrain_color(cell.terrain_type).darkened(0.55), 1.5, true)
+			# Un quad por fachada mantiene su topología cerrada; el UV toma solo
+			# la región necesaria para conservar la escala del arte en este desnivel.
+			var cliff_quad := PackedVector2Array([upper_start, upper_end, lower_end, lower_start])
+			var cliff_texture: Texture2D = MOUNTAIN_CLIFF_TEXTURE
+			if cell.terrain_type == HexCell.TerrainType.GRASS:
+				cliff_texture = GRASS_CLIFF_TEXTURE
+			var texture_size: Vector2i = cliff_texture.get_size()
+			var uv_span := Vector2(
+				cliff_edge.length() * CLIFF_TEXTURE_PIXEL_DENSITY / float(texture_size.x),
+				face_offset.length() * CLIFF_TEXTURE_PIXEL_DENSITY / float(texture_size.y)
+			)
+			var max_u_start: float = maxf(1.0 - uv_span.x, 0.0)
+			var uv_seed: float = (
+				high_center.x + high_center.y * 1.73 + float(direction_index) * HEX_RADIUS
+			) * CLIFF_TEXTURE_PIXEL_DENSITY / float(texture_size.x)
+			var uv_left: float = fposmod(uv_seed, max_u_start) if max_u_start > 0.0 else 0.0
+			var cliff_uvs := PackedVector2Array([
+				Vector2(uv_left, 0.0),
+				Vector2(uv_left + uv_span.x, 0.0),
+				Vector2(uv_left + uv_span.x, uv_span.y),
+				Vector2(uv_left, uv_span.y),
+			])
+			draw_colored_polygon(cliff_quad, Color.WHITE, cliff_uvs, cliff_texture)
+			_register_cliff_corner(corner_fills, upper_start, lower_start, cell.terrain_type)
+			_register_cliff_corner(corner_fills, upper_end, lower_end, cell.terrain_type)
+	_draw_cliff_corner_caps(corner_fills)
+
+func _register_cliff_corner(
+	corner_fills: Dictionary,
+	upper_point: Vector2,
+	lower_point: Vector2,
+	terrain_type: int
+) -> void:
+	var key := Vector2i(roundi(upper_point.x * 10.0), roundi(upper_point.y * 10.0))
+	var entry: Dictionary = corner_fills.get(key, {})
+	var lower_points: Array = entry.get("lower_points", [])
+	for existing_variant in lower_points:
+		var existing_point: Vector2 = existing_variant
+		if existing_point.distance_to(lower_point) <= 0.25:
+			return
+	lower_points.append(lower_point)
+	entry["upper_point"] = upper_point
+	entry["lower_points"] = lower_points
+	entry["terrain_type"] = terrain_type
+	corner_fills[key] = entry
+
+func _draw_cliff_corner_caps(corner_fills: Dictionary) -> void:
+	for entry_variant in corner_fills.values():
+		var entry: Dictionary = entry_variant
+		var lower_points: Array = entry.get("lower_points", [])
+		if lower_points.size() < 2:
+			continue
+		var upper_point: Vector2 = entry["upper_point"]
+		var sorted_lower_points: Array[Vector2] = []
+		for lower_variant in lower_points:
+			sorted_lower_points.append(lower_variant)
+		sorted_lower_points.sort_custom(func(a: Vector2, b: Vector2) -> bool:
+			return (a - upper_point).angle() < (b - upper_point).angle()
+		)
+		var seam_color: Color = _cliff_seam_color(int(entry.get("terrain_type", HexCell.TerrainType.GRASS)))
+		for point_index in range(sorted_lower_points.size()):
+			var next_index: int = (point_index + 1) % sorted_lower_points.size()
+			var cap := PackedVector2Array([
+				upper_point,
+				sorted_lower_points[point_index],
+				sorted_lower_points[next_index],
+			])
+			draw_colored_polygon(cap, seam_color)
+
+func _cliff_seam_color(terrain_type: int) -> Color:
+	if terrain_type == HexCell.TerrainType.MOUNTAIN:
+		return Color("#777383")
+	return Color("#a86f3e")
 
 func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 	var center := _top_center(cell.local_coord, cell.elevation)
@@ -280,18 +342,22 @@ func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 		if is_ghost:
 			fill_color = fill_color.lerp(placement_tint, 0.3)
 			fill_color.a = 0.88
-		outline_color = fill_color.lightened(0.18)
-		outline_width = 3.5
+		outline_color = placement_tint.lightened(0.10) if is_ghost else fill_color.lightened(0.18)
+		outline_width = 4.5 if is_ghost else 3.5
 	draw_colored_polygon(corners, fill_color)
 	var tile_size := Vector2(HEX_RADIUS * sqrt(3.0), HEX_RADIUS * 2.0)
 	var tile_rect := Rect2(center - tile_size * 0.5, tile_size)
-	var tile_region: Rect2 = TERRAIN_VISUAL_CATALOG_SCRIPT.get_terrain_art_region(
-		cell.terrain_type,
-		cell.visual_variant,
-		cell.local_coord
-	)
 	var tile_tint: Color = Color(1.0, 1.0, 1.0, 0.86 if is_ghost else 1.0)
-	draw_texture_rect_region(TERRAIN_VISUAL_CATALOG_SCRIPT.TERRAIN_ATLAS, tile_rect, tile_region, tile_tint)
+	draw_texture_rect(
+		TERRAIN_VISUAL_CATALOG_SCRIPT.get_terrain_texture(
+			cell.terrain_type,
+			cell.visual_variant,
+			cell.local_coord
+		),
+		tile_rect,
+		false,
+		tile_tint
+	)
 	if is_ghost or is_hovered:
 		var interaction_overlay: Color = placement_tint if is_ghost else _terrain_hover_color(cell.terrain_type)
 		interaction_overlay.a = 0.24 if is_ghost else 0.17
@@ -310,9 +376,10 @@ func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 		outline_width = (2.5 if combo_strength < 5 else 3.0) if grid_opacity > 0.0 else 0.0
 	if not is_ghost:
 		outline_color.a *= grid_opacity if combo_strength < 3 else 1.0
-	if outline_width > 0.0:
+	if outline_width > 0.0 and (not _board_mode or is_ghost or combo_strength >= 3):
 		draw_polyline(closed_corners, outline_color, outline_width, true)
-	_draw_path_edges(cell, center, corners, is_ghost)
+	if not _board_mode or is_ghost:
+		_draw_path_edges(cell, center, corners, is_ghost)
 
 func _grid_opacity_for_cell(cell: TerrainPieceCellData) -> float:
 	if _hovered_cell == null:
@@ -353,6 +420,7 @@ func _sync_cell_decorations() -> void:
 		if is_instance_valid(decoration_to_remove):
 			decoration_to_remove.queue_free()
 		_decorations_by_coord.erase(coord)
+	_sync_obstacle_hover()
 
 func _sync_elevation_surface_occluders() -> void:
 	if _decoration_parent == null or not is_instance_valid(_decoration_parent):
@@ -431,6 +499,8 @@ func _refresh_hovered_cell() -> void:
 	if next_hovered_cell == null:
 		if _hovered_cell != null:
 			_hovered_cell = null
+			_sync_terrain_hover_overlay()
+			_sync_obstacle_hover()
 			hover_cleared.emit()
 			queue_redraw()
 		return
@@ -445,12 +515,27 @@ func _refresh_hovered_cell() -> void:
 			return
 
 	_hovered_cell = next_hovered_cell
+	_sync_terrain_hover_overlay()
+	_sync_obstacle_hover()
 	hover_changed.emit(
 		_hovered_cell.local_coord,
 		_hovered_cell.terrain_type,
 		_hovered_cell.elevation
 	)
 	queue_redraw()
+
+func _sync_terrain_hover_overlay() -> void:
+	if _terrain_hover_overlay == null or not is_instance_valid(_terrain_hover_overlay):
+		return
+	_terrain_hover_overlay.global_position = global_position
+	_terrain_hover_overlay.call("set_hover_state", _board_display_cells, _hovered_cell)
+
+func _sync_obstacle_hover() -> void:
+	for coord in _decorations_by_coord:
+		var decoration: Node2D = _decorations_by_coord[coord] as Node2D
+		if decoration == null or not is_instance_valid(decoration):
+			continue
+		decoration.call("set_obstacle_hovered", _hovered_cell != null and _hovered_cell.local_coord == coord)
 
 func _find_hovered_cell(mouse_position: Vector2) -> TerrainPieceCellData:
 	var cells := _active_display_cells()
@@ -492,6 +577,7 @@ func _rebuild_display_cells() -> void:
 			_board_display_cells.append(ghost_cell)
 	_board_display_cells.sort_custom(Callable(self, "_sort_cells_back_to_front"))
 	_rebuild_combo_highlights()
+	_sync_terrain_hover_overlay()
 
 func _rebuild_combo_highlights() -> void:
 	_combo_strength_by_coord.clear()
