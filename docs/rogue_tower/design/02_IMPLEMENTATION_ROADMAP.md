@@ -54,7 +54,7 @@ Codex debe ejecutar estos milestones en orden. **No saltar al contenido final.**
 - Visualización debug de rutas.
 - Resultado: varias rutas válidas sobre mapa dinámico.
 
-Contrato técnico del prototipo: grafo axial propio y BFS determinista sin costes; aplica las ofertas exactas/flexibles de [ADR-0006](../decisions/ADR-0006-sockets-laterales-flexibles-de-camino.md). La base actual `(0,0)` es provisional y se documenta en [ADR-0007](../decisions/ADR-0007-grafo-logico-de-caminos.md). M4 solo expone candidatos; M5 añade a `WaveDirector` una política configurable por grupo y usa `FIRST_SORTED` en la demo.
+Contrato técnico del prototipo: grafo axial propio y BFS determinista sin costes; aplica las ofertas exactas/flexibles de [ADR-0006](../decisions/ADR-0006-sockets-laterales-flexibles-de-camino.md). La referencia M4 a la base `(0,0)` es histórica; el tablero activo usa `(-1,0)` y una ruta recta según [ADR-0056](../decisions/ADR-0056-tablero-inicial-lineal.md). M4 solo expone candidatos; M5 añade a `WaveDirector` una política configurable por grupo y usa `FIRST_SORTED` en la demo.
 
 ## M5 — Enemigo básico + objetivo
 - Base/objetivo con Health.
@@ -65,7 +65,7 @@ Contrato técnico del prototipo: grafo axial propio y BFS determinista sin coste
 - Health y muerte.
 - Resultado: primera oleada funcional.
 
-Contrato histórico del prototipo M5: la base temporal se dibujaba sobre PATH `(0,0)` y la primera oleada salía del primer endpoint ordenado. La campaña actual conserva la base, pero usa un tablero semilla de radio axial 2 (19 celdas) con un mínimo de cuatro celdas PATH por ruta spawn-base, según [ADR-0025](../decisions/ADR-0025-tablero-inicial-y-ruta-minima.md). Los valores de enemigos y base descritos en ADR-0008 eran fixtures provisionales de M5; la campaña actual usa los Resources de `data/waves/` y `data/enemies/`. Durante combate se bloquea la colocación; al completar se habilita expansión. Los fixtures de depuración M7/M8 no son la progresión de campaña M10.
+Contrato histórico del prototipo M5: la base temporal se dibujaba sobre PATH `(0,0)` y la primera oleada salía del primer endpoint ordenado. La campaña actual usa un tablero semilla de radio axial 2 (19 celdas), base en `(-1,0)` y un mínimo de cuatro celdas PATH por ruta spawn-base, con trazado recto según [ADR-0025](../decisions/ADR-0025-tablero-inicial-y-ruta-minima.md) y [ADR-0056](../decisions/ADR-0056-tablero-inicial-lineal.md). Los valores de enemigos y base descritos en ADR-0008 eran fixtures provisionales de M5; la campaña actual usa los Resources de `data/waves/` y `data/enemies/`. Durante combate se bloquea la colocación; al completar se habilita expansión. Los fixtures de depuración M7/M8 no son la progresión de campaña M10.
 
 ## M6 — Torres
 - Build mode.

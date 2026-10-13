@@ -24,7 +24,7 @@
 - Solo se crea arista entre PATH adyacentes si ambos sockets ofrecen caras recíprocas en la unión de máscaras exactas/flexibles.
 - Un socket exacto abierto fuera del mapa produce endpoint spawn; una oferta flexible sola no produce endpoint.
 - Una salida exacta hacia no-PATH o hacia PATH sin socket complementario invalida el snapshot.
-- La base provisional del prototipo está en PATH `(0,0)`; una base ausente invalida el grafo.
+- El tablero de campaña coloca la base en PATH `(-1,0)` y usa el camino recto `(-1,0) → (0,0) → (1,0) → (2,0)`, con salida exterior `(3,0)`; una base ausente invalida el grafo.
 - Cada endpoint spawn y cada nodo PATH tiene una ruta a la base; los caminos huérfanos invalidan la colocación candidata.
 - Una recta produce ruta válida, bifurcación conserva nodo de grado 3 o mayor y convergencia vuelve a compartir nodos.
 - BFS devuelve una ruta mínima por número de enlaces; repetir sobre el mismo estado produce la misma secuencia usando el orden de direcciones como desempate.
@@ -202,15 +202,17 @@ M9.5 queda aceptado cuando pasan todos los criterios y se observa cada perfil en
 
 ### Prueba manual M10 en el juego
 
-1. Iniciar una run nueva y confirmar Ronda 01/45, el tablero inicial de 19 celdas y ruta válida de cuatro celdas PATH desde spawn hasta base. Mantener la inspección previa de orientación, terreno y preview.
+1. Iniciar una run nueva y confirmar Ronda 01/45, el tablero inicial de 19 celdas, base en `(-1,0)` y camino recto por `(-1,0) → (0,0) → (1,0) → (2,0)` hasta la salida `(3,0)`. Confirmar cuatro celdas PATH en cada ruta y mantener la inspección previa de orientación, terreno y preview.
 2. En cada oleada muestreada, comparar los grupos visibles/activos con la tabla de la ronda. Verificar que dos o más endpoints no multipliquen la cantidad anunciada y que la distribución alterne rutas.
 3. En una oleada con grupos espaciados, comprobar que pendientes llega a cero antes de que la ronda termine si aún hay enemigos vivos. Probar también muerte/llegada a base mientras quedan grupos pendientes.
 4. Completar varias rondas y expansiones, incluyendo una ronda con oferta M11. Verificar bloqueo de acciones entre fases y orden expansión→carta→siguiente ronda.
-5. En la ronda 24, observar el jefe Ooogie von Ooogovich, las invocaciones, la transición a Bat y la espera del contador/recompensa hasta la derrota final.
-6. Inspeccionar al menos un enemigo que mira a cada lado del eje horizontal. El sprite debe voltearse solo al moverse hacia la izquierda y volver a su orientación original hacia la derecha.
-7. Abrir el inspector técnico y seleccionar Frost Keep y Tesla Coil. Comparar daño, RPM, Slow y duración con el perfil documentado; comprobar que sus modificadores runtime se reflejan sin cambiar los Resources.
-8. Repetir una prueba de expansión y un fixture DEBUG desde preparación/expansión. El estado actual de oferta y campaña debe conservarse al volver.
-9. Completar la ronda 45 y confirmar 45/45, RUN_VICTORY, una sola recompensa de limpieza, sin expansión posterior y sin acciones de combate/construcción disponibles.
+5. En cada oferta, comprobar que una card está marcada `ALARGA CAMINO` y que su ghost empieza en la posición/rotación legales guardadas. Confirma que conecta con una ruta existente, aumenta su longitud y deja una opción legal para la expansión siguiente. Para cualquier otra card, mueve y gira el ghost hasta una posición que bloquearía toda futura prolongación: debe verse inválido, explicar el motivo y no permitir confirmar.
+6. Previsualiza una posición que cierre uno o más spawns. Los portales afectados deben quedarse visibles en su ubicación y mostrar una X roja; el texto debe indicar claramente cuántos se cerrarían. Al cancelar, los portales activos recuperan su estado normal. No debe ser posible confirmar una posición que deje cero opciones legales para alargar la ruta.
+7. En la ronda 24, observar el jefe Ooogie von Ooogovich, las invocaciones, la transición a Bat y la espera del contador/recompensa hasta la derrota final.
+8. Inspeccionar al menos un enemigo que mira a cada lado del eje horizontal. El sprite debe voltearse solo al moverse hacia la izquierda y volver a su orientación original hacia la derecha.
+9. Abrir el inspector técnico y seleccionar Frost Keep y Tesla Coil. Comparar daño, RPM, Slow y duración con el perfil documentado; comprobar que sus modificadores runtime se reflejan sin cambiar los Resources.
+10. Repetir una prueba de expansión y un fixture DEBUG desde preparación/expansión. El estado actual de oferta y campaña debe conservarse al volver.
+11. Completar la ronda 45 y confirmar 45/45, RUN_VICTORY, una sola recompensa de limpieza, sin expansión posterior y sin acciones de combate/construcción disponibles.
 
 La implementación de campaña, recursos, perfiles, habilidades y sprites está integrada. El arranque headless se comprobó en esta revisión; la aceptación completa de gameplay/arte requiere completar los pasos interactivos anteriores en la ventana del juego.
 
@@ -315,7 +317,7 @@ M13 queda aceptado cuando los nueve puntos anteriores pasan en una ventana Godot
 2. Activa build mode y apunta a obstáculos de varios tipos: el preview debe marcarlos inválidos y no se debe colocar torre. Repite en una celda Grass/Mountain con cofre; la torre tampoco se debe construir hasta abrirlo. Haz clic en el cofre y confirma que desaparece y añade 25 Gold una sola vez, sin alterar la ruta ni la celda axial. Vuelve a hacer clic y confirma que no duplica la recompensa.
 3. En la tienda permanente compra «Suerte del explorador» nivel por nivel y comienza otra run para que cambie el porcentaje de cofres. Comprueba que parte del 1 %, sube en pasos de 5 puntos porcentuales y se limita al 20 % tras cuatro niveles; la configuración persiste al reiniciar el juego.
 4. Comprueba el VFX al impactar cada torre: Ballista Dust_01, Mortar Explosion_01, Tesla Coil TeslaCoil, Frost Keep Ice_01, Flame Thrower Fire_03, Poison Sprayer Poison y Shredder Blood. Los efectos deben aparecer en la posición de impacto y concluir su animación sin quedarse congelados.
-5. Comprueba los cuatro estados del cursor: Cursor_01 normal, Cursor_02 al pasar sobre controles u objetos interactivos, Cursor_03 al apuntar a terreno inválido o una acción deshabilitada, y Cursor_04 mientras se coloca una torre.
+5. Comprueba los cuatro estados del cursor: Cursor_01 normal, Cursor_02 al pasar sobre controles u objetos interactivos, Cursor_03 al apuntar a terreno inválido o una acción deshabilitada, y Cursor_04 mientras se coloca una torre. Confirma que los tres primeros se asignan al puntero del sistema y que al salir del overlay de construcción se restaura el cursor del estado actual.
 6. Verifica que el panel lateral de torre no tiene barras de desplazamiento a 1280×720 y 1440×900; debe mostrar todo su contenido y adaptarse a la altura disponible. Revisa que la tienda conserve su scroll cuando una categoría exceda el espacio.
 
 El código y los assets están integrados. M14 requiere ejecutar este procedimiento en ventana y corregir cualquier problema visual/interactivo antes de marcarlo aceptado.
@@ -404,13 +406,14 @@ M22 queda aceptado tras pasar esta revisión manual en ventana Godot. La integra
 ### Revisión manual en ventana
 
 1. Ejecuta `game/main/main.tscn`. Mantén `W`, `A`, `S`, `D` y prueba diagonales; la cámara debe moverse continuo sin aceleración diagonal extra y mantener velocidad visual al acercar/alejar. Comprueba que `D` panea a la derecha y que `Ctrl+D` alterna el overlay diagnóstico. Suelta las teclas y cambia el foco de ventana mientras una está pulsada: la cámara no debe quedarse moviéndose. Los controles con foco de interfaz deben conservar su entrada.
-2. Inspecciona las salidas PATH de una ronda mixta con varios endpoints. Encima de cada portal deben aparecer los tipos de enemigo asignados a ese endpoint y una cifra en los grupos repetidos. Al hacer hover aparece el contorno que sigue el alfa del portal y un tooltip con ronda, total y cantidades por tipo. Suma todos los portales y compara con la composición directa de esa `WaveData`.
+2. Inspecciona las salidas PATH de una ronda mixta con varios endpoints. Encima de cada portal deben aparecer los tipos de enemigo asignados a ese endpoint y una cifra en los grupos repetidos. Al hacer hover aparece el contorno que sigue el alfa del portal y un tooltip con ronda, total y cantidades por tipo. El sprite conserva una silueta pixel art sencilla y se ve nítido a su nueva caja visual de 64×96 px. Suma todos los portales y compara con la composición directa de esa `WaveData`.
 3. Repite para una ronda siguiente, un fixture DEBUG con `ROUND_ROBIN` y otro con `FIRST`; confirma que los iconos y conteos cambian con la ronda/política. Selecciona una expansión válida y mueve/rota su preview: la vista por portal debe usar los endpoints del grafo candidato. Al cancelar o invalidar, debe volver al grafo activo. El tooltip no debe quedarse visible cuando se oculta el HUD ni capturar clics.
 4. Entra en colocación de torre y mueve el cursor por celdas legales e ilegales, elevadas y con obstáculos. El sprite fantasma debe quedar encima de terreno y props y recibir tinte verde translúcido si es válido o rojo si no. Al cancelar no debe permanecer el sprite fantasma.
-5. Revisa torres, enemigos, base, cofres y obstáculos en profundidad: no deben aparecer elipses ni trazos de sombra proyectada generados por el juego debajo de ellos. El arte que venga dibujado dentro de sus PNG no se elimina.
-6. Selecciona una torre y revisa Tower Info a 1280×720 y 1440×900. El marco PNG debe conservar las esquinas; el retrato aparece grande debajo del encabezado, el título queda junto a `NIVEL X DE 45` y el panel ajusta su altura sin scroll ni recorte. Las mejoras H/A/S muestran iconos mayores, nivel en negrita y XP como barra con progreso/restante; el tooltip de cada botón incluye las cifras de XP. Demoler es cuadrado de 64×64, su icono queda limitado a 36×36 y no estira el panel; conserva su comportamiento. Comprueba que el nivel acumulado avanza tras comprar capas y llega como máximo a 45.
+5. Revisa torres, enemigos, base, cofres y obstáculos en profundidad: no deben aparecer sombras, pedestales oscuros ni otras formas que simulen sombra generadas por el juego debajo de ellos. El cofre debe conservar su silueta cerrada y simple al tamaño real; los PNG de cofre y portal mantienen alpha y se dibujan con filtro nearest.
+6. Selecciona una torre y revisa Tower Info a 1280×720 y 1440×900. La superficie plana no lleva marco ornamental; el icono pequeño comparte cabecera con el nombre y `NIVEL X DE 45`. El panel se ajusta sin scroll ni recorte. Health/Armor/Shield muestran icono, nivel, barra de XP y coste en tres controles compactos; el tooltip conserva las cifras exactas de XP y el efecto completo. Demoler usa un botón de texto horizontal y conserva su comportamiento. Comprueba que el nivel acumulado avanza tras comprar capas y llega como máximo a 45.
+7. Abre la selección de expansión de terreno. Las tres cards usan superficies planas con un borde fino para hover/selección, sin marco ornamental; preview, nombre y conteos siguen legibles y seleccionar una pieza conserva el comportamiento.
 
-M23 queda aceptado tras completar esta revisión manual en ventana. El cambio está registrado en [ADR-0051](../decisions/ADR-0051-navegacion-prevision-portales-y-panel-torre.md).
+M23 queda aceptado tras completar esta revisión manual en ventana. El cambio está registrado en [ADR-0051](../decisions/ADR-0051-navegacion-prevision-portales-y-panel-torre.md), [ADR-0053](../decisions/ADR-0053-paneles-y-sprites-sencillos.md) y [ADR-0055](../decisions/ADR-0055-feedback-base-seleccion-y-recompensas.md).
 
 ## M24 Feedback legible de daño
 
@@ -421,6 +424,26 @@ M23 queda aceptado tras completar esta revisión manual en ventana. El cambio es
 3. Genera un crítico y confirma que su etiqueta `CRIT`, tamaño/contorno y punch destacan sin ocultar el color de la capa afectada. Comprueba grupos de muchos enemigos y torres rápidas: los números deben separarse lo suficiente para leerse y no afectar HP ni el resultado de combate.
 
 M24 queda aceptado tras completar esta revisión manual en ventana. La decisión está registrada en [ADR-0052](../decisions/ADR-0052-numeros-de-dano-animados-y-legibles.md).
+
+## Feedback de daño a base, recompensas y selección
+
+### Revisión manual en ventana
+
+1. Inicia una oleada con enemigos que alcanzan la base: el sprite se tiñe de rojo durante un instante y la cámara tiembla brevemente. La cámara debe terminar exactamente en su posición y zoom previos, también al recibir impactos seguidos.
+2. Gana Gold por una baja/recompensa y abre un cofre con recompensa: el icono y la cifra de la esquina superior derecha deben rebotar y vibrar juntos. Abre un cofre teniendo Gold al límite y confirma que el cofre también produce el feedback sin cambiar el saldo.
+3. Abre una oferta de mejoras y una oferta de expansión de terreno: el tablero queda oscurecido bajo las cards, las cards siguen destacadas y el fondo no bloquea clics. Al elegir una pieza el velo desaparece; cancela su colocación y confirma que vuelve con las tres opciones.
+
+El feedback queda aceptado tras completar esta revisión visual/interactiva. La decisión está registrada en [ADR-0055](../decisions/ADR-0055-feedback-base-seleccion-y-recompensas.md).
+
+## Revisión visual global: tipografía y ausencia de sombras de código
+
+### Revisión manual en ventana
+
+1. Revisa el HUD, selección de terreno, Tower Info, cards de mejora, tienda permanente, tooltips, panel de debug, números de daño y cifras dibujadas junto a iconos. Todos deben usar Patrick Hand; los números de contadores dibujados manualmente también deben coincidir con la tipografía de controles.
+2. Comprueba tamaños legibles y ausencia de recortes en 1280×720 y 1440×900. La sustitución de fuente conserva los tamaños tipográficos y la estructura actuales.
+3. Coloca una torre y un obstáculo, mueve enemigos y abre cofres. Ninguno debe generar debajo sombras, pedestales oscuros ni formas que simulen sombras. Las flechas de flujo PATH no deben añadir un trazo ancho de sombra bajo ellas, y los contadores no deben dibujar texto desplazado como sombra. El feedback de hover y selección se mantiene.
+
+La revisión queda aceptada tras completar estos puntos en ventana. La decisión está registrada en [ADR-0054](../decisions/ADR-0054-tipografia-global-y-sin-sombras-de-codigo.md).
 
 ## Loop
 - Al terminar oleada se entra en expansión.

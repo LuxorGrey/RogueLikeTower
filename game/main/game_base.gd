@@ -14,6 +14,8 @@ const BASE_OUTLINE: Color = Color(0.16, 0.13, 0.08)
 @onready var _base_sprite: Sprite2D = %BaseSprite
 
 var _is_hovered: bool = false
+var _damage_flash_tween: Tween
+var _sprite_original_modulate: Color = Color.WHITE
 
 func _ready() -> void:
 	_health.health_changed.connect(_on_health_changed)
@@ -28,12 +30,24 @@ func _ready() -> void:
 	_health.initialize(base_data.max_health)
 	_base_sprite.texture = base_data.sprite_texture
 	_base_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	_sprite_original_modulate = _base_sprite.modulate
 	if base_data.sprite_texture != null:
 		_base_sprite.scale = base_data.sprite_size / Vector2(base_data.sprite_texture.get_width(), base_data.sprite_texture.get_height())
 	queue_redraw()
 
 func apply_damage(amount: int) -> int:
 	return _health.apply_damage(amount)
+
+func show_damage_feedback() -> void:
+	if _base_sprite == null or not is_instance_valid(_base_sprite):
+		return
+	if _damage_flash_tween != null and _damage_flash_tween.is_running():
+		_damage_flash_tween.kill()
+	_base_sprite.modulate = _sprite_original_modulate
+	var damage_tint := Color(1.0, 0.24, 0.24, _sprite_original_modulate.a)
+	_damage_flash_tween = create_tween()
+	_damage_flash_tween.tween_property(_base_sprite, "modulate", damage_tint, 0.045).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_damage_flash_tween.tween_property(_base_sprite, "modulate", _sprite_original_modulate, 0.24).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func heal(amount: int) -> int:
 	return _health.heal(amount)

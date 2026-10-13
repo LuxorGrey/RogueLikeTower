@@ -23,7 +23,7 @@ const DAMAGE_TAG_POISON: int = 8
 @export_range(0.0, 4.0, 0.05) var arcane_damage_multiplier: float = 1.0
 @export_range(0.0, 4.0, 0.05) var poison_damage_multiplier: float = 1.0
 @export var placeholder_color: Color = Color(0.82, 0.30, 0.27)
-## Presentation radius for sprite fallback, shadow, hit-point bars, and status icons; not a collider.
+## Presentation radius for sprite fallback, hit-point bars, and status icons; not a collider.
 @export_range(7.0, 28.0, 0.1) var placeholder_radius: float = 11.5
 @export var sprite_texture: Texture2D
 ## Side length in pixels for this enemy's individual sprite.

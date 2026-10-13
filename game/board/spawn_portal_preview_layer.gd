@@ -1,5 +1,6 @@
 extends Node2D
 
+const PROJECT_FONT: Font = preload("res://assets/fonts/PatrickHand-Regular.ttf")
 const ICON_SIZE: float = 22.0
 const ICON_GAP: float = 3.0
 const ITEMS_PER_ROW: int = 4
@@ -36,7 +37,7 @@ func _draw() -> void:
 			draw_circle(badge_center, 7.0, Color("#15202a"))
 			draw_circle(badge_center, 5.5, Color("#d9b35d"))
 			var count_text: String = str(enemy_count)
-			var font: Font = ThemeDB.fallback_font
+			var font: Font = PROJECT_FONT
 			var text_width: float = font.get_string_size(count_text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 9).x
 			draw_string(
 				font,

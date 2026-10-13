@@ -24,6 +24,7 @@ const DAMAGE_TEXT_COLORS: Dictionary = {
 	HitPointLayer.SHIELD: Color("#65ceff"),
 }
 const ICON_CATALOG_SCRIPT: Script = preload("res://game/ui/icon_catalog.gd")
+const PROJECT_FONT: Font = preload("res://assets/fonts/PatrickHand-Regular.ttf")
 const STATUS_ICON_IDS: Dictionary = {
 	"burn": &"burn",
 	"slow": &"slow",
@@ -599,10 +600,9 @@ func _draw_status_icons() -> void:
 			var icon_rect := Rect2(start_x, status_y, icon_size, icon_size)
 			draw_texture_rect(icon_texture, icon_rect, false)
 		var stacks: int = int(stacks_by_id[status_id_variant])
-		if stacks > 1 and ThemeDB.fallback_font != null:
+		if stacks > 1:
 			var count_position: Vector2 = Vector2(start_x + icon_size + 1.0, status_y + icon_size + 1.0)
-			draw_string(ThemeDB.fallback_font, count_position + Vector2(1.0, 1.0), str(stacks), HORIZONTAL_ALIGNMENT_RIGHT, 15.0, 12, Color("#101820"))
-			draw_string(ThemeDB.fallback_font, count_position, str(stacks), HORIZONTAL_ALIGNMENT_RIGHT, 15.0, 12, Color.WHITE)
+			draw_string(PROJECT_FONT, count_position, str(stacks), HORIZONTAL_ALIGNMENT_RIGHT, 15.0, 12, Color.WHITE)
 		start_x += icon_size + gap
 
 func _on_health_changed(current_health: int, maximum_health: int) -> void:

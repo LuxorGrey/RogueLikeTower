@@ -1,6 +1,6 @@
 # ADR-0007: grafo lógico de caminos y rutas M4
 
-- Estado: aceptada para la implementación M4; la coordenada de base sigue siendo provisional.
+- Estado: contrato técnico M4 vigente; la coordenada M4 `(0,0)` quedó sustituida primero por ADR-0025 y su geometría actual por ADR-0056.
 - Fecha: 2026-10-08.
 
 ## Contexto

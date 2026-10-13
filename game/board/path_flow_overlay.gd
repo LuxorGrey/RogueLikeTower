@@ -6,7 +6,6 @@ const FLOW_SPEED: float = 25.0
 const ARROW_SPACING: float = 66.0
 const REDRAW_INTERVAL: float = 1.0 / 30.0
 
-const PATH_LINE_GLOW: Color = Color("#43cf55", 0.34)
 const ARROW_FILL: Color = Color("#52ec62", 0.68)
 const ARROW_HIGHLIGHT: Color = Color("#d6ffd1", 0.58)
 
@@ -56,7 +55,6 @@ func _draw_flow_segment(from_center: Vector2, to_center: Vector2, distance_to_ba
 	if segment_length <= 0.0:
 		return
 	var direction: Vector2 = segment / segment_length
-	draw_line(from_center, to_center, PATH_LINE_GLOW, 6.0, true)
 	var arrow_distance: float = fposmod(
 		_flow_time * FLOW_SPEED + distance_to_base,
 		ARROW_SPACING

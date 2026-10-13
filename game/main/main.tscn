@@ -1,4 +1,4 @@
-[gd_scene load_steps=47 format=3]
+[gd_scene load_steps=44 format=3]
 
 [ext_resource type="Script" path="res://game/main/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://game/board/terrain_piece_preview.gd" id="2_preview"]
@@ -30,9 +30,6 @@
 [ext_resource type="Texture2D" path="res://game/ui/icons/armor.png" id="28_armor_icon"]
 [ext_resource type="Texture2D" path="res://game/ui/icons/shield.png" id="29_shield_icon"]
 [ext_resource type="Texture2D" path="res://assets/ui/start_round_button.png" id="30_start_round_texture"]
-[ext_resource type="Texture2D" path="res://assets/ui/terrain_expansion_card_frame.png" id="31_terrain_card_texture"]
-[ext_resource type="Texture2D" path="res://assets/ui/tower_info_panel_frame.png" id="32_tower_info_panel_frame"]
-[ext_resource type="Texture2D" path="res://assets/ui/demolish_tower_icon.png" id="33_demolish_tower_icon"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_transparent_panel"]
 
@@ -71,83 +68,97 @@ content_margin_bottom = 8.0
 draw_center = true
 modulate_color = Color(0.54, 0.54, 0.5, 0.85)
 
-[sub_resource type="StyleBoxTexture" id="TerrainCardNormal"]
-texture = ExtResource("31_terrain_card_texture")
-texture_margin_left = 42.0
-texture_margin_top = 42.0
-texture_margin_right = 42.0
-texture_margin_bottom = 42.0
-content_margin_left = 18.0
+[sub_resource type="StyleBoxFlat" id="TerrainCardNormal"]
+bg_color = Color(0.075, 0.098, 0.105, 0.96)
+border_color = Color(0.22, 0.29, 0.31, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+content_margin_left = 10.0
 content_margin_top = 8.0
-content_margin_right = 18.0
+content_margin_right = 10.0
 content_margin_bottom = 8.0
-draw_center = true
 
-[sub_resource type="StyleBoxTexture" id="TerrainCardHover"]
-texture = ExtResource("31_terrain_card_texture")
-texture_margin_left = 42.0
-texture_margin_top = 42.0
-texture_margin_right = 42.0
-texture_margin_bottom = 42.0
-content_margin_left = 18.0
+[sub_resource type="StyleBoxFlat" id="TerrainCardHover"]
+bg_color = Color(0.09, 0.12, 0.13, 0.98)
+border_color = Color(0.42, 0.53, 0.53, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+content_margin_left = 10.0
 content_margin_top = 8.0
-content_margin_right = 18.0
+content_margin_right = 10.0
 content_margin_bottom = 8.0
-draw_center = true
-modulate_color = Color(1.12, 1.1, 0.92, 1)
 
-[sub_resource type="StyleBoxTexture" id="TerrainCardSelected"]
-texture = ExtResource("31_terrain_card_texture")
-texture_margin_left = 42.0
-texture_margin_top = 42.0
-texture_margin_right = 42.0
-texture_margin_bottom = 42.0
-content_margin_left = 18.0
+[sub_resource type="StyleBoxFlat" id="TerrainCardSelected"]
+bg_color = Color(0.12, 0.16, 0.16, 1)
+border_color = Color(0.68, 0.77, 0.58, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+content_margin_left = 10.0
 content_margin_top = 8.0
-content_margin_right = 18.0
+content_margin_right = 10.0
 content_margin_bottom = 8.0
-draw_center = true
-modulate_color = Color(1.2, 1.1, 0.78, 1)
 
 [sub_resource type="StyleBoxFlat" id="PortalTooltipStyle"]
 bg_color = Color(0.09, 0.13, 0.17, 0.98)
-border_color = Color(0.77, 0.6, 0.32, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
+border_color = Color(0.28, 0.36, 0.38, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
 content_margin_left = 10.0
 content_margin_top = 9.0
 content_margin_right = 10.0
 content_margin_bottom = 9.0
 
-[sub_resource type="StyleBoxTexture" id="TowerInfoPanelFrame"]
-texture = ExtResource("32_tower_info_panel_frame")
-texture_margin_left = 88.0
-texture_margin_top = 88.0
-texture_margin_right = 88.0
-texture_margin_bottom = 88.0
-content_margin_left = 18.0
-content_margin_top = 22.0
-content_margin_right = 18.0
-content_margin_bottom = 24.0
-draw_center = true
+[sub_resource type="StyleBoxFlat" id="TowerInfoPanelSimple"]
+bg_color = Color(0.055, 0.075, 0.084, 0.97)
+border_color = Color(0.22, 0.29, 0.31, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+content_margin_left = 9.0
+content_margin_top = 9.0
+content_margin_right = 9.0
+content_margin_bottom = 9.0
 
 [sub_resource type="StyleBoxFlat" id="DemolishNormal"]
 bg_color = Color(0.318, 0.149, 0.169, 1)
-border_color = Color(0.831, 0.42, 0.329, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_right = 7
-corner_radius_bottom_left = 7
+border_color = Color(0.48, 0.30, 0.29, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
 content_margin_left = 7.0
 content_margin_top = 7.0
 content_margin_right = 7.0
@@ -155,15 +166,15 @@ content_margin_bottom = 7.0
 
 [sub_resource type="StyleBoxFlat" id="DemolishHover"]
 bg_color = Color(0.451, 0.2, 0.227, 1)
-border_color = Color(0.949, 0.584, 0.408, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_right = 7
-corner_radius_bottom_left = 7
+border_color = Color(0.68, 0.42, 0.37, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
 content_margin_left = 7.0
 content_margin_top = 7.0
 content_margin_right = 7.0
@@ -171,15 +182,15 @@ content_margin_bottom = 7.0
 
 [sub_resource type="StyleBoxFlat" id="DemolishPressed"]
 bg_color = Color(0.239, 0.114, 0.129, 1)
-border_color = Color(0.733, 0.325, 0.275, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_right = 7
-corner_radius_bottom_left = 7
+border_color = Color(0.39, 0.26, 0.25, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
 content_margin_left = 7.0
 content_margin_top = 7.0
 content_margin_right = 7.0
@@ -231,6 +242,17 @@ script = ExtResource("9_run_card_service")
 
 [node name="HUD" type="CanvasLayer" parent="."]
 unique_name_in_owner = true
+
+[node name="SelectionBackdrop" type="ColorRect" parent="HUD"]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.42)
 
 [node name="Panel" type="PanelContainer" parent="HUD"]
 unique_name_in_owner = true
@@ -406,7 +428,7 @@ text = "Iniciar ronda"
 unique_name_in_owner = true
 visible = false
 theme = ExtResource("16_ui_theme")
-theme_override_styles/panel = SubResource("TowerInfoPanelFrame")
+theme_override_styles/panel = SubResource("TowerInfoPanelSimple")
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 0.0
@@ -417,50 +439,48 @@ offset_bottom = 402.0
 
 [node name="Margin" type="MarginContainer" parent="HUD/TowerInfoPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_left = 9
+theme_override_constants/margin_top = 9
+theme_override_constants/margin_right = 9
+theme_override_constants/margin_bottom = 9
 
 [node name="TowerInfoContent" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 9
+theme_override_constants/separation = 6
 
 [node name="TowerHeader" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
+
+[node name="TowerPortrait" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(36, 36)
+expand_mode = 1
+stretch_mode = 5
 
 [node name="TowerTitle" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerHeader"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.949, 0.894, 0.741, 1)
-theme_override_font_sizes/font_size = 23
+theme_override_colors/font_color = Color(0.913725, 0.898039, 0.847059, 1)
+theme_override_font_sizes/font_size = 18
 text = "Ballista"
 
 [node name="TowerLevel" type="RichTextLabel" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerHeader"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 0)
+custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 fit_content = true
 scroll_active = false
 bbcode_enabled = true
 horizontal_alignment = 2
-theme_override_font_sizes/normal_font_size = 15
-theme_override_colors/default_color = Color(0.949, 0.776, 0.435, 1)
+theme_override_font_sizes/normal_font_size = 12
+theme_override_colors/default_color = Color(0.78, 0.82, 0.76, 1)
 text = "[b]NIVEL 0 DE 45[/b]"
-
-[node name="TowerPortrait" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-size_flags_horizontal = 4
-custom_minimum_size = Vector2(136, 136)
-expand_mode = 1
-stretch_mode = 5
 
 [node name="TowerStatus" type="RichTextLabel" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent"]
 unique_name_in_owner = true
@@ -469,13 +489,13 @@ fit_content = true
 scroll_active = false
 bbcode_enabled = true
 autowrap_mode = 2
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 12
 text = "Selecciona una torre para ver sus datos."
 
 [node name="TowerActions" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 5
 
 [node name="PriorityRow" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions"]
 layout_mode = 2
@@ -569,30 +589,13 @@ layer_icon_texture = ExtResource("29_shield_icon")
 [node name="DemolishTower" type="Button" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions"]
 unique_name_in_owner = true
 layout_mode = 2
-custom_minimum_size = Vector2(64, 64)
-size_flags_horizontal = 4
-size_flags_vertical = 4
+custom_minimum_size = Vector2(84, 32)
+size_flags_horizontal = 3
 theme_override_styles/normal = SubResource("DemolishNormal")
 theme_override_styles/hover = SubResource("DemolishHover")
 theme_override_styles/pressed = SubResource("DemolishPressed")
 theme_override_styles/focus = SubResource("DemolishHover")
-text = ""
-
-[node name="DemolishIcon" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTower"]
-layout_mode = 1
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -18.0
-offset_top = -18.0
-offset_right = 18.0
-offset_bottom = 18.0
-custom_minimum_size = Vector2(36, 36)
-mouse_filter = 2
-texture = ExtResource("33_demolish_tower_icon")
-expand_mode = 1
-stretch_mode = 5
+text = "Demoler"
 
 [node name="BuildStatus" type="RichTextLabel" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent"]
 unique_name_in_owner = true
@@ -629,7 +632,7 @@ theme_override_constants/separation = 6
 
 [node name="TerrainTitle" type="Label" parent="HUD/TerrainPanel/Margin/Content"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 15
 text = "TERRENO · F3 para ocultar"
 
 [node name="PieceStatus" type="Label" parent="HUD/TerrainPanel/Margin/Content"]
@@ -853,7 +856,7 @@ theme_override_constants/separation = 3
 [node name="CardTitle1" type="Label" parent="HUD/TerrainCardPanel/Margin/Content/Cards/TerrainCard1/CardContent1"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 15
 horizontal_alignment = 1
 mouse_filter = 2
 text = "Terreno A"
@@ -928,7 +931,7 @@ theme_override_constants/separation = 3
 [node name="CardTitle2" type="Label" parent="HUD/TerrainCardPanel/Margin/Content/Cards/TerrainCard2/CardContent2"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 15
 horizontal_alignment = 1
 mouse_filter = 2
 text = "Terreno B"
@@ -982,7 +985,7 @@ theme_override_constants/separation = 3
 [node name="CardTitle3" type="Label" parent="HUD/TerrainCardPanel/Margin/Content/Cards/TerrainCard3/CardContent3"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 15
 horizontal_alignment = 1
 mouse_filter = 2
 text = "Terreno C"

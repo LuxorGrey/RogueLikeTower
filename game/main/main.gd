@@ -78,7 +78,10 @@ var _terrain_rng := RandomNumberGenerator.new()
 var _run_seed: int = 0
 var _chest_spawn_chance: float = TERRAIN_VISUAL_CATALOG_SCRIPT.BASE_CHEST_CHANCE
 var _offered_terrain_pieces: Array[TerrainPieceData] = []
+var _offered_path_extension: Dictionary = {}
 var _selected_expansion_piece: TerrainPieceData
+var _placement_preview_board: Dictionary[Vector2i, HexCell] = {}
+var _placement_blocks_future_path: bool = false
 var _pending_expansion_round: int = 0
 var _pending_expansion_reward: int = 0
 var _upgrade_card_buttons: Array[Button] = []
@@ -92,8 +95,11 @@ var _meta_shop_panel: CanvasLayer
 
 var _icon_catalog: Resource
 var _gold_feedback_tween: Tween
+var _gold_feedback_direction: float = 1.0
+var _camera_shake_tween: Tween
+var _camera_shake_origin: Vector2 = Vector2.ZERO
 var _cursor_textures: Dictionary[int, Texture2D] = {}
-var _current_cursor_kind: int = -1
+var _native_cursor_kind: int = -1
 var _hovered_interactable_control: Control
 var _tower_shortcut_names: Array[Label] = []
 var _tower_shortcut_prices: Array[Label] = []
@@ -133,6 +139,7 @@ var _priority_visibility_tower_instance_id: int = 0
 @onready var _tower_level_label: RichTextLabel = %TowerLevel
 @onready var _tower_portrait: TextureRect = %TowerPortrait
 @onready var _hud: CanvasLayer = %HUD
+@onready var _selection_backdrop: ColorRect = %SelectionBackdrop
 @onready var _upgrade_card_panel: UpgradeOfferPanel = %UpgradeCardPanel
 @onready var _build_cursor_overlay: TextureRect = %BuildCursor
 @onready var _terrain_panel: PanelContainer = %TerrainPanel
@@ -229,6 +236,7 @@ func _ready() -> void:
 	var starting_board_rotation_steps: int = posmod(run_number - 1, HexCoord.DIRECTION_OFFSETS.size())
 	_camera.position = get_viewport_rect().size * 0.5
 	_camera.make_current()
+	_camera_shake_origin = _camera.offset
 	_pieces = [
 		STRAIGHT_PIECE, GENTLE_TURN_PIECE, HARD_TURN_PIECE, FORK_PIECE, CONVERGENCE_PIECE,
 		MEADOW_HILLS_PIECE, MOUNTAIN_MASSIF_PIECE, OPEN_GRASSLAND_PIECE, STAGGERED_RIDGE_PIECE,
@@ -238,6 +246,8 @@ func _ready() -> void:
 	_rotate_left.pressed.connect(_rotate_by.bind(-1))
 	_rotate_right.pressed.connect(_rotate_by.bind(1))
 	_configure_hud_visuals()
+	_terrain_card_panel.visibility_changed.connect(_sync_selection_backdrop)
+	_upgrade_card_panel.visibility_changed.connect(_sync_selection_backdrop)
 	_configure_cursors()
 	_configure_hud_tooltips()
 	for index in _terrain_card_buttons.size():
@@ -360,6 +370,13 @@ func _ready() -> void:
 	_on_piece_selected(0)
 	_terrain_card_panel.hide()
 	_upgrade_card_panel.hide()
+	_sync_selection_backdrop()
+
+func _sync_selection_backdrop() -> void:
+	if _selection_backdrop == null:
+		return
+	var choosing_terrain: bool = _terrain_card_panel.visible and _selected_expansion_piece == null
+	_selection_backdrop.visible = choosing_terrain or _upgrade_card_panel.visible
 
 func _process(_delta: float) -> void:
 	_update_camera_keyboard_pan(_delta)
@@ -638,20 +655,19 @@ func _set_cursor(cursor_kind: int) -> void:
 	):
 		_build_cursor_overlay.call("activate", cursor_texture)
 		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
-		_current_cursor_kind = cursor_kind
 		return
 	_build_cursor_overlay.call("deactivate")
 	if Input.mouse_mode == Input.MOUSE_MODE_HIDDEN:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	if cursor_kind == _current_cursor_kind:
-		return
 	if cursor_texture == null:
+		return
+	if cursor_kind == _native_cursor_kind:
 		return
 	var hotspot := Vector2(13.0, 11.0)
 	if cursor_kind == CursorKind.TOWER_PLACEMENT:
 		hotspot = cursor_texture.get_size() * 0.5
-		Input.set_custom_mouse_cursor(cursor_texture, Input.CURSOR_ARROW, hotspot)
-	_current_cursor_kind = cursor_kind
+	Input.set_custom_mouse_cursor(cursor_texture, Input.CURSOR_ARROW, hotspot)
+	_native_cursor_kind = cursor_kind
 
 func _configure_tower_shortcut_visuals() -> void:
 	_tower_shortcut_names.clear()
@@ -680,9 +696,9 @@ func _configure_tower_upgrade_visuals() -> void:
 	for layer in _tower_upgrade_buttons.size():
 		var button := _tower_upgrade_buttons[layer] as TowerLayerUpgradeButton
 		button.text = ""
-		button.custom_minimum_size = Vector2(116.0, 148.0)
+		button.custom_minimum_size = Vector2(96.0, 98.0)
 		var layer_icon: TextureRect = button.layer_icon
-		layer_icon.custom_minimum_size = Vector2(48.0, 48.0)
+		layer_icon.custom_minimum_size = Vector2(32.0, 32.0)
 		var level_label: RichTextLabel = button.level_label
 		level_label.add_theme_color_override("default_color", _hp_layer_color(layer))
 		var xp_bar: ProgressBar = button.xp_bar
@@ -696,7 +712,7 @@ func _configure_tower_upgrade_visuals() -> void:
 		xp_bar.add_theme_stylebox_override("fill", xp_fill)
 		var xp_label: Label = button.xp_label
 		var effect_label: Label = button.effect_label
-		effect_label.text = "+1 Daño · +1 %s" % layer_names[layer]
+		effect_label.text = "+1 %s" % layer_names[layer]
 		effect_label.add_theme_color_override("font_color", _hp_layer_color(layer))
 		var cost_icon: TextureRect = button.cost_icon
 		var amount_label: Label = button.amount_label
@@ -724,7 +740,7 @@ func _fit_tower_info_panel() -> void:
 		return
 	var viewport_size: Vector2 = _tower_info_panel.get_viewport_rect().size
 	var panel_top: float = 76.0
-	var panel_width: float = minf(420.0, maxf(240.0, viewport_size.x - 48.0))
+	var panel_width: float = minf(344.0, maxf(240.0, viewport_size.x - 48.0))
 	_tower_info_panel.offset_left = -panel_width - 24.0
 	_tower_info_panel.offset_right = -24.0
 	_tower_info_panel.offset_top = panel_top
@@ -853,9 +869,12 @@ func _on_piece_selected(index: int) -> void:
 	_refresh_placement()
 
 func _refresh_placement() -> void:
+	_placement_status.remove_theme_color_override("font_color")
 	if RunManager.phase == RunManager.Phase.CARD_OFFER:
 		_latest_placement = null
 		_placement_path_graph = null
+		_placement_preview_board.clear()
+		_placement_blocks_future_path = false
 		_piece_preview.set_placement_preview(null, _anchor_coord, _rotation_steps, false, false)
 		_refresh_spawn_portal_previews()
 		_piece_selector.disabled = true
@@ -881,6 +900,8 @@ func _refresh_placement() -> void:
 	if _selected_piece == null:
 		_latest_placement = null
 		_placement_path_graph = null
+		_placement_preview_board.clear()
+		_placement_blocks_future_path = false
 		_piece_preview.set_placement_preview(null, _anchor_coord, _rotation_steps, false, false)
 		_refresh_spawn_portal_previews()
 		_confirm_button.disabled = true
@@ -900,10 +921,20 @@ func _refresh_placement() -> void:
 		_board_grid.cells
 	)
 	_placement_path_graph = null
+	_placement_preview_board.clear()
+	_placement_blocks_future_path = false
 	var placement_is_valid: bool = _latest_placement.is_valid
 	if placement_is_valid and can_edit_terrain:
 		_placement_path_graph = _build_placement_preview_graph()
 		placement_is_valid = _placement_path_graph.is_valid
+		if placement_is_valid and is_campaign_card_placement:
+			_placement_blocks_future_path = _find_path_extension_option(
+				_placement_preview_board,
+				_placement_path_graph,
+				null,
+				false
+			).is_empty()
+			placement_is_valid = not _placement_blocks_future_path
 	_piece_preview.set_placement_preview(
 		_selected_piece,
 		_anchor_coord,
@@ -924,22 +955,53 @@ func _refresh_placement() -> void:
 			placement_message = "Esta posición deja la red PATH inválida. "
 			if _placement_path_graph != null and not _placement_path_graph.errors.is_empty():
 				placement_message += "; ".join(_placement_path_graph.errors)
-		else:
+		if _placement_path_graph != null:
 			placement_message += " · " + _spawn_preview_summary(_placement_path_graph)
+		if _placement_blocks_future_path:
+			placement_message += " · No deja ninguna pieza legal para alargar el camino; cambia la posición."
+	var closes_spawn: bool = (
+		_latest_placement.is_valid
+		and _placement_path_graph != null
+		and _get_closed_spawn_count(_placement_path_graph) > 0
+	)
+	if closes_spawn or _placement_blocks_future_path:
+		_placement_status.add_theme_color_override("font_color", Color("#ff8178"))
+	else:
+		_placement_status.remove_theme_color_override("font_color")
 	_placement_status.text = "%s · conexiones: %d" % [
 		placement_message,
 		_latest_placement.path_connection_count,
 	]
 
 func _build_placement_preview_graph() -> PathGraph:
-	var candidate_board: Dictionary[Vector2i, HexCell] = {}
-	for coord in _board_grid.cells:
-		candidate_board[coord] = _board_grid.cells[coord]
-	var piece_cells: Dictionary[Vector2i, HexCell] = TerrainPlacementValidator.instantiate_cells(
+	_placement_preview_board = _build_candidate_board(
+		_board_grid.cells,
 		_selected_piece,
 		_anchor_coord,
-		_rotation_steps,
-		_next_piece_instance_id
+		_rotation_steps
+	)
+	var candidate_graph := PathGraph.new()
+	candidate_graph.rebuild(
+		_placement_preview_board,
+		_base_coord,
+		int(STARTING_BOARD.get("minimum_spawn_route_cells"))
+	)
+	return candidate_graph
+
+func _build_candidate_board(
+	board_cells: Dictionary[Vector2i, HexCell],
+	piece: TerrainPieceData,
+	anchor_coord: Vector2i,
+	rotation_steps: int
+) -> Dictionary[Vector2i, HexCell]:
+	var candidate_board: Dictionary[Vector2i, HexCell] = {}
+	for coord in board_cells:
+		candidate_board[coord] = board_cells[coord]
+	var piece_cells: Dictionary[Vector2i, HexCell] = TerrainPlacementValidator.instantiate_cells(
+		piece,
+		anchor_coord,
+		rotation_steps,
+		-1
 	)
 	for coord in piece_cells:
 		candidate_board[coord] = piece_cells[coord]
@@ -953,9 +1015,106 @@ func _build_placement_preview_graph() -> PathGraph:
 		preview_fill.buildable = true
 		preview_fill.visual_variant = &"auto_filled_void_preview"
 		candidate_board[hole_coord] = preview_fill
-	var candidate_graph := PathGraph.new()
-	candidate_graph.rebuild(candidate_board, _base_coord, int(STARTING_BOARD.get("minimum_spawn_route_cells")))
-	return candidate_graph
+	return candidate_board
+
+func _find_path_extension_option(
+	board_cells: Dictionary[Vector2i, HexCell],
+	source_graph: PathGraph,
+	piece_filter: TerrainPieceData = null,
+	require_followup: bool = false
+) -> Dictionary:
+	var option: Dictionary = {}
+	if source_graph == null or not source_graph.is_valid:
+		return option
+	var source_endpoint_keys: Dictionary = _get_spawn_endpoint_keys(source_graph)
+	var pieces_to_check: Array[TerrainPieceData] = []
+	if piece_filter != null:
+		pieces_to_check.append(piece_filter)
+	else:
+		pieces_to_check.append_array(_pieces)
+	var minimum_route_cells: int = int(STARTING_BOARD.get("minimum_spawn_route_cells"))
+	for source_route in source_graph.routes:
+		if source_route == null or not source_route.is_reachable or source_route.spawn_endpoint == null:
+			continue
+		var source_endpoint: PathEndpoint = source_route.spawn_endpoint
+		var target_coord: Vector2i = source_endpoint.outside_coord
+		var incoming_direction: int = posmod(source_endpoint.edge_direction + 3, 6)
+		for piece in pieces_to_check:
+			if piece == null:
+				continue
+			for rotation in range(6):
+				for rotated_cell in piece.rotated_cells(rotation):
+					if rotated_cell.terrain_type != HexCell.TerrainType.PATH:
+						continue
+					if not _piece_cell_offers_path_edge(rotated_cell, incoming_direction):
+						continue
+					var anchor_coord: Vector2i = target_coord - rotated_cell.local_coord
+					var placement: TerrainPlacementResult = TerrainPlacementValidator.evaluate(
+						piece,
+						anchor_coord,
+						rotation,
+						board_cells
+					)
+					if not placement.is_valid:
+						continue
+					var candidate_board: Dictionary[Vector2i, HexCell] = _build_candidate_board(
+						board_cells,
+						piece,
+						anchor_coord,
+						rotation
+					)
+					var candidate_graph := PathGraph.new()
+					candidate_graph.rebuild(candidate_board, _base_coord, minimum_route_cells)
+					if not candidate_graph.is_valid:
+						continue
+					var extension_route: PathRoute
+					for candidate_route in candidate_graph.routes:
+						if candidate_route == null or not candidate_route.is_reachable or candidate_route.spawn_endpoint == null:
+							continue
+						var candidate_endpoint: PathEndpoint = candidate_route.spawn_endpoint
+						var candidate_key: String = _get_spawn_endpoint_key(candidate_endpoint)
+						if source_endpoint_keys.has(candidate_key):
+							continue
+						if not candidate_route.cells.has(target_coord):
+							continue
+						if candidate_route.cells.size() <= source_route.cells.size():
+							continue
+						extension_route = candidate_route
+						break
+					if extension_route == null:
+						continue
+					if require_followup:
+						var followup_option: Dictionary = _find_path_extension_option(
+							candidate_board,
+							candidate_graph,
+							null,
+							false
+						)
+						if followup_option.is_empty():
+							continue
+					return {
+						"piece": piece,
+						"anchor_coord": anchor_coord,
+						"rotation_steps": rotation,
+						"connected_coord": target_coord,
+						"route_length": extension_route.cells.size(),
+					}
+	return option
+
+func _piece_cell_offers_path_edge(cell: TerrainPieceCellData, direction_index: int) -> bool:
+	return (
+		(cell.path_edges & (1 << direction_index)) != 0
+		or (cell.flexible_path_edges & (1 << direction_index)) != 0
+	)
+
+func _get_closed_spawn_count(candidate_graph: PathGraph) -> int:
+	var current_keys: Dictionary = _get_spawn_endpoint_keys(_path_graph)
+	var candidate_keys: Dictionary = _get_spawn_endpoint_keys(candidate_graph)
+	var closed_count: int = 0
+	for key in current_keys:
+		if not candidate_keys.has(key):
+			closed_count += 1
+	return closed_count
 
 func _spawn_preview_summary(candidate_graph: PathGraph) -> String:
 	var current_keys: Dictionary = _get_spawn_endpoint_keys(_path_graph)
@@ -970,6 +1129,11 @@ func _spawn_preview_summary(candidate_graph: PathGraph) -> String:
 			closed_count += 1
 	if added_count == 0 and closed_count == 0:
 		return "Spawns %d → %d · sin cambios" % [current_keys.size(), candidate_keys.size()]
+	if closed_count > 0:
+		return "¡AVISO! Se cerrarán %d spawns; quedarán %d. Las X rojas indican cuáles." % [
+			closed_count,
+			candidate_keys.size(),
+		]
 	return "Spawns %d → %d · %d nuevos · %d se cierran" % [
 		current_keys.size(),
 		candidate_keys.size(),
@@ -985,8 +1149,13 @@ func _get_spawn_endpoint_keys(graph: PathGraph) -> Dictionary:
 		if route == null or not route.is_reachable or route.spawn_endpoint == null:
 			continue
 		var endpoint: PathEndpoint = route.spawn_endpoint
-		keys["%d,%d,%d" % [endpoint.cell_coord.x, endpoint.cell_coord.y, endpoint.edge_direction]] = true
+		keys[_get_spawn_endpoint_key(endpoint)] = true
 	return keys
+
+func _get_spawn_endpoint_key(endpoint: PathEndpoint) -> String:
+	if endpoint == null:
+		return ""
+	return "%d,%d,%d" % [endpoint.cell_coord.x, endpoint.cell_coord.y, endpoint.edge_direction]
 
 func _confirm_placement() -> void:
 	if (
@@ -1025,6 +1194,22 @@ func _confirm_placement() -> void:
 	if not candidate_graph.is_valid:
 		_placement_status.text = "No se confirma: red PATH inválida · %s" % "; ".join(candidate_graph.errors)
 		return
+	var confirmed_campaign_expansion: bool = (
+		_awaiting_campaign_expansion
+		and RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION
+	)
+	if confirmed_campaign_expansion:
+		var next_path_option: Dictionary = _find_path_extension_option(
+			candidate_board,
+			candidate_graph,
+			null,
+			false
+		)
+		if next_path_option.is_empty():
+			_placement_blocks_future_path = true
+			_placement_status.add_theme_color_override("font_color", Color("#ff8178"))
+			_placement_status.text = "No se confirma: esta posición te dejaría sin ninguna pieza para alargar el camino. Cambia la posición."
+			return
 	if not _board_grid.add_cells(cells_to_add):
 		_placement_status.text = "La pieza dejó de encajar antes de confirmar."
 		return
@@ -1034,14 +1219,11 @@ func _confirm_placement() -> void:
 	_piece_preview.set_path_graph(_path_graph)
 	_refresh_path_status()
 	_refresh_campaign_option_counts()
-	var confirmed_campaign_expansion: bool = (
-		_awaiting_campaign_expansion
-		and RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION
-	)
 	if confirmed_campaign_expansion:
 		_awaiting_campaign_expansion = false
 		_selected_expansion_piece = null
 		_offered_terrain_pieces.clear()
+		_offered_path_extension.clear()
 		_terrain_card_panel.hide()
 	_cancel_placement()
 	if confirmed_campaign_expansion:
@@ -1150,6 +1332,8 @@ func _open_treasure_chest(cell: HexCell) -> void:
 	if gold_awarded <= 0:
 		reward_text = "Cofre abierto · Gold al máximo."
 	_set_rich_text_with_currency_icons(_build_status, reward_text)
+	if gold_awarded <= 0:
+		_play_gold_feedback(true)
 	_piece_preview.refresh_cell_decorations()
 	_piece_preview.queue_redraw()
 	_refresh_tower_controls()
@@ -2060,37 +2244,37 @@ func _refresh_economy_status() -> void:
 	)
 
 func _play_gold_feedback(is_reward: bool = true) -> void:
+	if _gold_group == null or _gold_icon == null:
+		return
 	if _gold_feedback_tween != null and _gold_feedback_tween.is_running():
 		_gold_feedback_tween.kill()
-	_gold_group.scale = Vector2.ONE
-	_gold_group.self_modulate = Color.WHITE
-	_gold_icon.rotation = 0.0
+	_gold_feedback_direction *= -1.0
 	_gold_group.pivot_offset = _gold_group.size * 0.5
+	var peak_scale: Vector2 = Vector2(1.34, 1.34) if is_reward else Vector2(1.14, 1.14)
+	var shake_angle: float = 0.065 if is_reward else 0.03
+	var flash_color := Color("#fff0a6") if is_reward else Color("#f5e2a8")
+	_gold_group.scale = peak_scale
+	_gold_group.rotation = shake_angle * _gold_feedback_direction
+	_gold_group.self_modulate = flash_color
+	_gold_icon.rotation = 0.14 * _gold_feedback_direction if is_reward else 0.06 * _gold_feedback_direction
 	_gold_feedback_tween = create_tween()
 	_gold_feedback_tween.set_parallel(true)
-	var peak_scale: Vector2 = Vector2(1.48, 1.48) if is_reward else Vector2(1.18, 1.18)
-	var flash_color := Color("#fff0a6") if is_reward else Color("#f5e2a8")
-	var first_duration: float = 0.18 if is_reward else 0.12
-	_gold_feedback_tween.tween_property(_gold_group, "scale", peak_scale, first_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	_gold_feedback_tween.tween_property(_gold_group, "self_modulate", flash_color, first_duration * 0.75).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	if is_reward:
-		_gold_feedback_tween.tween_property(_gold_icon, "rotation", 0.16, first_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	_gold_feedback_tween.chain().set_parallel(true)
-	var squash_scale: Vector2 = Vector2(0.82, 0.82) if is_reward else Vector2(0.94, 0.94)
-	var squash_duration: float = 0.12 if is_reward else 0.09
+	var squash_scale: Vector2 = Vector2(0.88, 0.88) if is_reward else Vector2(0.96, 0.96)
+	var squash_duration: float = 0.10 if is_reward else 0.08
 	_gold_feedback_tween.tween_property(_gold_group, "scale", squash_scale, squash_duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
-	if is_reward:
-		_gold_feedback_tween.tween_property(_gold_icon, "rotation", -0.10, squash_duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	_gold_feedback_tween.tween_property(_gold_group, "rotation", -shake_angle * 0.72 * _gold_feedback_direction, squash_duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	_gold_feedback_tween.tween_property(_gold_group, "self_modulate", Color.WHITE, squash_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_gold_feedback_tween.tween_property(_gold_icon, "rotation", -0.08 * _gold_feedback_direction, squash_duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 	_gold_feedback_tween.chain().set_parallel(true)
-	var settle_scale: Vector2 = Vector2(1.12, 1.12) if is_reward else Vector2.ONE
-	var settle_duration: float = 0.13 if is_reward else 0.14
+	var settle_scale: Vector2 = Vector2(1.08, 1.08) if is_reward else Vector2.ONE
+	var settle_duration: float = 0.11 if is_reward else 0.10
 	_gold_feedback_tween.tween_property(_gold_group, "scale", settle_scale, settle_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	_gold_feedback_tween.tween_property(_gold_group, "self_modulate", Color.WHITE, settle_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	if is_reward:
-		_gold_feedback_tween.tween_property(_gold_icon, "rotation", 0.025, settle_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_gold_feedback_tween.tween_property(_gold_group, "rotation", shake_angle * 0.28 * _gold_feedback_direction, settle_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_gold_feedback_tween.tween_property(_gold_icon, "rotation", 0.025 * _gold_feedback_direction, settle_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	_gold_feedback_tween.chain().set_parallel(true)
-	var final_duration: float = 0.20 if is_reward else 0.14
+	var final_duration: float = 0.16 if is_reward else 0.12
 	_gold_feedback_tween.tween_property(_gold_group, "scale", Vector2.ONE, final_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_gold_feedback_tween.tween_property(_gold_group, "rotation", 0.0, final_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	_gold_feedback_tween.tween_property(_gold_group, "self_modulate", Color.WHITE, final_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	_gold_feedback_tween.tween_property(_gold_icon, "rotation", 0.0, final_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
@@ -2189,10 +2373,29 @@ func _on_new_run_requested() -> void:
 func _on_base_damaged(amount: int, current_health: int, maximum_health: int) -> void:
 	_on_base_health_changed(current_health, maximum_health)
 	if amount > 0:
+		_base.show_damage_feedback()
+		_play_camera_shake(amount)
 		_wave_status.text = "La base recibió %d de daño · enemigos en ruta: %d" % [
 			amount,
 			_wave_director.get_alive_enemy_count(),
 		]
+
+func _play_camera_shake(damage_amount: int) -> void:
+	if _camera == null:
+		return
+	if _camera_shake_tween != null and _camera_shake_tween.is_running():
+		_camera_shake_tween.kill()
+	_camera.offset = _camera_shake_origin
+	var amplitude: float = clampf(4.0 + float(damage_amount) * 0.35, 4.0, 10.0)
+	_camera_shake_tween = create_tween()
+	for pulse_index in range(6):
+		var decay: float = 1.0 - float(pulse_index) / 6.0
+		var shake_offset := _camera_shake_origin + Vector2(
+			randf_range(-amplitude, amplitude) * decay,
+			randf_range(-amplitude, amplitude) * decay
+		)
+		_camera_shake_tween.tween_property(_camera, "offset", shake_offset, 0.035).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_camera_shake_tween.tween_property(_camera, "offset", _camera_shake_origin, 0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func _piece_summary(piece: TerrainPieceData) -> String:
 	var terrain_counts: String = _piece_terrain_counts(piece)
@@ -2225,14 +2428,29 @@ func _piece_terrain_counts(piece: TerrainPieceData) -> String:
 
 func _present_terrain_card_offer() -> void:
 	if _offered_terrain_pieces.is_empty():
+		_offered_path_extension = _find_path_extension_option(
+			_board_grid.cells,
+			_path_graph,
+			null,
+			true
+		)
+		if _offered_path_extension.is_empty():
+			_placement_status.add_theme_color_override("font_color", Color("#ff8178"))
+			_placement_status.text = "Error: no se encontró una pieza colocable que permita alargar el camino."
+			push_error(_placement_status.text)
+			return
+		var extension_piece: TerrainPieceData = _offered_path_extension.get("piece") as TerrainPieceData
 		var candidates: Array[TerrainPieceData] = []
-		candidates.append_array(_pieces)
+		for piece in _pieces:
+			if piece != null and piece != extension_piece:
+				candidates.append(piece)
 		for index in range(candidates.size() - 1, 0, -1):
 			var swap_index: int = _terrain_rng.randi_range(0, index)
 			var piece_to_swap: TerrainPieceData = candidates[index]
 			candidates[index] = candidates[swap_index]
 			candidates[swap_index] = piece_to_swap
-		for index in range(mini(_terrain_card_buttons.size(), candidates.size())):
+		_offered_terrain_pieces.append(extension_piece)
+		for index in range(mini(_terrain_card_buttons.size() - 1, candidates.size())):
 			_offered_terrain_pieces.append(candidates[index])
 	if _offered_terrain_pieces.size() != _terrain_card_buttons.size():
 		push_error("La expansión necesita tres piezas de terreno diferentes para ofrecer.")
@@ -2245,7 +2463,18 @@ func _present_terrain_card_offer() -> void:
 		_terrain_card_buttons[index].disabled = false
 		_terrain_card_buttons[index].set_pressed_no_signal(false)
 		_terrain_card_titles[index].text = piece.display_name
-		_terrain_card_counts[index].text = _piece_terrain_counts(piece)
+		var is_path_extension: bool = piece == _offered_path_extension.get("piece")
+		_terrain_card_counts[index].text = (
+			"ALARGA CAMINO · %s" % _piece_terrain_counts(piece)
+			if is_path_extension
+			else _piece_terrain_counts(piece)
+		)
+		if is_path_extension:
+			_terrain_card_counts[index].add_theme_color_override("font_color", Color("#8de7aa"))
+			_terrain_card_buttons[index].tooltip_text = "Colocación comprobada: alarga una ruta y conserva una opción legal para la siguiente expansión."
+		else:
+			_terrain_card_counts[index].remove_theme_color_override("font_color")
+			_terrain_card_buttons[index].tooltip_text = "La posición solo se podrá confirmar si deja una opción legal para alargar el camino."
 		_terrain_card_previews[index].call("set_piece", piece)
 	_set_terrain_card_layout(false)
 	_terrain_card_panel.show()
@@ -2257,6 +2486,7 @@ func _present_terrain_card_offer() -> void:
 	_start_wave_button.disabled = true
 	_set_start_wave_button_text("Elige terreno")
 	_refresh_tower_controls()
+	_sync_selection_backdrop()
 
 func _begin_campaign_terrain_expansion(round_number: int, round_reward: int) -> void:
 	_upgrade_card_panel.hide()
@@ -2303,6 +2533,7 @@ func _present_upgrade_card_offer(round_number: int, cards: Array[Resource]) -> v
 	_start_wave_button.disabled = true
 	_set_start_wave_button_text("Elige mejora")
 	_refresh_tower_controls()
+	_sync_selection_backdrop()
 
 func _on_upgrade_card_selected(index: int) -> void:
 	if RunManager.phase != RunManager.Phase.CARD_OFFER:
@@ -2431,6 +2662,12 @@ func _on_terrain_card_selected(index: int) -> void:
 	_selected_expansion_piece = _offered_terrain_pieces[index]
 	_selected_piece = _selected_expansion_piece
 	_rotation_steps = 0
+	var selected_path_extension: bool = _selected_piece == _offered_path_extension.get("piece")
+	if selected_path_extension:
+		var suggested_anchor: Variant = _offered_path_extension.get("anchor_coord", _anchor_coord)
+		if suggested_anchor is Vector2i:
+			_anchor_coord = suggested_anchor
+		_rotation_steps = int(_offered_path_extension.get("rotation_steps", 0))
 	_placement_enabled = true
 	_piece_selector.select(_pieces.find(_selected_piece) + 1)
 	_piece_status.text = _piece_summary(_selected_piece)
@@ -2438,11 +2675,20 @@ func _on_terrain_card_selected(index: int) -> void:
 		_terrain_card_buttons[card_index].set_pressed_no_signal(card_index == index)
 	_set_terrain_card_layout(true)
 	_terrain_card_panel.show()
-	_wave_status.text = "Expansión · %s seleccionada · coloca una posición válida" % _selected_piece.display_name
+	var placement_prompt: String = (
+		"posición sugerida: alarga la ruta"
+		if selected_path_extension
+		else "coloca en una posición válida"
+	)
+	_wave_status.text = "Expansión · %s seleccionada · %s" % [
+		_selected_piece.display_name,
+		placement_prompt,
+	]
 	_start_wave_button.disabled = true
 	_set_start_wave_button_text("Coloca terreno")
 	_refresh_placement()
 	_refresh_tower_controls()
+	_sync_selection_backdrop()
 
 func _return_to_terrain_card_offer() -> void:
 	_selected_expansion_piece = null

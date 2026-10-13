@@ -13,6 +13,7 @@ Los ADR documentan decisiones de terreno, combate, campaña, progresión y UX en
 | [ADR-0016](ADR-0016-campana-de-veinte-rondas.md) | Campaña de 20 rondas y ciclo de ronda | Calendario de 20 rondas sustituido por ADR-0037; se conserva como historial del ciclo de expansión. |
 | [ADR-0022](ADR-0022-meta-progression-y-guardado.md) | Meta-progresión, tienda y guardado | Aceptado; balance de configuración provisional. |
 | [ADR-0023](ADR-0023-reglas-de-torres-y-capas-de-vida.md) | Roster, combate, capas y estados | Contrato vigente del combate; ver decisiones posteriores para UX. |
+| [ADR-0025](ADR-0025-tablero-inicial-y-ruta-minima.md) | Tablero inicial y longitud mínima de ruta | Parcialmente sustituido por ADR-0056 en posición de base y trazado; se conserva el mínimo de cuatro PATH. |
 | [ADR-0026](ADR-0026-jerarquia-ux-ui.md) | Jerarquía UX/UI | Vigente con detalles posteriores. |
 | [ADR-0028](ADR-0028-iconos-png-y-feedback-visual.md) | Iconos y atlas | La decisión de atlas fue sustituida por ADR-0031. |
 | [ADR-0031](ADR-0031-png-individuales-por-objeto.md) | PNG separados por objeto | Vigente; aceptación visual pendiente según Progreso. |
@@ -26,7 +27,7 @@ Los ADR documentan decisiones de terreno, combate, campaña, progresión y UX en
 | [ADR-0039](ADR-0039-panel-torre-y-escalado-individual.md) | Panel lateral de torre y escala visual por objeto | Aceptado con apartados de scroll/escalado sustituidos por ADR-0040/0041. |
 | [ADR-0040](ADR-0040-terreno-obstaculos-cofres-y-feedback.md) | Terreno, obstáculos, cofres, VFX/cursor y panel sin scroll | Aceptado; la tasa de cofre fue revisada por ADR-0041. El premio sigue provisional. |
 | [ADR-0041](ADR-0041-occlusion-arte-terreno-y-flujo-de-rutas.md) | Oclusión, ajuste del arte, flujo de rutas, escala y rareza de cofres | Aceptado; código integrado, aceptación visual pendiente. Sustituye parcialmente ADR-0039/0040. |
-| [ADR-0042](ADR-0042-orden-por-elevacion-y-feedback-del-tablero.md) | Oclusión por elevación, grid hover, portales, cursor, botones y catálogo de piezas | Aceptado; el criterio de oclusión de fachadas fue sustituido parcialmente por ADR-0043. Los demás puntos siguen vigentes. |
+| [ADR-0042](ADR-0042-orden-por-elevacion-y-feedback-del-tablero.md) | Oclusión por elevación, grid hover, portales, cursor, botones y catálogo de piezas | Aceptado; el criterio de oclusión de fachadas fue sustituido parcialmente por ADR-0043 y la sombra de flechas por ADR-0054. |
 | [ADR-0043](ADR-0043-superficies-de-elevacion-y-preview-de-spawns.md) | Oclusión de superficies, portales candidatos y props en cards | Corrección implementada; aceptación visual pendiente. Sustituye parcialmente ADR-0042. |
 | [ADR-0044](ADR-0044-caja-estandar-de-obstaculos.md) | Caja estándar para los sprites de obstáculos | Implementada en el tablero y las cards; aceptación visual pendiente. Sustituye el tamaño/proporción de obstáculos de ADR-0041. |
 | [ADR-0045](ADR-0045-auditoria-torres-y-feedback-visual.md) | Auditoría de torres, pulso de selección, hover elevado y assets compactos | Auditoría documentada y cambios visuales integrados; aceptación manual pendiente. |
@@ -37,6 +38,11 @@ Los ADR documentan decisiones de terreno, combate, campaña, progresión y UX en
 | [ADR-0050](ADR-0050-recursos-visuales-ui-en-inspector.md) | Sprites y estilos de UI visibles y editables en el Inspector | Implementado; smoke y escaneo del editor pasados; aceptación visual pendiente. |
 | [ADR-0051](ADR-0051-navegacion-prevision-portales-y-panel-torre.md) | WASD, preview exacto de spawns, torre fantasma, sombras y panel Tower Info | Código y recursos integrados; aceptación visual/interactiva pendiente. |
 | [ADR-0052](ADR-0052-numeros-de-dano-animados-y-legibles.md) | Números de daño animados, alternancia, color y énfasis de críticos | Código integrado; aceptación visual pendiente. |
+| [ADR-0053](ADR-0053-paneles-y-sprites-sencillos.md) | Simplificación visual de paneles, cofre y portal | Código y arte integrados; aceptación visual pendiente. Sustituye los acabados de panel de ADR-0048/0051. |
+| [ADR-0054](ADR-0054-tipografia-global-y-sin-sombras-de-codigo.md) | Patrick Hand como fuente del proyecto y eliminación de sombras generadas por código | Implementado; aceptación visual pendiente. |
+| [ADR-0055](ADR-0055-feedback-base-seleccion-y-recompensas.md) | Feedback de daño a la base, recompensas, selección y escala del portal | Código integrado; aceptación visual pendiente. |
+| [ADR-0056](ADR-0056-tablero-inicial-lineal.md) | Tablero inicial sencillo con camino recto | Datos y código integrados; aceptación visual pendiente. |
+| [ADR-0057](ADR-0057-expansion-con-prolongacion-garantizada.md) | Ofertas de terreno con prolongación garantizada y aviso de cierre de spawn | Código integrado; aceptación interactiva pendiente. |
 
 ## Regla para nuevos ADR
 

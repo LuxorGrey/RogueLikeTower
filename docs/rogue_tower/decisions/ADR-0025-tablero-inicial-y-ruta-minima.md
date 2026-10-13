@@ -1,6 +1,6 @@
 # ADR-0025 — Tablero inicial amplio y ruta mínima
 
-- Estado: implementado en datos/código; aceptación visual pendiente.
+- Estado: parcialmente sustituido en la ubicación de base y geometría de ruta por [ADR-0056](ADR-0056-tablero-inicial-lineal.md); se mantienen el tablero de 19 celdas y la longitud mínima de cuatro PATH.
 - Fecha: 2026-10-08.
 - Contexto: el usuario pide más terreno disponible al comenzar y que el camino de los enemigos hasta la base tenga al menos cuatro celdas PATH; la muestra previa tenía una única celda de camino antes de la base.
 

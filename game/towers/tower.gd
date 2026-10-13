@@ -860,22 +860,8 @@ func _draw() -> void:
 	if _is_hovered and not _is_selected:
 		draw_arc(Vector2.ZERO, get_current_range_pixels(), 0.0, TAU, 72, Color(0.65, 0.9, 1.0, 0.2), 1.4, true)
 	var icon_scale: float = 1.0 + pulse * 0.055 if _is_selected else 1.0
-	var visual_scale: float = _tower_data.visual_icon_size * icon_scale / 54.0
-	var pedestal := PackedVector2Array([
-		Vector2(-16.0, -2.0),
-		Vector2(-11.0, -12.0),
-		Vector2(11.0, -12.0),
-		Vector2(16.0, -2.0),
-		Vector2(10.0, 5.0),
-		Vector2(-10.0, 5.0),
-	])
-	for point_index in range(pedestal.size()):
-		pedestal[point_index] = pedestal[point_index] * visual_scale + Vector2(0.0, VISUAL_ART_OFFSET_Y)
-	var body_color: Color = _tower_data.visual_color
-	var dark_color: Color = body_color.darkened(0.55)
 	var icon_size: float = _tower_data.visual_icon_size * icon_scale
 	var icon_center := Vector2(0.0, -icon_size * 0.5 + VISUAL_ART_OFFSET_Y)
-	draw_colored_polygon(pedestal, dark_color)
 	if _tower_icon != null:
 		var icon_rect := Rect2(icon_center - Vector2.ONE * icon_size * 0.5, Vector2.ONE * icon_size)
 		if _is_selected:

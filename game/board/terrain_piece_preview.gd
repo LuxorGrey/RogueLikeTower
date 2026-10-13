@@ -26,6 +26,7 @@ const GRASS_HOVER_COLOR: Color = Color(0.50, 0.88, 0.52)
 const MOUNTAIN_HOVER_COLOR: Color = Color(0.96, 0.76, 0.36)
 const CLIFF_MIN_SCREEN_DEPTH: float = 6.0
 const CLIFF_TEXTURE_PIXEL_DENSITY: float = 20.0
+const CLIFF_CAP_MIN_DOUBLE_AREA: float = 0.5
 const ROUTE_DEBUG_COLORS: Array[Color] = [
 	Color(0.25, 0.78, 1.0, 0.92),
 	Color(1.0, 0.76, 0.25, 0.92),
@@ -316,6 +317,10 @@ func _draw_cliff_corner_caps(corner_fills: Dictionary) -> void:
 		var seam_color: Color = _cliff_seam_color(int(entry.get("terrain_type", HexCell.TerrainType.GRASS)))
 		for point_index in range(sorted_lower_points.size()):
 			var next_index: int = (point_index + 1) % sorted_lower_points.size()
+			var first_edge: Vector2 = sorted_lower_points[point_index] - upper_point
+			var second_edge: Vector2 = sorted_lower_points[next_index] - upper_point
+			if absf(first_edge.cross(second_edge)) < CLIFF_CAP_MIN_DOUBLE_AREA:
+				continue
 			var cap := PackedVector2Array([
 				upper_point,
 				sorted_lower_points[point_index],
@@ -461,41 +466,74 @@ func _sync_elevation_surface_occluders() -> void:
 func _sync_spawn_portals() -> void:
 	if _decoration_parent == null or not is_instance_valid(_decoration_parent):
 		return
-	var graph: PathGraph = _path_graph
-	var using_candidate_graph: bool = (
-		_placement_active
-		and _placement_is_valid
-		and _placement_path_graph != null
-		and _placement_path_graph.is_valid
-	)
-	if using_candidate_graph:
-		graph = _placement_path_graph
-	var active_keys: Dictionary[String, bool] = {}
-	if graph != null and graph.is_valid:
-		for route in graph.routes:
-			if not route.is_reachable or route.spawn_endpoint == null:
+	var using_candidate_graph: bool = _placement_active and _placement_path_graph != null
+	var display_graph: PathGraph = _placement_path_graph if using_candidate_graph else _path_graph
+	var visible_keys: Dictionary[String, bool] = {}
+	var candidate_keys: Dictionary[String, bool] = {}
+	if display_graph != null:
+		for route in display_graph.routes:
+			if route == null or not route.is_reachable or route.spawn_endpoint == null:
 				continue
 			var endpoint: PathEndpoint = route.spawn_endpoint
-			var key: String = "%d,%d,%d" % [endpoint.cell_coord.x, endpoint.cell_coord.y, endpoint.edge_direction]
-			active_keys[key] = true
-			var portal: SpawnPortal = _spawn_portals_by_key.get(key) as SpawnPortal
-			if portal == null or not is_instance_valid(portal):
-				portal = SPAWN_PORTAL_SCENE.instantiate() as SpawnPortal
-				if portal == null:
-					continue
-				portal.name = "SpawnPortal_%d_%d_%d" % [endpoint.cell_coord.x, endpoint.cell_coord.y, endpoint.edge_direction]
-				_decoration_parent.add_child(portal)
-				_spawn_portals_by_key[key] = portal
+			var key: String = _spawn_endpoint_key(endpoint)
+			visible_keys[key] = true
+			candidate_keys[key] = true
+			var portal: SpawnPortal = _get_or_create_spawn_portal(endpoint, key)
+			if portal == null:
+				continue
 			portal.global_position = global_position + _top_center(endpoint.outside_coord, 0)
 			portal.set_endpoint_key(key)
-			portal.set_candidate_preview(using_candidate_graph)
+			portal.set_candidate_preview(
+				using_candidate_graph
+				and _placement_is_valid
+				and _placement_path_graph.is_valid
+			)
+			portal.set_closing_preview(false)
+
+	# Keep the active portals visible while moving the ghost so a disappearing
+	# endpoint can be marked in place instead of vanishing without warning.
+	if using_candidate_graph and _path_graph != null:
+		for route in _path_graph.routes:
+			if route == null or not route.is_reachable or route.spawn_endpoint == null:
+				continue
+			var endpoint: PathEndpoint = route.spawn_endpoint
+			var key: String = _spawn_endpoint_key(endpoint)
+			if candidate_keys.has(key):
+				continue
+			visible_keys[key] = true
+			var closing_portal: SpawnPortal = _get_or_create_spawn_portal(endpoint, key)
+			if closing_portal == null:
+				continue
+			closing_portal.global_position = global_position + _top_center(endpoint.outside_coord, 0)
+			closing_portal.set_endpoint_key(key)
+			closing_portal.set_candidate_preview(false)
+			closing_portal.set_closing_preview(true)
 	for key in _spawn_portals_by_key.keys():
-		if active_keys.has(key):
+		if visible_keys.has(key):
 			continue
 		var removed_portal: Node2D = _spawn_portals_by_key[key]
 		if is_instance_valid(removed_portal):
 			removed_portal.queue_free()
 		_spawn_portals_by_key.erase(key)
+
+func _get_or_create_spawn_portal(endpoint: PathEndpoint, key: String) -> SpawnPortal:
+	var portal: SpawnPortal = _spawn_portals_by_key.get(key) as SpawnPortal
+	if portal != null and is_instance_valid(portal):
+		return portal
+	portal = SPAWN_PORTAL_SCENE.instantiate() as SpawnPortal
+	if portal == null:
+		return null
+	portal.name = "SpawnPortal_%d_%d_%d" % [
+		endpoint.cell_coord.x,
+		endpoint.cell_coord.y,
+		endpoint.edge_direction,
+	]
+	_decoration_parent.add_child(portal)
+	_spawn_portals_by_key[key] = portal
+	return portal
+
+func _spawn_endpoint_key(endpoint: PathEndpoint) -> String:
+	return "%d,%d,%d" % [endpoint.cell_coord.x, endpoint.cell_coord.y, endpoint.edge_direction]
 
 func _sync_path_flow_overlay() -> void:
 	if _path_flow_overlay == null or not is_instance_valid(_path_flow_overlay):
