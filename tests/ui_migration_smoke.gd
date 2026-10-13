@@ -36,10 +36,18 @@ func _run_smoke() -> void:
 	var legacy_icon_catalog := ICON_CATALOG_SCRIPT.new() as RefCounted
 	assert(legacy_icon_catalog.call("get_tower_icon", &"ballista_demo") is Texture2D, "The legacy tower icon API must continue to resolve tower icons.")
 	var start_round_button := main_instance.get_node("HUD/RoundPanel/Margin/Content/StartWave") as Button
-	var start_round_style := start_round_button.get_theme_stylebox("normal") as StyleBoxTexture
-	assert(start_round_style != null and start_round_style.texture != null, "The round button sprite must be authored on its scene style resource.")
+	var start_round_style := start_round_button.get_theme_stylebox("normal") as StyleBoxFlat
+	assert(start_round_style != null, "The round button must use a flat style resource.")
+	assert(start_round_style.corner_radius_top_left == 0 and start_round_style.border_width_left == 0, "The round button must have square, borderless corners.")
+	var terrain_card := main_instance.get_node("HUD/TerrainCardPanel/Margin/Content/Cards/TerrainCard1") as Button
+	var terrain_card_style := terrain_card.get_theme_stylebox("normal") as StyleBoxFlat
+	assert(terrain_card_style != null, "Terrain cards must use flat fills instead of image frames.")
+	var tower_info := main_instance.get_node("HUD/TowerInfoPanel") as PanelContainer
+	var tower_info_style := tower_info.get_theme_stylebox("panel") as StyleBoxFlat
+	assert(tower_info_style != null and tower_info_style.corner_radius_top_left == 0, "Tower Info must inherit the flat square panel theme.")
 	var toolbar_card := main_instance.get_node("HUD/TowerToolbar/Buttons/TowerShortcut1") as TowerShortcutCard
 	assert(toolbar_card.tower_icon_texture != null and toolbar_card.tower_icon.texture == toolbar_card.tower_icon_texture)
+	assert(toolbar_card.custom_minimum_size == Vector2(132, 132), "Tower shortcuts must use the compact flat layout.")
 	var health_upgrade := main_instance.get_node("HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/UpgradeRow/UpgradeHealth") as TowerLayerUpgradeButton
 	assert(health_upgrade.layer_icon_texture != null and health_upgrade.layer_icon.texture == health_upgrade.layer_icon_texture)
 	main_instance.free()
@@ -76,6 +84,9 @@ func _run_smoke() -> void:
 	var shop := META_SHOP_SCENE.instantiate() as MetaShopPanel
 	shop.configure([BALLISTA], [STARTING_COFFERS])
 	add_child(shop)
+	shop.present({"outcome": "DEFEAT", "reached_round": 1, "completed_rounds": 0, "meta_reward": 5, "run_seed": 1, "saved": true})
+	var shop_summary := shop.get_node("MetaShopRoot/MetaShop/Margin/Content/SummaryLabel") as Label
+	assert(shop_summary.text.contains("/45"), "The terminal shop must show the active 45-round campaign limit.")
 	var tower_list := shop.get_node("MetaShopRoot/MetaShop/Margin/Content/Scroll/Lists/TowerList") as VBoxContainer
 	var upgrade_list := shop.get_node("MetaShopRoot/MetaShop/Margin/Content/Scroll/Lists/UpgradeList") as VBoxContainer
 	assert(tower_list.get_child_count() == 2, "The tower tab must add one reusable shop row after its heading.")

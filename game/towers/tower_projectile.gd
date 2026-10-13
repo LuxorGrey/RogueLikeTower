@@ -4,6 +4,8 @@ enum ImpactMode { SINGLE_TARGET, AREA }
 
 const BOLT_COLOR: Color = Color("f2d894")
 const SHELL_COLOR: Color = Color("d99b62")
+const BOLT_TRAIL_COLOR: Color = Color(0.95, 0.76, 0.38, 0.38)
+const SHELL_TRAIL_COLOR: Color = Color(0.74, 0.45, 0.29, 0.42)
 
 var _target: Enemy
 var _impact_position: Vector2 = Vector2.ZERO
@@ -47,6 +49,7 @@ func configure(
 	_impact_mode = impact_mode
 	_ballista_cooldown_cycle_id = ballista_cooldown_cycle_id
 	global_position = launch_position
+	rotation = (impact_position - launch_position).angle()
 	if _ballista_cooldown_cycle_id > 0:
 		_target.state_changed.connect(_on_target_state_changed)
 	set_process(true)
@@ -128,8 +131,11 @@ func _distance_squared_to_segment(point: Vector2, start: Vector2, end: Vector2) 
 
 func _draw() -> void:
 	if _impact_mode == ImpactMode.AREA:
+		draw_line(Vector2(-15.0, 0.0), Vector2(-6.0, 0.0), SHELL_TRAIL_COLOR, 4.0, true)
+		draw_line(Vector2(-13.0, 0.0), Vector2(-7.0, 0.0), Color(0.95, 0.72, 0.48, 0.5), 1.5, true)
 		draw_circle(Vector2.ZERO, 7.0, SHELL_COLOR)
 		draw_circle(Vector2(-2.0, -2.0), 2.2, Color("ffe4ad"))
 	else:
+		draw_line(Vector2(-17.0, 0.0), Vector2(-6.0, 0.0), BOLT_TRAIL_COLOR, 4.0, true)
 		draw_line(Vector2(-8.0, 0.0), Vector2(5.0, 0.0), BOLT_COLOR, 3.0, true)
 		draw_colored_polygon(PackedVector2Array([Vector2(5.0, 0.0), Vector2(1.0, -3.0), Vector2(1.0, 3.0)]), Color("fff2c7"))

@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://data/enemies/enemy_data.gd" id="1_enemy_data"]
 [ext_resource type="PackedScene" path="res://game/enemies/enemy.tscn" id="2_enemy_scene"]
-[ext_resource type="Texture2D" path="res://assets/enemies/goblin.png" id="3_sprite"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/enemies/goblin.png" id="3_sprite"]
 
 [resource]
 script = ExtResource("1_enemy_data")

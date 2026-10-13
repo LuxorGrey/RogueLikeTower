@@ -3,7 +3,7 @@ extends Node2D
 
 signal hover_changed(portal: Node2D, hovered: bool)
 
-const PORTAL_SPRITE_SIZE: Vector2 = Vector2(112.0, 168.0)
+const PORTAL_SPRITE_SIZE: Vector2 = Vector2(100.0, 150.0)
 const PORTAL_TEXTURE_SIZE: Vector2 = Vector2(224.0, 336.0)
 const PULSE_PERIOD: float = 3.8
 const PULSE_MIN_SCALE: float = 0.96
@@ -28,8 +28,8 @@ var _preview_enemy_count: int = 0
 
 func _ready() -> void:
 	z_as_relative = false
-	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_base_sprite_scale = PORTAL_SPRITE_SIZE / PORTAL_TEXTURE_SIZE
 	_sprite.scale = _base_sprite_scale
 	_sprite.position = Vector2(0.0, -80.0)
@@ -99,7 +99,7 @@ func _create_hover_outline() -> void:
 	_outline_sprite.position = _sprite.position
 	_outline_sprite.scale = _sprite.scale
 	_outline_sprite.z_index = _sprite.z_index - 1
-	_outline_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	_outline_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	var outline_material := ShaderMaterial.new()
 	outline_material.shader = OBSTACLE_HOVER_SHADER
 	_outline_sprite.material = outline_material

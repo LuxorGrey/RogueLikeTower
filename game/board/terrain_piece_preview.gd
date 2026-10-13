@@ -8,8 +8,8 @@ const PATH_FLOW_OVERLAY_SCRIPT: Script = preload("res://game/board/path_flow_ove
 const TERRAIN_HOVER_OVERLAY_SCRIPT: Script = preload("res://game/board/terrain_hover_overlay.gd")
 const TOWER_BUILD_GHOST_SCRIPT: Script = preload("res://game/board/tower_build_ghost.gd")
 const SPAWN_PORTAL_SCENE: PackedScene = preload("res://game/board/spawn_portal.tscn")
-const MOUNTAIN_CLIFF_TEXTURE: Texture2D = preload("res://assets/terrain/tiles/mountain_cliff_face.png")
-const GRASS_CLIFF_TEXTURE: Texture2D = preload("res://assets/terrain/tiles/grass_cliff_face.png")
+const MOUNTAIN_CLIFF_TEXTURE: Texture2D = preload("res://assets/pixel_art/terrain/tiles/mountain_cliff_face.png")
+const GRASS_CLIFF_TEXTURE: Texture2D = preload("res://assets/pixel_art/terrain/tiles/grass_cliff_face.png")
 
 signal hover_changed(local_coord: Vector2i, terrain_type: int, elevation: int)
 signal hover_cleared
@@ -59,7 +59,7 @@ var _combo_animation_time: float = 0.0
 var _combo_redraw_timer: float = 0.0
 
 func _ready() -> void:
-	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	texture_repeat = CanvasItem.TEXTURE_REPEAT_DISABLED
 	_tower_build_ghost = TOWER_BUILD_GHOST_SCRIPT.new() as Node2D
 	_tower_build_ghost.name = "TowerBuildGhost"
@@ -331,8 +331,6 @@ func _cliff_seam_color(terrain_type: int) -> Color:
 func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 	var center := _top_center(cell.local_coord, cell.elevation)
 	var corners := _hex_corners(center)
-	var closed_corners := corners.duplicate()
-	closed_corners.append(corners[0])
 	var is_hovered := _is_hovered(cell)
 	var grid_opacity: float = _grid_opacity_for_cell(cell)
 	var fill_color := _terrain_color(cell.terrain_type)
@@ -385,7 +383,9 @@ func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 	if not is_ghost:
 		outline_color.a *= grid_opacity if combo_strength < 3 else 1.0
 	if outline_width > 0.0 and (not _board_mode or is_ghost or combo_strength >= 3):
-		draw_polyline(closed_corners, outline_color, outline_width, true)
+		var border := _hex_corners(center, maxf(HEX_RADIUS - outline_width * 0.5, 0.0))
+		border.append(border[0])
+		draw_polyline(border, outline_color, outline_width, true)
 	if not _board_mode or is_ghost:
 		_draw_path_edges(cell, center, corners, is_ghost)
 
@@ -420,7 +420,7 @@ func _sync_cell_decorations() -> void:
 			_decoration_parent.add_child(decoration)
 			_decorations_by_coord[coord] = decoration
 		decoration.global_position = global_position + _top_center(coord, cell.elevation)
-		decoration.call("configure", cell.obstacle_type, cell.chest_available)
+		decoration.call("configure", cell.obstacle_type, cell.chest_available, cell.elevation)
 	for coord in _decorations_by_coord.keys():
 		if active_coords.has(coord):
 			continue
@@ -710,9 +710,9 @@ func _combo_color(terrain_type: int) -> Color:
 		_:
 			return Color.WHITE
 
-func _hex_corners(center: Vector2) -> PackedVector2Array:
+func _hex_corners(center: Vector2, radius: float = HEX_RADIUS) -> PackedVector2Array:
 	var corners := PackedVector2Array()
 	for corner_index in range(6):
 		var angle_radians: float = deg_to_rad(-90.0 + 60.0 * float(corner_index))
-		corners.append(center + Vector2(cos(angle_radians), sin(angle_radians)) * HEX_RADIUS)
+		corners.append(center + Vector2(cos(angle_radians), sin(angle_radians)) * radius)
 	return corners

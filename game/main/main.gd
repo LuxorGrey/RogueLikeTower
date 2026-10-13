@@ -544,7 +544,10 @@ func _toggle_hud() -> void:
 	_refresh_tower_controls()
 
 func _toggle_debug_hacks() -> void:
-	if _debug_hacks_panel == null:
+	if (
+		_debug_hacks_panel == null
+		or _is_modal_offer_active()
+	):
 		return
 	_debug_hacks_panel.visible = not _debug_hacks_panel.visible
 	if _debug_hacks_panel.visible:
@@ -688,10 +691,8 @@ func _configure_tower_upgrade_visuals() -> void:
 		var xp_bar: ProgressBar = button.xp_bar
 		var xp_background := StyleBoxFlat.new()
 		xp_background.bg_color = Color("#1c252b")
-		xp_background.set_corner_radius_all(4)
 		var xp_fill := StyleBoxFlat.new()
 		xp_fill.bg_color = _hp_layer_color(layer)
-		xp_fill.set_corner_radius_all(4)
 		xp_bar.add_theme_stylebox_override("background", xp_background)
 		xp_bar.add_theme_stylebox_override("fill", xp_fill)
 		var xp_label: Label = button.xp_label
@@ -797,6 +798,8 @@ func _is_mouse_over_hud(mouse_position: Vector2) -> bool:
 	)
 
 func _toggle_terrain_panel() -> void:
+	if _is_modal_offer_active():
+		return
 	_terrain_panel.visible = not _terrain_panel.visible
 	if _terrain_panel.visible:
 		_refresh_combat_debug()
@@ -1106,21 +1109,22 @@ func _handle_board_click() -> void:
 			return
 	if _build_controller.is_build_mode():
 		if not _has_hovered_cell:
-			_build_status.text = "Coloca el cursor sobre una casilla existente."
+			_set_build_feedback("Coloca el cursor sobre una casilla existente.", Color("#ed897c"))
 			return
+		var confirmed_build_cost: int = _build_controller.get_current_build_cost(_selected_tower_data)
 		if _build_controller.place_tower(_hovered_coord):
-			_set_rich_text_with_currency_icons(_build_status, "%s construida por %d Gold en (%d, %d)." % [
+			_set_build_feedback("%s construida por %d Gold en (%d, %d)." % [
 				_selected_tower_data.display_name,
-				_selected_tower_data.build_cost,
+				confirmed_build_cost,
 				_hovered_coord.x,
 				_hovered_coord.y,
-			])
+			], Color("#91d3a2"))
 			_build_controller.cancel_build_mode()
 			_refresh_build_preview()
 			_refresh_placement()
 			_refresh_tower_controls()
 		else:
-			_set_rich_text_with_currency_icons(_build_status, _build_controller.last_error)
+			_set_build_feedback(_build_controller.last_error, Color("#ed897c"))
 			_refresh_build_preview()
 		return
 	if _has_hovered_cell:
@@ -1149,7 +1153,7 @@ func _open_treasure_chest(cell: HexCell) -> void:
 	var reward_text: String = "Cofre abierto · +%d Gold." % gold_awarded
 	if gold_awarded <= 0:
 		reward_text = "Cofre abierto · Gold al máximo."
-	_set_rich_text_with_currency_icons(_build_status, reward_text)
+	_set_build_feedback(reward_text, Color("#e7c36f"))
 	_piece_preview.refresh_cell_decorations()
 	_piece_preview.queue_redraw()
 	_refresh_tower_controls()
@@ -1166,14 +1170,14 @@ func _select_tower_profile_and_build(chosen_tower: TowerData) -> void:
 	if chosen_tower == null:
 		return
 	if not bool(MetaProgression.call("is_tower_unlocked", chosen_tower)):
-		_build_status.text = "Torre bloqueada · desbloquéala en la tienda al terminar la run."
+		_set_build_feedback("Torre bloqueada · desbloquéala en la tienda al terminar la run.", Color("#ed897c"))
 		return
 	if _awaiting_campaign_expansion and _selected_expansion_piece == null:
-		_build_status.text = "Elige una carta de terreno antes de continuar."
+		_set_build_feedback("Elige una carta de terreno antes de continuar.", Color("#ed897c"))
 		return
 	if _build_controller.is_build_mode() and _selected_tower_data == chosen_tower:
 		_build_controller.cancel_build_mode()
-		_build_status.text = "Construcción cancelada."
+		_set_build_feedback("Construcción cancelada.")
 		_refresh_tower_controls()
 		return
 	_selected_tower_data = chosen_tower
@@ -1181,8 +1185,9 @@ func _select_tower_profile_and_build(chosen_tower: TowerData) -> void:
 		_cancel_placement()
 	if _build_controller.begin_build(_selected_tower_data):
 		_build_status.clear()
+		_build_status.remove_theme_color_override("default_color")
 	else:
-		_set_rich_text_with_currency_icons(_build_status, _build_controller.last_error)
+		_set_build_feedback(_build_controller.last_error, Color("#ed897c"))
 	_refresh_build_preview()
 	_refresh_placement()
 	_refresh_tower_controls()
@@ -1195,8 +1200,12 @@ func _on_build_mode_changed(is_active: bool) -> void:
 	_refresh_tower_controls()
 
 func _refresh_build_preview() -> void:
-	if not _build_controller.is_build_mode() or not _has_hovered_cell:
+	if not _build_controller.is_build_mode():
 		_piece_preview.set_tower_build_preview(false)
+		return
+	if not _has_hovered_cell:
+		_piece_preview.set_tower_build_preview(false)
+		_set_build_feedback("Mueve el cursor sobre el tablero para ver una posición.", Color("#b5c3c7"))
 		return
 	var error: String = _build_controller.get_placement_error(_hovered_coord)
 	_piece_preview.set_tower_build_preview(
@@ -1207,6 +1216,29 @@ func _refresh_build_preview() -> void:
 		_icon_catalog.call("get_tower_icon", StringName(_selected_tower_data.id)) as Texture2D,
 		_selected_tower_data.visual_icon_size
 	)
+	if error.is_empty():
+		_set_build_feedback("Posición válida · clic para construir.", Color("#91d3a2"))
+	else:
+		_set_build_feedback(error, Color("#ed897c"))
+
+func _set_build_feedback(message: String, color: Color = Color("#d8e3e4")) -> void:
+	_build_status.add_theme_color_override("default_color", color)
+	_set_rich_text_with_currency_icons(_build_status, message)
+
+func _is_modal_offer_active() -> bool:
+	return (
+		RunManager.phase == RunManager.Phase.CARD_OFFER
+		or (_terrain_card_panel.visible and _selected_expansion_piece == null)
+		or (_meta_shop_panel != null and bool(_meta_shop_panel.call("is_open")))
+	)
+
+func _hide_transient_overlays() -> void:
+	_terrain_card_panel.hide()
+	_upgrade_card_panel.hide()
+	_terrain_panel.hide()
+	if _debug_hacks_panel != null:
+		_debug_hacks_panel.hide()
+	_hide_portal_wave_tooltip()
 
 func _populate_targeting_modes() -> void:
 	var labels: PackedStringArray = [
@@ -1399,20 +1431,20 @@ func _on_upgrade_tower_pressed(layer: int) -> void:
 	var tower: Tower = _build_controller.selected_tower
 	var upgrade_cost: int = tower.get_next_upgrade_cost(layer) if tower != null and is_instance_valid(tower) else -1
 	if _build_controller.upgrade_selected_tower(layer):
-		_set_rich_text_with_currency_icons(_build_status, "%s mejorado: +1 daño base y +1 %s · −%d Gold." % [
+		_set_build_feedback("%s mejorado: +1 daño base y +1 %s · −%d Gold." % [
 			_hp_layer_name(layer),
 			_hp_layer_name(layer),
 			upgrade_cost,
-		])
+		], Color("#91d3a2"))
 	else:
-		_set_rich_text_with_currency_icons(_build_status, _build_controller.last_error)
+		_set_build_feedback(_build_controller.last_error, Color("#ed897c"))
 	_refresh_tower_controls()
 
 func _on_demolish_tower_pressed() -> void:
 	if _build_controller.demolish_selected_tower():
-		_build_status.text = "Torre retirada. El siguiente precio de este tipo baja."
+		_set_build_feedback("Torre retirada. El siguiente precio de este tipo baja.", Color("#e7c36f"))
 	else:
-		_set_rich_text_with_currency_icons(_build_status, _build_controller.last_error)
+		_set_build_feedback(_build_controller.last_error, Color("#ed897c"))
 	_refresh_tower_controls()
 
 func _on_tower_list_changed(_tower: Tower, _coord: Vector2i) -> void:
@@ -1672,17 +1704,21 @@ func _build_tower_description(tower_data: TowerData) -> String:
 func _format_selected_tower_summary(tower: Tower) -> String:
 	var tower_data: TowerData = tower.get_tower_data()
 	var mana_summary: String = ""
+	var mana_warning: String = ""
 	if tower_data.mana_cost_per_second > 0.0:
 		mana_summary = " · %.1f Mana/s" % (tower_data.mana_cost_per_second * float(_run_card_service.call("get_tower_mana_cost_multiplier", tower_data.id)))
 	elif tower.get_mana_cost_per_attack() > 0.0:
 		mana_summary = " · %.1f Mana/ataque" % tower.get_mana_cost_per_attack()
-	return "[b]Daño[/b] %d · [b]Rango[/b] %.1f hex · [b]RPM[/b] %.0f\n[b]Crítico[/b] %.0f%% · %s%s" % [
+	if tower.is_mana_blocked():
+		mana_warning = "\n[color=#ed897c]Ataque pausado · falta Mana[/color]"
+	return "[b]Daño[/b] %d · [b]Rango[/b] %.1f hex · [b]RPM[/b] %.0f\n[b]Crítico[/b] %.0f%% · %s%s%s" % [
 		tower.get_current_damage(),
 		tower.get_current_range_hexes(),
 		tower.get_current_rounds_per_minute(),
 		tower.get_current_crit_chance() * 100.0,
 		tower.get_attack_pattern_name(),
 		mana_summary,
+		mana_warning,
 	]
 
 func _tower_attack_description(tower_data: TowerData) -> String:
@@ -1721,6 +1757,7 @@ func _hp_layer_name(layer: int) -> String:
 func _start_selected_wave() -> void:
 	if RunManager.phase == RunManager.Phase.CARD_OFFER or not _path_graph.is_valid or not _can_start_selected_wave():
 		return
+	_hide_transient_overlays()
 	if _selected_wave_is_debug:
 		_debug_return_phase = RunManager.phase
 		if _debug_return_phase == RunManager.Phase.TERRAIN_EXPANSION:
@@ -2019,9 +2056,9 @@ func _on_reward_earned(amount: int, reason: int) -> void:
 	if accepted <= 0:
 		return
 	if reason == WaveDirector.RewardReason.ENEMY_KILL:
-		_set_rich_text_with_currency_icons(_build_status, "Recompensa por baja: +%d Gold." % accepted)
+		_set_build_feedback("Recompensa por baja: +%d Gold." % accepted, Color("#e7c36f"))
 	elif reason == WaveDirector.RewardReason.ROUND_CLEAR:
-		_set_rich_text_with_currency_icons(_build_status, "Recompensa por oleada: +%d Gold." % accepted)
+		_set_build_feedback("Recompensa por oleada: +%d Gold." % accepted, Color("#e7c36f"))
 
 func _on_gold_changed(_current_gold: int, delta: int, _reason: StringName) -> void:
 	_refresh_economy_status()
@@ -2180,6 +2217,7 @@ func _on_base_health_changed(current_health: int, maximum_health: int) -> void:
 func _show_run_end(outcome: StringName, reached_round: int) -> void:
 	if _meta_shop_panel == null:
 		return
+	_hide_transient_overlays()
 	var summary: Dictionary = MetaProgression.call("finish_run", outcome, reached_round, GameState.run_seed)
 	_meta_shop_panel.call("present", summary)
 
@@ -2189,6 +2227,7 @@ func _on_new_run_requested() -> void:
 func _on_base_damaged(amount: int, current_health: int, maximum_health: int) -> void:
 	_on_base_health_changed(current_health, maximum_health)
 	if amount > 0:
+		_base_health_bar.call("flash_damage")
 		_wave_status.text = "La base recibió %d de daño · enemigos en ruta: %d" % [
 			amount,
 			_wave_director.get_alive_enemy_count(),
@@ -2224,6 +2263,7 @@ func _piece_terrain_counts(piece: TerrainPieceData) -> String:
 	return " ".join(parts)
 
 func _present_terrain_card_offer() -> void:
+	_hide_transient_overlays()
 	if _offered_terrain_pieces.is_empty():
 		var candidates: Array[TerrainPieceData] = []
 		candidates.append_array(_pieces)
@@ -2259,7 +2299,7 @@ func _present_terrain_card_offer() -> void:
 	_refresh_tower_controls()
 
 func _begin_campaign_terrain_expansion(round_number: int, round_reward: int) -> void:
-	_upgrade_card_panel.hide()
+	_hide_transient_overlays()
 	_placement_enabled = false
 	_awaiting_campaign_expansion = true
 	RunManager.transition_to(RunManager.Phase.TERRAIN_EXPANSION)
@@ -2274,6 +2314,7 @@ func _present_upgrade_card_offer(round_number: int, cards: Array[Resource]) -> v
 	if cards.size() != _upgrade_card_buttons.size():
 		push_error("La oferta M11 debe coincidir con el número de cards visibles.")
 		return
+	_hide_transient_overlays()
 	if _build_controller.is_build_mode():
 		_build_controller.cancel_build_mode()
 	_upgrade_card_heading.text = "MEJORAS DE RUN · RONDA %02d" % round_number
@@ -2288,7 +2329,6 @@ func _present_upgrade_card_offer(round_number: int, cards: Array[Resource]) -> v
 		_upgrade_card_tower_icons[index].visible = tower_icon_name != &""
 		_style_upgrade_card_button(_upgrade_card_buttons[index], int(card.get("rarity")))
 	_upgrade_card_panel.show()
-	_terrain_card_panel.hide()
 	_placement_enabled = false
 	_selected_expansion_piece = null
 	_selected_piece = null
@@ -2350,10 +2390,9 @@ func _style_upgrade_card_button(button: Button, rarity: int) -> void:
 	elif rarity == 2:
 		accent = Color("d1ab62")
 	var normal_style := StyleBoxFlat.new()
-	normal_style.bg_color = Color("202b34")
+	normal_style.bg_color = Color("1b272f")
 	normal_style.border_color = accent.darkened(0.18)
-	normal_style.set_border_width_all(2)
-	normal_style.set_corner_radius_all(10)
+	normal_style.border_width_left = 3
 	normal_style.content_margin_left = 14.0
 	normal_style.content_margin_right = 14.0
 	normal_style.content_margin_top = 12.0
@@ -2519,6 +2558,8 @@ func _on_preview_hover_cleared() -> void:
 	_base.set_hovered(false)
 	_hover_status.text = "Casilla del tablero (q,r): — · hover sobre cara superior"
 	_piece_preview.set_tower_build_preview(false)
+	if _build_controller.is_build_mode():
+		_set_build_feedback("Mueve el cursor sobre el tablero para ver una posición.", Color("#b5c3c7"))
 
 func _update_hovered_tower(coord: Vector2i, has_cell: bool = true) -> void:
 	var next_tower: Tower = _build_controller.get_tower_at(coord) if has_cell else null

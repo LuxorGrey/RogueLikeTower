@@ -10,7 +10,7 @@ func _ready() -> void:
 	custom_minimum_size = CURSOR_SIZE
 	size = CURSOR_SIZE
 	pivot_offset = CURSOR_SIZE * 0.5
-	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	mouse_filter = Control.MOUSE_FILTER_IGNORE

@@ -19,11 +19,11 @@ var _ghost_material: ShaderMaterial
 func _ready() -> void:
 	z_as_relative = false
 	z_index = 4096
-	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_icon_sprite = Sprite2D.new()
 	_icon_sprite.name = "PlacementGhostSprite"
 	_icon_sprite.centered = true
-	_icon_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	_icon_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_ghost_material = ShaderMaterial.new()
 	_ghost_material.shader = TOWER_GHOST_SHADER
 	_icon_sprite.material = _ghost_material
@@ -83,9 +83,10 @@ func _draw() -> void:
 	if _range_pixels > 0.0:
 		draw_arc(center, _range_pixels, 0.0, TAU, 72, Color(tint.r, tint.g, tint.b, 0.38), 2.0, true)
 	var corners := PackedVector2Array()
+	var outline_radius: float = HEX_RADIUS - 2.0
 	for corner_index in range(6):
 		var angle_radians: float = deg_to_rad(-90.0 + 60.0 * float(corner_index))
-		corners.append(center + Vector2(cos(angle_radians), sin(angle_radians)) * HEX_RADIUS)
+		corners.append(center + Vector2(cos(angle_radians), sin(angle_radians)) * outline_radius)
 	corners.append(corners[0])
 	draw_polyline(corners, tint, 4.0, true)
 	if _icon == null:

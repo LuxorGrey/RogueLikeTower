@@ -3,6 +3,7 @@ extends Node2D
 
 const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
 const OBSTACLE_HOVER_SHADER: Shader = preload("res://game/board/obstacle_hover_glow.gdshader")
+const PIXEL_SHADOW_SCRIPT: Script = preload("res://game/vfx/pixel_shadow_2d.gd")
 
 const CHEST_DISPLAY_SIZE: Vector2 = Vector2(84.0, 84.0)
 const ART_OFFSET_Y: float = 6.0
@@ -13,25 +14,29 @@ var _chest_available: bool = false
 var _chest_appearance_tween: Tween
 var _obstacle_hovered: bool = false
 var _obstacle_hover_sprite: Sprite2D
+var _pixel_shadow: Sprite2D
+var _cell_elevation: int = 0
 
 func _ready() -> void:
-	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_obstacle_hover_sprite = Sprite2D.new()
 	_obstacle_hover_sprite.name = "ObstacleAlphaHoverGlow"
 	_obstacle_hover_sprite.centered = true
 	_obstacle_hover_sprite.z_index = 1
-	_obstacle_hover_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	_obstacle_hover_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	var glow_material := ShaderMaterial.new()
 	glow_material.shader = OBSTACLE_HOVER_SHADER
 	_obstacle_hover_sprite.material = glow_material
 	add_child(_obstacle_hover_sprite)
 	_sync_obstacle_hover_sprite()
 
-func configure(obstacle_type: int, chest_available: bool) -> void:
+func configure(obstacle_type: int, chest_available: bool, cell_elevation: int = 0) -> void:
 	var chest_appeared: bool = chest_available and not _chest_available
 	_obstacle_type = obstacle_type
 	_chest_available = chest_available
+	_cell_elevation = clampi(cell_elevation, 0, 2)
 	_sync_obstacle_hover_sprite()
+	_sync_pixel_shadow()
 	if chest_appeared:
 		_play_chest_appearance()
 	elif not chest_available and _chest_appearance_tween != null and _chest_appearance_tween.is_running():
@@ -57,6 +62,49 @@ func _sync_obstacle_hover_sprite() -> void:
 	_obstacle_hover_sprite.texture = texture
 	_obstacle_hover_sprite.position = Vector2(0.0, ART_OFFSET_Y)
 	_obstacle_hover_sprite.scale = TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_DISPLAY_SIZE / Vector2(texture.get_width(), texture.get_height())
+
+func _sync_pixel_shadow() -> void:
+	var shadow_texture: Texture2D
+	var display_size: Vector2
+	var source_center := Vector2(0.0, ART_OFFSET_Y)
+	if _obstacle_type >= 0 and _obstacle_type < TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_COUNT:
+		shadow_texture = TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_texture(_obstacle_type)
+		display_size = TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_DISPLAY_SIZE
+		source_center += OBSTACLE_CENTER_OFFSET
+	elif _chest_available:
+		shadow_texture = TERRAIN_VISUAL_CATALOG_SCRIPT.TREASURE_CHEST
+		display_size = CHEST_DISPLAY_SIZE
+		source_center.y -= CHEST_DISPLAY_SIZE.y * 0.5
+	if shadow_texture == null or display_size == Vector2.ZERO:
+		if _pixel_shadow != null:
+			_pixel_shadow.visible = false
+			_pixel_shadow.set_process(false)
+		return
+	if _pixel_shadow == null:
+		_pixel_shadow = PIXEL_SHADOW_SCRIPT.new() as Sprite2D
+		_pixel_shadow.name = "PixelShadow"
+		_pixel_shadow.call(
+			"configure_from_texture",
+			shadow_texture,
+			display_size,
+			source_center,
+			display_size.y * 0.17,
+			_cell_elevation,
+			0.26,
+			true
+		)
+		add_child(_pixel_shadow)
+	else:
+		_pixel_shadow.call(
+			"configure_from_texture",
+			shadow_texture,
+			display_size,
+			source_center,
+			display_size.y * 0.17,
+			_cell_elevation,
+			0.26,
+			true
+		)
 
 func _play_chest_appearance() -> void:
 	if _chest_appearance_tween != null and _chest_appearance_tween.is_running():

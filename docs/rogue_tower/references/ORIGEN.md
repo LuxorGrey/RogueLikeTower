@@ -14,6 +14,8 @@
 
 Estas fuentes orientan el contexto. No sustituyen las reglas propias confirmadas en `01_GAME_DESIGN_SOURCE_OF_TRUTH.md`.
 
+La comparación documental específica de feedback, game feel, colocación e interfaz en tower defense está en [02 — Game feel y UX](02_gamefeel_yux.md), con títulos, URLs, edición/versionado conocido, fecha de consulta y límites de cada fuente.
+
 | Título | URL | Edición o versión | Consulta | Uso y límites |
 |---|---|---|---|---|
 | *Rogue Tower* — página oficial de Steam | <https://store.steampowered.com/app/1843760/Rogue_Tower/> | Versión de tienda consultada; la página no fija una versión de juego | 2026-10-07 | Contexto oficial del juego de referencia. Para mecánicas sensibles al parche, revisar también anuncios y notas oficiales. |
@@ -33,7 +35,7 @@ Estas fuentes orientan el contexto. No sustituyen las reglas propias confirmadas
 | *Moving Arrow on Tiles/Cells for Voxel Engines/Games* — Godot Shaders | <https://godotshaders.com/shader/moving-arrow-on-tiles-cells-for-voxel-engines-games/> | Sentry456123; publicado el 2026-09-18 | 2026-10-09 | Referencia visual solicitada para flechas móviles. Su shader espacial parte de UV por celda de voxel; el juego mantiene flechas 2D por arista del `PathGraph` para conservar ramas y tramos compartidos. |
 | *Godot Engine* — ThemeDB | <https://docs.godotengine.org/en/4.7/classes/class_themedb.html> | Documentación oficial de Godot 4.7 | 2026-10-07 | Fuente de la tipografía fallback usada para las etiquetas debug. |
 
-La consulta del shader de Godot Shaders se usa solo como referencia visual de movimiento; no se reutiliza su código. El sprite de portal `assets/terrain/spawn_portal.png` fue generado para este proyecto con fondo transparente y se conserva como PNG intercambiable. La consulta de *Rogue Tower* en este hito fue solo de contexto; no se implementaron ni balancearon sus mecánicas. La orientación pointy-top de M1 es una decisión de prototipo del proyecto, no una regla atribuida a *Urtuk*.
+La consulta del shader de Godot Shaders se usa solo como referencia visual de movimiento; no se reutiliza su código. El sprite de portal `assets/pixel_art/terrain/spawn_portal.png` fue generado para este proyecto con fondo transparente y se conserva como PNG intercambiable. La consulta de *Rogue Tower* en este hito fue solo de contexto; no se implementaron ni balancearon sus mecánicas. La orientación pointy-top de M1 es una decisión de prototipo del proyecto, no una regla atribuida a *Urtuk*.
 
 ## Reglas anteriores retiradas
 

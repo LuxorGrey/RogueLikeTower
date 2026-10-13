@@ -20,6 +20,7 @@ const DAMAGE_TAG_PHYSICAL: int = 1
 const DAMAGE_TAG_FIRE: int = 2
 const DAMAGE_TAG_ARCANE: int = 4
 const DAMAGE_TAG_POISON: int = 8
+const PIXEL_SHADOW_SCRIPT: Script = preload("res://game/vfx/pixel_shadow_2d.gd")
 
 var cell_coord: Vector2i = Vector2i.ZERO
 var elevation: int = 0
@@ -37,6 +38,7 @@ var _is_selected: bool = false
 var _is_hovered: bool = false
 var _icon_catalog: RefCounted
 var _tower_icon: Texture2D
+var _pixel_shadow: Sprite2D
 var _current_target: Enemy
 var _targeting_mode: int = TowerData.TargetingMode.FIRST_PROGRESS
 var _targeting_priorities: Array[int] = [TowerData.TargetingMode.FIRST_PROGRESS, -1, -1]
@@ -77,9 +79,24 @@ func configure(
 		last_error = "; ".join(errors)
 		return false
 	_tower_data = tower_data
-	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_icon_catalog = ICON_CATALOG_SCRIPT.new() as RefCounted
 	_tower_icon = _icon_catalog.call("get_tower_icon", StringName(tower_data.id)) as Texture2D
+	if _tower_icon != null:
+		var icon_size: float = tower_data.visual_icon_size
+		_pixel_shadow = PIXEL_SHADOW_SCRIPT.new() as Sprite2D
+		_pixel_shadow.name = "PixelShadow"
+		_pixel_shadow.call(
+			"configure_from_texture",
+			_tower_icon,
+			Vector2.ONE * icon_size,
+			Vector2(0.0, -icon_size * 0.5 + VISUAL_ART_OFFSET_Y),
+			icon_size * 0.17,
+			cell_elevation,
+			0.25,
+			true
+		)
+		add_child(_pixel_shadow)
 	_damage_service = damage_service
 	_run_economy = run_economy
 	_run_card_service = run_card_service
@@ -653,7 +670,7 @@ func _launch_tower_projectile(target: Enemy, cooldown_cycle_id: int = 0) -> bool
 	if _tower_data.visual_archetype == TowerData.VisualArchetype.MORTAR:
 		impact_mode = 1
 		splash_radius = get_current_area_radius_hexes() * _hex_neighbor_distance()
-	return bool(projectile.call(
+	var launched: bool = bool(projectile.call(
 		"configure",
 		global_position,
 		target,
@@ -667,6 +684,14 @@ func _launch_tower_projectile(target: Enemy, cooldown_cycle_id: int = 0) -> bool
 		impact_mode,
 		cooldown_cycle_id
 	))
+	if not launched:
+		projectile.queue_free()
+		return false
+	_shot_target_position = target.global_position - global_position
+	_shot_target_positions.clear()
+	_shot_flash_timer = SHOT_FLASH_DURATION
+	queue_redraw()
+	return true
 
 func on_projectile_hit(target: Enemy, total_damage: int) -> void:
 	if target == null or not is_instance_valid(target):
@@ -859,7 +884,10 @@ func _draw() -> void:
 	var pulse: float = 0.5 + 0.5 * sin(_selection_pulse_time * TAU / 1.15) if _is_selected else 0.0
 	if _is_hovered and not _is_selected:
 		draw_arc(Vector2.ZERO, get_current_range_pixels(), 0.0, TAU, 72, Color(0.65, 0.9, 1.0, 0.2), 1.4, true)
-	var icon_scale: float = 1.0 + pulse * 0.055 if _is_selected else 1.0
+	var attack_recovery: float = 0.0
+	if _shot_flash_timer > 0.0:
+		attack_recovery = 1.0 - clampf(_shot_flash_timer / SHOT_FLASH_DURATION, 0.0, 1.0)
+	var icon_scale: float = 1.0 + pulse * 0.055 + attack_recovery * 0.025 if _is_selected else 1.0 + attack_recovery * 0.025
 	var visual_scale: float = _tower_data.visual_icon_size * icon_scale / 54.0
 	var pedestal := PackedVector2Array([
 		Vector2(-16.0, -2.0),
@@ -902,5 +930,13 @@ func _draw() -> void:
 			draw_arc(icon_center, icon_size * 0.56, 0.0, TAU, 48, Color(0.82, 0.94, 1.0, 0.68), 1.6, true)
 		draw_texture_rect(_tower_icon, icon_rect, false)
 	if _shot_flash_timer > 0.0:
-		for target_offset in _shot_target_positions:
-			draw_line(icon_center, target_offset, SHOT_COLOR, 2.0, true)
+		if _shot_target_positions.is_empty():
+			var muzzle_direction := Vector2.RIGHT.rotated(_turret_angle)
+			var muzzle_position: Vector2 = icon_center + muzzle_direction * icon_size * 0.32
+			var flash_alpha: float = clampf(_shot_flash_timer / SHOT_FLASH_DURATION, 0.0, 1.0)
+			var flash_color := Color(1.0, 0.91, 0.58, flash_alpha)
+			draw_circle(muzzle_position, 4.0, flash_color)
+			draw_line(muzzle_position, muzzle_position + muzzle_direction * 8.0, flash_color, 2.0, true)
+		else:
+			for target_offset in _shot_target_positions:
+				draw_line(icon_center, target_offset, SHOT_COLOR, 2.0, true)

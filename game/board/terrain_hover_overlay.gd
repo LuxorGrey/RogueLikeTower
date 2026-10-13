@@ -37,21 +37,28 @@ func _draw() -> void:
 			continue
 		var opacity: float = _grid_opacity(distance)
 		var center := _top_center(cell.local_coord, cell.elevation)
-		var corners := _hex_corners(center)
-		var closed_corners := corners.duplicate()
-		closed_corners.append(corners[0])
+		var cell_corners := _hex_corners(center)
 		var color: Color = _terrain_hover_color(cell.terrain_type)
 		color.a = opacity * (0.76 if distance == 0 else 0.62)
 		if distance == 0:
 			var pulse: float = 0.5 + 0.5 * sin(_pulse_time * TAU / 1.5)
 			var glow := color
 			glow.a = 0.16 + pulse * 0.08
-			draw_polyline(closed_corners, glow, 10.0 + pulse * 2.0, true)
+			var glow_width: float = 10.0 + pulse * 2.0
+			var glow_corners := _closed_hex_corners(center, HEX_RADIUS - glow_width * 0.5)
+			draw_polyline(glow_corners, glow, glow_width, true)
+			var highlight_width: float = 3.0
 			color.a = 0.80 + pulse * 0.16
-			draw_polyline(closed_corners, color, 3.0, true)
+			var highlight_corners := _closed_hex_corners(
+				center,
+				HEX_RADIUS - highlight_width * 0.5
+			)
+			draw_polyline(highlight_corners, color, highlight_width, true)
 		else:
-			draw_polyline(closed_corners, color, 2.0, true)
-		_draw_path_edges(cell, center, corners, opacity)
+			var grid_width: float = 2.0
+			var grid_corners := _closed_hex_corners(center, HEX_RADIUS - grid_width * 0.5)
+			draw_polyline(grid_corners, color, grid_width, true)
+		_draw_path_edges(cell, center, cell_corners, opacity)
 
 func _draw_path_edges(
 	cell: TerrainPieceCellData,
@@ -95,11 +102,16 @@ func _top_center(coord: Vector2i, elevation: int) -> Vector2:
 		float(elevation) * ELEVATION_PIXEL_OFFSET
 	)
 
-func _hex_corners(center: Vector2) -> PackedVector2Array:
+func _closed_hex_corners(center: Vector2, radius: float) -> PackedVector2Array:
+	var corners := _hex_corners(center, radius)
+	corners.append(corners[0])
+	return corners
+
+func _hex_corners(center: Vector2, radius: float = HEX_RADIUS) -> PackedVector2Array:
 	var corners := PackedVector2Array()
 	for corner_index in range(6):
 		var angle_radians: float = deg_to_rad(-90.0 + 60.0 * float(corner_index))
-		corners.append(center + Vector2(cos(angle_radians), sin(angle_radians)) * HEX_RADIUS)
+		corners.append(center + Vector2(cos(angle_radians), sin(angle_radians)) * radius)
 	return corners
 
 func _terrain_hover_color(terrain_type: int) -> Color:

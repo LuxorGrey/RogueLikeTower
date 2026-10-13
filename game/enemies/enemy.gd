@@ -24,6 +24,7 @@ const DAMAGE_TEXT_COLORS: Dictionary = {
 	HitPointLayer.SHIELD: Color("#65ceff"),
 }
 const ICON_CATALOG_SCRIPT: Script = preload("res://game/ui/icon_catalog.gd")
+const PATRICK_HAND_FONT: Font = preload("res://assets/fonts/Patrick_Hand/PatrickHand-Regular.ttf")
 const STATUS_ICON_IDS: Dictionary = {
 	"burn": &"burn",
 	"slow": &"slow",
@@ -41,10 +42,12 @@ const DAMAGE_POPUP_PUNCH_SCALE: float = 1.75
 const DAMAGE_POPUP_PUNCH_DURATION: float = 0.18
 const DAMAGE_POPUP_ARC_MID_DURATION: float = 0.2
 const DAMAGE_POPUP_ARC_END_DURATION: float = 0.42
+const PIXEL_SHADOW_SCRIPT: Script = preload("res://game/vfx/pixel_shadow_2d.gd")
 
 var state: State = State.UNCONFIGURED
 var _enemy_data: EnemyData
 var _sprite_texture: Texture2D
+var _pixel_shadow: Sprite2D
 var _body_color: Color = BODY_COLOR
 var _body_radius: float = 10.0
 var _regen_fraction: float = 0.0
@@ -80,7 +83,7 @@ const RT_FORTIFICATION_DAMAGE_REDUCTION: float = 5.0
 @onready var _status_controller: Node = %StatusEffects
 
 func _ready() -> void:
-	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_icon_catalog = ICON_CATALOG_SCRIPT.new() as RefCounted
 	add_to_group(&"enemies")
 	_health.health_changed.connect(_on_health_changed)
@@ -98,6 +101,8 @@ func _process(delta: float) -> void:
 		queue_redraw()
 	else:
 		_jump_height = 0.0
+	if _pixel_shadow != null:
+		_pixel_shadow.call("set_lift_height_px", _jump_height)
 	if state != State.MOVING or _enemy_data == null or delta <= 0.0:
 		return
 	var had_rt_status: bool = _haste_strength > 0.0 or _fortification_strength > 0.0
@@ -147,6 +152,21 @@ func configure(
 	_sprite_texture = enemy_data.sprite_texture
 	_body_color = enemy_data.placeholder_color
 	_body_radius = enemy_data.placeholder_radius
+	if _sprite_texture != null:
+		var sprite_extent: float = enemy_data.sprite_extent if enemy_data.sprite_extent > 0.0 else maxf(_body_radius * 3.2, 48.0)
+		_pixel_shadow = PIXEL_SHADOW_SCRIPT.new() as Sprite2D
+		_pixel_shadow.name = "PixelShadow"
+		_pixel_shadow.call(
+			"configure_from_texture",
+			_sprite_texture,
+			Vector2.ONE * sprite_extent,
+			Vector2(0.0, VISUAL_ART_OFFSET_Y),
+			sprite_extent * 0.16,
+			0,
+			0.25,
+			true
+		)
+		add_child(_pixel_shadow)
 	_regen_fraction = 0.0
 	_armor_regen_fraction = 0.0
 	_shield_regen_fraction = 0.0
@@ -599,10 +619,10 @@ func _draw_status_icons() -> void:
 			var icon_rect := Rect2(start_x, status_y, icon_size, icon_size)
 			draw_texture_rect(icon_texture, icon_rect, false)
 		var stacks: int = int(stacks_by_id[status_id_variant])
-		if stacks > 1 and ThemeDB.fallback_font != null:
+		if stacks > 1:
 			var count_position: Vector2 = Vector2(start_x + icon_size + 1.0, status_y + icon_size + 1.0)
-			draw_string(ThemeDB.fallback_font, count_position + Vector2(1.0, 1.0), str(stacks), HORIZONTAL_ALIGNMENT_RIGHT, 15.0, 12, Color("#101820"))
-			draw_string(ThemeDB.fallback_font, count_position, str(stacks), HORIZONTAL_ALIGNMENT_RIGHT, 15.0, 12, Color.WHITE)
+			draw_string(PATRICK_HAND_FONT, count_position + Vector2(1.0, 1.0), str(stacks), HORIZONTAL_ALIGNMENT_RIGHT, 15.0, 12, Color("#101820"))
+			draw_string(PATRICK_HAND_FONT, count_position, str(stacks), HORIZONTAL_ALIGNMENT_RIGHT, 15.0, 12, Color.WHITE)
 		start_x += icon_size + gap
 
 func _on_health_changed(current_health: int, maximum_health: int) -> void:
@@ -647,4 +667,6 @@ func _on_horizontal_direction_changed(is_facing_left: bool) -> void:
 	if _is_facing_left == is_facing_left:
 		return
 	_is_facing_left = is_facing_left
+	if _pixel_shadow != null:
+		_pixel_shadow.call("set_source_flipped", _is_facing_left)
 	queue_redraw()

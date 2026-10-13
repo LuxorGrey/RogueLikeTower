@@ -9,7 +9,7 @@ var _visual_variant: StringName = &""
 var _coord: Vector2i = Vector2i.ZERO
 
 func _ready() -> void:
-	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 func configure_surface(terrain_type: int, visual_variant: StringName, coord: Vector2i) -> void:
 	_terrain_type = terrain_type

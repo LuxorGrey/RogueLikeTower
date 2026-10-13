@@ -6,12 +6,29 @@ extends Control
 var current_health: int = 0
 var maximum_health: int = 1
 var fill_color: Color = Color("#76bd82")
+var _damage_flash_remaining: float = 0.0
+
+const DAMAGE_FLASH_DURATION: float = 0.24
+
+func _ready() -> void:
+	set_process(false)
 
 func set_health(current: int, maximum: int, color: Color) -> void:
 	current_health = maxi(current, 0)
 	maximum_health = maxi(maximum, 1)
 	fill_color = color
 	queue_redraw()
+
+func flash_damage() -> void:
+	_damage_flash_remaining = DAMAGE_FLASH_DURATION
+	set_process(true)
+	queue_redraw()
+
+func _process(delta: float) -> void:
+	_damage_flash_remaining = maxf(_damage_flash_remaining - delta, 0.0)
+	queue_redraw()
+	if _damage_flash_remaining <= 0.0:
+		set_process(false)
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
@@ -36,3 +53,12 @@ func _draw() -> void:
 		if fill_width > 0.0:
 			draw_rect(Rect2(x, 0.0, fill_width, size.y), fill_color, true)
 		draw_rect(rect, Color("#11191d"), false, 1.0, true)
+	if _damage_flash_remaining > 0.0:
+		var flash_alpha: float = 0.3 + 0.55 * _damage_flash_remaining / DAMAGE_FLASH_DURATION
+		draw_rect(
+			Rect2(Vector2(1.0, 1.0), size - Vector2(2.0, 2.0)),
+			Color(0.96, 0.28, 0.22, flash_alpha),
+			false,
+			2.0,
+			true
+		)

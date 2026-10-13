@@ -11,7 +11,7 @@ base_data = ExtResource("2_base_data")
 [node name="BaseSprite" type="Sprite2D" parent="."]
 unique_name_in_owner = true
 position = Vector2(0, -12)
-texture_filter = 2
+texture_filter = 1
 
 [node name="Health" type="Node" parent="."]
 unique_name_in_owner = true

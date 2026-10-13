@@ -1,10 +1,13 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Theme" path="res://game/ui/themes/rogue_hud_theme.tres" id="1_theme"]
+
+[sub_resource type="StyleBoxEmpty" id="RowSurface"]
 
 [node name="MetaShopRow" type="PanelContainer"]
 custom_minimum_size = Vector2(0, 68)
 theme = ExtResource("1_theme")
+theme_override_styles/panel = SubResource("RowSurface")
 
 [node name="Body" type="HBoxContainer" parent="."]
 layout_mode = 2

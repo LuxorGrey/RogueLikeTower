@@ -1,7 +1,7 @@
 # ADR-0051: Navegación, previsión por portal y panel de torre
 
 - Fecha: 2026-10-10.
-- Estado: aceptado; cambios de código y recursos integrados, aceptación visual/interactiva pendiente.
+- Estado: navegación, previsión, ghost y composición de Tower Info vigentes; el marco del panel fue sustituido parcialmente por ADR-0053. Aceptación visual/interactiva pendiente.
 - Complementa: ADR-0042, ADR-0043, ADR-0046, ADR-0047, ADR-0048 y ADR-0050.
 - Sustituye: la tecla `D` deja de alternar el overlay diagnóstico para permitir mover la cámara a la derecha; el overlay pasa a `Ctrl+D`.
 
@@ -18,8 +18,8 @@ La composición activa de la campaña se reparte en `WaveDirector._select_campai
 3. El sprite alfa del portal recibe contorno cuando el puntero está sobre su área interactiva. El tooltip vive en la escena de HUD y se mantiene por encima del mundo sin capturar el puntero.
 4. El sprite de la torre en construcción usa un `ShaderMaterial` fantasma verde translúcido si la casilla es legal y rojo si no lo es. Mantiene prioridad Z por encima de terrenos, elevaciones y decoración.
 5. Se eliminan las sombras proyectadas dibujadas por código bajo enemigos, props y trazos de flujo. No se sustituyen por otro tipo de sombra procedural.
-6. Tower Info usa el PNG de marco `assets/ui/tower_info_panel_frame.png`. Muestra el retrato grande arriba, el título y `NIVEL X DE 45` en la cabecera, donde X cuenta las mejoras acumuladas. Cada capa Health/Armor/Shield conserva XP independiente y lo presenta con una barra; la cifra exacta se consulta en su tooltip. Los niveles de capa aparecen en negrita y sus iconos aumentan de tamaño.
-7. Demoler ocupa un botón cuadrado de 64×64 con el PNG `assets/ui/demolish_tower_icon.png` dibujado en un `TextureRect` fijo de 36×36. El PNG de alta resolución no se asigna como icono intrínseco del botón para que su tamaño fuente no infle el control ni la altura automática del panel. El marco 9-slice del panel y el icono/estilos del botón quedan editables en la escena `game/main/main.tscn`.
+6. (Marco sustituido por ADR-0053.) Tower Info conserva su retrato grande arriba, título y `NIVEL X DE 45` en la cabecera, donde X cuenta las mejoras acumuladas. Cada capa Health/Armor/Shield conserva XP independiente y lo presenta con una barra; la cifra exacta se consulta en su tooltip. Los niveles de capa aparecen en negrita y sus iconos aumentan de tamaño. El panel actual usa el Theme plano compartido.
+7. Demoler conserva un botón cuadrado de 64×64 con el PNG `assets/ui/demolish_tower_icon.png` dibujado en un `TextureRect` fijo de 36×36. El PNG de alta resolución no se asigna como icono intrínseco del botón para que su tamaño fuente no infle el control ni la altura automática del panel. El estilo hereda el Theme plano; los márgenes, tamaño e icono siguen editables en `game/main/main.tscn`.
 
 ## Consecuencias
 

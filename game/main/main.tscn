@@ -1,4 +1,4 @@
-[gd_scene load_steps=47 format=3]
+[gd_scene load_steps=43 format=3]
 
 [ext_resource type="Script" path="res://game/main/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://game/board/terrain_piece_preview.gd" id="2_preview"]
@@ -17,137 +17,80 @@
 [ext_resource type="PackedScene" path="res://game/ui/components/upgrade_offer_panel.tscn" id="15_upgrade_offer_panel"]
 [ext_resource type="Theme" path="res://game/ui/themes/rogue_hud_theme.tres" id="16_ui_theme"]
 [ext_resource type="Resource" path="res://game/ui/resources/icon_catalog.tres" id="17_icon_catalog"]
-[ext_resource type="Texture2D" path="res://game/ui/icons/gold.png" id="18_gold_icon"]
-[ext_resource type="Texture2D" path="res://game/ui/icons/mana.png" id="19_mana_icon"]
-[ext_resource type="Texture2D" path="res://game/ui/icons/ballista.png" id="20_ballista_icon"]
-[ext_resource type="Texture2D" path="res://game/ui/icons/mortar.png" id="21_mortar_icon"]
-[ext_resource type="Texture2D" path="res://game/ui/icons/tesla_coil.png" id="22_tesla_icon"]
-[ext_resource type="Texture2D" path="res://game/ui/icons/frost_keep.png" id="23_frost_icon"]
-[ext_resource type="Texture2D" path="res://game/ui/icons/flame_thrower.png" id="24_flame_icon"]
-[ext_resource type="Texture2D" path="res://game/ui/icons/poison_sprayer.png" id="25_poison_icon"]
-[ext_resource type="Texture2D" path="res://game/ui/icons/shredder.png" id="26_shredder_icon"]
-[ext_resource type="Texture2D" path="res://game/ui/icons/health.png" id="27_health_icon"]
-[ext_resource type="Texture2D" path="res://game/ui/icons/armor.png" id="28_armor_icon"]
-[ext_resource type="Texture2D" path="res://game/ui/icons/shield.png" id="29_shield_icon"]
-[ext_resource type="Texture2D" path="res://assets/ui/start_round_button.png" id="30_start_round_texture"]
-[ext_resource type="Texture2D" path="res://assets/ui/terrain_expansion_card_frame.png" id="31_terrain_card_texture"]
-[ext_resource type="Texture2D" path="res://assets/ui/tower_info_panel_frame.png" id="32_tower_info_panel_frame"]
-[ext_resource type="Texture2D" path="res://assets/ui/demolish_tower_icon.png" id="33_demolish_tower_icon"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/ui/icons/gold.png" id="18_gold_icon"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/ui/icons/mana.png" id="19_mana_icon"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/ui/icons/ballista.png" id="20_ballista_icon"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/ui/icons/mortar.png" id="21_mortar_icon"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/ui/icons/tesla_coil.png" id="22_tesla_icon"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/ui/icons/frost_keep.png" id="23_frost_icon"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/ui/icons/flame_thrower.png" id="24_flame_icon"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/ui/icons/poison_sprayer.png" id="25_poison_icon"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/ui/icons/shredder.png" id="26_shredder_icon"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/ui/icons/health.png" id="27_health_icon"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/ui/icons/armor.png" id="28_armor_icon"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/ui/icons/shield.png" id="29_shield_icon"]
+[ext_resource type="Texture2D" path="res://assets/pixel_art/ui/demolish_tower_icon.png" id="33_demolish_tower_icon"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_transparent_panel"]
 
-[sub_resource type="StyleBoxTexture" id="StartRoundNormal"]
-texture = ExtResource("30_start_round_texture")
+[sub_resource type="StyleBoxFlat" id="StartRoundNormal"]
+bg_color = Color(0.74, 0.56, 0.28, 1)
 content_margin_left = 22.0
 content_margin_top = 8.0
 content_margin_right = 22.0
 content_margin_bottom = 8.0
-draw_center = true
 
-[sub_resource type="StyleBoxTexture" id="StartRoundHover"]
-texture = ExtResource("30_start_round_texture")
+[sub_resource type="StyleBoxFlat" id="StartRoundHover"]
+bg_color = Color(0.84, 0.66, 0.36, 1)
 content_margin_left = 22.0
 content_margin_top = 8.0
 content_margin_right = 22.0
 content_margin_bottom = 8.0
-draw_center = true
-modulate_color = Color(1.12, 1.08, 0.88, 1)
 
-[sub_resource type="StyleBoxTexture" id="StartRoundPressed"]
-texture = ExtResource("30_start_round_texture")
+[sub_resource type="StyleBoxFlat" id="StartRoundPressed"]
+bg_color = Color(0.57, 0.43, 0.23, 1)
 content_margin_left = 22.0
 content_margin_top = 8.0
 content_margin_right = 22.0
 content_margin_bottom = 8.0
-draw_center = true
-modulate_color = Color(0.78, 0.72, 0.58, 1)
 
-[sub_resource type="StyleBoxTexture" id="StartRoundDisabled"]
-texture = ExtResource("30_start_round_texture")
+[sub_resource type="StyleBoxFlat" id="StartRoundDisabled"]
+bg_color = Color(0.33, 0.34, 0.31, 1)
 content_margin_left = 22.0
 content_margin_top = 8.0
 content_margin_right = 22.0
 content_margin_bottom = 8.0
-draw_center = true
-modulate_color = Color(0.54, 0.54, 0.5, 0.85)
 
-[sub_resource type="StyleBoxTexture" id="TerrainCardNormal"]
-texture = ExtResource("31_terrain_card_texture")
-texture_margin_left = 42.0
-texture_margin_top = 42.0
-texture_margin_right = 42.0
-texture_margin_bottom = 42.0
+[sub_resource type="StyleBoxFlat" id="TerrainCardNormal"]
+bg_color = Color(0.105, 0.15, 0.174, 1)
 content_margin_left = 18.0
 content_margin_top = 8.0
 content_margin_right = 18.0
 content_margin_bottom = 8.0
-draw_center = true
 
-[sub_resource type="StyleBoxTexture" id="TerrainCardHover"]
-texture = ExtResource("31_terrain_card_texture")
-texture_margin_left = 42.0
-texture_margin_top = 42.0
-texture_margin_right = 42.0
-texture_margin_bottom = 42.0
+[sub_resource type="StyleBoxFlat" id="TerrainCardHover"]
+bg_color = Color(0.15, 0.22, 0.25, 1)
 content_margin_left = 18.0
 content_margin_top = 8.0
 content_margin_right = 18.0
 content_margin_bottom = 8.0
-draw_center = true
-modulate_color = Color(1.12, 1.1, 0.92, 1)
 
-[sub_resource type="StyleBoxTexture" id="TerrainCardSelected"]
-texture = ExtResource("31_terrain_card_texture")
-texture_margin_left = 42.0
-texture_margin_top = 42.0
-texture_margin_right = 42.0
-texture_margin_bottom = 42.0
+[sub_resource type="StyleBoxFlat" id="TerrainCardSelected"]
+bg_color = Color(0.205, 0.29, 0.31, 1)
 content_margin_left = 18.0
 content_margin_top = 8.0
 content_margin_right = 18.0
 content_margin_bottom = 8.0
-draw_center = true
-modulate_color = Color(1.2, 1.1, 0.78, 1)
 
 [sub_resource type="StyleBoxFlat" id="PortalTooltipStyle"]
 bg_color = Color(0.09, 0.13, 0.17, 0.98)
-border_color = Color(0.77, 0.6, 0.32, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
 content_margin_left = 10.0
 content_margin_top = 9.0
 content_margin_right = 10.0
 content_margin_bottom = 9.0
 
-[sub_resource type="StyleBoxTexture" id="TowerInfoPanelFrame"]
-texture = ExtResource("32_tower_info_panel_frame")
-texture_margin_left = 88.0
-texture_margin_top = 88.0
-texture_margin_right = 88.0
-texture_margin_bottom = 88.0
-content_margin_left = 18.0
-content_margin_top = 22.0
-content_margin_right = 18.0
-content_margin_bottom = 24.0
-draw_center = true
-
 [sub_resource type="StyleBoxFlat" id="DemolishNormal"]
 bg_color = Color(0.318, 0.149, 0.169, 1)
-border_color = Color(0.831, 0.42, 0.329, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_right = 7
-corner_radius_bottom_left = 7
 content_margin_left = 7.0
 content_margin_top = 7.0
 content_margin_right = 7.0
@@ -155,15 +98,6 @@ content_margin_bottom = 7.0
 
 [sub_resource type="StyleBoxFlat" id="DemolishHover"]
 bg_color = Color(0.451, 0.2, 0.227, 1)
-border_color = Color(0.949, 0.584, 0.408, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_right = 7
-corner_radius_bottom_left = 7
 content_margin_left = 7.0
 content_margin_top = 7.0
 content_margin_right = 7.0
@@ -171,15 +105,6 @@ content_margin_bottom = 7.0
 
 [sub_resource type="StyleBoxFlat" id="DemolishPressed"]
 bg_color = Color(0.239, 0.114, 0.129, 1)
-border_color = Color(0.733, 0.325, 0.275, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_right = 7
-corner_radius_bottom_left = 7
 content_margin_left = 7.0
 content_margin_top = 7.0
 content_margin_right = 7.0
@@ -392,9 +317,9 @@ unique_name_in_owner = true
 layout_mode = 2
 custom_minimum_size = Vector2(0, 64)
 size_flags_horizontal = 4
-theme_override_colors/font_color = Color(0.203922, 0.141176, 0.098039, 1)
-theme_override_colors/font_hover_color = Color(0.176471, 0.12549, 0.086275, 1)
-theme_override_colors/font_pressed_color = Color(0.176471, 0.12549, 0.086275, 1)
+theme_override_colors/font_color = Color(0.082, 0.102, 0.106, 1)
+theme_override_colors/font_hover_color = Color(0.082, 0.102, 0.106, 1)
+theme_override_colors/font_pressed_color = Color(0.082, 0.102, 0.106, 1)
 theme_override_styles/normal = SubResource("StartRoundNormal")
 theme_override_styles/hover = SubResource("StartRoundHover")
 theme_override_styles/pressed = SubResource("StartRoundPressed")
@@ -406,7 +331,6 @@ text = "Iniciar ronda"
 unique_name_in_owner = true
 visible = false
 theme = ExtResource("16_ui_theme")
-theme_override_styles/panel = SubResource("TowerInfoPanelFrame")
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 0.0

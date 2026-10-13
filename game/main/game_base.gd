@@ -1,6 +1,8 @@
 class_name GameBase
 extends Node2D
 
+const PIXEL_SHADOW_SCRIPT: Script = preload("res://game/vfx/pixel_shadow_2d.gd")
+
 signal health_changed(current_health: int, maximum_health: int)
 signal defeated
 
@@ -14,6 +16,7 @@ const BASE_OUTLINE: Color = Color(0.16, 0.13, 0.08)
 @onready var _base_sprite: Sprite2D = %BaseSprite
 
 var _is_hovered: bool = false
+var _pixel_shadow: Sprite2D
 
 func _ready() -> void:
 	_health.health_changed.connect(_on_health_changed)
@@ -27,9 +30,24 @@ func _ready() -> void:
 		return
 	_health.initialize(base_data.max_health)
 	_base_sprite.texture = base_data.sprite_texture
-	_base_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	_base_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	if base_data.sprite_texture != null:
 		_base_sprite.scale = base_data.sprite_size / Vector2(base_data.sprite_texture.get_width(), base_data.sprite_texture.get_height())
+		_pixel_shadow = PIXEL_SHADOW_SCRIPT.new() as Sprite2D
+		_pixel_shadow.name = "PixelShadow"
+		_pixel_shadow.call(
+			"configure_from_texture",
+			base_data.sprite_texture,
+			base_data.sprite_size,
+			_base_sprite.position,
+			base_data.sprite_size.y * 0.17,
+			0,
+			0.24,
+			false
+		)
+		if _pixel_shadow != null:
+			add_child(_pixel_shadow)
+			move_child(_pixel_shadow, _base_sprite.get_index())
 	queue_redraw()
 
 func apply_damage(amount: int) -> int:
@@ -52,15 +70,19 @@ func set_hovered(is_hovered: bool) -> void:
 
 func _draw() -> void:
 	var footprint := _hex_corners(footprint_radius)
-	var closed_footprint := footprint.duplicate()
-	closed_footprint.append(footprint[0])
 	draw_colored_polygon(footprint, BASE_TILE_COLOR)
-	draw_polyline(closed_footprint, BASE_OUTLINE, 4.0, true)
+	var outline_width: float = 4.0
+	var outline := _hex_corners(maxf(footprint_radius - outline_width * 0.5, 0.0))
+	outline.append(outline[0])
+	draw_polyline(outline, BASE_OUTLINE, outline_width, true)
 
 	if _is_hovered:
 		var hover_tint := Color(0.51, 0.75, 0.90, 0.34)
 		draw_colored_polygon(footprint, hover_tint)
-		draw_polyline(closed_footprint, Color(0.72, 0.87, 0.98), 5.0, true)
+		var hover_width: float = 5.0
+		var hover_outline := _hex_corners(maxf(footprint_radius - hover_width * 0.5, 0.0))
+		hover_outline.append(hover_outline[0])
+		draw_polyline(hover_outline, Color(0.72, 0.87, 0.98), hover_width, true)
 
 func _hex_corners(radius: float) -> PackedVector2Array:
 	var corners := PackedVector2Array()

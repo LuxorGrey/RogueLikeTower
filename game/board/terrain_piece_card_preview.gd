@@ -12,7 +12,7 @@ const MOUNTAIN_COLOR: Color = Color(0.63, 0.58, 0.48)
 var _piece: TerrainPieceData
 
 func _ready() -> void:
-	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 func set_piece(piece: TerrainPieceData) -> void:
 	_piece = piece
@@ -57,8 +57,6 @@ func _draw() -> void:
 	for cell in cells:
 		var center: Vector2 = rendered_centers[cell.local_coord]
 		var corners := _hex_corners(center, HEX_RADIUS * render_scale)
-		var closed_corners := corners.duplicate()
-		closed_corners.append(corners[0])
 		draw_colored_polygon(corners, _terrain_color(cell.terrain_type))
 		var tile_size := Vector2(HEX_RADIUS * sqrt(3.0), HEX_RADIUS * 2.0) * render_scale
 		draw_texture_rect(
@@ -70,7 +68,13 @@ func _draw() -> void:
 			Rect2(center - tile_size * 0.5, tile_size),
 			false
 		)
-		draw_polyline(closed_corners, HEX_OUTLINE, maxf(1.0, 1.8 * render_scale), true)
+		var outline_width: float = maxf(1.0, 1.8 * render_scale)
+		var outline_corners := _hex_corners(
+			center,
+			maxf(HEX_RADIUS * render_scale - outline_width * 0.5, 0.0)
+		)
+		outline_corners.append(outline_corners[0])
+		draw_polyline(outline_corners, HEX_OUTLINE, outline_width, true)
 		_draw_path_edges(cell, center, corners, render_scale)
 	_draw_obstacles(cells, rendered_centers, render_scale)
 

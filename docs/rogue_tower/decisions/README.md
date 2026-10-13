@@ -32,11 +32,16 @@ Los ADR documentan decisiones de terreno, combate, campaña, progresión y UX en
 | [ADR-0045](ADR-0045-auditoria-torres-y-feedback-visual.md) | Auditoría de torres, pulso de selección, hover elevado y assets compactos | Auditoría documentada y cambios visuales integrados; aceptación manual pendiente. |
 | [ADR-0046](ADR-0046-progresion-de-mejoras-y-feedback-de-seleccion.md) | Progresión independiente de mejoras, targeting, preview y terreno inicial | Código integrado; aceptación manual pendiente. Sustituye la caja visual de obstáculos de ADR-0044 y actualiza UX de mejoras/prioridades de ADR-0028/0039/0045. |
 | [ADR-0047](ADR-0047-herramientas-de-depuracion-y-claridad-de-seleccion.md) | Hacks temporales, prioridades bajo demanda y claridad visual de selección | Código y documentación integrados; aceptación manual pendiente. |
-| [ADR-0048](ADR-0048-hud-oleadas-cards-y-paredes-texturizadas.md) | HUD sin paneles compartidos, progreso de oleadas, cards con marco y fachadas con sprites | Código y arte integrados; aceptación visual pendiente. |
+| [ADR-0048](ADR-0048-hud-oleadas-cards-y-paredes-texturizadas.md) | HUD sin paneles compartidos, progreso de oleadas, cards y fachadas con sprites | Oleadas/HUD/fachadas vigentes; marcos decorativos sustituidos parcialmente por ADR-0053. |
 | [ADR-0049](ADR-0049-arquitectura-hibrida-ui-editable.md) | Arquitectura híbrida, componentes UI editables y Theme local | Implementación integrada; smoke headless pasado; aceptación visual/interactiva pendiente. |
-| [ADR-0050](ADR-0050-recursos-visuales-ui-en-inspector.md) | Sprites y estilos de UI visibles y editables en el Inspector | Implementado; smoke y escaneo del editor pasados; aceptación visual pendiente. |
-| [ADR-0051](ADR-0051-navegacion-prevision-portales-y-panel-torre.md) | WASD, preview exacto de spawns, torre fantasma, sombras y panel Tower Info | Código y recursos integrados; aceptación visual/interactiva pendiente. |
+| [ADR-0050](ADR-0050-recursos-visuales-ui-en-inspector.md) | Catálogo de iconos y componentes de UI editables en el Inspector | Catálogo vigente; piel texturizada de algunos botones/cards sustituida por ADR-0053. |
+| [ADR-0051](ADR-0051-navegacion-prevision-portales-y-panel-torre.md) | WASD, preview exacto de spawns, torre fantasma, sombras y panel Tower Info | Contenido/layout vigentes; marco del panel sustituido parcialmente por ADR-0053. |
 | [ADR-0052](ADR-0052-numeros-de-dano-animados-y-legibles.md) | Números de daño animados, alternancia, color y énfasis de críticos | Código integrado; aceptación visual pendiente. |
+| [ADR-0053](ADR-0053-interfaz-plana-y-feedback-contextual.md) | Theme plano, colocación con motivo exacto, feedback de ataque/Mana/base y ofertas excluyentes | Implementado en código; verificación técnica y aceptación visual M25 pendientes. |
+| [ADR-0054](ADR-0054-prueba-visual-pixel-art-32px.md) | Prueba reversible de lectura pixel art de 32 px | Histórico; el shader de pantalla se retiró y el experimento quedó superado por ADR-0055. |
+| [ADR-0055](ADR-0055-assets-pixel-art-nativo-y-muestreo-nearest.md) | Variantes pixel art nativas y muestreo nearest | 62 PNG derivados integrados en la rama `Pixel-Change`; aceptación visual y dirección de producción pendientes. |
+| [ADR-0056](ADR-0056-sombras-pixel-art-proyectadas.md) | Sombras pixel art proyectadas en 2D | Código integrado; aceptación visual/manual pendiente. |
+| [ADR-0057](ADR-0057-assets-pixel-art-activos-y-encaje-hexagonal.md) | Assets pixel art activos, fuente Patrick Hand y encaje con hexes | Implementado en `Pixel-Change`; aceptación visual responsive pendiente. |
 
 ## Regla para nuevos ADR
 

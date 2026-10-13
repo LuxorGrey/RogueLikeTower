@@ -2,28 +2,28 @@ class_name TerrainVisualCatalog
 extends RefCounted
 
 const PATH_VARIANTS: Array[Texture2D] = [
-	preload("res://assets/terrain/tiles/path_01.png"),
-	preload("res://assets/terrain/tiles/path_02.png"),
-	preload("res://assets/terrain/tiles/path_03.png"),
+	preload("res://assets/pixel_art/terrain/tiles/path_01.png"),
+	preload("res://assets/pixel_art/terrain/tiles/path_02.png"),
+	preload("res://assets/pixel_art/terrain/tiles/path_03.png"),
 ]
 const GRASS_VARIANTS: Array[Texture2D] = [
-	preload("res://assets/terrain/tiles/grass_01.png"),
-	preload("res://assets/terrain/tiles/grass_02.png"),
-	preload("res://assets/terrain/tiles/grass_03.png"),
+	preload("res://assets/pixel_art/terrain/tiles/grass_01.png"),
+	preload("res://assets/pixel_art/terrain/tiles/grass_02.png"),
+	preload("res://assets/pixel_art/terrain/tiles/grass_03.png"),
 ]
 const MOUNTAIN_VARIANTS: Array[Texture2D] = [
-	preload("res://assets/terrain/tiles/mountain_01.png"),
-	preload("res://assets/terrain/tiles/mountain_02.png"),
-	preload("res://assets/terrain/tiles/mountain_03.png"),
+	preload("res://assets/pixel_art/terrain/tiles/mountain_01.png"),
+	preload("res://assets/pixel_art/terrain/tiles/mountain_02.png"),
+	preload("res://assets/pixel_art/terrain/tiles/mountain_03.png"),
 ]
 const OBSTACLE_TEXTURES: Array[Texture2D] = [
-	preload("res://assets/terrain/obstacles/rock.png"),
-	preload("res://assets/terrain/obstacles/crystal_shard.png"),
-	preload("res://assets/terrain/obstacles/tall_grass.png"),
-	preload("res://assets/terrain/obstacles/totem.png"),
-	preload("res://assets/terrain/obstacles/stone_pile.png"),
+	preload("res://assets/pixel_art/terrain/obstacles/rock.png"),
+	preload("res://assets/pixel_art/terrain/obstacles/crystal_shard.png"),
+	preload("res://assets/pixel_art/terrain/obstacles/tall_grass.png"),
+	preload("res://assets/pixel_art/terrain/obstacles/totem.png"),
+	preload("res://assets/pixel_art/terrain/obstacles/stone_pile.png"),
 ]
-const TREASURE_CHEST: Texture2D = preload("res://assets/terrain/treasure_chest.png")
+const TREASURE_CHEST: Texture2D = preload("res://assets/pixel_art/terrain/treasure_chest.png")
 const TERRAIN_VARIANT_COUNT: int = 3
 const OBSTACLE_COUNT: int = 5
 const OBSTACLE_DISPLAY_SIZE: Vector2 = Vector2(86.0, 86.0)
