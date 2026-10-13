@@ -1,4 +1,4 @@
-[gd_scene load_steps=44 format=3]
+[gd_scene load_steps=45 format=3]
 
 [ext_resource type="Script" path="res://game/main/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://game/board/terrain_piece_preview.gd" id="2_preview"]
@@ -19,6 +19,7 @@
 [ext_resource type="Resource" path="res://game/ui/resources/icon_catalog.tres" id="17_icon_catalog"]
 [ext_resource type="Texture2D" path="res://game/ui/icons/gold.png" id="18_gold_icon"]
 [ext_resource type="Texture2D" path="res://game/ui/icons/mana.png" id="19_mana_icon"]
+[ext_resource type="Script" path="res://game/ui/pause_toggle_button.gd" id="31_pause_toggle_button"]
 [ext_resource type="Texture2D" path="res://game/ui/icons/ballista.png" id="20_ballista_icon"]
 [ext_resource type="Texture2D" path="res://game/ui/icons/mortar.png" id="21_mortar_icon"]
 [ext_resource type="Texture2D" path="res://game/ui/icons/tesla_coil.png" id="22_tesla_icon"]
@@ -262,7 +263,7 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_transparent_panel")
 offset_left = 24.0
 offset_top = 24.0
 offset_right = 280.0
-offset_bottom = 96.0
+offset_bottom = 132.0
 
 [node name="Margin" type="MarginContainer" parent="HUD/Panel"]
 layout_mode = 2
@@ -296,6 +297,15 @@ horizontal_alignment = 1
 vertical_alignment = 1
 mouse_filter = 2
 text = "BASE  — / —"
+
+[node name="PauseButton" type="Button" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 26)
+layout_mode = 2
+toggle_mode = true
+text = "Pausar · P"
+tooltip_text = "Pausa o reanuda la partida con el botón o con P."
+script = ExtResource("31_pause_toggle_button")
 
 [node name="ResourcesRow" type="HBoxContainer" parent="HUD"]
 unique_name_in_owner = true
@@ -411,6 +421,7 @@ script = ExtResource("10_round_strip")
 
 [node name="StartWave" type="Button" parent="HUD/RoundPanel/Margin/Content"]
 unique_name_in_owner = true
+process_mode = 3
 layout_mode = 2
 custom_minimum_size = Vector2(0, 64)
 size_flags_horizontal = 4
@@ -596,6 +607,44 @@ theme_override_styles/hover = SubResource("DemolishHover")
 theme_override_styles/pressed = SubResource("DemolishPressed")
 theme_override_styles/focus = SubResource("DemolishHover")
 text = "Demoler"
+
+[node name="WorldObjectActions" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="WorldObjectDescription" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.82, 0.76, 1)
+theme_override_font_sizes/font_size = 12
+text = ""
+
+[node name="WorldObjectEnemyScroll" type="ScrollContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+custom_minimum_size = Vector2(0, 88)
+size_flags_horizontal = 3
+
+[node name="WorldObjectEnemyList" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/WorldObjectEnemyScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 3
+
+[node name="RemoveWorldObject" type="Button" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(84, 32)
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("DemolishNormal")
+theme_override_styles/hover = SubResource("DemolishHover")
+theme_override_styles/pressed = SubResource("DemolishPressed")
+theme_override_styles/focus = SubResource("DemolishHover")
+text = "Quitar · 25 Gold"
 
 [node name="BuildStatus" type="RichTextLabel" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent"]
 unique_name_in_owner = true

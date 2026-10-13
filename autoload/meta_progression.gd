@@ -6,6 +6,7 @@ signal progress_changed
 signal run_ended(summary: Dictionary)
 
 const SAVE_PATH: String = "user://rogue_tower_meta.json"
+const CAMPAIGN_ROUND_COUNT: int = 45
 const TEMP_SAVE_PATH: String = "user://rogue_tower_meta.json.tmp"
 const BACKUP_SAVE_PATH: String = "user://rogue_tower_meta.json.bak"
 const PROGRESSION_DATA: MetaProgressionData = preload("res://data/meta/demo_meta_progression.tres")
@@ -27,7 +28,7 @@ func _ready() -> void:
 		_save_blocked = true
 		last_error = "Configuración meta inválida: %s" % "; ".join(profile_errors)
 		push_error(last_error)
-	for upgrade in PROGRESSION_DATA.permanent_upgrades:
+	for upgrade in _all_permanent_upgrades():
 		if upgrade != null:
 			_upgrade_catalog[upgrade.id] = upgrade
 	_load_progress()
@@ -63,8 +64,8 @@ func finish_run(outcome: StringName, reached_round: int, run_seed: int) -> Dicti
 	if outcome != &"VICTORY" and outcome != &"DEFEAT":
 		last_error = "El resultado de run debe ser VICTORY o DEFEAT."
 		return {}
-	var safe_reached_round: int = clampi(reached_round, 1, 20)
-	var completed_rounds: int = 20 if outcome == &"VICTORY" else maxi(safe_reached_round - 1, 0)
+	var safe_reached_round: int = clampi(reached_round, 1, CAMPAIGN_ROUND_COUNT)
+	var completed_rounds: int = CAMPAIGN_ROUND_COUNT if outcome == &"VICTORY" else maxi(safe_reached_round - 1, 0)
 	var reward: int = PROGRESSION_DATA.base_run_reward + completed_rounds * PROGRESSION_DATA.reward_per_completed_round
 	if outcome == &"VICTORY":
 		reward += PROGRESSION_DATA.victory_bonus
@@ -74,7 +75,7 @@ func finish_run(outcome: StringName, reached_round: int, run_seed: int) -> Dicti
 	_save_data.total_runs_completed += 1
 	if outcome == &"VICTORY":
 		_save_data.total_victories += 1
-		_save_data.best_round_reached = maxi(_save_data.best_round_reached, 20)
+		_save_data.best_round_reached = maxi(_save_data.best_round_reached, CAMPAIGN_ROUND_COUNT)
 	else:
 		_save_data.best_round_reached = maxi(_save_data.best_round_reached, safe_reached_round)
 	_save_data.total_meta_earned = mini(_save_data.total_meta_earned + (_save_data.meta_currency - previous_currency), SaveData.MAX_META_CURRENCY)
@@ -137,7 +138,7 @@ func get_unlocked_content_ids() -> Array[StringName]:
 	for unlock_id in _save_data.unlocked_towers:
 		if not result.has(unlock_id):
 			result.append(unlock_id)
-	for upgrade in PROGRESSION_DATA.permanent_upgrades:
+	for upgrade in _all_permanent_upgrades():
 		if upgrade == null:
 			continue
 		var current_level: int = _get_upgrade_level(upgrade)
@@ -150,7 +151,10 @@ func get_unlocked_content_ids() -> Array[StringName]:
 	return result
 
 func get_permanent_upgrades() -> Array[PermanentUpgradeData]:
-	return PROGRESSION_DATA.permanent_upgrades.duplicate()
+	return _all_permanent_upgrades()
+
+func _all_permanent_upgrades() -> Array[PermanentUpgradeData]:
+	return PROGRESSION_DATA.get_all_permanent_upgrades()
 
 func get_unlocked_tower_ids() -> Array[StringName]:
 	return _save_data.unlocked_towers.duplicate()
@@ -169,6 +173,18 @@ func get_run_economy_bonuses() -> Dictionary:
 		"mana_regen_per_second": _get_permanent_bonus(PermanentUpgradeOperation.EffectType.MANA_REGEN_ADD),
 	}
 
+func get_gold_per_kill_bonus() -> int:
+	return roundi(_get_permanent_bonus(PermanentUpgradeOperation.EffectType.GOLD_PER_KILL_ADD))
+
+func get_card_offer_bonus() -> int:
+	return clampi(roundi(_get_permanent_bonus(PermanentUpgradeOperation.EffectType.CARD_OFFER_SIZE_ADD)), 0, 3)
+
+func get_base_max_health_bonus() -> int:
+	return roundi(_get_permanent_bonus(PermanentUpgradeOperation.EffectType.BASE_MAX_HEALTH_ADD))
+
+func get_base_repair_max_chance() -> float:
+	return clampf(_get_permanent_bonus(PermanentUpgradeOperation.EffectType.BASE_REPAIR_MAX_CHANCE_ADD), 0.0, 1.0)
+
 func get_chest_spawn_chance() -> float:
 	return clampf(
 		TERRAIN_VISUAL_CATALOG_SCRIPT.BASE_CHEST_CHANCE
@@ -179,7 +195,7 @@ func get_chest_spawn_chance() -> float:
 
 func get_tower_damage_multiplier(tower_id: StringName) -> float:
 	var multiplier: float = 1.0
-	for upgrade in PROGRESSION_DATA.permanent_upgrades:
+	for upgrade in _all_permanent_upgrades():
 		if upgrade == null:
 			continue
 		for level_index in range(_get_upgrade_level(upgrade)):
@@ -190,6 +206,20 @@ func get_tower_damage_multiplier(tower_id: StringName) -> float:
 				continue
 			multiplier *= operation.value
 	return clampf(multiplier, 0.0, 4.0)
+
+func get_tower_hit_point_multiplier_add(tower_id: StringName, layer: int) -> float:
+	var bonus: float = 0.0
+	for upgrade in _all_permanent_upgrades():
+		if upgrade == null:
+			continue
+		for level_index in range(_get_upgrade_level(upgrade)):
+			var operation: PermanentUpgradeOperation = upgrade.operations_by_level[level_index]
+			if operation.effect_type != PermanentUpgradeOperation.EffectType.TOWER_HIT_POINT_MULTIPLIER_ADD:
+				continue
+			if operation.affected_tower_id != tower_id or operation.affected_hit_point_layer != layer:
+				continue
+			bonus += operation.value
+	return bonus
 
 func can_purchase_tower(unlock_id: StringName) -> bool:
 	var tower_data := _tower_catalog.get(unlock_id) as TowerData
@@ -237,6 +267,10 @@ func can_purchase_upgrade(upgrade_id: StringName) -> bool:
 	for prerequisite in upgrade.prerequisites:
 		if int(_save_data.permanent_upgrade_levels.get(prerequisite, 0)) <= 0:
 			return false
+	var unlocked_content: Array[StringName] = get_unlocked_content_ids()
+	for required_unlock in upgrade.prerequisite_unlock_ids:
+		if not unlocked_content.has(required_unlock):
+			return false
 	return true
 
 func purchase_upgrade(upgrade_id: StringName) -> bool:
@@ -256,6 +290,11 @@ func purchase_upgrade(upgrade_id: StringName) -> bool:
 	for prerequisite in upgrade.prerequisites:
 		if int(_save_data.permanent_upgrade_levels.get(prerequisite, 0)) <= 0:
 			last_error = "Falta el prerrequisito '%s'." % prerequisite
+			return false
+	var unlocked_content: Array[StringName] = get_unlocked_content_ids()
+	for required_unlock in upgrade.prerequisite_unlock_ids:
+		if not unlocked_content.has(required_unlock):
+			last_error = "Falta desbloquear el contenido '%s'." % required_unlock
 			return false
 	if _save_data.meta_currency < cost:
 		last_error = "Moneda meta insuficiente: %d disponibles · %d necesarios." % [_save_data.meta_currency, cost]
@@ -280,7 +319,7 @@ func _get_upgrade_level(upgrade: PermanentUpgradeData) -> int:
 
 func _get_permanent_bonus(effect_type: int) -> float:
 	var total: float = 0.0
-	for upgrade in PROGRESSION_DATA.permanent_upgrades:
+	for upgrade in _all_permanent_upgrades():
 		if upgrade == null:
 			continue
 		for level_index in range(_get_upgrade_level(upgrade)):

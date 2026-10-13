@@ -1,8 +1,8 @@
 # ADR-0037: Campaña de 45 rondas, roster y habilidades enemigas
 
 - Fecha: 2026-10-09
-- Estado: Aceptado por elección explícita del usuario; implementación integrada, aceptación de gameplay pendiente.
-- Sustituye parcialmente: ADR-0016, ADR-0018, ADR-0032, ADR-0033, ADR-0035 y ADR-0036.
+- Estado: Aceptado por elección explícita del usuario; implementación integrada, aceptación de gameplay pendiente. El balance y comportamiento de Frost Keep de la decisión 10 fueron sustituidos por ADR-0059.
+- Sustituye parcialmente: ADR-0016, ADR-0018, ADR-0032, ADR-0033, ADR-0035 y ADR-0036. ADR-0059 sustituye únicamente la decisión de Frost Keep.
 - Fuente de autoridad: el prompt adjunto del hito, las aclaraciones directas del usuario y los Resources activos. La wiki es referencia de parámetros individuales, no reemplaza las decisiones propias.
 
 ## Contexto
@@ -24,7 +24,7 @@ La implementación previa tampoco modelaba muchas habilidades ligadas por el usu
 7. El jefe de balance propio es Ooogie von Ooogovich (Haunted). Invoca dos Bats cada 2 s y al morir se transforma en Bat con 2.500 Health. La transformación conserva una sola instancia activa y el pago por baja original; la oleada y su recompensa esperan la derrota de Bat. Health 8.000, Armor 1.500, Shield 2.000, regen 25 Health/s y 10 Shield/s, velocidad 26 px/s, daño a base 50 y 200 Gold son valores propios **provisionales**.
 8. Se implementan las habilidades de invocación, transformación, teletransporte, Haste y Fortification declaradas por el roster. El árbol de Ooogiehedron crea Dodecahedron con 30.000 Shield, Octahedron con 20.000 Armor, Hexahedron con 10.000 Health y Tetrahedron con 10.000 Health; las variantes usan velocidad 1,3 RT. Las apariciones adicionales cuentan para la vida de la oleada.
 9. Se conservan las recompensas de limpieza de rondas 1–20 de sus Resources antiguos. De la 21 a la 45 se asigna provisionalmente 100 + 5 × (ronda − 20), es decir, 105–225 Gold. Los intervalos 1–20 reutilizan el intervalo del primer grupo antiguo de cada ronda; las antiguas pausas de Miniboss en 17/19 se quitan. Las rondas 21–45 usan 0,5 s provisional. Grupos y tipos aparecen secuencialmente en el orden de la tabla.
-10. Frost Keep queda en daño base 2, 120 RPM y Slow ×0,85 durante 1 s. En nivel 1 baja de 18 a 4 de daño por segundo antes de cobertura y cartas. Tesla Coil baja de daño base 10 a 9. Son nerfs propios provisionales.
+10. **Decisión histórica, sustituida en Frost Keep por ADR-0059:** Frost Keep quedó inicialmente en daño base 2, 120 RPM y Slow ×0,85 durante 1 s. Tesla Coil baja de daño base 10 a 9; ese ajuste continúa vigente y provisional.
 11. Todo enemigo con sprite mira inicialmente hacia la derecha; el renderizado refleja el sprite horizontalmente al navegar hacia la izquierda y restaura su orientación al dirigirse hacia la derecha. Los 12 PNG nuevos se generan como arte original transparente de 256×256; no se importan assets de terceros.
 12. Todo contenido que no se promovió queda en [Backlog de candidatos](../backlog/CONTENT_CANDIDATES.md). La tabla de composición no se duplica en otros documentos: deben enlazar a la campaña para conservar una autoridad.
 
@@ -33,7 +33,7 @@ La implementación previa tampoco modelaba muchas habilidades ligadas por el usu
 - La dificultad total incluye enemigos directos y adicionales generados por habilidades. No debe confundirse el 1.093 de la tabla con el total final de apariciones.
 - Las recompensas de baja son por instancia derrotada; un enemigo que transforma paga al final, mientras que sus invocaciones pueden pagar sus propias bajas.
 - El escalado de Health, daño a base y Gold por baja permanece a 0. Las recompensas por limpiar 21–45 son provisionales y pueden cambiar.
-- El Frost Keep conserva su carta Blizzard y sinergia de Path, pero su daño y Slow dejan de trivializar el recorrido; Tesla Coil solo pierde 10% de daño.
+- Frost Keep conserva su carta Blizzard y sinergia de Path. La integración inicial de este ADR redujo su daño; ADR-0059 restablece el perfil de referencia y sustituye el antiguo impacto de área garantizado por copos individuales que pueden fallar. Tesla Coil conserva el recorte de 10% de daño.
 - Cada WaveData se valida en orden; WaveCampaignData comprueba 45 entradas, coincidencia entre tipo de encuentro y boss_tier y exactamente 1.093 enemigos directos.
 - La progresión del terreno sigue entre las rondas 1–44; después de limpiar la 45, la run termina en victoria.
 - Las decisiones históricas que mencionaban el calendario previo se conservan como antecedente y no describen ya el diseño activo.

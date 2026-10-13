@@ -48,7 +48,6 @@ func can_build_in_current_phase() -> bool:
 	return (
 		RunManager.phase == RunManager.Phase.ROUND_PREP
 		or RunManager.phase == RunManager.Phase.COMBAT
-		or RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION
 	)
 
 func begin_build(tower_data: TowerData) -> bool:
@@ -175,6 +174,8 @@ func place_tower(coord: Vector2i) -> bool:
 	return true
 
 func select_tower_at(coord: Vector2i) -> bool:
+	if not can_build_in_current_phase():
+		return false
 	var tower: Tower = get_tower_at(coord)
 	if tower == null or not is_instance_valid(tower):
 		return false

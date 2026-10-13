@@ -119,7 +119,7 @@ func _refresh() -> void:
 	var completed_rounds: int = int(_run_summary.get("completed_rounds", 0))
 	var reward: int = int(_run_summary.get("meta_reward", 0))
 	var run_seed_value: int = int(_run_summary.get("run_seed", 0))
-	_summary_label.text = "Ronda alcanzada %02d/20   ·   %d rondas completas   ·   +%d Meta Currency" % [
+	_summary_label.text = "Ronda alcanzada %02d/45   ·   %d rondas completas   ·   +%d Meta Currency" % [
 		reached_round,
 		completed_rounds,
 		reward,

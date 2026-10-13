@@ -1,7 +1,7 @@
 # ADR-0045: auditoría de torres, feedback de selección y texturas runtime
 
 - **Fecha:** 2026-10-09
-- **Estado:** cambios implementados; aceptación visual/manual pendiente
+- **Estado:** cambios implementados; aceptación visual/manual pendiente. La decisión 2 de patrón Frost fue sustituida parcialmente por ADR-0059.
 - **Decide:** solicita el usuario; se mantienen los valores de combate existentes salvo alinear metadata y UI con el runtime
 
 ## Contexto
@@ -13,7 +13,7 @@ La inspección confirmó que las mejoras de torre efectivas están codificadas c
 ## Decisiones
 
 1. Registrar fórmulas, configuración cargada, diferencias con la wiki y preguntas de balance en [15 — Auditoría del sistema de torres](../design/15_AUDITORIA_SISTEMA_DE_TORRES.md). La página describe el runtime y no aprueba por sí sola mecánicas externas.
-2. Configurar Frost Keep como `ALL_IN_RANGE` y mostrar que afecta a enemigos dentro de un cuadrado con semilado igual al alcance. Sus objetivos efectivos, coste y cifras no cambian. La aproximación a un radio circular queda fuera de este cambio.
+2. **Decisión histórica, sustituida parcialmente por ADR-0059:** Frost Keep se configuró como `ALL_IN_RANGE` dentro de un cuadrado. Se conserva el alcance cuadrado; el patrón garantizado sobre todos los enemigos se reemplaza por caída de copos e impactos individuales.
 3. Dejar `max_targets = 1` en Tesla Coil porque `ALL_IN_RANGE` alcanza a todos y ese campo no limita su ataque. `max_targets` sigue activo para `CHAIN`.
 4. Al seleccionar una torre, hacer que su panel pulse, que su icono y radio tengan pulso y que el PNG reciba resplandor siguiendo su alfa. Elevar el `z_index` de la torre seleccionada para que su sprite no quede tapado por tapas elevadas.
 5. Dibujar el contorno y los sockets de hover en un overlay independiente situado en la elevación lógica de cada celda, sobre las superficies Y-sorted. Las vecinas se desvanecen hasta dos anillos.

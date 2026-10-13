@@ -52,6 +52,9 @@ func show_damage_feedback() -> void:
 func heal(amount: int) -> int:
 	return _health.heal(amount)
 
+func increase_maximum_health(amount: int, fill_added_health: bool = true) -> int:
+	return _health.increase_maximum_health(amount, fill_added_health)
+
 func get_current_health() -> int:
 	return _health.current_health
 

@@ -13,6 +13,24 @@ enum OperationType {
 	MANA_REGEN_ADD,
 	TOWER_CRIT_CHANCE_ADD,
 	TOWER_HIT_POINT_MULTIPLIER_ADD,
+	TOWER_STATUS_DAMAGE_BONUS,
+	TOWER_SLOW_FRACTION_ADD,
+	TOWER_ELEVATION_RANGE_BONUS_MULTIPLIER_ADD,
+	TOWER_AREA_RADIUS_MULTIPLIER_ADD,
+	STATUS_MAX_DAMAGE_PER_SECOND_ADD,
+	STATUS_CONDITION_LAYER_DAMAGE_ADD,
+	STATUS_CRIT_CHANCE_ADD,
+	STATUS_CRIT_DAMAGE_CONVERSION_ADD,
+	STATUS_SLOW_DAMAGE_SCALING_ADD,
+	STATUS_POISON_SLOW_FRACTION_ADD,
+	TOWER_CRIT_CHANCE_PER_LEVEL_ADD,
+	TOWER_MANA_COST_DAMAGE_RATIO_ADD,
+	MANA_REGEN_MAX_PERCENT_ADD,
+	MANA_ON_KILL_MAX_PERCENT_ADD,
+	GOLD_PER_KILL_ADD,
+	ENEMY_BASE_DAMAGE_ADD,
+	BASE_MAX_HEALTH_ADD,
+	STATUS_STRENGTH_CAP_ADD,
 }
 
 signal card_selected(card: Resource)
@@ -28,12 +46,14 @@ var _selected_counts: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 var _is_configured: bool = false
 var _debug_unlock_all: bool = false
+var _offer_size_bonus: int = 0
 
 func configure(
 	card_pool: Resource,
 	unlocked_content_ids: Array[StringName],
 	run_seed: int = 0,
-	use_run_seed: bool = false
+	use_run_seed: bool = false,
+	offer_size_bonus: int = 0
 ) -> bool:
 	last_error = ""
 	if card_pool == null or not card_pool.has_method("validate"):
@@ -44,6 +64,7 @@ func configure(
 		last_error = "; ".join(errors)
 		return false
 	_pool = card_pool
+	_offer_size_bonus = clampi(offer_size_bonus, 0, 3)
 	_unlocked_content_ids.clear()
 	for content_id in unlocked_content_ids:
 		_unlocked_content_ids[content_id] = true
@@ -71,13 +92,13 @@ func create_offer(round_number: int) -> Array[Resource]:
 	if not _current_offer.is_empty():
 		return _current_offer.duplicate()
 	var candidates: Array[Resource] = []
-	var pool_cards: Array = _pool.get("cards")
+	var pool_cards: Array = _pool.call("get_all_cards")
 	for card_variant in pool_cards:
 		var card := card_variant as Resource
 		if card == null or not _is_card_available(card):
 			continue
 		candidates.append(card)
-	var offer_size: int = int(_pool.get("offer_size"))
+	var offer_size: int = get_offer_size()
 	while _current_offer.size() < offer_size and not candidates.is_empty():
 		var selected_index: int = _pick_weighted_index(candidates)
 		_current_offer.append(candidates[selected_index])
@@ -145,6 +166,9 @@ func get_tower_hit_point_multiplier_add(tower_id: StringName, layer: int) -> flo
 func get_tower_crit_chance_add(tower_id: StringName) -> float:
 	return _sum_matching_operations(OperationType.TOWER_CRIT_CHANCE_ADD, tower_id)
 
+func get_tower_crit_chance_per_level_add(tower_id: StringName) -> float:
+	return _sum_matching_operations(OperationType.TOWER_CRIT_CHANCE_PER_LEVEL_ADD, tower_id)
+
 func get_status_duration_multiplier(tower_id: StringName, status_id: StringName) -> float:
 	return _multiply_matching_operations(
 		OperationType.STATUS_DURATION_MULTIPLIER,
@@ -159,6 +183,74 @@ func get_mana_max_bonus() -> float:
 func get_mana_regen_bonus() -> float:
 	return _sum_matching_operations(OperationType.MANA_REGEN_ADD, &"")
 
+func get_mana_regen_max_percent_bonus() -> float:
+	return _sum_matching_operations(OperationType.MANA_REGEN_MAX_PERCENT_ADD, &"")
+
+func get_mana_on_kill_max_percent_bonus() -> float:
+	return _sum_matching_operations(OperationType.MANA_ON_KILL_MAX_PERCENT_ADD, &"")
+
+func get_offer_size() -> int:
+	if not _is_configured or _pool == null:
+		return 0
+	return clampi(int(_pool.get("offer_size")) + _offer_size_bonus, 1, 6)
+
+func get_tower_status_ids(tower_id: StringName) -> Array[StringName]:
+	var result: Array[StringName] = []
+	for operation in _active_operations:
+		if int(operation.get("type")) != OperationType.TOWER_STATUS_DAMAGE_BONUS:
+			continue
+		var status_id: StringName = StringName(operation.get("affected_status_id"))
+		if status_id == &"" or not _operation_matches(operation, tower_id, 0, status_id):
+			continue
+		if not result.has(status_id):
+			result.append(status_id)
+	return result
+
+func get_tower_status_damage_bonus(tower_id: StringName, status_id: StringName) -> float:
+	return _sum_matching_operations(OperationType.TOWER_STATUS_DAMAGE_BONUS, tower_id, 0, status_id)
+
+func get_status_max_damage_per_second_bonus(tower_id: StringName, status_id: StringName) -> float:
+	return _sum_matching_operations(OperationType.STATUS_MAX_DAMAGE_PER_SECOND_ADD, tower_id, 0, status_id)
+
+func get_status_condition_layer_damage_add(status_id: StringName) -> float:
+	return _sum_matching_operations(OperationType.STATUS_CONDITION_LAYER_DAMAGE_ADD, &"", 0, status_id)
+
+func get_status_crit_chance_add(status_id: StringName) -> float:
+	return _sum_matching_operations(OperationType.STATUS_CRIT_CHANCE_ADD, &"", 0, status_id)
+
+func get_status_crit_damage_conversion_fraction(status_id: StringName) -> float:
+	return _sum_matching_operations(OperationType.STATUS_CRIT_DAMAGE_CONVERSION_ADD, &"", 0, status_id)
+
+func get_status_slow_damage_scaling(status_id: StringName) -> float:
+	return _sum_matching_operations(OperationType.STATUS_SLOW_DAMAGE_SCALING_ADD, &"", 0, status_id)
+
+func get_status_strength_cap_add(status_id: StringName) -> float:
+	return _sum_matching_operations(OperationType.STATUS_STRENGTH_CAP_ADD, &"", 0, status_id)
+
+func get_status_poison_slow_fraction() -> float:
+	return _sum_matching_operations(OperationType.STATUS_POISON_SLOW_FRACTION_ADD, &"", 0, &"poison")
+
+func get_tower_slow_fraction_add(tower_id: StringName) -> float:
+	return _sum_matching_operations(OperationType.TOWER_SLOW_FRACTION_ADD, tower_id)
+
+func get_tower_elevation_range_bonus_multiplier_add(tower_id: StringName) -> float:
+	return _sum_matching_operations(OperationType.TOWER_ELEVATION_RANGE_BONUS_MULTIPLIER_ADD, tower_id)
+
+func get_tower_area_radius_multiplier_add(tower_id: StringName) -> float:
+	return _sum_matching_operations(OperationType.TOWER_AREA_RADIUS_MULTIPLIER_ADD, tower_id)
+
+func get_tower_mana_cost_damage_ratio_add(tower_id: StringName) -> float:
+	return _sum_matching_operations(OperationType.TOWER_MANA_COST_DAMAGE_RATIO_ADD, tower_id)
+
+func get_gold_per_kill_bonus() -> int:
+	return roundi(_sum_matching_operations(OperationType.GOLD_PER_KILL_ADD, &""))
+
+func get_enemy_base_damage_bonus() -> int:
+	return roundi(_sum_matching_operations(OperationType.ENEMY_BASE_DAMAGE_ADD, &""))
+
+func get_base_max_health_bonus() -> int:
+	return roundi(_sum_matching_operations(OperationType.BASE_MAX_HEALTH_ADD, &""))
+
 func _is_card_available(card: Resource) -> bool:
 	if float(card.get("offer_weight")) <= 0.0:
 		return false
@@ -166,7 +258,21 @@ func _is_card_available(card: Resource) -> bool:
 	if int(_selected_counts.get(card_id, 0)) >= int(card.get("max_per_run")):
 		return false
 	var requirement: StringName = StringName(card.get("unlock_requirement"))
-	return _debug_unlock_all or requirement == &"" or _unlocked_content_ids.has(requirement)
+	if not (_debug_unlock_all or requirement == &"" or _unlocked_content_ids.has(requirement)):
+		return false
+	for required_card_id in card.get("required_card_ids"):
+		if int(_selected_counts.get(required_card_id, 0)) <= 0:
+			return false
+	var alternatives: Array = card.get("any_required_card_ids")
+	if not alternatives.is_empty():
+		var has_any_prerequisite: bool = false
+		for required_card_id in alternatives:
+			if int(_selected_counts.get(required_card_id, 0)) > 0:
+				has_any_prerequisite = true
+				break
+		if not has_any_prerequisite:
+			return false
+	return true
 
 func _pick_weighted_index(candidates: Array[Resource]) -> int:
 	var total_weight: float = 0.0

@@ -1,7 +1,7 @@
 # ADR-0036: Parámetros de torres según changelog oficial
 
 - **Fecha:** 2026-10-09
-- **Estado:** Implementado históricamente; los valores de Frost Keep y Tesla Coil fueron sustituidos por el balance propio provisional ADR-0037.
+- **Estado:** Implementado históricamente; Frost Keep fue ajustado por ADR-0037 y recupera daño 6/cadencia 180 RPM por ADR-0059. Tesla Coil conserva el override provisional de ADR-0037.
 - **Alcance:** stats base de las torres de la demo donde la wiki comunitaria contradice las notas oficiales.
 - **Fuentes:** [anuncios y changelogs oficiales de Rogue Tower en Steam](https://steamcommunity.com/app/1843760/announcements/) y fichas de [Tesla Coil](https://rogue-tower.fandom.com/wiki/Tesla_Coil), [Flame Thrower](https://rogue-tower.fandom.com/wiki/Flame_Thrower) y [Frost Keep](https://rogue-tower.fandom.com/wiki/Frost_Keep), consultados el 2026-10-09.
 

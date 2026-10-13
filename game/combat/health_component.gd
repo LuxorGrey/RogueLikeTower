@@ -38,6 +38,16 @@ func heal(amount: int) -> int:
 	health_changed.emit(current_health, maximum_health)
 	return healed_amount
 
+func increase_maximum_health(amount: int, fill_added_health: bool = true) -> int:
+	if amount <= 0 or maximum_health <= 0:
+		return 0
+	maximum_health += amount
+	if fill_added_health:
+		current_health = mini(current_health + amount, maximum_health)
+	_depleted = current_health <= 0
+	health_changed.emit(current_health, maximum_health)
+	return amount
+
 func get_health_ratio() -> float:
 	if maximum_health <= 0:
 		return 0.0

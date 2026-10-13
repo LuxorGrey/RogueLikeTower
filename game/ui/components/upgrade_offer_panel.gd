@@ -25,3 +25,8 @@ func set_card_count(count: int) -> void:
 		var card: UpgradeOfferCard = cards.pop_back()
 		_card_container.remove_child(card)
 		card.queue_free()
+	var card_width: float = 300.0 if target_count <= 3 else maxf(145.0, floor((1000.0 - 12.0 * float(target_count - 1)) / float(target_count)))
+	for card in cards:
+		card.custom_minimum_size.x = card_width
+		card.title_label.add_theme_font_size_override("normal_font_size", 20 if target_count <= 3 else 16)
+		card.description_label.add_theme_font_size_override("normal_font_size", 15 if target_count <= 3 else 13)

@@ -7,6 +7,7 @@ extends Resource
 @export_range(1, 20, 1) var max_level: int = 1
 @export var cost_by_level: Array[int] = []
 @export var prerequisites: Array[StringName] = []
+@export var prerequisite_unlock_ids: Array[StringName] = []
 @export var operations_by_level: Array[PermanentUpgradeOperation] = []
 
 func validate() -> PackedStringArray:
@@ -36,6 +37,12 @@ func validate() -> PackedStringArray:
 			errors.append("Los prerrequisitos deben tener IDs no vacíos y únicos.")
 			break
 		unique_prerequisites[prerequisite] = true
+	var unique_unlock_ids: Dictionary[StringName, bool] = {}
+	for unlock_id in prerequisite_unlock_ids:
+		if unlock_id == &"" or unique_unlock_ids.has(unlock_id):
+			errors.append("Los desbloqueos requeridos deben tener IDs no vacíos y únicos.")
+			break
+		unique_unlock_ids[unlock_id] = true
 	return errors
 
 func get_cost_for_next_level(current_level: int) -> int:

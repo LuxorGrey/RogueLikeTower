@@ -85,6 +85,8 @@ func rotated_cells(steps: int) -> Array[TerrainPieceCellData]:
 		var source_coord := HexCoord.new(source_cell.local_coord.x, source_cell.local_coord.y)
 		rotated_cell.local_coord = source_coord.rotated60(normalized_steps).to_key()
 		rotated_cell.path_edges = _rotate_path_edges(source_cell.path_edges, normalized_steps)
+		rotated_cell.obstacle_type = source_cell.obstacle_type
+		rotated_cell.chest_available = source_cell.chest_available
 		rotated_cell.flexible_path_edges = _rotate_path_edges(
 			_flexible_boundary_edges(source_cell, cells_by_coord),
 			normalized_steps

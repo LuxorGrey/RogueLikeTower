@@ -11,6 +11,9 @@ class ActiveStatus:
 	var source_id: int = 0
 	var total_damage_remaining: int = -1
 	var total_damage_ticks_remaining: int = 0
+	var damage_scale: float = 1.0
+	var strength: float = 0.0
+	var uses_strength_decay: bool = false
 
 const DAMAGE_PACKET_SCRIPT: Script = preload("res://game/combat/damage_packet.gd")
 const STACK_RULE_REFRESH: int = 0
@@ -30,13 +33,25 @@ func _ready() -> void:
 func configure_damage_service(damage_service: Node) -> void:
 	_damage_service = damage_service
 
-func apply_effect(effect_data: Resource, source_id: int, total_damage_override: int = -1) -> bool:
+func apply_effect(
+	effect_data: Resource,
+	source_id: int,
+	total_damage_override: int = -1,
+	strength_override: float = -1.0
+) -> bool:
 	if _enemy == null or not is_instance_valid(_enemy) or _enemy.state != Enemy.State.MOVING:
 		return false
 	if effect_data == null or not effect_data.has_method("validate"):
 		return false
 	var validation_errors: PackedStringArray = effect_data.call("validate")
 	if not validation_errors.is_empty():
+		return false
+	var strength_cap: float = float(effect_data.get("strength_cap"))
+	var strength_decay_per_second: float = float(effect_data.get("strength_decay_per_second"))
+	var uses_strength_decay: bool = strength_override >= 0.0 and strength_cap > 0.0 and strength_decay_per_second > 0.0
+	if strength_override >= 0.0 and not uses_strength_decay:
+		return false
+	if uses_strength_decay and strength_override <= 0.0:
 		return false
 
 	var effect_id: StringName = effect_data.get("id")
@@ -53,18 +68,34 @@ func apply_effect(effect_data: Resource, source_id: int, total_damage_override: 
 		active_status.remaining_duration = float(effect_data.get("duration"))
 		active_status.source_id = source_id
 		active_status.stacks = mini(active_status.stacks, int(effect_data.get("max_stacks")))
+	if uses_strength_decay:
+		active_status.uses_strength_decay = true
+		active_status.strength = minf(active_status.strength + strength_override, strength_cap)
+		active_status.remaining_duration = active_status.strength / strength_decay_per_second
+		active_status.stacks = 1
+		active_status.total_damage_remaining = -1
+		active_status.total_damage_ticks_remaining = 0
+	else:
+		active_status.uses_strength_decay = false
+		active_status.strength = 0.0
 		match int(effect_data.get("stack_rule")):
 			STACK_RULE_REFRESH:
 				active_status.stacks = 1
 			STACK_RULE_ADD_STACKS:
 				active_status.stacks = mini(active_status.stacks + 1, int(effect_data.get("max_stacks")))
 	var tick_count: int = _get_effect_tick_count(effect_data)
-	if total_damage_override >= 0 and tick_count > 0:
-		active_status.total_damage_remaining = total_damage_override * active_status.stacks
+	if not uses_strength_decay and total_damage_override >= 0 and tick_count > 0:
+		var capped_total_damage: int = total_damage_override * active_status.stacks
+		var max_dps: float = float(effect_data.get("max_damage_per_second"))
+		if max_dps > 0.0:
+			capped_total_damage = mini(capped_total_damage, floori(max_dps * float(effect_data.get("duration"))))
+		active_status.total_damage_remaining = capped_total_damage
 		active_status.total_damage_ticks_remaining = tick_count
-	else:
+		active_status.damage_scale = 1.0
+	elif not uses_strength_decay:
 		active_status.total_damage_remaining = -1
 		active_status.total_damage_ticks_remaining = 0
+		active_status.damage_scale = 1.0
 
 	_recalculate_speed_multiplier()
 	set_process(true)
@@ -101,6 +132,36 @@ func get_active_status_stacks() -> Dictionary:
 			stacks[String(effect_id)] = active_status.stacks
 	return stacks
 
+func get_status_strength(effect_id: StringName) -> float:
+	var active_status: ActiveStatus = _active_statuses.get(effect_id) as ActiveStatus
+	return active_status.strength if active_status != null else 0.0
+
+func consume_status_damage(effect_id: StringName, fraction: float) -> Dictionary:
+	var empty_result: Dictionary = {}
+	var active_status: ActiveStatus = _active_statuses.get(effect_id) as ActiveStatus
+	if active_status == null or fraction <= 0.0:
+		return empty_result
+	var remaining_damage: float = 0.0
+	if active_status.total_damage_remaining >= 0:
+		remaining_damage = float(active_status.total_damage_remaining)
+	else:
+		var ticks_left: int = maxi(int(ceil(active_status.remaining_duration / maxf(float(active_status.data.get("tick_interval")), 0.001))), 0)
+		remaining_damage = float(active_status.data.get("damage_per_tick")) * float(active_status.stacks * ticks_left) * active_status.damage_scale
+	var converted_damage: int = floori(remaining_damage * clampf(fraction, 0.0, 1.0))
+	if converted_damage <= 0:
+		return empty_result
+	if active_status.total_damage_remaining >= 0:
+		active_status.total_damage_remaining = maxi(active_status.total_damage_remaining - converted_damage, 0)
+	else:
+		active_status.damage_scale *= 1.0 - clampf(fraction, 0.0, 1.0)
+	return {
+		"amount": converted_damage,
+		"damage_tags": int(active_status.data.get("damage_tags")),
+		"health_layer_multiplier": float(active_status.data.get("health_layer_multiplier")),
+		"armor_layer_multiplier": float(active_status.data.get("armor_layer_multiplier")),
+		"shield_layer_multiplier": float(active_status.data.get("shield_layer_multiplier")),
+	}
+
 func clear_all() -> void:
 	if _active_statuses.is_empty():
 		return
@@ -114,10 +175,19 @@ func _process(delta: float) -> void:
 		clear_all()
 		return
 	var expired_ids := PackedStringArray()
+	var strength_changed: bool = false
 	for effect_id in _active_statuses.keys():
 		var active_status: ActiveStatus = _active_statuses.get(effect_id) as ActiveStatus
 		if active_status == null:
 			expired_ids.append(String(effect_id))
+			continue
+		if active_status.uses_strength_decay:
+			var decay_rate: float = float(active_status.data.get("strength_decay_per_second"))
+			active_status.strength = maxf(active_status.strength - decay_rate * delta, 0.0)
+			active_status.remaining_duration = active_status.strength / maxf(decay_rate, 0.001)
+			strength_changed = true
+			if active_status.strength <= 0.0:
+				expired_ids.append(String(effect_id))
 			continue
 		var active_delta: float = minf(delta, active_status.remaining_duration)
 		active_status.remaining_duration -= delta
@@ -133,6 +203,8 @@ func _process(delta: float) -> void:
 		if active_status.remaining_duration <= 0.0:
 			expired_ids.append(String(effect_id))
 	if expired_ids.is_empty():
+		if strength_changed:
+			_recalculate_speed_multiplier()
 		return
 	for expired_id in expired_ids:
 		_active_statuses.erase(StringName(expired_id))
@@ -145,7 +217,14 @@ func _apply_damage_tick(effect_id: StringName, active_status: ActiveStatus) -> v
 	if _damage_service == null or not is_instance_valid(_damage_service):
 		return
 	var packet: RefCounted = DAMAGE_PACKET_SCRIPT.new()
-	var damage_for_tick: float = float(active_status.data.get("damage_per_tick")) * float(active_status.stacks)
+	var damage_for_tick: float = float(active_status.data.get("damage_per_tick")) * float(active_status.stacks) * active_status.damage_scale
+	if effect_id == &"burn":
+		var burn_slow_scaling: float = float(active_status.data.get("slow_damage_scaling"))
+		if burn_slow_scaling > 0.0:
+			damage_for_tick *= 1.0 + get_status_strength(&"slow") * burn_slow_scaling / 100.0
+	var max_damage_per_second: float = float(active_status.data.get("max_damage_per_second"))
+	if max_damage_per_second > 0.0:
+		damage_for_tick = minf(damage_for_tick, max_damage_per_second * maxf(float(active_status.data.get("tick_interval")), 0.0))
 	if active_status.total_damage_remaining >= 0 and active_status.total_damage_ticks_remaining > 0:
 		damage_for_tick = float(ceili(
 			float(active_status.total_damage_remaining) / float(active_status.total_damage_ticks_remaining)
@@ -174,8 +253,8 @@ func _recalculate_speed_multiplier() -> void:
 		return
 	var speed_multiplier: float = 1.0
 	for active_status in _active_statuses.values():
-		speed_multiplier = minf(
-			speed_multiplier,
-			float(active_status.data.get("speed_multiplier"))
-		)
+		var effect_multiplier: float = float(active_status.data.get("speed_multiplier"))
+		if active_status.uses_strength_decay:
+			effect_multiplier = clampf(1.0 - active_status.strength / 100.0, 0.05, 1.0)
+		speed_multiplier = minf(speed_multiplier, effect_multiplier)
 	_enemy.set_status_speed_multiplier(speed_multiplier)

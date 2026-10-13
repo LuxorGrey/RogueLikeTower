@@ -21,7 +21,7 @@ Los ADR documentan decisiones de terreno, combate, campaña, progresión y UX en
 | [ADR-0033](ADR-0033-nomenclatura-rogue-tower.md) | Nomenclatura canónica del proyecto | Nombres aceptados; las designaciones Miniboss 17/19 fueron retiradas por ADR-0037. |
 | [ADR-0034](ADR-0034-reembolso-de-cooldown-ballista.md) | Reembolso de cooldown al perder el objetivo | Aceptado; código implementado, verificación pendiente. |
 | [ADR-0035](ADR-0035-roster-rogue-tower-hasta-ronda-20.md) | Parámetros RT del roster enemigo hasta wave 20 | Parcialmente sustituido por ADR-0037, que expande a 45 rondas e integra la tabla exacta. |
-| [ADR-0036](ADR-0036-parametros-torres-segun-changelog-oficial.md) | Parámetros de torre según changelog oficial | Histórico; Frost Keep y Tesla Coil reciben overrides propios de balance en ADR-0037. |
+| [ADR-0036](ADR-0036-parametros-torres-segun-changelog-oficial.md) | Parámetros de torre según changelog oficial | Histórico; Frost Keep fue ajustado por ADR-0037 y recupera las cifras oficiales por ADR-0059; Tesla mantiene el override de ADR-0037. |
 | [ADR-0037](ADR-0037-campana-de-45-rondas-y-habilidades.md) | Campaña de 45 rondas, roster, habilidades y nerfs | Aceptado; datos y código integrados, aceptación de gameplay pendiente. Sustituye partes de ADR-0016/0018/0032/0033/0035/0036. |
 | [ADR-0038](ADR-0038-base-sprite-y-feedback-del-hud.md) | Sprite de base y feedback de HUD | Aceptado; implementación integrada, inspección visual pendiente. |
 | [ADR-0039](ADR-0039-panel-torre-y-escalado-individual.md) | Panel lateral de torre y escala visual por objeto | Aceptado con apartados de scroll/escalado sustituidos por ADR-0040/0041. |
@@ -43,6 +43,12 @@ Los ADR documentan decisiones de terreno, combate, campaña, progresión y UX en
 | [ADR-0055](ADR-0055-feedback-base-seleccion-y-recompensas.md) | Feedback de daño a la base, recompensas, selección y escala del portal | Código integrado; aceptación visual pendiente. |
 | [ADR-0056](ADR-0056-tablero-inicial-lineal.md) | Tablero inicial sencillo con camino recto | Datos y código integrados; aceptación visual pendiente. |
 | [ADR-0057](ADR-0057-expansion-con-prolongacion-garantizada.md) | Ofertas de terreno con prolongación garantizada y aviso de cierre de spawn | Código integrado; aceptación interactiva pendiente. |
+| [ADR-0058](ADR-0058-arte-dirt-en-texturas-path.md) | Sustitución visual de Path con variantes Dirt y reemplazo del lote de 23 sprites | Assets integrados; inspección visual runtime pendiente. |
+| [ADR-0059](ADR-0059-frost-keep-comportamiento-de-copos.md) | Frost Keep: copos individuales, daño y Slow de referencia | Implementado; aceptación manual pendiente. Sustituye parcialmente ADR-0037 y ADR-0045 para Frost Keep. |
+| [ADR-0060](ADR-0060-ofertas-de-terreno-y-contenido-determinista.md) | Ofertas variables de camino y props idénticos en card, ghost y tablero | Código integrado; aceptación interactiva pendiente. Sustituye la card recta garantizada de ADR-0057; mantiene la continuidad PATH. |
+| [ADR-0061](ADR-0061-pausa-y-fases-de-expansion.md) | Pausa, exclusividad de la expansión y feedback hover de cofres | Código integrado; aceptación interactiva pendiente. |
+| [ADR-0062](ADR-0062-catalogo-de-upgrade-cards-y-permanent-upgrades.md) | Catálogo compatible de cartas temporales y mejoras permanentes | Catálogos y operaciones integrados; aceptación manual pendiente. Confirma ofertas cada tres rondas. |
+| [ADR-0063](ADR-0063-seleccion-y-retirada-de-objetos-del-terreno.md) | Selección/retirada de obstáculos y portales, redistribución de spawns y elevación visual | Código integrado; aceptación visual/interactiva pendiente. |
 
 ## Regla para nuevos ADR
 

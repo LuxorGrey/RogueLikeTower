@@ -33,7 +33,7 @@ func _draw() -> void:
 	if graph == null:
 		return
 	var drawn_edges: Dictionary[String, bool] = {}
-	for route in graph.routes:
+	for route in graph.get_active_routes():
 		if not route.is_reachable or route.cells.size() < 2:
 			continue
 		for segment_index in range(route.cells.size() - 1):

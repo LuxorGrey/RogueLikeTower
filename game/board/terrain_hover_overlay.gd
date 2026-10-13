@@ -2,7 +2,7 @@ class_name TerrainHoverOverlay
 extends Node2D
 
 const HEX_RADIUS: float = 52.0
-const ELEVATION_PIXEL_OFFSET: float = 18.0
+const ELEVATION_PIXEL_OFFSET: float = 28.0
 const REDRAW_INTERVAL: float = 1.0 / 30.0
 
 var _cells: Array[TerrainPieceCellData] = []

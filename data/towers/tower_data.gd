@@ -14,7 +14,7 @@ enum TargetingMode {
 	SLOWEST,
 	FASTEST,
 }
-enum AttackPattern { SINGLE_TARGET, AREA, CHAIN, CONE, SAWBLADE, ALL_IN_RANGE }
+enum AttackPattern { SINGLE_TARGET, AREA, CHAIN, CONE, SAWBLADE, ALL_IN_RANGE, FROST_SNOWFALL }
 enum VisualArchetype { BALLISTA, MORTAR, TESLA, FROST, FLAME, POISON, SHREDDER }
 
 const GRASS_FLAG: int = 1 << HexCell.TerrainType.GRASS
@@ -40,7 +40,7 @@ const ALL_DAMAGE_TAGS: int = DAMAGE_TAG_PHYSICAL | DAMAGE_TAG_FIRE | DAMAGE_TAG_
 @export_range(0.05, 100.0, 0.05) var attack_rate: float = 1.0
 @export_range(0.0, 10000.0, 1.0) var rounds_per_minute: float = 0.0
 @export_range(0.25, 20.0, 0.25) var range_hexes: float = 3.0
-@export_enum("Single target", "Area", "Chain", "Cone", "Sawblade along path", "All enemies in range")
+@export_enum("Single target", "Area", "Chain", "Cone", "Sawblade along path", "All enemies in range", "Frost snowfall")
 var attack_pattern: int = AttackPattern.SINGLE_TARGET
 @export_range(0.0, 10.0, 0.1) var attack_area_radius_hexes: float = 0.0
 @export_range(1, 12, 1) var max_targets: int = 1
@@ -69,7 +69,12 @@ var targeting_mode: int = TargetingMode.FIRST_PROGRESS
 @export_range(1.0, 2.0, 0.01) var upgrade_cost_growth_factor: float = 1.15
 @export_range(1.0, 2.0, 0.01) var targeting_xp_growth_factor: float = 1.15
 @export_range(0.0, 1000.0, 1.0) var frost_rpm_per_path_cell: float = 18.0
+## Fraction of damage actually applied that becomes Frost Slow strength.
 @export_range(0.0, 1.0, 0.05) var frost_slow_fraction: float = 0.5
+## Visual and contact tuning for Frost's falling snowflakes.
+@export_range(24.0, 512.0, 8.0) var frost_snowflake_fall_height: float = 112.0
+@export_range(40.0, 1200.0, 20.0) var frost_snowflake_fall_speed: float = 280.0
+@export_range(1.0, 64.0, 1.0) var frost_snowflake_hit_radius: float = 18.0
 @export_range(0, 15, 1) var max_layer_upgrades: int = 15
 @export_enum("Ballista", "Mortar", "Tesla Coil", "Frost Keep", "Flame Thrower", "Poison Sprayer", "Shredder")
 var visual_archetype: int = VisualArchetype.BALLISTA
@@ -100,7 +105,7 @@ func validate() -> PackedStringArray:
 		errors.append("La cadencia de la torre debe ser mayor que cero.")
 	if range_hexes <= 0.0:
 		errors.append("El alcance de la torre debe ser mayor que cero.")
-	if attack_pattern < AttackPattern.SINGLE_TARGET or attack_pattern > AttackPattern.ALL_IN_RANGE:
+	if attack_pattern < AttackPattern.SINGLE_TARGET or attack_pattern > AttackPattern.FROST_SNOWFALL:
 		errors.append("El patrón de ataque configurado no existe.")
 	if attack_pattern == AttackPattern.AREA and attack_area_radius_hexes <= 0.0:
 		errors.append("Un ataque de área requiere un radio positivo.")
@@ -114,6 +119,11 @@ func validate() -> PackedStringArray:
 		errors.append("El ángulo de cono debe estar entre 0 y 180 grados.")
 	if visual_archetype < VisualArchetype.BALLISTA or visual_archetype > VisualArchetype.SHREDDER:
 		errors.append("El arquetipo visual de la torre no existe.")
+	if attack_pattern == AttackPattern.FROST_SNOWFALL:
+		if frost_snowflake_fall_height <= 0.0 or frost_snowflake_fall_speed <= 0.0 or frost_snowflake_hit_radius <= 0.0:
+			errors.append("Frost Snowfall requiere altura, velocidad y radio de impacto positivos.")
+		if frost_slow_fraction < 0.0 or frost_slow_fraction > 1.0:
+			errors.append("La fracción de Slow de Frost Keep debe estar entre 0 y 1.")
 	if visual_icon_size <= 0.0:
 		errors.append("El tamaño visual de la torre debe ser positivo.")
 	if (
@@ -143,6 +153,8 @@ func validate() -> PackedStringArray:
 		if seen_status_ids.has(status_id):
 			errors.append("TowerData no puede aplicar dos payloads con el mismo ID de estado.")
 		seen_status_ids[status_id] = true
+	if attack_pattern == AttackPattern.FROST_SNOWFALL and not seen_status_ids.has(&"slow"):
+		errors.append("Frost Snowfall requiere un payload Slow para convertir daño en ralentización.")
 	if allowed_terrain_mask == 0:
 		errors.append("La torre debe permitir al menos un tipo de terreno construible.")
 	if targeting_mode < TargetingMode.FIRST_PROGRESS or targeting_mode > TargetingMode.FASTEST:

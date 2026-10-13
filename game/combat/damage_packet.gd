@@ -27,6 +27,15 @@ var regen_counter_duration: float = 0.0
 var status_payloads: Array[Resource] = []
 ## Optional total raw damage budgets, distributed across the effect's ticks.
 var status_total_damage_overrides: Dictionary[StringName, int] = {}
+var status_damage_multipliers: Dictionary[StringName, float] = {}
+var status_max_damage_per_second: Dictionary[StringName, float] = {}
+var status_condition_layer_damage_adds: Dictionary[StringName, float] = {}
+var status_crit_damage_conversion_fractions: Dictionary[StringName, float] = {}
+## Slow strength added per point of direct damage, used by Frost Keep's snowflakes.
+var slow_fraction_of_damage: float = 0.0
+var slow_strength_cap_add: float = 0.0
+var poison_slow_fraction: float = 0.0
+var is_status_bonus_damage: bool = false
 
 func validate() -> PackedStringArray:
 	var errors := PackedStringArray()
@@ -48,6 +57,22 @@ func validate() -> PackedStringArray:
 		errors.append("La fuerza anti-regeneración debe estar entre 0 y 1.")
 	if regen_counter_duration < 0.0:
 		errors.append("La duración anti-regeneración no puede ser negativa.")
+	if slow_fraction_of_damage < 0.0 or slow_fraction_of_damage > 1.0:
+		errors.append("La fracción de daño convertida en Slow debe estar entre 0 y 1.")
+	if slow_strength_cap_add < 0.0 or slow_strength_cap_add > 40.0 or poison_slow_fraction < 0.0 or poison_slow_fraction > 1.0:
+		errors.append("Los parámetros de conversión a Slow están fuera de rango.")
+	for status_id: StringName in status_damage_multipliers:
+		if status_id == &"" or status_damage_multipliers[status_id] < 1.0 or not is_finite(status_damage_multipliers[status_id]):
+			errors.append("Los multiplicadores periódicos deben tener ID y ser finitos desde ×1.")
+	for status_id: StringName in status_max_damage_per_second:
+		if status_id == &"" or status_max_damage_per_second[status_id] <= 0.0 or not is_finite(status_max_damage_per_second[status_id]):
+			errors.append("Los límites de estado deben tener ID y DPS positivo.")
+	for status_id: StringName in status_condition_layer_damage_adds:
+		if status_id == &"" or status_condition_layer_damage_adds[status_id] < 0.0 or not is_finite(status_condition_layer_damage_adds[status_id]):
+			errors.append("Los bonus contra estados deben tener ID y valor finito no negativo.")
+	for status_id: StringName in status_crit_damage_conversion_fractions:
+		if status_id == &"" or status_crit_damage_conversion_fractions[status_id] < 0.0 or not is_finite(status_crit_damage_conversion_fractions[status_id]):
+			errors.append("Las conversiones críticas de estados deben tener ID y fracción válida.")
 	var status_ids: Dictionary[StringName, bool] = {}
 	for status_effect: Resource in status_payloads:
 		if status_effect == null or not status_effect.has_method("validate"):

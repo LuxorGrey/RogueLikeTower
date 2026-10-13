@@ -3,7 +3,8 @@ extends Node2D
 const HEX_RADIUS: float = 52.0
 const CAMPAIGN_ROUND_COUNT: int = 45
 const DEBUG_WAVE_START_INDEX: int = CAMPAIGN_ROUND_COUNT
-const ELEVATION_PIXEL_OFFSET: float = 18.0
+const ELEVATION_PIXEL_OFFSET: float = 28.0
+const SPAWN_PORTAL_TEXTURE: Texture2D = preload("res://assets/terrain/spawn_portal.png")
 const STARTING_BOARD: Resource = preload("res://data/terrain/starting_board.tres")
 const STRAIGHT_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/straight.tres")
 const GENTLE_TURN_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/gentle_turn.tres")
@@ -61,6 +62,11 @@ var _placement_path_graph: PathGraph
 var _is_panning: bool = false
 var _camera_pan_keys: Dictionary[int, bool] = {}
 var _path_graph := PathGraph.new()
+var _removed_spawn_endpoint_keys: Dictionary[String, bool] = {}
+var _obstacles_removed_count: int = 0
+var _selected_world_object_kind: StringName = &""
+var _selected_obstacle_coord: Vector2i = Vector2i.ZERO
+var _selected_spawn_endpoint_key: String = ""
 var _path_debug_visible: bool = false
 var _placement_enabled: bool = false
 var _selected_wave: WaveData = FIRST_WAVE
@@ -181,6 +187,7 @@ var _priority_visibility_tower_instance_id: int = 0
 @onready var _base: GameBase = %GameBase
 @onready var _wave_director: WaveDirector = %WaveDirector
 @onready var _base_health_bar: Control = %BaseHealthBar
+@onready var _pause_button: Button = %PauseButton
 @onready var _base_status: Label = %BaseStatus
 @onready var _resources_row: Control = %ResourcesRow
 @onready var _gold_icon: TextureRect = %GoldIcon
@@ -196,6 +203,11 @@ var _priority_visibility_tower_instance_id: int = 0
 @onready var _tower_status: RichTextLabel = %TowerStatus
 @onready var _combat_debug: RichTextLabel = %CombatDebug
 @onready var _tower_actions: VBoxContainer = %TowerActions
+@onready var _world_object_actions: VBoxContainer = %WorldObjectActions
+@onready var _world_object_description: Label = %WorldObjectDescription
+@onready var _world_object_enemy_scroll: ScrollContainer = %WorldObjectEnemyScroll
+@onready var _world_object_enemy_list: VBoxContainer = %WorldObjectEnemyList
+@onready var _remove_world_object_button: Button = %RemoveWorldObject
 @onready var _tower_priority_buttons: Array[OptionButton] = [
 	%TowerPriority1,
 	%TowerPriority2,
@@ -220,6 +232,8 @@ var _priority_visibility_tower_instance_id: int = 0
 
 var _reward_transition_token: int = 0
 var _base_coord: Vector2i = Vector2i.ZERO
+var _applied_run_card_base_health_bonus: int = 0
+var _base_repair_rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
@@ -228,6 +242,8 @@ func _ready() -> void:
 	MetaProgression.call("set_debug_unlock_all_enabled", false)
 	var current_run_seed: int = int(MetaProgression.call("begin_run"))
 	_run_seed = current_run_seed
+	_base_repair_rng.seed = current_run_seed ^ 728219
+	_base.increase_maximum_health(int(MetaProgression.call("get_base_max_health_bonus")))
 	_chest_spawn_chance = float(MetaProgression.call("get_chest_spawn_chance"))
 	GameState.run_seed = current_run_seed
 	GameState.current_round = 1
@@ -299,6 +315,7 @@ func _ready() -> void:
 	for layer in _tower_upgrade_buttons.size():
 		_tower_upgrade_buttons[layer].pressed.connect(_on_upgrade_tower_pressed.bind(layer))
 	_demolish_tower_button.pressed.connect(_on_demolish_tower_pressed)
+	_remove_world_object_button.pressed.connect(_on_remove_world_object_pressed)
 	_build_controller.configure(
 		_board_grid,
 		_entities,
@@ -312,9 +329,18 @@ func _ready() -> void:
 	_damage_service.connect(&"damage_resolved", _on_damage_resolved)
 	var unlocked_content_ids: Array[StringName] = []
 	unlocked_content_ids.assign(MetaProgression.call("get_unlocked_content_ids"))
-	if not bool(_run_card_service.call("configure", DEMO_CARD_POOL, unlocked_content_ids, current_run_seed, true)):
+	if not bool(_run_card_service.call(
+		"configure",
+		DEMO_CARD_POOL,
+		unlocked_content_ids,
+		current_run_seed,
+		true,
+		int(MetaProgression.call("get_card_offer_bonus"))
+	)):
 		push_error("No se pudo configurar el pool de cartas M11: %s" % _run_card_service.get("last_error"))
+	_run_card_service.connect(&"modifiers_changed", _on_run_card_modifiers_changed)
 	_run_economy.call("set_run_card_service", _run_card_service)
+	_sync_run_card_side_effects()
 	var campaign_errors: PackedStringArray = DEMO_CAMPAIGN.call("validate")
 	if not campaign_errors.is_empty():
 		_campaign_is_valid = false
@@ -337,6 +363,7 @@ func _ready() -> void:
 	for cell_variant in starting_cells.values():
 		TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_cell_contents(cell_variant as HexCell, _run_seed, _chest_spawn_chance)
 	_path_graph.rebuild(_board_grid.cells, _base_coord, int(STARTING_BOARD.get("minimum_spawn_route_cells")))
+	_apply_removed_spawn_endpoints(_path_graph)
 	if not _path_graph.is_valid:
 		push_error("Grafo PATH inicial inválido: %s" % "; ".join(_path_graph.errors))
 
@@ -394,6 +421,16 @@ func _process(_delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		_track_camera_pan_key(event as InputEventKey)
+	if _is_terrain_selection_locked():
+		if event is InputEventKey:
+			var restricted_key := event as InputEventKey
+			if restricted_key.pressed and not restricted_key.echo:
+				if restricted_key.keycode in [KEY_H, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0]:
+					get_viewport().set_input_as_handled()
+					return
+				if restricted_key.ctrl_pressed and restricted_key.keycode in [KEY_K, KEY_D]:
+					get_viewport().set_input_as_handled()
+					return
 	if event is InputEventKey:
 		var debug_key := event as InputEventKey
 		if debug_key.pressed and not debug_key.echo and debug_key.ctrl_pressed and debug_key.keycode == KEY_K:
@@ -488,6 +525,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		if key_event == null or not key_event.pressed or key_event.echo:
 			return
 		if key_event.ctrl_pressed and key_event.keycode == KEY_D:
+			if _is_terrain_selection_locked():
+				get_viewport().set_input_as_handled()
+				return
 			_toggle_path_debug()
 			get_viewport().set_input_as_handled()
 			return
@@ -502,6 +542,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				_reset_camera()
 				get_viewport().set_input_as_handled()
 			KEY_F3:
+				if _is_terrain_selection_locked():
+					get_viewport().set_input_as_handled()
+					return
 				_toggle_terrain_panel()
 				get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton:
@@ -986,6 +1029,7 @@ func _build_placement_preview_graph() -> PathGraph:
 		_base_coord,
 		int(STARTING_BOARD.get("minimum_spawn_route_cells"))
 	)
+	_apply_removed_spawn_endpoints(candidate_graph)
 	return candidate_graph
 
 func _build_candidate_board(
@@ -1032,6 +1076,7 @@ func _find_path_extension_option(
 		pieces_to_check.append(piece_filter)
 	else:
 		pieces_to_check.append_array(_pieces)
+		_shuffle_piece_candidates(pieces_to_check)
 	var minimum_route_cells: int = int(STARTING_BOARD.get("minimum_spawn_route_cells"))
 	for source_route in source_graph.routes:
 		if source_route == null or not source_route.is_reachable or source_route.spawn_endpoint == null:
@@ -1042,7 +1087,9 @@ func _find_path_extension_option(
 		for piece in pieces_to_check:
 			if piece == null:
 				continue
-			for rotation in range(6):
+			var rotations: Array[int] = [0, 1, 2, 3, 4, 5]
+			_shuffle_int_candidates(rotations)
+			for rotation in rotations:
 				for rotated_cell in piece.rotated_cells(rotation):
 					if rotated_cell.terrain_type != HexCell.TerrainType.PATH:
 						continue
@@ -1065,10 +1112,11 @@ func _find_path_extension_option(
 					)
 					var candidate_graph := PathGraph.new()
 					candidate_graph.rebuild(candidate_board, _base_coord, minimum_route_cells)
+					_apply_removed_spawn_endpoints(candidate_graph)
 					if not candidate_graph.is_valid:
 						continue
 					var extension_route: PathRoute
-					for candidate_route in candidate_graph.routes:
+					for candidate_route in candidate_graph.get_active_routes():
 						if candidate_route == null or not candidate_route.is_reachable or candidate_route.spawn_endpoint == null:
 							continue
 						var candidate_endpoint: PathEndpoint = candidate_route.spawn_endpoint
@@ -1100,6 +1148,20 @@ func _find_path_extension_option(
 						"route_length": extension_route.cells.size(),
 					}
 	return option
+
+func _shuffle_piece_candidates(values: Array[TerrainPieceData]) -> void:
+	for index in range(values.size() - 1, 0, -1):
+		var swap_index: int = _terrain_rng.randi_range(0, index)
+		var piece: TerrainPieceData = values[index]
+		values[index] = values[swap_index]
+		values[swap_index] = piece
+
+func _shuffle_int_candidates(values: Array[int]) -> void:
+	for index in range(values.size() - 1, 0, -1):
+		var swap_index: int = _terrain_rng.randi_range(0, index)
+		var value: int = values[index]
+		values[index] = values[swap_index]
+		values[swap_index] = value
 
 func _piece_cell_offers_path_edge(cell: TerrainPieceCellData, direction_index: int) -> bool:
 	return (
@@ -1145,17 +1207,19 @@ func _get_spawn_endpoint_keys(graph: PathGraph) -> Dictionary:
 	var keys: Dictionary = {}
 	if graph == null:
 		return keys
-	for route in graph.routes:
-		if route == null or not route.is_reachable or route.spawn_endpoint == null:
-			continue
+	for route in graph.get_active_routes():
 		var endpoint: PathEndpoint = route.spawn_endpoint
 		keys[_get_spawn_endpoint_key(endpoint)] = true
 	return keys
 
+func _apply_removed_spawn_endpoints(graph: PathGraph) -> void:
+	if graph == null:
+		return
+	for endpoint_key in _removed_spawn_endpoint_keys:
+		graph.set_spawn_endpoint_removed(endpoint_key, true)
+
 func _get_spawn_endpoint_key(endpoint: PathEndpoint) -> String:
-	if endpoint == null:
-		return ""
-	return "%d,%d,%d" % [endpoint.cell_coord.x, endpoint.cell_coord.y, endpoint.edge_direction]
+	return PathGraph.get_spawn_endpoint_key(endpoint)
 
 func _confirm_placement() -> void:
 	if (
@@ -1167,6 +1231,10 @@ func _confirm_placement() -> void:
 		or not _placement_path_graph.is_valid
 	):
 		return
+	var confirmed_campaign_expansion: bool = (
+		_awaiting_campaign_expansion
+		and RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION
+	)
 	var cells := TerrainPlacementValidator.instantiate_cells(
 		_selected_piece,
 		_anchor_coord,
@@ -1174,7 +1242,11 @@ func _confirm_placement() -> void:
 		_next_piece_instance_id
 	)
 	for cell_variant in cells.values():
-		TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_cell_contents(cell_variant as HexCell, _run_seed, _chest_spawn_chance)
+		var placed_cell: HexCell = cell_variant as HexCell
+		if confirmed_campaign_expansion:
+			TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_visual_variant(placed_cell, _run_seed)
+		else:
+			TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_cell_contents(placed_cell, _run_seed, _chest_spawn_chance)
 	var candidate_board: Dictionary[Vector2i, HexCell] = {}
 	for coord in _board_grid.cells:
 		candidate_board[coord] = _board_grid.cells[coord]
@@ -1191,13 +1263,10 @@ func _confirm_placement() -> void:
 		cells_to_add[hole_coord] = filled_cell
 	var candidate_graph := PathGraph.new()
 	candidate_graph.rebuild(candidate_board, _base_coord, int(STARTING_BOARD.get("minimum_spawn_route_cells")))
+	_apply_removed_spawn_endpoints(candidate_graph)
 	if not candidate_graph.is_valid:
 		_placement_status.text = "No se confirma: red PATH inválida · %s" % "; ".join(candidate_graph.errors)
 		return
-	var confirmed_campaign_expansion: bool = (
-		_awaiting_campaign_expansion
-		and RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION
-	)
 	if confirmed_campaign_expansion:
 		var next_path_option: Dictionary = _find_path_extension_option(
 			candidate_board,
@@ -1281,9 +1350,19 @@ func _cancel_active_tool() -> void:
 func _handle_board_click() -> void:
 	if RunManager.phase == RunManager.Phase.CARD_OFFER:
 		return
+	if _is_terrain_selection_locked():
+		if _placement_enabled and _selected_expansion_piece != null:
+			_confirm_placement()
+		return
+	if not _placement_enabled and _has_hovered_cell:
+		var object_cell: HexCell = _board_grid.cells.get(_hovered_coord) as HexCell
+		if object_cell != null and object_cell.obstacle_type != HexCell.ObstacleType.NONE:
+			_select_obstacle(_hovered_coord)
+			return
 	if not _placement_enabled and _has_hovered_cell:
 		var hovered_cell: HexCell = _board_grid.cells.get(_hovered_coord) as HexCell
 		if hovered_cell != null and hovered_cell.chest_available:
+			_clear_selected_world_object()
 			_open_treasure_chest(hovered_cell)
 			return
 	if _build_controller.is_build_mode():
@@ -1308,11 +1387,15 @@ func _handle_board_click() -> void:
 	if _has_hovered_cell:
 		var tower: Tower = _build_controller.get_tower_at(_hovered_coord)
 		if tower != null:
+			_clear_selected_world_object()
 			if _selected_expansion_piece == null:
 				_cancel_placement()
 			_build_controller.select_tower_at(_hovered_coord)
 			_refresh_tower_controls()
 			return
+	if _selected_world_object_kind != &"":
+		_clear_selected_world_object()
+		_refresh_tower_controls()
 	if _build_controller.selected_tower != null:
 		_build_controller.clear_selection()
 		_refresh_tower_controls()
@@ -1338,6 +1421,167 @@ func _open_treasure_chest(cell: HexCell) -> void:
 	_piece_preview.queue_redraw()
 	_refresh_tower_controls()
 
+func _select_obstacle(coord: Vector2i) -> void:
+	var cell: HexCell = _board_grid.cells.get(coord) as HexCell
+	if cell == null or cell.obstacle_type == HexCell.ObstacleType.NONE:
+		return
+	_selected_world_object_kind = &"obstacle"
+	_selected_obstacle_coord = coord
+	_selected_spawn_endpoint_key = ""
+	if _build_controller.selected_tower != null:
+		_build_controller.clear_selection()
+	_refresh_tower_controls()
+
+func _on_spawn_portal_selected(portal_node: Node2D) -> void:
+	var portal := portal_node as SpawnPortal
+	if portal == null or not is_instance_valid(portal) or _is_terrain_selection_locked():
+		return
+	_selected_world_object_kind = &"portal"
+	_selected_spawn_endpoint_key = portal.get_endpoint_key()
+	_selected_obstacle_coord = Vector2i.ZERO
+	if _build_controller.selected_tower != null:
+		_build_controller.clear_selection()
+	_populate_spawn_enemy_list(portal.get_wave_preview_entries())
+	_refresh_tower_controls()
+
+func _clear_selected_world_object() -> void:
+	_selected_world_object_kind = &""
+	_selected_obstacle_coord = Vector2i.ZERO
+	_selected_spawn_endpoint_key = ""
+	_populate_spawn_enemy_list([])
+
+func _has_selected_world_object() -> bool:
+	match _selected_world_object_kind:
+		&"obstacle":
+			var cell: HexCell = _board_grid.cells.get(_selected_obstacle_coord) as HexCell
+			return cell != null and cell.obstacle_type != HexCell.ObstacleType.NONE
+		&"portal":
+			return (
+				not _selected_spawn_endpoint_key.is_empty()
+				and not _removed_spawn_endpoint_keys.has(_selected_spawn_endpoint_key)
+				and _path_graph.get_active_spawn_count() > 0
+				and _get_spawn_portal_by_key(_selected_spawn_endpoint_key) != null
+			)
+	return false
+
+func _get_spawn_portal_by_key(endpoint_key: String) -> SpawnPortal:
+	for portal in _piece_preview.get_spawn_portals():
+		if portal.get_endpoint_key() == endpoint_key:
+			return portal
+	return null
+
+func _next_obstacle_removal_cost() -> int:
+	var next_removal_number: int = _obstacles_removed_count + 1
+	return 25 * next_removal_number * next_removal_number
+
+func _world_object_removal_cost() -> int:
+	var obstacle_cost: int = _next_obstacle_removal_cost()
+	return obstacle_cost * 2 if _selected_world_object_kind == &"portal" else obstacle_cost
+
+func _refresh_world_object_controls() -> void:
+	var has_world_object: bool = _has_selected_world_object()
+	_world_object_actions.visible = has_world_object
+	if not has_world_object:
+		return
+	var removal_cost: int = _world_object_removal_cost()
+	var can_remove_now: bool = RunManager.phase == RunManager.Phase.ROUND_PREP and not _is_terrain_selection_locked()
+	var can_afford: bool = bool(_run_economy.call("can_afford_gold", removal_cost))
+	var removal_label: String = "Quitar obstáculo" if _selected_world_object_kind == &"obstacle" else "Quitar portal"
+	_remove_world_object_button.text = "%s · %d Gold" % [removal_label, removal_cost]
+	_remove_world_object_button.disabled = not can_remove_now or not can_afford
+	if _selected_world_object_kind == &"obstacle":
+		var cell: HexCell = _board_grid.cells.get(_selected_obstacle_coord) as HexCell
+		var obstacle_name: String = TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_display_name(cell.obstacle_type)
+		_world_object_description.text = "%s · %s · altura h%d\nRetirada n.º %d · coste progresivo." % [
+			obstacle_name,
+			_terrain_display_name(cell.terrain_type),
+			cell.elevation,
+			_obstacles_removed_count + 1,
+		]
+		_world_object_enemy_scroll.hide()
+		_remove_world_object_button.tooltip_text = "Cada obstáculo retirado sube el precio: 25, 100, 225, 400…"
+	else:
+		var portal: SpawnPortal = _get_spawn_portal_by_key(_selected_spawn_endpoint_key)
+		var wave_number: int = portal.get_wave_preview_round_number() if portal != null else _campaign_round_number
+		var enemy_count: int = portal.get_wave_preview_enemy_count() if portal != null else 0
+		_world_object_description.text = "Ronda %02d · %d enemigos asignados a esta salida · %d spawns activos." % [
+			wave_number,
+			enemy_count,
+			_path_graph.get_active_spawn_count(),
+		]
+		_world_object_enemy_scroll.show()
+		var can_remove_portal: bool = _path_graph.get_active_spawn_count() > 3
+		_remove_world_object_button.disabled = not can_remove_now or not can_afford or not can_remove_portal
+		if not can_remove_portal:
+			_remove_world_object_button.tooltip_text = "Deben quedar al menos tres portales activos."
+		elif not can_afford:
+			_remove_world_object_button.tooltip_text = "No hay Gold suficiente."
+		else:
+			_remove_world_object_button.tooltip_text = "El portal cuesta el doble del precio actual de retirada de obstáculos."
+	if not can_remove_now:
+		_remove_world_object_button.tooltip_text = "Puedes retirar obstáculos y portales durante la preparación de ronda."
+	elif not can_afford:
+		_remove_world_object_button.tooltip_text = "No hay Gold suficiente."
+
+func _populate_spawn_enemy_list(entries: Array[Dictionary]) -> void:
+	for child in _world_object_enemy_list.get_children():
+		_world_object_enemy_list.remove_child(child)
+		child.queue_free()
+	for entry in entries:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		row.custom_minimum_size = Vector2(0.0, 34.0)
+		var portrait := TextureRect.new()
+		portrait.custom_minimum_size = Vector2(30.0, 30.0)
+		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		portrait.texture = entry.get("texture") as Texture2D
+		row.add_child(portrait)
+		var enemy_label := Label.new()
+		enemy_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		enemy_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		enemy_label.add_theme_font_size_override("font_size", 13)
+		enemy_label.text = "%s  ×%d" % [
+			String(entry.get("display_name", "Enemigo")),
+			int(entry.get("count", 0)),
+		]
+		row.add_child(enemy_label)
+		_world_object_enemy_list.add_child(row)
+	if entries.is_empty():
+		var empty_label := Label.new()
+		empty_label.text = "Sin enemigos asignados."
+		empty_label.add_theme_font_size_override("font_size", 12)
+		_world_object_enemy_list.add_child(empty_label)
+
+func _on_remove_world_object_pressed() -> void:
+	if not _has_selected_world_object() or RunManager.phase != RunManager.Phase.ROUND_PREP:
+		return
+	if _selected_world_object_kind == &"portal" and _path_graph.get_active_spawn_count() <= 3:
+		_refresh_tower_controls()
+		return
+	var removal_cost: int = _world_object_removal_cost()
+	if not bool(_run_economy.call("try_spend_gold", removal_cost, &"remove_terrain_object")):
+		_refresh_tower_controls()
+		return
+	if _selected_world_object_kind == &"obstacle":
+		var cell: HexCell = _board_grid.cells.get(_selected_obstacle_coord) as HexCell
+		if cell == null or cell.obstacle_type == HexCell.ObstacleType.NONE:
+			return
+		cell.obstacle_type = HexCell.ObstacleType.NONE
+		_obstacles_removed_count += 1
+		_clear_selected_world_object()
+		_piece_preview.set_board_cells(_board_grid.cells)
+		_piece_preview.queue_redraw()
+	else:
+		_removed_spawn_endpoint_keys[_selected_spawn_endpoint_key] = true
+		_path_graph.set_spawn_endpoint_removed(_selected_spawn_endpoint_key, true)
+		_clear_selected_world_object()
+		_piece_preview.set_path_graph(_path_graph)
+		_refresh_spawn_portal_previews()
+	_refresh_path_status()
+	_refresh_tower_controls()
+
 func _select_tower_and_build(index: int) -> void:
 	if index < 0 or index >= TOWER_PROFILES.size():
 		return
@@ -1347,7 +1591,7 @@ func _select_debug_tower_and_build(tower_data: TowerData) -> void:
 	_select_tower_profile_and_build(tower_data)
 
 func _select_tower_profile_and_build(chosen_tower: TowerData) -> void:
-	if chosen_tower == null:
+	if chosen_tower == null or _is_terrain_selection_locked():
 		return
 	if not bool(MetaProgression.call("is_tower_unlocked", chosen_tower)):
 		_build_status.text = "Torre bloqueada · desbloquéala en la tienda al terminar la run."
@@ -1699,8 +1943,10 @@ func _refresh_tower_controls() -> void:
 	var build_mode: bool = _build_controller.is_build_mode()
 	var selected: Tower = _build_controller.selected_tower
 	var has_selected_tower: bool = selected != null and is_instance_valid(selected)
+	var has_selected_world_object: bool = _has_selected_world_object()
 	var waiting_for_terrain_card: bool = _awaiting_campaign_expansion and _selected_expansion_piece == null
-	var can_build: bool = _build_controller.can_build_in_current_phase() and not waiting_for_terrain_card
+	var terrain_selection_locked: bool = _is_terrain_selection_locked()
+	var can_build: bool = _build_controller.can_build_in_current_phase() and not waiting_for_terrain_card and not terrain_selection_locked
 	var is_run_ended: bool = RunManager.phase == RunManager.Phase.RUN_DEFEAT or RunManager.phase == RunManager.Phase.RUN_VICTORY
 	var selected_card_index: int = -1
 	for index in _tower_shortcut_buttons.size():
@@ -1742,19 +1988,33 @@ func _refresh_tower_controls() -> void:
 		if is_active_card:
 			selected_card_index = index
 	_update_tower_card_pulse(selected_card_index)
+	_tower_toolbar.visible = _hud.visible and not terrain_selection_locked
 	_refresh_wave_option_states()
 	_wave_selector.disabled = build_mode or not _can_start_wave() or is_run_ended
-	_tower_actions.visible = has_selected_tower and not build_mode
+	_tower_actions.visible = has_selected_tower and not build_mode and not has_selected_world_object
+	_world_object_actions.visible = has_selected_world_object
 	_tower_info_panel.visible = (
 		_hud.visible
+		and not terrain_selection_locked
 		and not _terrain_panel.visible
-		and (build_mode or has_selected_tower)
+		and (build_mode or has_selected_tower or has_selected_world_object)
 	)
-	_build_status.visible = (_build_status.get_parsed_text().strip_edges() != "") and (build_mode or has_selected_tower)
-	_tower_portrait.visible = build_mode or has_selected_tower
+	_build_status.visible = (_build_status.get_parsed_text().strip_edges() != "") and (build_mode or has_selected_tower) and not has_selected_world_object
+	_tower_portrait.visible = build_mode or has_selected_tower or has_selected_world_object
 	_tower_portrait.texture = null
-	_tower_level_label.visible = has_selected_tower and not build_mode
-	if build_mode:
+	_tower_level_label.visible = has_selected_tower and not build_mode and not has_selected_world_object
+	_tower_status.visible = not has_selected_world_object
+	if has_selected_world_object:
+		if _selected_world_object_kind == &"obstacle":
+			var selected_cell: HexCell = _board_grid.cells.get(_selected_obstacle_coord) as HexCell
+			_tower_title.text = TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_display_name(selected_cell.obstacle_type)
+			_tower_portrait.texture = TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_texture(selected_cell.obstacle_type)
+		else:
+			_tower_title.text = "Portal de spawn"
+			_tower_portrait.texture = SPAWN_PORTAL_TEXTURE
+		_tower_level_label.text = ""
+		_refresh_world_object_controls()
+	elif build_mode:
 		_tower_title.text = _selected_tower_data.display_name
 		_tower_portrait.texture = _icon_catalog.call("get_tower_icon", StringName(_selected_tower_data.id)) as Texture2D
 	elif has_selected_tower:
@@ -1815,7 +2075,9 @@ func _refresh_tower_controls() -> void:
 			]
 	_demolish_tower_button.disabled = build_mode or not has_selected_tower or not _build_controller.can_build_in_current_phase()
 	_demolish_tower_button.tooltip_text = "Retira esta torre sin devolución y reduce el precio siguiente de su tipo."
-	if build_mode:
+	if has_selected_world_object:
+		pass
+	elif build_mode:
 		_set_rich_text_with_currency_icons(_tower_status, _build_tower_description(_selected_tower_data))
 	elif not has_selected_tower:
 		_tower_status.text = "Torre: ninguna · pulsa 1–7 para construir"
@@ -1870,8 +2132,8 @@ func _format_selected_tower_summary(tower: Tower) -> String:
 	]
 
 func _tower_attack_description(tower_data: TowerData) -> String:
-	if tower_data.visual_archetype == TowerData.VisualArchetype.FROST:
-		return "enemigos en un cuadrado hasta su alcance"
+	if tower_data.attack_pattern == TowerData.AttackPattern.FROST_SNOWFALL:
+		return "copos sobre los Path del cuadrado; solo dañan al impactar"
 	match tower_data.attack_pattern:
 		TowerData.AttackPattern.SINGLE_TARGET:
 			return "objetivo único"
@@ -1903,7 +2165,12 @@ func _hp_layer_name(layer: int) -> String:
 			return "Layer"
 
 func _start_selected_wave() -> void:
-	if RunManager.phase == RunManager.Phase.CARD_OFFER or not _path_graph.is_valid or not _can_start_selected_wave():
+	if (
+		_is_terrain_selection_locked()
+		or RunManager.phase == RunManager.Phase.CARD_OFFER
+		or not _path_graph.is_valid
+		or not _can_start_selected_wave()
+	):
 		return
 	if _selected_wave_is_debug:
 		_debug_return_phase = RunManager.phase
@@ -1914,6 +2181,8 @@ func _start_selected_wave() -> void:
 		return
 	_terrain_card_panel.hide()
 	_upgrade_card_panel.hide()
+	get_tree().paused = false
+	_pause_button.call("sync_pause_state")
 	if _build_controller.is_build_mode():
 		_build_controller.cancel_build_mode()
 	_cancel_placement()
@@ -1956,6 +2225,7 @@ func _on_wave_completed(round_number: int) -> void:
 	var was_debug_wave: bool = _selected_wave_is_debug
 	if not was_debug_wave:
 		_round_progress.call("set_progress", round_number, round_number)
+		_attempt_base_repair_for_round()
 	var return_phase: int = _debug_return_phase
 	var round_reward: int = completed_wave.round_reward if completed_wave != null and not was_debug_wave else 0
 	_set_rich_text_with_currency_icons(_wave_status, "%s completada · ronda %d · +%d Gold · procesando recompensa…" % [
@@ -2029,7 +2299,14 @@ func _on_population_changed(pending_count: int, alive_count: int) -> void:
 		]
 
 func _can_start_wave() -> bool:
-	return RunManager.phase == RunManager.Phase.ROUND_PREP or RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION
+	return RunManager.phase == RunManager.Phase.ROUND_PREP
+
+func _is_terrain_selection_locked() -> bool:
+	return (
+		_awaiting_campaign_expansion
+		or RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION
+		or RunManager.phase == RunManager.Phase.CARD_OFFER
+	)
 
 func _can_start_selected_wave() -> bool:
 	if _selected_wave_is_debug:
@@ -2084,9 +2361,8 @@ func _refresh_spawn_portal_previews() -> void:
 		preview_graph = _placement_path_graph
 	var reachable_routes: Array[PathRoute] = []
 	if preview_graph != null and preview_graph.is_valid:
-		for route in preview_graph.routes:
-			if route != null and route.is_reachable and route.spawn_endpoint != null:
-				reachable_routes.append(route)
+		for route in preview_graph.get_active_routes():
+			reachable_routes.append(route)
 	var entries_by_endpoint: Dictionary = {}
 	var campaign_spawn_index: int = 0
 	if preview_wave != null and not reachable_routes.is_empty():
@@ -2129,6 +2405,8 @@ func _refresh_spawn_portal_previews() -> void:
 	for portal in portals:
 		if not portal.hover_changed.is_connected(_on_spawn_portal_hover_changed):
 			portal.hover_changed.connect(_on_spawn_portal_hover_changed)
+		if not portal.selected.is_connected(_on_spawn_portal_selected):
+			portal.selected.connect(_on_spawn_portal_selected)
 		var portal_entries: Array[Dictionary] = []
 		var raw_entries: Variant = entries_by_endpoint.get(portal.get_endpoint_key(), [])
 		if raw_entries is Array:
@@ -2136,8 +2414,12 @@ func _refresh_spawn_portal_previews() -> void:
 				if entry_variant is Dictionary:
 					portal_entries.append(entry_variant as Dictionary)
 		portal.set_wave_preview(portal_entries, preview_wave.round_number if preview_wave != null else 0)
+		if _selected_world_object_kind == &"portal" and portal.get_endpoint_key() == _selected_spawn_endpoint_key:
+			_populate_spawn_enemy_list(portal.get_wave_preview_entries())
 	if _hovered_spawn_portal != null and not is_instance_valid(_hovered_spawn_portal):
 		_hide_portal_wave_tooltip()
+	if _selected_world_object_kind == &"portal":
+		_refresh_world_object_controls()
 
 func _on_spawn_portal_hover_changed(portal_node: Node2D, is_hovered: bool) -> void:
 	var portal := portal_node as SpawnPortal
@@ -2197,9 +2479,17 @@ func _set_campaign_wave_name() -> void:
 
 func _on_reward_earned(amount: int, reason: int) -> void:
 	var economy_reason: StringName = &"kill_reward"
+	var adjusted_amount: int = amount
 	if reason == WaveDirector.RewardReason.ROUND_CLEAR:
 		economy_reason = &"round_reward"
-	var accepted: int = int(_run_economy.call("add_gold", amount, economy_reason))
+	else:
+		adjusted_amount += int(_run_card_service.call("get_gold_per_kill_bonus"))
+		adjusted_amount += int(MetaProgression.call("get_gold_per_kill_bonus"))
+		var mana_steal_fraction: float = float(_run_card_service.call("get_mana_on_kill_max_percent_bonus"))
+		if mana_steal_fraction > 0.0:
+			var mana_reward: float = float(_run_economy.call("get_maximum_mana")) * mana_steal_fraction
+			_run_economy.call("add_mana", mana_reward, &"mana_on_kill")
+	var accepted: int = int(_run_economy.call("add_gold", adjusted_amount, economy_reason))
 	if accepted <= 0:
 		return
 	if reason == WaveDirector.RewardReason.ENEMY_KILL:
@@ -2310,7 +2600,7 @@ func _refresh_combat_debug() -> void:
 		_set_rich_text_with_currency_icons(_combat_debug, no_target_text)
 		_tower_status.tooltip_text = no_target_text
 		return
-	var estimate: Variant = _damage_service.call("preview_damage", target, tower.create_damage_packet(false))
+	var estimate: Variant = _damage_service.call("preview_damage", target, tower.create_damage_packet(null, false))
 	var status_summaries: PackedStringArray = target.get_active_status_summaries()
 	var status_text: String = "Estados: —" if status_summaries.is_empty() else "Estados: %s" % " · ".join(status_summaries)
 	var tower_data: TowerData = tower.get_tower_data()
@@ -2360,6 +2650,32 @@ func _on_base_health_changed(current_health: int, maximum_health: int) -> void:
 	_base_status.text = "%d / %d" % [current_health, maximum_health]
 	if current_health <= 0:
 		_base_status.text = "DESTRUIDA  ·  0 / %d" % maximum_health
+
+func _on_run_card_modifiers_changed() -> void:
+	_sync_run_card_side_effects()
+	_refresh_tower_controls()
+
+func _sync_run_card_side_effects() -> void:
+	if _run_card_service == null or not is_instance_valid(_run_card_service):
+		return
+	var desired_health_bonus: int = int(_run_card_service.call("get_base_max_health_bonus"))
+	var health_bonus_delta: int = desired_health_bonus - _applied_run_card_base_health_bonus
+	if health_bonus_delta > 0 and _base != null and is_instance_valid(_base):
+		_base.increase_maximum_health(health_bonus_delta)
+	_applied_run_card_base_health_bonus = desired_health_bonus
+	_wave_director.call("set_enemy_base_damage_bonus", int(_run_card_service.call("get_enemy_base_damage_bonus")))
+
+func _attempt_base_repair_for_round() -> void:
+	var maximum_chance: float = float(MetaProgression.call("get_base_repair_max_chance"))
+	if maximum_chance <= 0.0 or _base == null or not is_instance_valid(_base):
+		return
+	var maximum_health: int = _base.get_maximum_health()
+	var missing_health: int = maximum_health - _base.get_current_health()
+	if missing_health <= 0 or maximum_health <= 0:
+		return
+	var chance: float = maximum_chance * float(missing_health) / float(maximum_health)
+	if _base_repair_rng.randf() < chance:
+		_base.heal(1)
 
 func _show_run_end(outcome: StringName, reached_round: int) -> void:
 	if _meta_shop_panel == null:
@@ -2427,7 +2743,12 @@ func _piece_terrain_counts(piece: TerrainPieceData) -> String:
 	return " ".join(parts)
 
 func _present_terrain_card_offer() -> void:
+	if _build_controller.is_build_mode():
+		_build_controller.cancel_build_mode()
+	_build_controller.clear_selection()
+	_refresh_build_preview()
 	if _offered_terrain_pieces.is_empty():
+		_offered_path_extension.clear()
 		_offered_path_extension = _find_path_extension_option(
 			_board_grid.cells,
 			_path_graph,
@@ -2439,19 +2760,42 @@ func _present_terrain_card_offer() -> void:
 			_placement_status.text = "Error: no se encontró una pieza colocable que permita alargar el camino."
 			push_error(_placement_status.text)
 			return
-		var extension_piece: TerrainPieceData = _offered_path_extension.get("piece") as TerrainPieceData
+		var extension_source: TerrainPieceData = _offered_path_extension.get("piece") as TerrainPieceData
 		var candidates: Array[TerrainPieceData] = []
 		for piece in _pieces:
-			if piece != null and piece != extension_piece:
-				candidates.append(piece)
+			if piece == null or piece.id == extension_source.id:
+				continue
+			# Cuando la pieza de continuidad hace una curva o bifurca, esta oferta
+			# no añade también una recta como alternativa automática.
+			if extension_source.id != STRAIGHT_PIECE.id and piece.id == STRAIGHT_PIECE.id:
+				continue
+			candidates.append(piece)
 		for index in range(candidates.size() - 1, 0, -1):
 			var swap_index: int = _terrain_rng.randi_range(0, index)
 			var piece_to_swap: TerrainPieceData = candidates[index]
 			candidates[index] = candidates[swap_index]
 			candidates[swap_index] = piece_to_swap
-		_offered_terrain_pieces.append(extension_piece)
+		var selected_sources: Array[TerrainPieceData] = [extension_source]
 		for index in range(mini(_terrain_card_buttons.size() - 1, candidates.size())):
-			_offered_terrain_pieces.append(candidates[index])
+			selected_sources.append(candidates[index])
+		for index in range(selected_sources.size() - 1, 0, -1):
+			var swap_index: int = _terrain_rng.randi_range(0, index)
+			var piece_to_swap: TerrainPieceData = selected_sources[index]
+			selected_sources[index] = selected_sources[swap_index]
+			selected_sources[swap_index] = piece_to_swap
+		for index in selected_sources.size():
+			var offer_piece: TerrainPieceData = TERRAIN_VISUAL_CATALOG_SCRIPT.create_piece_offer(
+				selected_sources[index],
+				_run_seed,
+				_pending_expansion_round * 10 + index,
+				_chest_spawn_chance
+			) as TerrainPieceData
+			if offer_piece == null:
+				push_error("No se pudo preparar la pieza de terreno de la oferta.")
+				return
+			_offered_terrain_pieces.append(offer_piece)
+			if selected_sources[index].id == extension_source.id:
+				_offered_path_extension["piece"] = offer_piece
 	if _offered_terrain_pieces.size() != _terrain_card_buttons.size():
 		push_error("La expansión necesita tres piezas de terreno diferentes para ofrecer.")
 		return
@@ -2465,16 +2809,16 @@ func _present_terrain_card_offer() -> void:
 		_terrain_card_titles[index].text = piece.display_name
 		var is_path_extension: bool = piece == _offered_path_extension.get("piece")
 		_terrain_card_counts[index].text = (
-			"ALARGA CAMINO · %s" % _piece_terrain_counts(piece)
+			"EXTIENDE RUTA · %s" % _piece_terrain_counts(piece)
 			if is_path_extension
 			else _piece_terrain_counts(piece)
 		)
 		if is_path_extension:
 			_terrain_card_counts[index].add_theme_color_override("font_color", Color("#8de7aa"))
-			_terrain_card_buttons[index].tooltip_text = "Colocación comprobada: alarga una ruta y conserva una opción legal para la siguiente expansión."
+			_terrain_card_buttons[index].tooltip_text = "Pieza de continuidad verificada. Su colocación sugerida puede extender una ruta; la geometría varía entre rectas, curvas y bifurcaciones."
 		else:
 			_terrain_card_counts[index].remove_theme_color_override("font_color")
-			_terrain_card_buttons[index].tooltip_text = "La posición solo se podrá confirmar si deja una opción legal para alargar el camino."
+			_terrain_card_buttons[index].tooltip_text = "La posición solo se confirma si conserva una continuación legal del camino."
 		_terrain_card_previews[index].call("set_piece", piece)
 	_set_terrain_card_layout(false)
 	_terrain_card_panel.show()
@@ -2506,6 +2850,7 @@ func _present_upgrade_card_offer(round_number: int, cards: Array[Resource]) -> v
 		return
 	if _build_controller.is_build_mode():
 		_build_controller.cancel_build_mode()
+	_build_controller.clear_selection()
 	_upgrade_card_heading.text = "MEJORAS DE RUN · RONDA %02d" % round_number
 	for index in _upgrade_card_buttons.size():
 		var card: Resource = cards[index]
@@ -2601,7 +2946,8 @@ func _style_upgrade_card_button(button: Button, rarity: int) -> void:
 
 func _configure_upgrade_card_panel() -> void:
 	_upgrade_card_heading = _upgrade_card_panel.heading_label
-	_upgrade_card_panel.set_card_count(maxi(int(DEMO_CARD_POOL.get("offer_size")), 1))
+	var permanent_offer_bonus: int = int(MetaProgression.call("get_card_offer_bonus"))
+	_upgrade_card_panel.set_card_count(clampi(int(DEMO_CARD_POOL.get("offer_size")) + permanent_offer_bonus, 1, 6))
 	_upgrade_card_buttons.clear()
 	_upgrade_card_titles.clear()
 	_upgrade_card_descriptions.clear()
@@ -2669,14 +3015,14 @@ func _on_terrain_card_selected(index: int) -> void:
 			_anchor_coord = suggested_anchor
 		_rotation_steps = int(_offered_path_extension.get("rotation_steps", 0))
 	_placement_enabled = true
-	_piece_selector.select(_pieces.find(_selected_piece) + 1)
+	_piece_selector.select(_find_catalog_piece_index(_selected_piece) + 1)
 	_piece_status.text = _piece_summary(_selected_piece)
 	for card_index in _terrain_card_buttons.size():
 		_terrain_card_buttons[card_index].set_pressed_no_signal(card_index == index)
 	_set_terrain_card_layout(true)
 	_terrain_card_panel.show()
 	var placement_prompt: String = (
-		"posición sugerida: alarga la ruta"
+		"posición sugerida: extiende una ruta"
 		if selected_path_extension
 		else "coloca en una posición válida"
 	)
@@ -2689,6 +3035,14 @@ func _on_terrain_card_selected(index: int) -> void:
 	_refresh_placement()
 	_refresh_tower_controls()
 	_sync_selection_backdrop()
+
+func _find_catalog_piece_index(piece: TerrainPieceData) -> int:
+	if piece == null:
+		return -1
+	for index in _pieces.size():
+		if _pieces[index].id == piece.id:
+			return index
+	return -1
 
 func _return_to_terrain_card_offer() -> void:
 	_selected_expansion_piece = null
@@ -2795,7 +3149,7 @@ func _refresh_path_status() -> void:
 	var debug_state: String = "ON" if _path_debug_visible else "OFF"
 	_path_status.text = "M4 PATH: %d · spawns %d · ramas %d · base* %s · %s · Ctrl+D:%s" % [
 		_path_graph.nodes.size(),
-		_path_graph.spawn_endpoints.size(),
+		_path_graph.get_active_spawn_count(),
 		_path_graph.get_branch_count(),
 		base_text,
 		graph_state,

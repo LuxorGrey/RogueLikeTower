@@ -10,6 +10,10 @@ Esta página fija los nombres visibles y términos de juego. Se usa junto con el
 - El texto explicativo puede seguir en español; los nombres canónicos de entidades, estados, recursos y capas se escriben como en el juego de referencia.
 - Los IDs internos, archivos y rutas permanecen estables al cambiar únicamente el nombre visible. Si un perfil genérico se divide en entidades distintas, se crean Resources e IDs separados y se actualizan sus referencias. Las entidades y estados toman sus nombres visibles de `display_name`; las etiquetas de encuentro, terreno y capa se fijan en sus enums/UI.
 
+## Contenido del terreno
+
+Los cinco obstáculos del HUD usan estos nombres visibles asociados al orden de `HexCell.ObstacleType`: `ROCK` = Roca, `SHARD` = Cristal, `TALL_GRASS` = Hierba alta, `TOTEM` = Tótem y `STONE_CLUSTER` = Montón de piedra. Son etiquetas descriptivas del proyecto, no equivalencias con contenido externo.
+
 ## Entidades de la demo
 
 Todos los enemigos de la tabla de campaña usan los nombres visibles canónicos del roster seleccionado de Rogue Tower. La equivalencia del nombre no aprueba automáticamente cada habilidad o estadística: el contrato propio está en ADR-0037 y los valores por perfil en 13_CONTENT_ROSTER.md.
@@ -55,7 +59,7 @@ Los fixtures que solo aparecen mediante DEBUG (dummies, objetivos de entrenamien
 | **Bleed** | Estado; corresponde a la capa `Health`. |
 | **Burn** | Estado; corresponde a la capa `Armor`. |
 | **Poison** | Estado; corresponde a la capa `Shield`. |
-| **Slow** | Estado de ralentización. Frost Keep lo aplica con el balance propio de la demo. |
+| **Slow** | Estado de ralentización. Frost Keep añade fuerza proporcional al daño de cada copo que impacta; ver ADR-0059. |
 | **Haste** | Estado enemigo de velocidad; lo aplican habilidades de EnemyAbilityData. |
 | **Fortification** | Estado enemigo de resistencia; resta cinco al daño base de cada golpe. |
 | **Health** | Capa consumible de enemigo y multiplicador de daño de torre. |
@@ -71,7 +75,7 @@ En texto técnico se usa el orden `Shield → Armor → Health`, también cuando
 
 ## Cards y mejoras permanentes
 
-Solo se reutilizan títulos cuando la función coincide: **Blizzard**, **Advanced Circuits**, **Treasury**, **Sourcery** y **Mana Capacity**. Los efectos y cantidades conservan los valores propios del proyecto. Las tablas siguientes enumeran todos los Resources `CardData` y todas las mejoras permanentes actuales. “Propio” significa que no se reutilizó un título de referencia: conserva el nombre actual en español porque su operación o alcance no coincide directamente.
+Solo se reutilizan títulos cuando la función coincide: **Blizzard**, **Advanced Circuits**, **Treasury**, **Sourcery** y **Mana Capacity**. Los efectos y cantidades conservan los valores propios del proyecto. La tabla de cards enumera los 18 Resources `CardData` propios anteriores al catálogo; 172 Resources compatibles nuevos conservan los títulos de referencia y la entrada Advanced Circuits se mapea a la card existente. Las ramas están agrupadas en [Catálogo y escalado](13_CONTENT_ROSTER.md). Para permanentes, esta página registra los equivalentes propios y los nombres de las familias importadas. “Propio” significa que no se reutilizó un título de referencia: conserva el nombre actual en español porque su operación o alcance no coincide directamente.
 
 | Resource | Título visible | Decisión de nomenclatura |
 |---|---|---|
@@ -101,6 +105,9 @@ Solo se reutilizan títulos cuando la función coincide: **Blizzard**, **Advance
 | `data/meta/upgrades/mana_reservoir.tres` | **Mana Capacity** | Título equivalente para capacidad máxima de Mana. |
 | `data/meta/upgrades/card_archive.tres` | **Archivo de cartas** | Propio; desbloquea contenido de cards en la meta-progresión. |
 | `data/meta/upgrades/tower_calibration.tres` | **Calibración de torres** | Propio; bonus global de daño persistente. |
+| `data/meta/upgrades/chest_finder.tres` | **Suerte del explorador** | Propio; mejora la probabilidad de cofres del proyecto. |
+
+Las mejoras permanentes importadas conservan sus títulos de referencia: **Card Draw I–III**, **Gold Drop I–V**, **Repair I–III**, **Fortification I–X** y **Better Bolts / Better Bombs / Better Electricity / Better Snow / Better Fire / Better Poison / Better Sawblades** para las capas Health, Armor y Shield de las siete torres actuales. El catálogo y sus IDs estables están en [rogue_tower_permanent_catalog.tres](../../../data/meta/rogue_tower_permanent_catalog.tres); las mejoras de torre se habilitan con el unlock persistente de su torre.
 
 Un título compartido indica correspondencia de función, no igualdad de balance. Esta tabla es el mapa vigente para cambiar títulos; si la operación de una carta cambia, revisa su equivalencia antes de conservar el título.
 

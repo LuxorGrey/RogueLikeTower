@@ -134,7 +134,7 @@ El usuario pidió expresamente cerrar este roster antes de avanzar a M10/M11. Po
 - Tras limpiar 1–44, ofrecer y colocar una expansión; mantener el loop de terreno y la fase de cartas M11.
 - Resultado: campaña de 45 rondas completa.
 
-Contrato vigente: WaveCampaignData valida 45 entradas, continuidad de round_number, tipo de encuentro derivado de boss_tier y 1.093 enemigos directos. WaveEnemyGroupData.count es la cantidad real del grupo. Cada enemigo se asigna a una ruta por vez; las invocaciones añaden unidades fuera del total directo. Cyclops y Werewolf no son Minibosses especiales en las rondas 17/19: la tabla seleccionada manda. Ooogie von Ooogovich conserva su identidad y kit adaptado, con balance propio provisional, invoca dos Bats cada 2 s y se transforma en Bat con 2.500 Health. Su instancia y recompensa sobreviven la transformación; la oleada espera la derrota final. Los perfiles normales adoptan parámetros base y habilidades documentados en ADR-0037; no hay crecimiento global de Health, daño ni recompensa por baja. Frost Keep usa daño 2, 120 RPM y Slow ×0,85 durante 1 s; Tesla Coil usa daño 9. La tabla exacta y las cadencias/recompensas provisionales están en [14 — Campaña de 45 rondas](14_CAMPANA_45_RONDAS.md), el contenido y escalado por entidad en [13 — Catálogo de contenido](13_CONTENT_ROSTER.md), y las decisiones en [ADR-0037](../decisions/ADR-0037-campana-de-45-rondas-y-habilidades.md). Los acuerdos previos de M10 se conservan solo como historial en sus ADR sustituidos.
+Contrato vigente: WaveCampaignData valida 45 entradas, continuidad de round_number, tipo de encuentro derivado de boss_tier y 1.093 enemigos directos. WaveEnemyGroupData.count es la cantidad real del grupo. Cada enemigo se asigna a una ruta por vez; las invocaciones añaden unidades fuera del total directo. Cyclops y Werewolf no son Minibosses especiales en las rondas 17/19: la tabla seleccionada manda. Ooogie von Ooogovich conserva su identidad y kit adaptado, con balance propio provisional, invoca dos Bats cada 2 s y se transforma en Bat con 2.500 Health. Su instancia y recompensa sobreviven la transformación; la oleada espera la derrota final. Los perfiles normales adoptan parámetros base y habilidades documentados en ADR-0037; no hay crecimiento global de Health, daño ni recompensa por baja. Frost Keep usa copos individuales de daño 6 a 180 RPM, Slow proporcional al daño y gasto continuo de 2 Mana/s, según ADR-0059; Tesla Coil usa daño 9. La tabla exacta y las cadencias/recompensas provisionales están en [14 — Campaña de 45 rondas](14_CAMPANA_45_RONDAS.md), el contenido y escalado por entidad en [13 — Catálogo de contenido](13_CONTENT_ROSTER.md), y las decisiones en [ADR-0037](../decisions/ADR-0037-campana-de-45-rondas-y-habilidades.md). Los acuerdos previos de M10 se conservan solo como historial en sus ADR sustituidos.
 
 ## M11 — Cards
 - `CardModifierOperation`, `CardData`, `CardPoolData` y `RunCardService` mantienen definición de contenido, calendario/oferta y selección separados.
@@ -142,8 +142,8 @@ Contrato vigente: WaveCampaignData valida 45 entradas, continuidad de round_numb
 - Pool con filtro `unlock_requirement`, peso de oferta, `max_per_run` y selección sin reemplazo dentro de cada oferta.
 - Aplicar operaciones runtime sin mutar `.tres`: daño plano/multiplicador, alcance, multiplicador H/A/S, crítico, radio de área, coste de Mana, duración de estados, capacidad y regeneración de Mana. RPM permanece fijo, salvo el Frost Keep por cobertura PATH.
 - El servicio se inyecta en torres y economía de la escena; los efectos modifican también torres ya colocadas y el preview correspondiente.
-- Primer pool de 12 cartas placeholder; siete requieren unlock de torre, las demás son globales/Mana. M12 provee la fuente persistente de estos IDs y añade dos cartas ligadas al Archivo; M12A suma una carta global de crítico y tres de multiplicador H/A/S (18 Resources en total).
-- Calendario provisional centralizado en `data/cards/demo_card_pool.tres`: primera oferta al limpiar ronda 3, después cada 3 rondas (3, 6, 9, 12, 15, 18). No cierra la frecuencia ni el balance finales.
+- Pool inicial M11 de 18 cards placeholder, descrito como historial de implementación. Su catálogo vigente combina 172 Resources nuevos y la Advanced Circuits existente para representar 173 entradas compatibles (190 IDs únicos con las 18 propias). Ver ADR-0062.
+- Calendario vigente centralizado en `data/cards/demo_card_pool.tres`: tras colocar expansión, ofrecer carta cada tres rondas entre 3 y 42. La cadencia está confirmada por ADR-0062; tamaños, rarezas y balance siguen provisionales.
 - Resultado: elecciones que producen builds diferentes dentro de la run. La persistencia y desbloqueos entre runs siguen siendo M12.
 
 ## M12 — Meta-progression
@@ -156,12 +156,12 @@ Contrato vigente: WaveCampaignData valida 45 entradas, continuidad de round_numb
 - SaveGame.
 - Resultado: morir -> mejorar -> nueva run.
 
-Contrato M12 implementado: `MetaProgression` conserva su estado fuera de las escenas de run; cada run concede moneda al terminar por victoria o derrota, con recompensa calculada a partir de rondas completas y un bonus de victoria configurable. La tienda terminal permite desbloquear perfiles `TowerData`, comprar niveles de `PermanentUpgradeData` y empezar otra run. Las torres bloqueadas no aparecen en la barra de construcción ni habilitan cartas específicas; el desbloqueo del Archivo de cartas suma contenido al pool M11. Las mejoras afectan Gold inicial, capacidad/regeneración de Mana y daño de torres en runs posteriores. `SaveData` serializa solo primitivas en JSON versionado dentro de `user://`, con escritura temporal y copia `.bak`; un save corrupto o de otra versión se conserva sin sobrescribirse y bloquea las compras. Ballista como única torre inicial, la economía/recompensa, costes, incrementos y los cinco upgrades actuales son fixtures provisionales configurables en Resources, no balance confirmado. La prueba manual M12 sigue pendiente; ver `10_ACCEPTANCE_TESTS.md` y [ADR-0022](../decisions/ADR-0022-meta-progression-y-guardado.md).
+Contrato M12 implementado: `MetaProgression` conserva su estado fuera de las escenas de run; cada run concede moneda al terminar por victoria o derrota, con recompensa calculada a partir de rondas completas y un bonus de victoria configurable. La tienda terminal permite desbloquear perfiles `TowerData`, comprar los 31 `PermanentUpgradeData` y empezar otra run. Las torres bloqueadas no aparecen en la barra de construcción ni habilitan cartas específicas; el Archivo de cartas suma contenido al pool M11. Los upgrades afectan Gold, Mana, daño H/A/S de torres, opciones de cards y vida/reparación de la base en runs posteriores. `SaveData` serializa solo primitivas en JSON versionado dentro de `user://`, con escritura temporal y copia `.bak`; un save corrupto o de otra versión se conserva sin sobrescribirse y bloquea las compras. Ballista como única torre inicial, economía/recompensa, costes e incrementos son configurables/provisionales, no balance confirmado. La prueba manual M12 sigue pendiente; ver `10_ACCEPTANCE_TESTS.md` y [ADR-0022](../decisions/ADR-0022-meta-progression-y-guardado.md)/[ADR-0062](../decisions/ADR-0062-catalogo-de-upgrade-cards-y-permanent-upgrades.md).
 
 ## M12A — Reglas de torres, mejoras y capas H/A/S
 - `EnemyData` y Enemy modelan los pools de Health, Armor y Shield con regeneración independiente. Cada perfil configura sus tres máximos; un máximo cero desactiva esa capa para ese enemigo. Resolver Shield→Armor→Health y dibujar una fila por capa con máximo positivo, con Health segmentada.
 - Alinear los siete `TowerData` con la tabla que compartió el usuario; todos los stats permanecen configurables y el balance se considera provisional.
-- Implementar disparos de Ballista/Mortar, área de Mortar, descarga de Tesla contra todos los enemigos en rango, rango/área cuadrada y RPM por cobertura de Frost, conos de Flame/Poison y hoja perforante de Shredder.
+- Implementar disparos de Ballista/Mortar, área de Mortar, descarga de Tesla contra todos los enemigos en rango, caída e impacto individual de los copos Frost sobre PATH en rango cuadrado y RPM por cobertura, conos de Flame/Poison y hoja perforante de Shredder.
 - Cada nivel añade +1 de daño base y +1 a una capa H/A/S, al comprarse con Gold o al subir por XP mientras mantiene un objetivo. La torre muestra stats y XP por capa.
 - Añadir crítico por bandas, hasta tres prioridades de objetivo, precio por cantidad de torres del mismo tipo y demolición que reduce el siguiente precio.
 - Añadir una oleada DEBUG Health/Armor/Shield para verificar barra, daño, bonus +1 de ataque de cada estado y bloqueo de regeneración Bleed/Burn/Poison. Los ticks aplican daño completo a su capa asociada y mitad a las otras.
@@ -256,3 +256,42 @@ Estas cantidades NO son compromiso de diseño final.
 - Estandarizar obstáculos en caja 86×86 px, centrada con un pequeño offset visual, en tablero y cards.
 - Validar que las seis celdas junto a la base tienen elevación 0.
 - Resultado: progresión por capa legible, máximo de 45 subidas y selección/colocación sin feedback contradictorio.
+
+## M21 — Depuración y claridad de selección
+- Añadir hacks de run desde `Ctrl+K`, usando servicios runtime y sin editar el guardado salvo el ciclo normal de run.
+- Mostrar progresivamente las prioridades de targeting; mantener el panel estable y sin recorte.
+- Reforzar hover alfa de obstáculos, rebote de Gold y feedback de selección.
+- Resultado: controles de diagnóstico y selección legibles; implementación integrada, aceptación manual pendiente.
+
+## M22 — HUD, oleadas, cards y fachadas
+- Distribuir vida/atajos a la izquierda, recursos arriba a la derecha y ronda en el centro, sin paneles compartidos.
+- Presentar el progreso configurable de 45 rondas y tooltip alimentado por `WaveData`/`EnemyData`.
+- Usar marcos editables para iniciar ronda y para las cards de terreno; simplificar conteos a tipos presentes.
+- Sustituir fachadas vectoriales por texturas de roca/suelo con césped sobre quads cerrados.
+- Resultado: HUD acorde al roster y terreno con lectura visual consistente; aceptación visual pendiente.
+
+## M23 — Navegación, portales y Tower Info
+- Añadir paneo WASD, previews de portales, distribución de spawns y tooltip de composición.
+- Mantener un ghost de torre verde/rojo, quitar las sombras generadas por código y simplificar Tower Info.
+- Simplificar los sprites de cofre/portal y sus filtros; conservar cursor, hitbox y navegación lógica.
+- Resultado: navegación y selección legibles; código/arte integrados, revisión visual/interactiva pendiente.
+
+## M24 — Feedback de daño
+- Animar números de daño por capa, alternando trayectorias/carriles para reducir solapamiento.
+- Diferenciar críticos y mantener el cálculo en `DamageService`.
+- Resultado: feedback de impactos legible sin cambiar el daño runtime; aceptación visual pendiente.
+
+## M25 — Oferta de terreno, pausa y control de fases
+- Crear por oferta una copia de cada pieza con rolls fijos de obstáculos/cofres; reutilizarlos en miniatura, ghost y tablero confirmado.
+- Elegir una colocación válida de continuidad entre piezas rectas, curvas y bifurcadas; al ofrecer una curva/bifurcación, omitir la recta como alternativa.
+- Bloquear construcción, selección de torres, cofres e inicio de ronda durante selección/colocación de terreno y cards.
+- Añadir pausa/reanudación con `P` y botón bajo la vida; `StartWave` despeja la pausa desde `ROUND_PREP`.
+- Animar el hover de cofres con bote y resplandor dorado.
+- Resultado: oferta con contenido visual fiel, expansión segura y fases sin acciones de torre; código integrado, aceptación interactiva pendiente. Ver [ADR-0060](../decisions/ADR-0060-ofertas-de-terreno-y-contenido-determinista.md) y [ADR-0061](../decisions/ADR-0061-pausa-y-fases-de-expansion.md).
+
+## M26 — Selección y retirada de objetos, y lectura de elevación
+- Seleccionar obstáculos y portales desde el tablero y mostrar su información en el panel HUD, con los nombres del catálogo y lista de enemigos con sprites por portal.
+- Permitir pagar para quitar obstáculos con coste `25 × n²` por obstáculo retirado; retirar portales cuesta el doble del siguiente precio de obstáculo y mantiene al menos tres activos.
+- Repartir el total de enemigos de cada oleada entre los portales que sigan activos.
+- Cerrar las cuñas estrechas de fachadas en vértices sin descartar triángulos pequeños y aumentar el offset visual de elevación de 18 a 28 px por nivel sin cambiar el rango lógico 0–2.
+- Resultado: limpieza de mapa y selección informada integradas; aceptación interactiva y revisión visual de fachadas/alturas pendientes. Ver [ADR-0063](../decisions/ADR-0063-seleccion-y-retirada-de-objetos-del-terreno.md).

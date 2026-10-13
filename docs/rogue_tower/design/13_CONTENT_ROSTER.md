@@ -11,20 +11,20 @@ Multiplicadores en orden Health / Armor / Shield. El coste de construcción es G
 | Ballista | Proyectil de objetivo único | 10; 10/5/5 | 5 hex; 20 RPM | — | 10 (+15); 10 Gold |
 | Mortar | Proyectil explosivo, radio 1,6 hex | 20; 10/15/5 | 10 hex; 10 RPM | — | 200 (+75); 10 Gold |
 | Tesla Coil | Descarga a todos los objetivos en rango | **9**; 6/3/10 | 2 hex; 30 RPM | 5 por ataque | 200 (+75); 20 Gold |
-| Frost Keep | Todos los enemigos en un cuadrado de alcance; aplica Slow | **2**; 10/5/5 | 2 hex; **120 RPM** base +18 por Path cubierto | 2/s mientras dispara | 250 (+100); 20 Gold |
+| Frost Keep | Deja caer copos sobre los Path del cuadrado; cada copo daña y aplica Slow solo al impactar | **6**; 10/5/5 | 2 hex; **180 RPM** base +18 por Path cubierto | 2/s durante combate | 250 (+100); 20 Gold |
 | Flame Thrower | Cono de fuego de 58°; aplica Burn | 6; 6/9/3 | 4 hex; 60 RPM | 1 por ataque | 300 (+75); 30 Gold |
 | Poison Sprayer | Cono de veneno de 48°; aplica Poison | 5; 6/3/9 | 4 hex; 60 RPM | 1 por ataque | 300 (+75); 30 Gold |
 | Shredder | Hoja por Path; perfora y aplica Bleed | 10; 20/10/10 | 5 hex; 5 RPM | — | 500 (+100); 30 Gold |
 
 Ese es el coste base para la primera subida de cada una de las tres capas. En cada mejora posterior se multiplica por `upgrade_cost_growth_factor`; el XP necesario para la siguiente subida parte de 100 y se multiplica por `targeting_xp_growth_factor`. Ambos factores empiezan en 1,15 y son configurables/provisionales. El XP solo avanza en la capa del tipo de HP que tiene el objetivo actual; ver [ADR-0046](../decisions/ADR-0046-progresion-de-mejoras-y-feedback-de-seleccion.md).
 
-Frost Keep reduce su daño por segundo de 18 a 4 en nivel 1, antes de upgrades y cobertura Path: base 6→2 y cadencia 180→120 RPM. Su Slow pasa de 50% durante 2,5 s a **15% durante 1 s** (multiplicador 0,85). Tesla Coil baja el daño base de 10 a 9 (−10%). Estos son balances propios provisionales; ver ADR-0037. Frost Keep suma provisionalmente 18 RPM por cada celda Path cubierta. Tesla Coil, Flame Thrower y Poison Sprayer escalan el gasto de Mana con el daño.
+Frost Keep usa los valores publicados de daño 6 y 180 RPM. Cada copo cae sobre una celda Path cubierta y daña como máximo a un enemigo al tocarlo; un copo que no alcanza a un enemigo no hace daño ni aplica Slow. El Slow suma fuerza equivalente al 50% del daño realmente aplicado, hasta 60, y decae a 6 puntos/s. Así, un impacto que aplica 60 de daño añade 30 puntos de Slow durante 5 s si no hay otros impactos. El ataque ya no aplica un golpe garantizado a todos los enemigos del cuadrado. La cobertura suma 18 RPM por celda Path. El coste es 2 Mana/s continuo durante combate. Frost y Tesla mantienen sus ajustes aceptados en ADR-0059 y ADR-0037 respectivamente.
 
 Regla propia de Ballista: cada torre conserva su cooldown por disparo. Si el objetivo muere por otra fuente antes de que llegue el proyectil, esa Ballista recupera el 33% del cooldown completo del disparo; el impacto propio no reembolsa. Ver [ADR-0034](../decisions/ADR-0034-reembolso-de-cooldown-ballista.md).
 
 ## Mejoras durante la run: cards
 
-Los nombres canónicos se reutilizan cuando la operación coincide con Rogue Tower. Las cartas con efecto distinto conservan nombre propio. Cada carta tiene un máximo de una copia por run.
+Los nombres canónicos se reutilizan cuando la operación coincide con Rogue Tower. Las cartas con efecto distinto conservan nombre propio. Cada carta tiene un máximo de una copia por run. La tabla siguiente conserva las 18 cards propias que ya existían antes del catálogo de referencia.
 
 | Card | Efecto runtime |
 |---|---|
@@ -47,20 +47,40 @@ Los nombres canónicos se reutilizan cuando la operación coincide con Rogue Tow
 | Dientes afilados | Bleed de Shredder: duración ×1,20. |
 | Advanced Circuits | Tesla Coil: +15 puntos porcentuales de probabilidad crítica. |
 
-El pool contiene 18 cards; el calendario y las rarezas siguen siendo provisionales. Los Resources individuales están en [data/cards](../../../data/cards/).
+El catálogo conserva estas 18 cards, añade 172 Resources y representa la 173.ª entrada compatible de Rogue Tower con la Advanced Circuits existente, ya que el efecto coincide. El pool combinado tiene 190 IDs únicos. Las cards de torre solo entran en la oferta si su torre está desbloqueada; las cadenas requieren haber elegido el escalón previo. La oferta base aparece tras las rondas 3, 6, 9, …, 42, una vez colocada la expansión; la frecuencia cada tres rondas está confirmada y Card Draw puede aumentar las tres opciones hasta seis. La rareza y los valores importados son provisionales.
+
+| Rama de Upgrade Cards compatible | Cantidad | Familias incluidas |
+|---|---:|---|
+| Ballista | 24 | Broadhead Bolts, Heavy Shafts, Enchanted Bolts, Advanced Ballistics, sinergias Bleed/Burn/Poison/Slow, Longbow y Mana Bolts. |
+| Mortar | 25 | HE/Concussive Shells, EMP, Advanced Explosives, sinergias de estado, Long Range Ballistics, Area of Effect y Mana Bombs. |
+| Tesla Coil | 15 + Advanced Circuits existente | Power Surge, Plasmatics, Static Permeation y sinergias Bleed/Burn/Poison; el crítico usa la card previa `tesla_overcharge.tres` con el prerequisito de la rama. |
+| Frost Keep | 19 | Frostbite, Dehydration, Conductive Snow, alcance, crítico y sinergias Bleed/Burn/Poison/Slow; se excluyen cartas de Freeze. |
+| Flame Thrower | 14 | Napalm, Nitric Acid, White Phosphorus, crítico y mejoras de Burn. |
+| Poison Sprayer | 14 | Infection, Corrosion, Fumigation, crítico y mejoras de Poison. |
+| Shredder | 15 | Sharpened/Hardened/Magnetic Blades, crítico y mejoras de Bleed. |
+| Generales y estados | 46 | Monster Studies por capa, caps/sinergias Bleed/Burn/Poison/Slow, Gold y riesgo a la base, Mana, fortificación de base y Quality over Quantity. |
+
+Los 172 recursos añadidos están en [rogue_tower_compatible_cards.tres](../../../data/cards/rogue_tower_compatible_cards.tres); las 18 cards propias (incluida la equivalencia Advanced Circuits) siguen en [data/cards](../../../data/cards/).
 
 ## Mejoras permanentes
 
-Se aplican al comenzar cada run. Costes en Meta Currency por nivel.
+Se compran en la tienda al acabar una run y se aplican desde la siguiente. Costes en Meta Currency por nivel. Las cifras y precios del catálogo son provisionales.
 
 | Mejora | Efecto por nivel | Niveles y costes |
 |---|---|---|
-| Treasury | +20 Gold inicial | 3; 10 / 20 / 35 |
-| Sourcery | +0,25 Mana/s | 2; 15 / 30 |
-| Mana Capacity | +15 Mana máximo | 2; 15 / 30 |
+| Treasury | +100 Gold inicial | 10; 10 / 15 / 20 / 25 / 30 / 35 / 40 / 45 / 50 / 60 |
+| Sourcery | +1 Mana/s | 3; 15 / 30 / 45 |
+| Mana Capacity | +20 Mana máximo | 5; 15 / 25 / 35 / 45 / 55 |
 | Archivo de cartas | +2 cartas globales al pool | 1; 25 |
 | Calibración de torres | Daño global ×1,05 | 3; 20 / 35 / 50 |
 | Suerte del explorador | +5 puntos porcentuales por nivel desde 1 % base; máximo total 20 % | 4; 10 / 20 / 35 / 55 |
+| Card Draw I–III | +1 opción por oferta y nivel; máximo 6 | 3; 25 / 50 / 75 |
+| Gold Drop I–V | +1 Gold por baja y nivel; máximo +5 | 5; 15 / 30 / 45 / 60 / 80 |
+| Repair I–III | Hasta 33 / 66 / 100 % de probabilidad de reparar 1 Health al acabar una ronda, escalada por Health perdida | 3; 25 / 50 / 100 |
+| Fortification I–X | +1 Health máximo de base por nivel | 10; 10 / 15 / 20 / 25 / 30 / 35 / 40 / 45 / 50 / 60 |
+| Better de torre × Health / Armor / Shield | +1 al multiplicador H/A/S de la torre correspondiente; requiere desbloquearla | 21 (3 por torre); 60 cada una |
+
+El catálogo ejecutable combina seis mejoras existentes y 25 adicionales. Las siete ramas `Better` son específicas de cada torre y quedan ocultas/bloqueadas hasta su unlock; el resto aparece en la tienda tras terminar una run. Ver [rogue_tower_permanent_catalog.tres](../../../data/meta/rogue_tower_permanent_catalog.tres) y [ADR-0062](../decisions/ADR-0062-catalogo-de-upgrade-cards-y-permanent-upgrades.md).
 
 ## Contenido de terreno
 
@@ -128,7 +148,7 @@ Los premios por limpiar rondas 1–20 conservan sus datos previos. Para 21–45 
 | Bleed | 1,5 s; tick cada 0,75 s; 1,5 Physical por tick; máximo 4 acumulaciones | Detiene regeneración Health; ataques directos reciben +1 al multiplicador Health. El tick hace 100% en Health y 50% en Armor/Shield. |
 | Burn | 5 s; tick cada 1 s; 2 Fire por tick; máximo 3 acumulaciones | Detiene regeneración Armor; ataques directos reciben +1 al multiplicador Armor. El tick hace 100% en Armor y 50% en Health/Shield. |
 | Poison | 4 s; tick cada 1 s; 2 Poison por tick; máximo 3 acumulaciones | Detiene regeneración Shield; ataques directos reciben +1 al multiplicador Shield. El tick hace 100% en Shield y 50% en Health/Armor. |
-| Slow | 1 s; no causa daño; una acumulación | Multiplicador de movimiento 0,85: ralentiza 15%. |
+| Slow | Fuerza máxima 60; decae 6 puntos/s | Frost añade el 50% del daño aplicado como fuerza al impactar; impactos repetidos suman hasta el límite. Sin daño aplicado no hay Slow. |
 | Haste | EnemyData: fuerza 0–60; decae a 6/s | Aumenta movimiento hasta 60%; máximo 10 s a fuerza 60. Nuevas aplicaciones suman hasta el máximo. |
 | Fortification | EnemyData: fuerza 0–60; decae a 6/s | Mientras su fuerza es positiva, reduce en 5 el daño base bruto de cada ataque; máximo 10 s a fuerza 60. Nuevas aplicaciones suman hasta el máximo. |
 

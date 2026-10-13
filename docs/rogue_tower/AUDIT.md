@@ -4,7 +4,7 @@
 - Alcance: cuatro borradores personales, paquete de diseño importado, ADR existentes y comprobaciones dirigidas a los datos actuales de campaña, roster y desbloqueos.
 - Resultado: los materiales quedaron bajo `docs/rogue_tower/`. El índice [README](README.md) fija cómo resolver discrepancias y qué autoridad tienen sus subcarpetas.
 
-> **Auditoría histórica:** este informe describe el estado documental previo a la campaña de 45 rondas y queda sustituido en reglas activas por ADR-0037. Para los criterios vigentes, sigue design/README.md y los documentos enlazados allí.
+> **Auditoría histórica:** este informe describe el estado documental previo a la campaña de 45 rondas y queda sustituido en reglas activas por ADR-0037. Su fila sobre upgrades también es anterior a [ADR-0062](decisions/ADR-0062-catalogo-de-upgrade-cards-y-permanent-upgrades.md), que promueve las 173 entradas compatibles de cartas y las mejoras permanentes. Para los criterios vigentes, sigue design/README.md y los documentos enlazados allí.
 ## Comparación por fuente
 
 | Fuente anterior | Qué aporta | Resultado de la comparación |

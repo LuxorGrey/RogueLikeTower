@@ -16,6 +16,7 @@ display_name = "Advanced Circuits"
 description = "Tesla Coil gana un 15 % de probabilidad crítica."
 rarity = 1
 unlock_requirement = &"tower:tesla_coil_demo"
+any_required_card_ids = Array[StringName]([&"tesla_coil_power_surge_iii", &"tesla_coil_plasmatics_iii", &"tesla_coil_static_permeation_iii"])
 tags = Array[StringName]([&"tower", &"critical"])
 modifier_operations = Array[Resource]([SubResource("CardModifierOperation_tesla_rate")])
 offer_weight = 0.9

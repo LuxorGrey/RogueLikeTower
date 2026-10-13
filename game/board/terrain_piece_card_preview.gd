@@ -3,7 +3,8 @@ extends Control
 const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
 
 const HEX_RADIUS: float = 52.0
-const ELEVATION_PIXEL_OFFSET: float = 18.0
+const ELEVATION_PIXEL_OFFSET: float = 28.0
+const CHEST_DISPLAY_SIZE: Vector2 = Vector2(84.0, 84.0)
 const HEX_OUTLINE: Color = Color(0.82, 0.87, 0.84)
 const PATH_COLOR: Color = Color(0.35, 0.40, 0.43)
 const GRASS_COLOR: Color = Color(0.28, 0.57, 0.34)
@@ -79,52 +80,32 @@ func _draw_obstacles(
 	centers: Dictionary[Vector2i, Vector2],
 	render_scale: float
 ) -> void:
-	var obstacle_by_coord: Dictionary[Vector2i, int] = {}
-	var eligible_cells: Array[TerrainPieceCellData] = []
-	var piece_key: String = str(_piece.resource_path)
-	if piece_key.is_empty():
-		piece_key = _piece.display_name
 	for cell in cells:
-		var chance: float = 0.0
-		if cell.terrain_type == HexCell.TerrainType.GRASS:
-			chance = TERRAIN_VISUAL_CATALOG_SCRIPT.GRASS_OBSTACLE_CHANCE
-		elif cell.terrain_type == HexCell.TerrainType.MOUNTAIN:
-			chance = TERRAIN_VISUAL_CATALOG_SCRIPT.MOUNTAIN_OBSTACLE_CHANCE
-		if chance <= 0.0:
-			continue
-		eligible_cells.append(cell)
-		var rng := RandomNumberGenerator.new()
-		rng.seed = hash("%s:%d:%d:card_obstacle" % [piece_key, cell.local_coord.x, cell.local_coord.y])
-		if rng.randf() < chance:
-			obstacle_by_coord[cell.local_coord] = rng.randi_range(
-				0,
-				TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_COUNT - 1
-			)
-
-	# Card art is representative. Ensure each card with buildable terrain shows
-	# at least one prop; actual obstacles are rolled only after placement.
-	if obstacle_by_coord.is_empty() and not eligible_cells.is_empty():
-		var representative_rng := RandomNumberGenerator.new()
-		representative_rng.seed = hash("%s:representative_obstacle" % piece_key)
-		var representative: TerrainPieceCellData = eligible_cells[
-			representative_rng.randi_range(0, eligible_cells.size() - 1)
-		]
-		obstacle_by_coord[representative.local_coord] = representative_rng.randi_range(
-			0,
-			TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_COUNT - 1
-		)
-
-	for cell in cells:
-		if not obstacle_by_coord.has(cell.local_coord):
-			continue
-		var obstacle_type: int = obstacle_by_coord[cell.local_coord]
-		var obstacle_size: Vector2 = TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_DISPLAY_SIZE * render_scale
 		var center: Vector2 = centers[cell.local_coord] + Vector2(0.0, 6.0 * render_scale)
-		draw_texture_rect(
-			TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_texture(obstacle_type),
-			Rect2(Vector2(center.x - obstacle_size.x * 0.5, center.y - obstacle_size.y), obstacle_size),
-			false
-		)
+		if cell.obstacle_type != HexCell.ObstacleType.NONE:
+			var obstacle_size: Vector2 = TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_DISPLAY_SIZE * render_scale
+			draw_texture_rect(
+				TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_texture(cell.obstacle_type),
+				Rect2(center - obstacle_size * 0.5, obstacle_size),
+				false
+			)
+		elif cell.chest_available:
+			var chest_texture: Texture2D = TERRAIN_VISUAL_CATALOG_SCRIPT.TREASURE_CHEST
+			var texture_size := Vector2(chest_texture.get_width(), chest_texture.get_height())
+			var chest_scale: float = minf(
+				CHEST_DISPLAY_SIZE.x / texture_size.x,
+				CHEST_DISPLAY_SIZE.y / texture_size.y
+			)
+			var chest_size: Vector2 = texture_size * chest_scale * render_scale
+			var chest_center: Vector2 = centers[cell.local_coord] + Vector2(
+				0.0,
+				(-CHEST_DISPLAY_SIZE.y * 0.5 + 6.0) * render_scale
+			)
+			draw_texture_rect(
+				chest_texture,
+				Rect2(chest_center - chest_size * 0.5, chest_size),
+				false
+			)
 
 func _draw_cliffs(
 	cells: Array[TerrainPieceCellData],

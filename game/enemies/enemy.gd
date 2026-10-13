@@ -261,10 +261,34 @@ func apply_regen_counter(strength: float, duration: float) -> void:
 	_regen_counter_strength = maxf(_regen_counter_strength, clampf(strength, 0.0, 1.0))
 	_regen_counter_time_left = maxf(_regen_counter_time_left, duration)
 
-func apply_status_effect(effect_data: Resource, source_id: int, total_damage_override: int = -1) -> bool:
+func apply_status_effect(
+	effect_data: Resource,
+	source_id: int,
+	total_damage_override: int = -1,
+	strength_override: float = -1.0
+) -> bool:
 	if state != State.MOVING:
 		return false
-	return bool(_status_controller.call("apply_effect", effect_data, source_id, total_damage_override))
+	return bool(_status_controller.call(
+		"apply_effect",
+		effect_data,
+		source_id,
+		total_damage_override,
+		strength_override
+	))
+
+func has_status(effect_id: StringName) -> bool:
+	return _status_controller != null and is_instance_valid(_status_controller) and bool(_status_controller.call("has_status", effect_id))
+
+func get_status_strength(effect_id: StringName) -> float:
+	if _status_controller == null or not is_instance_valid(_status_controller):
+		return 0.0
+	return float(_status_controller.call("get_status_strength", effect_id))
+
+func consume_status_damage(effect_id: StringName, fraction: float) -> Dictionary:
+	if _status_controller == null or not is_instance_valid(_status_controller):
+		return {}
+	return _status_controller.call("consume_status_damage", effect_id, fraction)
 
 func set_status_speed_multiplier(multiplier: float) -> void:
 	_status_speed_multiplier = clampf(multiplier, 0.05, 1.0)

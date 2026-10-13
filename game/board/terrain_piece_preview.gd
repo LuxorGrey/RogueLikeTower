@@ -15,7 +15,7 @@ signal hover_changed(local_coord: Vector2i, terrain_type: int, elevation: int)
 signal hover_cleared
 
 const HEX_RADIUS: float = 52.0
-const ELEVATION_PIXEL_OFFSET: float = 18.0
+const ELEVATION_PIXEL_OFFSET: float = 28.0
 const WORLD_ART_OFFSET_Y: float = 6.0
 const HEX_OUTLINE: Color = Color(0.82, 0.87, 0.84)
 const PATH_COLOR: Color = Color(0.35, 0.40, 0.43)
@@ -26,7 +26,6 @@ const GRASS_HOVER_COLOR: Color = Color(0.50, 0.88, 0.52)
 const MOUNTAIN_HOVER_COLOR: Color = Color(0.96, 0.76, 0.36)
 const CLIFF_MIN_SCREEN_DEPTH: float = 6.0
 const CLIFF_TEXTURE_PIXEL_DENSITY: float = 20.0
-const CLIFF_CAP_MIN_DOUBLE_AREA: float = 0.5
 const ROUTE_DEBUG_COLORS: Array[Color] = [
 	Color(0.25, 0.78, 1.0, 0.92),
 	Color(1.0, 0.76, 0.25, 0.92),
@@ -195,7 +194,10 @@ func _draw() -> void:
 
 	_draw_cliffs(cells, cells_by_coord)
 	for cell in cells:
-		_draw_cell_top(cell, _ghost_coords.has(cell.local_coord))
+		var is_ghost: bool = _ghost_coords.has(cell.local_coord)
+		_draw_cell_top(cell, is_ghost)
+		if is_ghost:
+			_draw_ghost_cell_content(cell)
 	if _board_mode and _path_graph != null:
 		if _path_debug_visible:
 			_draw_path_debug_overlay()
@@ -315,18 +317,11 @@ func _draw_cliff_corner_caps(corner_fills: Dictionary) -> void:
 			return (a - upper_point).angle() < (b - upper_point).angle()
 		)
 		var seam_color: Color = _cliff_seam_color(int(entry.get("terrain_type", HexCell.TerrainType.GRASS)))
-		for point_index in range(sorted_lower_points.size()):
-			var next_index: int = (point_index + 1) % sorted_lower_points.size()
-			var first_edge: Vector2 = sorted_lower_points[point_index] - upper_point
-			var second_edge: Vector2 = sorted_lower_points[next_index] - upper_point
-			if absf(first_edge.cross(second_edge)) < CLIFF_CAP_MIN_DOUBLE_AREA:
-				continue
-			var cap := PackedVector2Array([
-				upper_point,
-				sorted_lower_points[point_index],
-				sorted_lower_points[next_index],
-			])
-			draw_colored_polygon(cap, seam_color)
+		var cap := PackedVector2Array([upper_point])
+		cap.append_array(sorted_lower_points)
+		# Draw the complete corner wedge in one polygon. The old per-triangle
+		# area cutoff discarded thin but visible wedges and left dark pinholes.
+		draw_colored_polygon(cap, seam_color)
 
 func _cliff_seam_color(terrain_type: int) -> Color:
 	if terrain_type == HexCell.TerrainType.MOUNTAIN:
@@ -393,6 +388,33 @@ func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 		draw_polyline(closed_corners, outline_color, outline_width, true)
 	if not _board_mode or is_ghost:
 		_draw_path_edges(cell, center, corners, is_ghost)
+
+func _draw_ghost_cell_content(cell: TerrainPieceCellData) -> void:
+	var center: Vector2 = _top_center(cell.local_coord, cell.elevation) + Vector2(0.0, 6.0)
+	var content_tint := Color(1.0, 1.0, 1.0, 0.88)
+	if cell.obstacle_type != HexCell.ObstacleType.NONE:
+		var obstacle_size: Vector2 = TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_DISPLAY_SIZE
+		draw_texture_rect(
+			TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_texture(cell.obstacle_type),
+			Rect2(center - obstacle_size * 0.5, obstacle_size),
+			false,
+			content_tint
+		)
+	elif cell.chest_available:
+		var chest_texture: Texture2D = TERRAIN_VISUAL_CATALOG_SCRIPT.TREASURE_CHEST
+		var chest_texture_size := Vector2(chest_texture.get_width(), chest_texture.get_height())
+		var chest_scale: float = minf(
+			84.0 / chest_texture_size.x,
+			84.0 / chest_texture_size.y
+		)
+		var chest_size: Vector2 = chest_texture_size * chest_scale
+		var chest_center: Vector2 = _top_center(cell.local_coord, cell.elevation) + Vector2(0.0, -36.0)
+		draw_texture_rect(
+			chest_texture,
+			Rect2(chest_center - chest_size * 0.5, chest_size),
+			false,
+			content_tint
+		)
 
 func _grid_opacity_for_cell(cell: TerrainPieceCellData) -> float:
 	if _hovered_cell == null:
@@ -471,7 +493,7 @@ func _sync_spawn_portals() -> void:
 	var visible_keys: Dictionary[String, bool] = {}
 	var candidate_keys: Dictionary[String, bool] = {}
 	if display_graph != null:
-		for route in display_graph.routes:
+		for route in display_graph.get_active_routes():
 			if route == null or not route.is_reachable or route.spawn_endpoint == null:
 				continue
 			var endpoint: PathEndpoint = route.spawn_endpoint
@@ -493,7 +515,7 @@ func _sync_spawn_portals() -> void:
 	# Keep the active portals visible while moving the ghost so a disappearing
 	# endpoint can be marked in place instead of vanishing without warning.
 	if using_candidate_graph and _path_graph != null:
-		for route in _path_graph.routes:
+		for route in _path_graph.get_active_routes():
 			if route == null or not route.is_reachable or route.spawn_endpoint == null:
 				continue
 			var endpoint: PathEndpoint = route.spawn_endpoint
@@ -533,7 +555,7 @@ func _get_or_create_spawn_portal(endpoint: PathEndpoint, key: String) -> SpawnPo
 	return portal
 
 func _spawn_endpoint_key(endpoint: PathEndpoint) -> String:
-	return "%d,%d,%d" % [endpoint.cell_coord.x, endpoint.cell_coord.y, endpoint.edge_direction]
+	return PathGraph.get_spawn_endpoint_key(endpoint)
 
 func _sync_path_flow_overlay() -> void:
 	if _path_flow_overlay == null or not is_instance_valid(_path_flow_overlay):
@@ -584,7 +606,9 @@ func _sync_obstacle_hover() -> void:
 		var decoration: Node2D = _decorations_by_coord[coord] as Node2D
 		if decoration == null or not is_instance_valid(decoration):
 			continue
-		decoration.call("set_obstacle_hovered", _hovered_cell != null and _hovered_cell.local_coord == coord)
+		var is_hovered: bool = _hovered_cell != null and _hovered_cell.local_coord == coord
+		decoration.call("set_obstacle_hovered", is_hovered)
+		decoration.call("set_chest_hovered", is_hovered)
 
 func _find_hovered_cell(mouse_position: Vector2) -> TerrainPieceCellData:
 	var cells := _active_display_cells()
@@ -615,12 +639,16 @@ func _rebuild_display_cells() -> void:
 		cell.path_edges = source.path_edges
 		cell.flexible_path_edges = source.flexible_path_edges
 		cell.visual_variant = source.visual_variant
+		cell.obstacle_type = source.obstacle_type
+		cell.chest_available = source.chest_available
 		_board_display_cells.append(cell)
 	if _placement_active and _piece_data != null:
 		for local_cell in _display_cells:
 			var ghost_cell := local_cell.duplicate(true) as TerrainPieceCellData
 			if ghost_cell == null:
 				continue
+			ghost_cell.obstacle_type = local_cell.obstacle_type
+			ghost_cell.chest_available = local_cell.chest_available
 			ghost_cell.local_coord = _placement_anchor + local_cell.local_coord
 			_ghost_coords[ghost_cell.local_coord] = true
 			_board_display_cells.append(ghost_cell)

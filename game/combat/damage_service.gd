@@ -2,6 +2,8 @@ class_name DamageService
 extends Node
 
 const DAMAGE_RESULT_SCRIPT: Script = preload("res://game/combat/damage_result.gd")
+const DAMAGE_PACKET_SCRIPT: Script = preload("res://game/combat/damage_packet.gd")
+const SLOW_STATUS: Resource = preload("res://data/status_effects/slow.tres")
 
 signal damage_resolved(target: Enemy, packet: RefCounted, result: RefCounted)
 
@@ -68,6 +70,17 @@ func _calculate_layer_damage(
 	var layer_multiplier: float = float(packet.call("get_hit_point_multiplier", active_layer))
 	if not bool(packet.get("is_status_damage")):
 		layer_multiplier += target.get_layer_status_damage_bonus(active_layer)
+		var condition_status_id: StringName = &""
+		match active_layer:
+			Enemy.HitPointLayer.HEALTH:
+				condition_status_id = &"bleed"
+			Enemy.HitPointLayer.ARMOR:
+				condition_status_id = &"burn"
+			Enemy.HitPointLayer.SHIELD:
+				condition_status_id = &"poison"
+		var conditional_bonuses: Dictionary[StringName, float] = packet.get("status_condition_layer_damage_adds")
+		if condition_status_id != &"" and target.has_status(condition_status_id):
+			layer_multiplier += float(conditional_bonuses.get(condition_status_id, 0.0))
 	var effective_multiplier: float = layer_multiplier * damage_tag_multiplier
 	var layer_damage_budget: int = int(floor(raw_damage * effective_multiplier))
 	if layer_damage_budget <= 0:
@@ -109,9 +122,54 @@ func apply_damage(target: Enemy, packet: RefCounted) -> RefCounted:
 		var source_id: int = int(packet.get("source_id"))
 		for effect_data in status_payloads:
 			var effect_id: StringName = StringName(effect_data.get("id"))
-			var total_damage_override: int = int(total_damage_overrides.get(effect_id, -1))
-			if target.apply_status_effect(effect_data, source_id, total_damage_override):
+			var runtime_effect: Resource = effect_data.duplicate(true)
+			var damage_multipliers: Dictionary[StringName, float] = packet.get("status_damage_multipliers")
+			var status_damage_multiplier: float = maxf(float(damage_multipliers.get(effect_id, 1.0)), 1.0)
+			runtime_effect.set("damage_per_tick", float(runtime_effect.get("damage_per_tick")) * status_damage_multiplier)
+			var status_caps: Dictionary[StringName, float] = packet.get("status_max_damage_per_second")
+			var status_cap: float = float(status_caps.get(effect_id, 0.0))
+			if status_cap > 0.0:
+				runtime_effect.set("max_damage_per_second", status_cap)
+			var total_damage_override: int = int(roundi(float(total_damage_overrides.get(effect_id, -1)) * status_damage_multiplier))
+			var slow_strength_override: float = -1.0
+			if effect_id == &"slow" and float(packet.get("slow_fraction_of_damage")) > 0.0:
+				var applied_damage: int = int(result.get("total_damage"))
+				if applied_damage <= 0:
+					continue
+				slow_strength_override = float(applied_damage) * float(packet.get("slow_fraction_of_damage"))
+			if target.apply_status_effect(runtime_effect, source_id, total_damage_override, slow_strength_override):
 				applied_status_ids.append(String(effect_data.get("id")))
+				if effect_id == &"poison" and float(packet.get("poison_slow_fraction")) > 0.0:
+					var slow_effect: Resource = SLOW_STATUS.duplicate(true)
+					slow_effect.set("strength_cap", float(slow_effect.get("strength_cap")) + float(packet.get("slow_strength_cap_add")))
+					var tick_interval: float = float(runtime_effect.get("tick_interval"))
+					var tick_count: int = int(floor(float(runtime_effect.get("duration")) / maxf(tick_interval, 0.001)))
+					var poison_budget: float = float(total_damage_override) if total_damage_override >= 0 else float(runtime_effect.get("damage_per_tick")) * float(tick_count * int(runtime_effect.get("max_stacks")))
+					target.apply_status_effect(
+						slow_effect,
+						source_id,
+						-1,
+						maxf(poison_budget * float(packet.get("poison_slow_fraction")), 0.1)
+					)
+	if not bool(packet.get("is_status_damage")) and not bool(packet.get("is_status_bonus_damage")) and float(packet.get("critical_multiplier")) > 1.0 and is_instance_valid(target) and target.state == Enemy.State.MOVING:
+		var conversion_fractions: Dictionary[StringName, float] = packet.get("status_crit_damage_conversion_fractions")
+		for status_id: StringName in conversion_fractions:
+			if not target.has_status(status_id):
+				continue
+			var converted: Dictionary = target.consume_status_damage(status_id, float(conversion_fractions[status_id]))
+			var converted_amount: int = int(converted.get("amount", 0))
+			if converted_amount <= 0:
+				continue
+			var bonus_packet: RefCounted = DAMAGE_PACKET_SCRIPT.new()
+			bonus_packet.set("raw_damage", float(converted_amount))
+			bonus_packet.set("source_id", int(packet.get("source_id")))
+			bonus_packet.set("damage_tags", int(converted.get("damage_tags", DamagePacket.DamageTag.PHYSICAL)))
+			bonus_packet.set("is_status_damage", true)
+			bonus_packet.set("is_status_bonus_damage", true)
+			bonus_packet.set("health_damage_multiplier", float(converted.get("health_layer_multiplier", 1.0)))
+			bonus_packet.set("armor_damage_multiplier", float(converted.get("armor_layer_multiplier", 1.0)))
+			bonus_packet.set("shield_damage_multiplier", float(converted.get("shield_layer_multiplier", 1.0)))
+			apply_damage(target, bonus_packet)
 	result.set("applied_status_ids", applied_status_ids)
 	result.set("target_killed", target.state == Enemy.State.DEAD)
 	last_result_summary = "%s · %s" % [target.get_display_name(), result.call("get_summary")]

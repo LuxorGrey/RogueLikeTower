@@ -9,3 +9,7 @@ extends Resource
 
 # Derivada al preparar la pieza: abre los laterales contiguos a una salida externa.
 var flexible_path_edges: int = 0
+
+# Contenido asignado a una oferta concreta. Las plantillas del catálogo los dejan vacíos.
+var obstacle_type: int = HexCell.ObstacleType.NONE
+var chest_available: bool = false

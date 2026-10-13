@@ -2,6 +2,7 @@ class_name SpawnPortal
 extends Node2D
 
 signal hover_changed(portal: Node2D, hovered: bool)
+signal selected(portal: Node2D)
 
 const PORTAL_SPRITE_SIZE: Vector2 = Vector2(64.0, 96.0)
 const PULSE_PERIOD: float = 3.8
@@ -77,6 +78,18 @@ func get_wave_preview_tooltip_text() -> String:
 	for entry in _preview_entries:
 		lines.append("%s ×%d" % [String(entry.get("display_name", "Enemigo")), int(entry.get("count", 0))])
 	return "\n".join(lines)
+
+func get_wave_preview_entries() -> Array[Dictionary]:
+	var entries: Array[Dictionary] = []
+	for entry in _preview_entries:
+		entries.append(entry.duplicate())
+	return entries
+
+func get_wave_preview_round_number() -> int:
+	return _preview_wave_number
+
+func get_wave_preview_enemy_count() -> int:
+	return _preview_enemy_count
 
 func set_candidate_preview(is_candidate: bool) -> void:
 	if _candidate_preview == is_candidate:
@@ -172,4 +185,7 @@ func _on_mouse_exited() -> void:
 
 func _on_hover_area_input_event(viewport: Node, event: InputEvent, _shape_index: int) -> void:
 	if event is InputEventMouseButton and (event as InputEventMouseButton).pressed:
+		var mouse_event := event as InputEventMouseButton
+		if mouse_event.button_index == MOUSE_BUTTON_LEFT:
+			selected.emit(self)
 		viewport.set_input_as_handled()

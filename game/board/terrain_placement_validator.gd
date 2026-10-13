@@ -96,6 +96,8 @@ static func instantiate_cells(
 		cell.path_edges = cell_data.path_edges
 		cell.flexible_path_edges = cell_data.flexible_path_edges
 		cell.visual_variant = cell_data.visual_variant
+		cell.obstacle_type = cell_data.obstacle_type
+		cell.chest_available = cell_data.chest_available
 		cell.piece_instance_id = piece_instance_id
 		instantiated[global_coord] = cell
 	return instantiated

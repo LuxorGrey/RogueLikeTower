@@ -74,7 +74,10 @@ func get_mana_regen_per_second() -> float:
 	var bonus: float = 0.0
 	if _run_card_service != null and is_instance_valid(_run_card_service):
 		bonus = float(_run_card_service.call("get_mana_regen_bonus"))
-	return maxf(_mana_regen_per_second + bonus, 0.0)
+	var percentage_bonus: float = 0.0
+	if _run_card_service != null and is_instance_valid(_run_card_service):
+		percentage_bonus = float(_run_card_service.call("get_mana_regen_max_percent_bonus"))
+	return maxf(_mana_regen_per_second + bonus + _maximum_mana * percentage_bonus, 0.0)
 
 func refill_mana_to_max() -> void:
 	if not _is_configured:
@@ -87,6 +90,9 @@ func refill_mana_to_max() -> void:
 	mana_changed.emit(_mana, effective_maximum)
 
 func debug_add_mana(amount: float) -> float:
+	return add_mana(amount, &"debug")
+
+func add_mana(amount: float, _reason: StringName = &"reward") -> float:
 	if not _is_configured or amount <= 0.0:
 		return 0.0
 	var previous_mana: float = _mana

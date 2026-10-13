@@ -5,7 +5,7 @@ signal attack_fired(target: Enemy, damage: int)
 signal impact_effect_requested(effect_id: StringName, world_position: Vector2)
 signal stats_changed(level: int)
 
-const ELEVATION_PIXEL_OFFSET: float = 18.0
+const ELEVATION_PIXEL_OFFSET: float = 28.0
 const VISUAL_ART_OFFSET_Y: float = 6.0
 const SCAN_INTERVAL: float = 0.1
 const SHOT_FLASH_DURATION: float = 0.12
@@ -15,7 +15,12 @@ const SHOT_COLOR: Color = Color(1.0, 0.91, 0.46, 0.96)
 const DAMAGE_PACKET_SCRIPT: Script = preload("res://game/combat/damage_packet.gd")
 const SAWBLADE_SCRIPT: Script = preload("res://game/towers/sawblade_projectile.gd")
 const TOWER_PROJECTILE_SCRIPT: Script = preload("res://game/towers/tower_projectile.gd")
+const FROST_SNOWFLAKE_SCRIPT: Script = preload("res://game/towers/frost_snowflake.gd")
 const ICON_CATALOG_SCRIPT: Script = preload("res://game/ui/icon_catalog.gd")
+const STATUS_BLEED: Resource = preload("res://data/status_effects/bleed.tres")
+const STATUS_BURN: Resource = preload("res://data/status_effects/burn.tres")
+const STATUS_POISON: Resource = preload("res://data/status_effects/poison.tres")
+const STATUS_SLOW: Resource = preload("res://data/status_effects/slow.tres")
 const DAMAGE_TAG_PHYSICAL: int = 1
 const DAMAGE_TAG_FIRE: int = 2
 const DAMAGE_TAG_ARCANE: int = 4
@@ -54,6 +59,7 @@ var _turret_angle: float = -PI * 0.5
 var _is_mana_blocked: bool = false
 var _selection_pulse_time: float = 0.0
 var _critical_rng := RandomNumberGenerator.new()
+var _frost_rng := RandomNumberGenerator.new()
 
 func configure(
 	tower_data: TowerData,
@@ -93,6 +99,7 @@ func configure(
 	_targeting_mode = tower_data.targeting_mode
 	_targeting_priorities = [tower_data.targeting_mode, -1, -1]
 	_critical_rng.seed = int(GameState.run_seed) ^ int(get_instance_id())
+	_frost_rng.seed = int(GameState.run_seed) ^ int(get_instance_id()) ^ 19349663
 	_targeting_xp_by_layer = {
 		Enemy.HitPointLayer.HEALTH: 0.0,
 		Enemy.HitPointLayer.ARMOR: 0.0,
@@ -253,14 +260,21 @@ func get_hit_point_damage_multiplier(layer: int) -> float:
 	multiplier += float(get_layer_upgrade_level(layer))
 	if _run_card_service != null and is_instance_valid(_run_card_service) and _run_card_service.has_method("get_tower_hit_point_multiplier_add"):
 		multiplier += float(_run_card_service.call("get_tower_hit_point_multiplier_add", _tower_data.id, layer))
+	if _meta_progression != null and is_instance_valid(_meta_progression) and _meta_progression.has_method("get_tower_hit_point_multiplier_add"):
+		multiplier += float(_meta_progression.call("get_tower_hit_point_multiplier_add", _tower_data.id, layer))
 	return maxf(multiplier, 0.0)
 
-func get_current_crit_chance() -> float:
+func get_current_crit_chance(crit_target: Enemy = null) -> float:
 	if _tower_data == null:
 		return 0.0
 	var chance: float = _tower_data.base_crit_chance
 	if _run_card_service != null and is_instance_valid(_run_card_service) and _run_card_service.has_method("get_tower_crit_chance_add"):
 		chance += float(_run_card_service.call("get_tower_crit_chance_add", _tower_data.id))
+		chance += float(_run_card_service.call("get_tower_crit_chance_per_level_add", _tower_data.id)) * float(level)
+		if crit_target != null and is_instance_valid(crit_target):
+			for status_id in [&"bleed", &"burn", &"poison"]:
+				if crit_target.has_status(status_id):
+					chance += float(_run_card_service.call("get_status_crit_chance_add", status_id))
 	return clampf(chance, 0.0, 1.5)
 
 func get_current_mana_cost() -> float:
@@ -269,17 +283,24 @@ func get_current_mana_cost() -> float:
 	var mana_cost: float = _tower_data.mana_cost_per_attack
 	if _tower_data.mana_cost_scales_with_damage and _tower_data.base_damage > 0:
 		mana_cost *= float(get_current_damage()) / float(_tower_data.base_damage)
-	if _tower_data.mana_cost_per_second > 0.0:
-		mana_cost += _tower_data.mana_cost_per_second / maxf(get_current_attack_rate(), 0.001)
 	if _run_card_service != null and is_instance_valid(_run_card_service):
 		mana_cost *= float(_run_card_service.call("get_tower_mana_cost_multiplier", _tower_data.id))
+		mana_cost += float(get_current_damage()) * float(_run_card_service.call("get_tower_mana_cost_damage_ratio_add", _tower_data.id))
 	return maxf(mana_cost, 0.0)
 
-func create_damage_packet(include_critical_roll: bool = true) -> RefCounted:
+func get_current_mana_drain_rate() -> float:
+	if _tower_data == null:
+		return 0.0
+	var mana_drain_rate: float = _tower_data.mana_cost_per_second
+	if _run_card_service != null and is_instance_valid(_run_card_service):
+		mana_drain_rate *= float(_run_card_service.call("get_tower_mana_cost_multiplier", _tower_data.id))
+	return maxf(mana_drain_rate, 0.0)
+
+func create_damage_packet(crit_target: Enemy = null, include_critical_roll: bool = true) -> RefCounted:
 	var packet: RefCounted = DAMAGE_PACKET_SCRIPT.new()
 	if _tower_data == null:
 		return packet
-	var crit_multiplier: float = _roll_critical_multiplier() if include_critical_roll else 1.0
+	var crit_multiplier: float = _roll_critical_multiplier(crit_target) if include_critical_roll else 1.0
 	packet.set("raw_damage", float(get_current_damage()))
 	packet.set("critical_multiplier", crit_multiplier)
 	packet.set("source_id", get_instance_id())
@@ -293,38 +314,92 @@ func create_damage_packet(include_critical_roll: bool = true) -> RefCounted:
 		packet.set("shield_damage_multiplier", 0.0)
 	packet.set("regen_counter_strength", _tower_data.regen_counter_strength)
 	packet.set("regen_counter_duration", _tower_data.regen_counter_duration)
+	var slow_fraction: float = _tower_data.frost_slow_fraction if _tower_data.attack_pattern == TowerData.AttackPattern.FROST_SNOWFALL else 0.0
+	if _run_card_service != null and is_instance_valid(_run_card_service):
+		slow_fraction += float(_run_card_service.call("get_tower_slow_fraction_add", _tower_data.id))
+		packet.set("slow_strength_cap_add", float(_run_card_service.call("get_status_strength_cap_add", &"slow")))
+		packet.set("poison_slow_fraction", float(_run_card_service.call("get_status_poison_slow_fraction")))
+	packet.set("slow_fraction_of_damage", clampf(slow_fraction, 0.0, 1.0))
 	var status_payloads: Array[Resource] = []
+	var seen_status_ids: Dictionary[StringName, bool] = {}
 	for status_effect in _tower_data.status_effects:
 		if status_effect == null:
 			continue
 		var runtime_effect: Resource = status_effect.duplicate(true)
 		var effect_id: StringName = StringName(runtime_effect.get("id"))
-		var tick_interval: float = float(runtime_effect.get("tick_interval"))
-		runtime_effect.set(
-			"health_layer_multiplier",
-			get_hit_point_damage_multiplier(Enemy.HitPointLayer.HEALTH) * float(runtime_effect.get("health_layer_multiplier"))
-		)
-		runtime_effect.set(
-			"armor_layer_multiplier",
-			get_hit_point_damage_multiplier(Enemy.HitPointLayer.ARMOR) * float(runtime_effect.get("armor_layer_multiplier"))
-		)
-		runtime_effect.set(
-			"shield_layer_multiplier",
-			get_hit_point_damage_multiplier(Enemy.HitPointLayer.SHIELD) * float(runtime_effect.get("shield_layer_multiplier"))
-		)
-		if _run_card_service != null and is_instance_valid(_run_card_service):
-			var duration_multiplier: float = float(_run_card_service.call(
-				"get_status_duration_multiplier",
-				_tower_data.id,
-				StringName(runtime_effect.get("id"))
-			))
-			runtime_effect.set("duration", minf(float(runtime_effect.get("duration")) * duration_multiplier, 60.0))
-		if tick_interval > 0.0 and effect_id in [&"burn", &"poison"]:
-			var tick_count: int = maxi(int(floor(float(runtime_effect.get("duration")) / tick_interval + 0.0001)), 1)
-			runtime_effect.set("damage_per_tick", float(get_current_damage()) * crit_multiplier / float(tick_count))
-		status_payloads.append(runtime_effect)
+		seen_status_ids[effect_id] = true
+		status_payloads.append(_configure_status_payload(runtime_effect, effect_id, crit_multiplier, packet))
+	if _run_card_service != null and is_instance_valid(_run_card_service):
+		for extra_status_id in _run_card_service.call("get_tower_status_ids", _tower_data.id):
+			if seen_status_ids.has(extra_status_id):
+				continue
+			var extra_status: Resource = _get_status_resource(extra_status_id)
+			if extra_status == null:
+				continue
+			status_payloads.append(_configure_status_payload(extra_status.duplicate(true), extra_status_id, crit_multiplier, packet))
 	packet.set("status_payloads", status_payloads)
+	if _run_card_service != null and is_instance_valid(_run_card_service):
+		var condition_bonuses: Dictionary[StringName, float] = {}
+		var conversion_fractions: Dictionary[StringName, float] = {}
+		for status_id in [&"bleed", &"burn", &"poison"]:
+			var condition_bonus: float = float(_run_card_service.call("get_status_condition_layer_damage_add", status_id))
+			if condition_bonus > 0.0:
+				condition_bonuses[status_id] = condition_bonus
+			var conversion_fraction: float = float(_run_card_service.call("get_status_crit_damage_conversion_fraction", status_id))
+			if conversion_fraction > 0.0:
+				conversion_fractions[status_id] = minf(conversion_fraction, 0.95)
+		packet.set("status_condition_layer_damage_adds", condition_bonuses)
+		packet.set("status_crit_damage_conversion_fractions", conversion_fractions)
 	return packet
+
+func _configure_status_payload(runtime_effect: Resource, effect_id: StringName, crit_multiplier: float, packet: RefCounted) -> Resource:
+	runtime_effect.set(
+		"health_layer_multiplier",
+		get_hit_point_damage_multiplier(Enemy.HitPointLayer.HEALTH) * float(runtime_effect.get("health_layer_multiplier"))
+	)
+	runtime_effect.set(
+		"armor_layer_multiplier",
+		get_hit_point_damage_multiplier(Enemy.HitPointLayer.ARMOR) * float(runtime_effect.get("armor_layer_multiplier"))
+	)
+	runtime_effect.set(
+		"shield_layer_multiplier",
+		get_hit_point_damage_multiplier(Enemy.HitPointLayer.SHIELD) * float(runtime_effect.get("shield_layer_multiplier"))
+	)
+	var status_damage_multiplier: float = 1.0
+	if _run_card_service != null and is_instance_valid(_run_card_service):
+		var duration_multiplier: float = float(_run_card_service.call("get_status_duration_multiplier", _tower_data.id, effect_id))
+		runtime_effect.set("duration", minf(float(runtime_effect.get("duration")) * duration_multiplier, 60.0))
+		status_damage_multiplier += float(_run_card_service.call("get_tower_status_damage_bonus", _tower_data.id, effect_id))
+		var cap_bonus: float = float(_run_card_service.call("get_status_max_damage_per_second_bonus", _tower_data.id, effect_id))
+		if cap_bonus > 0.0:
+			var status_caps: Dictionary[StringName, float] = packet.get("status_max_damage_per_second")
+			status_caps[effect_id] = 24.0 + cap_bonus
+			packet.set("status_max_damage_per_second", status_caps)
+		if effect_id == &"slow":
+			runtime_effect.set("strength_cap", minf(float(runtime_effect.get("strength_cap")) + float(_run_card_service.call("get_status_strength_cap_add", effect_id)), 100.0))
+		if effect_id == &"burn":
+			runtime_effect.set("slow_damage_scaling", float(_run_card_service.call("get_status_slow_damage_scaling", effect_id)))
+	if status_damage_multiplier > 1.0:
+		var status_multipliers: Dictionary[StringName, float] = packet.get("status_damage_multipliers")
+		status_multipliers[effect_id] = status_damage_multiplier
+		packet.set("status_damage_multipliers", status_multipliers)
+	var tick_interval: float = float(runtime_effect.get("tick_interval"))
+	if tick_interval > 0.0 and effect_id in [&"bleed", &"burn", &"poison"]:
+		var tick_count: int = maxi(int(floor(float(runtime_effect.get("duration")) / tick_interval + 0.0001)), 1)
+		runtime_effect.set("damage_per_tick", float(get_current_damage()) * crit_multiplier / float(tick_count))
+	return runtime_effect
+
+func _get_status_resource(status_id: StringName) -> Resource:
+	match status_id:
+		&"bleed":
+			return STATUS_BLEED
+		&"burn":
+			return STATUS_BURN
+		&"poison":
+			return STATUS_POISON
+		&"slow":
+			return STATUS_SLOW
+	return null
 
 func get_current_attack_rate() -> float:
 	if _tower_data == null:
@@ -335,7 +410,7 @@ func get_current_rounds_per_minute() -> float:
 	if _tower_data == null:
 		return 0.0
 	var rounds_per_minute: float = _tower_data.get_rounds_per_minute()
-	if _tower_data.visual_archetype == TowerData.VisualArchetype.FROST:
+	if _tower_data.attack_pattern == TowerData.AttackPattern.FROST_SNOWFALL:
 		rounds_per_minute += float(get_covered_path_cell_count()) * _tower_data.frost_rpm_per_path_cell
 	if _run_card_service != null and is_instance_valid(_run_card_service) and _run_card_service.has_method("get_tower_attack_rate_multiplier"):
 		rounds_per_minute *= float(_run_card_service.call("get_tower_attack_rate_multiplier", _tower_data.id))
@@ -346,7 +421,7 @@ func get_current_range_hexes() -> float:
 		return 0.0
 	var range_hexes: float = (
 		_tower_data.range_hexes
-		+ elevation * _tower_data.height_range_bonus_per_level
+		+ elevation * _tower_data.height_range_bonus_per_level * _get_elevation_range_multiplier()
 	)
 	if _run_card_service != null and is_instance_valid(_run_card_service):
 		range_hexes += float(_run_card_service.call("get_tower_range_add", _tower_data.id))
@@ -358,7 +433,13 @@ func get_current_area_radius_hexes() -> float:
 	var radius: float = _tower_data.attack_area_radius_hexes
 	if _run_card_service != null and is_instance_valid(_run_card_service):
 		radius += float(_run_card_service.call("get_tower_area_radius_add", _tower_data.id))
+		radius *= 1.0 + float(_run_card_service.call("get_tower_area_radius_multiplier_add", _tower_data.id))
 	return maxf(radius, 0.0)
+
+func _get_elevation_range_multiplier() -> float:
+	if _run_card_service == null or not is_instance_valid(_run_card_service):
+		return 1.0
+	return 1.0 + float(_run_card_service.call("get_tower_elevation_range_bonus_multiplier_add", _tower_data.id))
 
 func get_covered_path_cell_count() -> int:
 	if _board_grid == null or _tower_data == null:
@@ -431,8 +512,8 @@ func _get_layer_progress_summary(layer: int) -> String:
 func get_attack_pattern_name() -> String:
 	if _tower_data == null:
 		return "sin ataque"
-	if _tower_data.visual_archetype == TowerData.VisualArchetype.FROST:
-		return "todos los enemigos en cuadrado de alcance"
+	if _tower_data.attack_pattern == TowerData.AttackPattern.FROST_SNOWFALL:
+		return "copos en cuadrado · daño y Slow al impactar"
 	match _tower_data.attack_pattern:
 		TowerData.AttackPattern.SINGLE_TARGET:
 			return "objetivo único"
@@ -497,6 +578,13 @@ func _physics_process(delta: float) -> void:
 		queue_redraw()
 	if RunManager.phase != RunManager.Phase.COMBAT:
 		return
+	if _tower_data.attack_pattern == TowerData.AttackPattern.FROST_SNOWFALL:
+		var mana_drain: float = get_current_mana_drain_rate() * delta
+		if mana_drain > 0.0 and _run_economy != null:
+			if not bool(_run_economy.call("try_spend_mana", mana_drain)):
+				_is_mana_blocked = true
+				return
+		_is_mana_blocked = false
 	if _current_target != null and not is_instance_valid(_current_target):
 		_current_target = null
 		_is_mana_blocked = false
@@ -574,10 +662,13 @@ func _is_target_in_range(target: Enemy) -> bool:
 	if target == null or not is_instance_valid(target) or target.state != Enemy.State.MOVING:
 		return false
 	var effective_range: float = get_current_range_pixels()
-	if _tower_data != null and _tower_data.visual_archetype == TowerData.VisualArchetype.FROST:
+	if _tower_data != null and _tower_data.attack_pattern == TowerData.AttackPattern.FROST_SNOWFALL:
 		var square_offset: Vector2 = target.global_position - global_position
 		return absf(square_offset.x) <= effective_range and absf(square_offset.y) <= effective_range
 	return global_position.distance_squared_to(target.global_position) <= effective_range * effective_range
+
+func is_enemy_within_current_range(target: Enemy) -> bool:
+	return _is_target_in_range(target)
 
 func _fire_at_target() -> void:
 	if _damage_service == null or not _is_target_in_range(_current_target):
@@ -591,6 +682,10 @@ func _fire_at_target() -> void:
 	_is_mana_blocked = false
 	var target: Enemy = _current_target
 	_attack_cooldown = 1.0 / maxf(get_current_attack_rate(), 0.001)
+	if _tower_data.attack_pattern == TowerData.AttackPattern.FROST_SNOWFALL:
+		if not _launch_frost_snowflake():
+			_attack_cooldown = 0.25
+		return
 	if _tower_data.attack_pattern == TowerData.AttackPattern.SAWBLADE:
 		if not _launch_sawblade(target):
 			_attack_cooldown = 0.25
@@ -614,7 +709,7 @@ func _fire_at_target() -> void:
 				_active_ballista_reload_cycle_id = 0
 				_active_ballista_reload_duration = 0.0
 		return
-	var packet: RefCounted = create_damage_packet()
+	var packet: RefCounted = create_damage_packet(target)
 	var targets: Array[Enemy] = _get_attack_targets(target)
 	var did_hit: bool = false
 	_shot_target_positions.clear()
@@ -658,7 +753,7 @@ func _launch_tower_projectile(target: Enemy, cooldown_cycle_id: int = 0) -> bool
 		global_position,
 		target,
 		target.global_position,
-		create_damage_packet(),
+		create_damage_packet(target),
 		_damage_service,
 		self,
 		_tower_data.projectile_speed,
@@ -746,6 +841,8 @@ func _get_attack_targets(primary_target: Enemy) -> Array[Enemy]:
 				if candidate.state == Enemy.State.MOVING and _is_target_in_range(candidate):
 					targets.append(candidate)
 			return targets
+		TowerData.AttackPattern.FROST_SNOWFALL:
+			return []
 		TowerData.AttackPattern.CONE:
 			var forward: Vector2 = global_position.direction_to(primary_target.global_position)
 			var half_angle: float = deg_to_rad(_tower_data.cone_angle_degrees * 0.5)
@@ -781,8 +878,8 @@ func _gain_targeting_xp(target: Enemy, delta: float) -> void:
 		queue_redraw()
 	_targeting_xp_by_layer[layer] = new_total
 
-func _roll_critical_multiplier() -> float:
-	var chance: float = get_current_crit_chance()
+func _roll_critical_multiplier(crit_target: Enemy = null) -> float:
+	var chance: float = get_current_crit_chance(crit_target)
 	if chance <= 0.0:
 		return 1.0
 	if _critical_rng.randf() < clampf(chance - 1.0, 0.0, 0.5):
@@ -811,7 +908,7 @@ func _launch_sawblade(target: Enemy) -> bool:
 		"configure",
 		global_position,
 		route,
-		create_damage_packet(),
+		create_damage_packet(target),
 		_damage_service,
 		_tower_data.projectile_speed,
 		_tower_data.projectile_hit_radius,
@@ -821,6 +918,72 @@ func _launch_sawblade(target: Enemy) -> bool:
 		projectile.queue_free()
 		return false
 	return true
+
+func _launch_frost_snowflake() -> bool:
+	if _tower_data == null or _damage_service == null:
+		return false
+	var entities: Node = get_parent()
+	if entities == null:
+		return false
+	var path_positions: Array[Vector2] = _get_covered_path_cell_positions()
+	if path_positions.is_empty():
+		return false
+	var landing_position: Vector2 = path_positions[_frost_rng.randi_range(0, path_positions.size() - 1)]
+	var snowflake: Node2D = FROST_SNOWFLAKE_SCRIPT.new() as Node2D
+	if snowflake == null:
+		return false
+	entities.add_child(snowflake)
+	var configured: bool = bool(snowflake.call(
+		"configure",
+		landing_position,
+		_tower_data.frost_snowflake_fall_height,
+		_tower_data.frost_snowflake_fall_speed,
+		_tower_data.frost_snowflake_hit_radius,
+		create_damage_packet(),
+		_damage_service,
+		self,
+		_frost_rng.randf_range(-2.8, 2.8)
+	))
+	if not configured:
+		snowflake.queue_free()
+	return configured
+
+func _get_covered_path_cell_positions() -> Array[Vector2]:
+	var positions: Array[Vector2] = []
+	if _board_grid == null or _tower_data == null:
+		return positions
+	var range_pixels: float = get_current_range_pixels()
+	var tower_position: Vector2 = HexMath.axial_to_world(
+		HexCoord.new(cell_coord.x, cell_coord.y),
+		_hex_radius
+	)
+	for cell_variant in _board_grid.cells.values():
+		var cell := cell_variant as HexCell
+		if cell == null or cell.terrain_type != HexCell.TerrainType.PATH:
+			continue
+		var cell_position: Vector2 = HexMath.axial_to_world(cell.coord, _hex_radius)
+		var elevation_offset: Vector2 = Vector2(
+			0.0,
+			float(cell.elevation - elevation) * ELEVATION_PIXEL_OFFSET
+		)
+		var offset: Vector2 = cell_position - tower_position - elevation_offset
+		if absf(offset.x) > range_pixels or absf(offset.y) > range_pixels:
+			continue
+		positions.append(global_position + offset)
+	return positions
+
+func on_frost_snowflake_hit(target: Enemy, result: RefCounted) -> void:
+	if target == null or not is_instance_valid(target) or result == null:
+		return
+	var total_damage: int = int(result.get("total_damage"))
+	if total_damage <= 0:
+		return
+	_emit_impact_effect(target.global_position)
+	_shot_target_position = target.global_position - global_position
+	_shot_target_positions = [_shot_target_position]
+	_shot_flash_timer = SHOT_FLASH_DURATION
+	attack_fired.emit(target, total_damage)
+	queue_redraw()
 
 func _emit_impact_effect(world_position: Vector2) -> void:
 	if _tower_data == null:

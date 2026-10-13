@@ -1,6 +1,6 @@
 # ADR-0057 — Oferta de expansión con prolongación garantizada
 
-- Estado: código integrado; aceptación interactiva pendiente.
+- Estado: parte del código integrada; la política de la card recta fue sustituida por ADR-0060; aceptación interactiva pendiente.
 - Fecha: 2026-10-13.
 - Contexto: una expansión podía cerrar spawns y dejar solo una salida abierta, mientras la siguiente oferta aleatoria contenía tres piezas sin una colocación legal para continuar PATH. El cambio responde a la petición de que siempre exista una opción de alargar el camino y que el cierre de un spawn se entienda antes de confirmar.
 
@@ -26,4 +26,4 @@
 
 ## ADR relacionados y sustituciones
 
-- No sustituye decisiones previas. Complementa [ADR-0007](ADR-0007-grafo-logico-de-caminos.md), [ADR-0025](ADR-0025-tablero-inicial-y-ruta-minima.md) y [ADR-0056](ADR-0056-tablero-inicial-lineal.md) con una garantía de UX/colocación para las expansiones de campaña.
+- ADR-0060 sustituye la regla de reservar siempre una card `ALARGA CAMINO`; conserva el requisito de al menos una opción legal de continuidad y el aviso de spawns que se cierran. Complementa [ADR-0007](ADR-0007-grafo-logico-de-caminos.md), [ADR-0025](ADR-0025-tablero-inicial-y-ruta-minima.md) y [ADR-0056](ADR-0056-tablero-inicial-lineal.md).

@@ -8,6 +8,8 @@ enum Rarity { COMMON, UNCOMMON, RARE }
 @export_multiline var description: String = ""
 @export_enum("Común", "Poco común", "Rara") var rarity: int = Rarity.COMMON
 @export var unlock_requirement: StringName = &""
+@export var required_card_ids: Array[StringName] = []
+@export var any_required_card_ids: Array[StringName] = []
 @export var tags: Array[StringName] = []
 @export var modifier_operations: Array[Resource] = []
 @export_range(0.0, 100.0, 0.1) var offer_weight: float = 1.0
@@ -27,6 +29,16 @@ func validate() -> PackedStringArray:
 		errors.append("El peso de oferta debe estar entre 0 y 100.")
 	if max_per_run < 1 or max_per_run > 20:
 		errors.append("El máximo de copias debe estar entre 1 y 20 por run.")
+	var required_ids: Dictionary[StringName, bool] = {}
+	for required_id in required_card_ids:
+		if required_id == &"" or required_id == id or required_ids.has(required_id):
+			errors.append("Los prerrequisitos obligatorios deben ser IDs válidos y únicos.")
+			break
+		required_ids[required_id] = true
+	for required_id in any_required_card_ids:
+		if required_id == &"" or required_id == id:
+			errors.append("Los prerrequisitos alternativos deben ser IDs válidos.")
+			break
 	if modifier_operations.is_empty():
 		errors.append("CardData requiere al menos una operación de modificador.")
 	for operation in modifier_operations:

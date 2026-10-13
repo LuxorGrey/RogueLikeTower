@@ -77,4 +77,4 @@ Las recompensas de limpieza de las rondas 1–20 conservan los valores de sus re
 - [Status Effects — Rogue Tower Wiki](https://rogue-tower.fandom.com/wiki/Status_Effects), consultada el 2026-10-09.
 - Un alias de la tabla adjunta puede diferir del título de una página actual de la wiki. El roster del juego sigue los nombres del prompt seleccionado y la nomenclatura (12_NOMENCLATURE.md); cualquier renombrado de recurso debe actualizar la tabla, los Resources y las habilidades que lo referencian.
 
-Los balances propios de Frost Keep, Tesla Coil y Ooogie von Ooogovich se registran en ADR-0037.
+El comportamiento y las cifras de referencia de Frost Keep se registran en ADR-0059; el ajuste propio de Tesla Coil y el balance de Ooogie von Ooogovich permanecen en ADR-0037.

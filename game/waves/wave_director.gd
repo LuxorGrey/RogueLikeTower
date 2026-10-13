@@ -19,6 +19,7 @@ var _entities: Node2D
 var _damage_service: Node
 var _campaign_data: Resource
 var _is_diagnostic: bool = false
+var _enemy_base_damage_bonus: int = 0
 var _map_origin: Vector2 = Vector2.ZERO
 var _hex_radius: float = 52.0
 var _active_enemies: Dictionary[int, Enemy] = {}
@@ -88,7 +89,7 @@ func start_wave(
 	if not wave_errors.is_empty():
 		last_error = "; ".join(wave_errors)
 		return false
-	if not path_graph.is_valid or path_graph.routes.is_empty():
+	if not path_graph.is_valid or path_graph.get_active_routes().is_empty():
 		last_error = "El grafo PATH no tiene rutas válidas hacia la base."
 		return false
 	if base.get_current_health() <= 0 or hex_radius <= 0.0:
@@ -155,7 +156,7 @@ func _select_route(group: WaveEnemyGroupData, enemy_index: int) -> PathRoute:
 		return available_routes[posmod(enemy_index, available_routes.size())]
 	return available_routes[0]
 
-func _select_campaign_route(group: WaveEnemyGroupData) -> PathRoute:
+func _select_campaign_route(_group: WaveEnemyGroupData) -> PathRoute:
 	var available_routes: Array[PathRoute] = _get_reachable_routes()
 	if available_routes.is_empty():
 		return null
@@ -173,13 +174,9 @@ func _get_spawn_routes(group: WaveEnemyGroupData, pulse_index: int) -> Array[Pat
 	return routes
 
 func _get_reachable_routes() -> Array[PathRoute]:
-	var available_routes: Array[PathRoute] = []
 	if _path_graph == null:
-		return available_routes
-	for route in _path_graph.routes:
-		if route != null and route.is_reachable:
-			available_routes.append(route)
-	return available_routes
+		return []
+	return _path_graph.get_active_routes()
 
 func _spawn_enemy(
 	enemy_data: EnemyData,
@@ -264,7 +261,7 @@ func _on_enemy_reached_base(base_damage: int, enemy_id: int) -> void:
 	_kill_rewards.erase(enemy_id)
 	var applied_damage: int = 0
 	if not _is_diagnostic:
-		applied_damage = _base.apply_damage(base_damage)
+		applied_damage = _base.apply_damage(maxi(base_damage + _enemy_base_damage_bonus, 0))
 		base_damaged.emit(applied_damage, _base.get_current_health(), _base.get_maximum_health())
 	enemy_count_changed.emit(_active_enemies.size())
 	_emit_population_changed()
@@ -272,6 +269,9 @@ func _on_enemy_reached_base(base_damage: int, enemy_id: int) -> void:
 		_fail_wave("La base ha sido destruida.")
 		return
 	_check_wave_completion()
+
+func set_enemy_base_damage_bonus(amount: int) -> void:
+	_enemy_base_damage_bonus = clampi(amount, 0, 1000)
 
 func _on_enemy_defeated(enemy_id: int) -> void:
 	if not _active_enemies.has(enemy_id):

@@ -6,8 +6,35 @@ var adjacency: Dictionary[Vector2i, Array] = {}
 var spawn_endpoints: Array[PathEndpoint] = []
 var base_endpoint: PathEndpoint
 var routes: Array[PathRoute] = []
+var removed_spawn_endpoint_keys: Dictionary[String, bool] = {}
 var errors: PackedStringArray = PackedStringArray()
 var is_valid: bool = false
+
+static func get_spawn_endpoint_key(endpoint: PathEndpoint) -> String:
+	if endpoint == null:
+		return ""
+	return "%d,%d,%d" % [endpoint.cell_coord.x, endpoint.cell_coord.y, endpoint.edge_direction]
+
+func set_spawn_endpoint_removed(endpoint_key: String, is_removed: bool) -> void:
+	if endpoint_key.is_empty():
+		return
+	if is_removed:
+		removed_spawn_endpoint_keys[endpoint_key] = true
+	else:
+		removed_spawn_endpoint_keys.erase(endpoint_key)
+
+func get_active_routes() -> Array[PathRoute]:
+	var active_routes: Array[PathRoute] = []
+	for route in routes:
+		if route == null or not route.is_reachable or route.spawn_endpoint == null:
+			continue
+		if removed_spawn_endpoint_keys.has(get_spawn_endpoint_key(route.spawn_endpoint)):
+			continue
+		active_routes.append(route)
+	return active_routes
+
+func get_active_spawn_count() -> int:
+	return get_active_routes().size()
 
 func rebuild(
 	board_cells: Dictionary[Vector2i, HexCell],

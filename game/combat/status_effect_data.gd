@@ -16,7 +16,12 @@ const ALL_DAMAGE_TAGS: int = DAMAGE_TAG_PHYSICAL | DAMAGE_TAG_FIRE | DAMAGE_TAG_
 @export_range(1, 20, 1) var max_stacks: int = 1
 @export_enum("Refresh", "Add stacks") var stack_rule: int = StackRule.REFRESH
 @export_range(0.05, 1.0, 0.05) var speed_multiplier: float = 1.0
+## Optional strength-based movement status that gains strength on impact and decays over time.
+@export_range(0.0, 100.0, 0.5) var strength_cap: float = 0.0
+@export_range(0.0, 100.0, 0.5) var strength_decay_per_second: float = 0.0
 @export_range(0.0, 10000.0, 0.1) var damage_per_tick: float = 0.0
+@export_range(0.0, 100000.0, 0.5) var max_damage_per_second: float = 0.0
+@export_range(0.0, 3.0, 0.05) var slow_damage_scaling: float = 0.0
 @export_flags("Physical", "Fire", "Arcane", "Poison") var damage_tags: int = DAMAGE_TAG_PHYSICAL
 @export_range(0.0, 100.0, 0.05) var health_layer_multiplier: float = 1.0
 @export_range(0.0, 100.0, 0.05) var armor_layer_multiplier: float = 1.0
@@ -40,8 +45,16 @@ func validate() -> PackedStringArray:
 		errors.append("El multiplicador de velocidad debe estar en el intervalo [0.05, 1].")
 	if damage_per_tick < 0.0 or damage_per_tick > 10000.0:
 		errors.append("El daño periódico debe estar entre 0 y 10000.")
+	if max_damage_per_second < 0.0 or max_damage_per_second > 100000.0:
+		errors.append("El límite de daño periódico debe estar entre 0 y 100000 DPS.")
+	if slow_damage_scaling < 0.0 or slow_damage_scaling > 3.0:
+		errors.append("El escalado de Burn por Slow debe estar entre 0 y 300%.")
 	if damage_per_tick > 0.0 and tick_interval <= 0.0:
 		errors.append("Un estado con daño periódico requiere un intervalo de tick positivo.")
+	if (strength_cap > 0.0) != (strength_decay_per_second > 0.0):
+		errors.append("Un estado de fuerza decreciente requiere límite y tasa de decaimiento positivos.")
+	if strength_decay_per_second > strength_cap:
+		errors.append("La tasa de decaimiento no puede superar la fuerza máxima del estado.")
 	if damage_per_tick > 0.0 and (damage_tags <= 0 or (damage_tags & ~ALL_DAMAGE_TAGS) != 0):
 		errors.append("El daño periódico requiere tags de daño válidos.")
 	if (
@@ -50,6 +63,6 @@ func validate() -> PackedStringArray:
 		or shield_layer_multiplier < 0.0 or shield_layer_multiplier > 100.0
 	):
 		errors.append("Los multiplicadores de daño periódico por capa deben estar entre 0 y 100.")
-	if is_equal_approx(speed_multiplier, 1.0) and damage_per_tick <= 0.0:
+	if is_equal_approx(speed_multiplier, 1.0) and damage_per_tick <= 0.0 and strength_cap <= 0.0:
 		errors.append("El estado no modifica velocidad ni causa daño periódico.")
 	return errors

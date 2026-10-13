@@ -2,7 +2,7 @@ class_name TowerBuildGhost
 extends Node2D
 
 const HEX_RADIUS: float = 52.0
-const ELEVATION_PIXEL_OFFSET: float = 18.0
+const ELEVATION_PIXEL_OFFSET: float = 28.0
 const ART_OFFSET_Y: float = 6.0
 const TOWER_GHOST_SHADER: Shader = preload("res://game/board/tower_placement_ghost.gdshader")
 

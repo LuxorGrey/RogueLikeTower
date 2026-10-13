@@ -1,0 +1,3363 @@
+[gd_resource type="Resource" script_class="CardCatalogData" load_steps=354 format=3]
+
+[ext_resource type="Script" path="res://data/cards/card_catalog_data.gd" id="1_catalog"]
+[ext_resource type="Script" path="res://game/cards/card_data.gd" id="2_card"]
+[ext_resource type="Script" path="res://game/cards/card_modifier_operation.gd" id="3_operation"]
+
+[sub_resource type="Resource" id="Op_0_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"ballista_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_0"]
+script = ExtResource("2_card")
+id = &"ballista_broadhead_bolts_i"
+display_name = "Broadhead Bolts I"
+description = "Aumenta en +1 el multiplicador de daño de Ballista contra Health (+1)."
+rarity = 0
+unlock_requirement = &"tower:ballista_demo"
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_0_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_1_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"ballista_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_1"]
+script = ExtResource("2_card")
+id = &"ballista_broadhead_bolts_ii"
+display_name = "Broadhead Bolts II"
+description = "Aumenta en +2 el multiplicador de daño de Ballista contra Health (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_broadhead_bolts_i"])
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_1_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_2_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"ballista_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_2"]
+script = ExtResource("2_card")
+id = &"ballista_broadhead_bolts_iii"
+display_name = "Broadhead Bolts III"
+description = "Aumenta en +3 el multiplicador de daño de Ballista contra Health (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_broadhead_bolts_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_2_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_3_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"ballista_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_3"]
+script = ExtResource("2_card")
+id = &"ballista_heavy_shafts_i"
+display_name = "Heavy Shafts I"
+description = "Aumenta en +1 el multiplicador de daño de Ballista contra Armor (+1)."
+rarity = 0
+unlock_requirement = &"tower:ballista_demo"
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_3_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_4_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"ballista_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_4"]
+script = ExtResource("2_card")
+id = &"ballista_heavy_shafts_ii"
+display_name = "Heavy Shafts II"
+description = "Aumenta en +2 el multiplicador de daño de Ballista contra Armor (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_heavy_shafts_i"])
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_4_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_5_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"ballista_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_5"]
+script = ExtResource("2_card")
+id = &"ballista_heavy_shafts_iii"
+display_name = "Heavy Shafts III"
+description = "Aumenta en +3 el multiplicador de daño de Ballista contra Armor (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_heavy_shafts_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_5_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_6_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"ballista_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_6"]
+script = ExtResource("2_card")
+id = &"ballista_enchanted_bolts_i"
+display_name = "Enchanted Bolts I"
+description = "Aumenta en +1 el multiplicador de daño de Ballista contra Shield (+1)."
+rarity = 0
+unlock_requirement = &"tower:ballista_demo"
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_6_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_7_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"ballista_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_7"]
+script = ExtResource("2_card")
+id = &"ballista_enchanted_bolts_ii"
+display_name = "Enchanted Bolts II"
+description = "Aumenta en +2 el multiplicador de daño de Ballista contra Shield (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_enchanted_bolts_i"])
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_7_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_8_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"ballista_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_8"]
+script = ExtResource("2_card")
+id = &"ballista_enchanted_bolts_iii"
+display_name = "Enchanted Bolts III"
+description = "Aumenta en +3 el multiplicador de daño de Ballista contra Shield (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_enchanted_bolts_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_8_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_9_0"]
+script = ExtResource("3_operation")
+type = 9
+value = 0.15
+affected_tower_id = &"ballista_demo"
+
+[sub_resource type="Resource" id="Card_9"]
+script = ExtResource("2_card")
+id = &"ballista_advanced_ballistics"
+display_name = "Advanced Ballistics"
+description = "Aumenta un 15% la probabilidad de crítico de Ballista."
+rarity = 1
+unlock_requirement = &"tower:ballista_demo"
+any_required_card_ids = Array[StringName]([&"ballista_broadhead_bolts_iii", &"ballista_heavy_shafts_iii", &"ballista_enchanted_bolts_iii"])
+tags = Array[StringName]([&"tower", &"critical"])
+modifier_operations = Array[Resource]([SubResource("Op_9_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_10_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"ballista_demo"
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_10"]
+script = ExtResource("2_card")
+id = &"ballista_jagged_heads_i"
+display_name = "Jagged Heads I"
+description = "Desbloquea Bleed para Ballista y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_broadhead_bolts_i"])
+tags = Array[StringName]([&"tower", &"status", &"bleed"])
+modifier_operations = Array[Resource]([SubResource("Op_10_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_11_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"ballista_demo"
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_11"]
+script = ExtResource("2_card")
+id = &"ballista_jagged_heads_ii"
+display_name = "Jagged Heads II"
+description = "Desbloquea Bleed para Ballista y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_jagged_heads_i"])
+tags = Array[StringName]([&"tower", &"status", &"bleed"])
+modifier_operations = Array[Resource]([SubResource("Op_11_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_12_0"]
+script = ExtResource("3_operation")
+type = 12
+value = 0.05
+affected_tower_id = &"ballista_demo"
+
+[sub_resource type="Resource" id="Card_12"]
+script = ExtResource("2_card")
+id = &"ballista_frost_bolts_i"
+display_name = "Frost Bolts I"
+description = "Cada impacto de Ballista aplica Slow equivalente al 5% del daño infligido."
+rarity = 1
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_broadhead_bolts_ii"])
+tags = Array[StringName]([&"tower", &"status", &"slow"])
+modifier_operations = Array[Resource]([SubResource("Op_12_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_13_0"]
+script = ExtResource("3_operation")
+type = 12
+value = 0.05
+affected_tower_id = &"ballista_demo"
+
+[sub_resource type="Resource" id="Card_13"]
+script = ExtResource("2_card")
+id = &"ballista_frost_bolts_ii"
+display_name = "Frost Bolts II"
+description = "Cada impacto de Ballista aplica Slow equivalente al 5% del daño infligido."
+rarity = 1
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_frost_bolts_i"])
+tags = Array[StringName]([&"tower", &"status", &"slow"])
+modifier_operations = Array[Resource]([SubResource("Op_13_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_14_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"ballista_demo"
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_14"]
+script = ExtResource("2_card")
+id = &"ballista_flaming_bolts_i"
+display_name = "Flaming Bolts I"
+description = "Desbloquea Burn para Ballista y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_heavy_shafts_i"])
+tags = Array[StringName]([&"tower", &"status", &"burn"])
+modifier_operations = Array[Resource]([SubResource("Op_14_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_15_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"ballista_demo"
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_15"]
+script = ExtResource("2_card")
+id = &"ballista_flaming_bolts_ii"
+display_name = "Flaming Bolts II"
+description = "Desbloquea Burn para Ballista y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_flaming_bolts_i"])
+tags = Array[StringName]([&"tower", &"status", &"burn"])
+modifier_operations = Array[Resource]([SubResource("Op_15_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_16_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"ballista_demo"
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_16"]
+script = ExtResource("2_card")
+id = &"ballista_poison_bolts_i"
+display_name = "Poison Bolts I"
+description = "Desbloquea Poison para Ballista y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_enchanted_bolts_i"])
+tags = Array[StringName]([&"tower", &"status", &"poison"])
+modifier_operations = Array[Resource]([SubResource("Op_16_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_17_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"ballista_demo"
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_17"]
+script = ExtResource("2_card")
+id = &"ballista_poison_bolts_ii"
+display_name = "Poison Bolts II"
+description = "Desbloquea Poison para Ballista y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_poison_bolts_i"])
+tags = Array[StringName]([&"tower", &"status", &"poison"])
+modifier_operations = Array[Resource]([SubResource("Op_17_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_18_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"mortar_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_18"]
+script = ExtResource("2_card")
+id = &"mortar_he_shells_i"
+display_name = "HE Shells I"
+description = "Aumenta en +1 el multiplicador de daño de Mortar contra Health (+1)."
+rarity = 0
+unlock_requirement = &"tower:mortar_demo"
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_18_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_19_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"mortar_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_19"]
+script = ExtResource("2_card")
+id = &"mortar_he_shells_ii"
+display_name = "HE Shells II"
+description = "Aumenta en +2 el multiplicador de daño de Mortar contra Health (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_he_shells_i"])
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_19_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_20_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"mortar_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_20"]
+script = ExtResource("2_card")
+id = &"mortar_he_shells_iii"
+display_name = "HE Shells III"
+description = "Aumenta en +3 el multiplicador de daño de Mortar contra Health (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_he_shells_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_20_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_21_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"mortar_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_21"]
+script = ExtResource("2_card")
+id = &"mortar_concussive_shells_i"
+display_name = "Concussive Shells I"
+description = "Aumenta en +1 el multiplicador de daño de Mortar contra Armor (+1)."
+rarity = 0
+unlock_requirement = &"tower:mortar_demo"
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_21_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_22_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"mortar_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_22"]
+script = ExtResource("2_card")
+id = &"mortar_concussive_shells_ii"
+display_name = "Concussive Shells II"
+description = "Aumenta en +2 el multiplicador de daño de Mortar contra Armor (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_concussive_shells_i"])
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_22_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_23_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"mortar_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_23"]
+script = ExtResource("2_card")
+id = &"mortar_concussive_shells_iii"
+display_name = "Concussive Shells III"
+description = "Aumenta en +3 el multiplicador de daño de Mortar contra Armor (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_concussive_shells_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_23_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_24_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"mortar_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_24"]
+script = ExtResource("2_card")
+id = &"mortar_emp_i"
+display_name = "EMP I"
+description = "Aumenta en +1 el multiplicador de daño de Mortar contra Shield (+1)."
+rarity = 0
+unlock_requirement = &"tower:mortar_demo"
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_24_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_25_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"mortar_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_25"]
+script = ExtResource("2_card")
+id = &"mortar_emp_ii"
+display_name = "EMP II"
+description = "Aumenta en +2 el multiplicador de daño de Mortar contra Shield (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_emp_i"])
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_25_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_26_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"mortar_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_26"]
+script = ExtResource("2_card")
+id = &"mortar_emp_iii"
+display_name = "EMP III"
+description = "Aumenta en +3 el multiplicador de daño de Mortar contra Shield (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_emp_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_26_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_27_0"]
+script = ExtResource("3_operation")
+type = 9
+value = 0.15
+affected_tower_id = &"mortar_demo"
+
+[sub_resource type="Resource" id="Card_27"]
+script = ExtResource("2_card")
+id = &"mortar_advanced_explosives"
+display_name = "Advanced Explosives"
+description = "Aumenta un 15% la probabilidad de crítico de Mortar."
+rarity = 1
+unlock_requirement = &"tower:mortar_demo"
+any_required_card_ids = Array[StringName]([&"mortar_he_shells_iii", &"mortar_concussive_shells_iii", &"mortar_emp_iii"])
+tags = Array[StringName]([&"tower", &"critical"])
+modifier_operations = Array[Resource]([SubResource("Op_27_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_28_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"mortar_demo"
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_28"]
+script = ExtResource("2_card")
+id = &"mortar_fragmentation_i"
+display_name = "Fragmentation I"
+description = "Desbloquea Bleed para Mortar y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_he_shells_i"])
+tags = Array[StringName]([&"tower", &"status", &"bleed"])
+modifier_operations = Array[Resource]([SubResource("Op_28_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_29_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"mortar_demo"
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_29"]
+script = ExtResource("2_card")
+id = &"mortar_fragmentation_ii"
+display_name = "Fragmentation II"
+description = "Desbloquea Bleed para Mortar y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_fragmentation_i"])
+tags = Array[StringName]([&"tower", &"status", &"bleed"])
+modifier_operations = Array[Resource]([SubResource("Op_29_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_30_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"mortar_demo"
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_30"]
+script = ExtResource("2_card")
+id = &"mortar_incendiary_rounds_i"
+display_name = "Incendiary Rounds I"
+description = "Desbloquea Burn para Mortar y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_concussive_shells_i"])
+tags = Array[StringName]([&"tower", &"status", &"burn"])
+modifier_operations = Array[Resource]([SubResource("Op_30_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_31_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"mortar_demo"
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_31"]
+script = ExtResource("2_card")
+id = &"mortar_incendiary_rounds_ii"
+display_name = "Incendiary Rounds II"
+description = "Desbloquea Burn para Mortar y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_incendiary_rounds_i"])
+tags = Array[StringName]([&"tower", &"status", &"burn"])
+modifier_operations = Array[Resource]([SubResource("Op_31_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_32_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"mortar_demo"
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_32"]
+script = ExtResource("2_card")
+id = &"mortar_gas_shells_i"
+display_name = "Gas Shells I"
+description = "Desbloquea Poison para Mortar y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_emp_i"])
+tags = Array[StringName]([&"tower", &"status", &"poison"])
+modifier_operations = Array[Resource]([SubResource("Op_32_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_33_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"mortar_demo"
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_33"]
+script = ExtResource("2_card")
+id = &"mortar_gas_shells_ii"
+display_name = "Gas Shells II"
+description = "Desbloquea Poison para Mortar y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_gas_shells_i"])
+tags = Array[StringName]([&"tower", &"status", &"poison"])
+modifier_operations = Array[Resource]([SubResource("Op_33_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_34_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"tesla_coil_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_34"]
+script = ExtResource("2_card")
+id = &"tesla_coil_power_surge_i"
+display_name = "Power Surge I"
+description = "Aumenta en +1 el multiplicador de daño de Tesla Coil contra Health (+1)."
+rarity = 0
+unlock_requirement = &"tower:tesla_coil_demo"
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_34_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_35_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"tesla_coil_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_35"]
+script = ExtResource("2_card")
+id = &"tesla_coil_power_surge_ii"
+display_name = "Power Surge II"
+description = "Aumenta en +2 el multiplicador de daño de Tesla Coil contra Health (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:tesla_coil_demo"
+required_card_ids = Array[StringName]([&"tesla_coil_power_surge_i"])
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_35_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_36_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"tesla_coil_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_36"]
+script = ExtResource("2_card")
+id = &"tesla_coil_power_surge_iii"
+display_name = "Power Surge III"
+description = "Aumenta en +3 el multiplicador de daño de Tesla Coil contra Health (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:tesla_coil_demo"
+required_card_ids = Array[StringName]([&"tesla_coil_power_surge_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_36_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_37_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"tesla_coil_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_37"]
+script = ExtResource("2_card")
+id = &"tesla_coil_plasmatics_i"
+display_name = "Plasmatics I"
+description = "Aumenta en +1 el multiplicador de daño de Tesla Coil contra Armor (+1)."
+rarity = 0
+unlock_requirement = &"tower:tesla_coil_demo"
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_37_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_38_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"tesla_coil_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_38"]
+script = ExtResource("2_card")
+id = &"tesla_coil_plasmatics_ii"
+display_name = "Plasmatics II"
+description = "Aumenta en +2 el multiplicador de daño de Tesla Coil contra Armor (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:tesla_coil_demo"
+required_card_ids = Array[StringName]([&"tesla_coil_plasmatics_i"])
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_38_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_39_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"tesla_coil_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_39"]
+script = ExtResource("2_card")
+id = &"tesla_coil_plasmatics_iii"
+display_name = "Plasmatics III"
+description = "Aumenta en +3 el multiplicador de daño de Tesla Coil contra Armor (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:tesla_coil_demo"
+required_card_ids = Array[StringName]([&"tesla_coil_plasmatics_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_39_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_40_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"tesla_coil_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_40"]
+script = ExtResource("2_card")
+id = &"tesla_coil_static_permeation_i"
+display_name = "Static Permeation I"
+description = "Aumenta en +1 el multiplicador de daño de Tesla Coil contra Shield (+1)."
+rarity = 0
+unlock_requirement = &"tower:tesla_coil_demo"
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_40_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_41_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"tesla_coil_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_41"]
+script = ExtResource("2_card")
+id = &"tesla_coil_static_permeation_ii"
+display_name = "Static Permeation II"
+description = "Aumenta en +2 el multiplicador de daño de Tesla Coil contra Shield (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:tesla_coil_demo"
+required_card_ids = Array[StringName]([&"tesla_coil_static_permeation_i"])
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_41_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_42_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"tesla_coil_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_42"]
+script = ExtResource("2_card")
+id = &"tesla_coil_static_permeation_iii"
+display_name = "Static Permeation III"
+description = "Aumenta en +3 el multiplicador de daño de Tesla Coil contra Shield (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:tesla_coil_demo"
+required_card_ids = Array[StringName]([&"tesla_coil_static_permeation_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_42_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_44_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"tesla_coil_demo"
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_44"]
+script = ExtResource("2_card")
+id = &"tesla_coil_electro_hemorrhaging_i"
+display_name = "Electro Hemorrhaging I"
+description = "Desbloquea Bleed para Tesla Coil y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:tesla_coil_demo"
+required_card_ids = Array[StringName]([&"tesla_coil_power_surge_i"])
+tags = Array[StringName]([&"tower", &"status", &"bleed"])
+modifier_operations = Array[Resource]([SubResource("Op_44_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_45_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"tesla_coil_demo"
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_45"]
+script = ExtResource("2_card")
+id = &"tesla_coil_electro_hemorrhaging_ii"
+display_name = "Electro Hemorrhaging II"
+description = "Desbloquea Bleed para Tesla Coil y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:tesla_coil_demo"
+required_card_ids = Array[StringName]([&"tesla_coil_electro_hemorrhaging_i"])
+tags = Array[StringName]([&"tower", &"status", &"bleed"])
+modifier_operations = Array[Resource]([SubResource("Op_45_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_46_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"tesla_coil_demo"
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_46"]
+script = ExtResource("2_card")
+id = &"tesla_coil_thermal_arcing_i"
+display_name = "Thermal Arcing I"
+description = "Desbloquea Burn para Tesla Coil y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:tesla_coil_demo"
+required_card_ids = Array[StringName]([&"tesla_coil_plasmatics_i"])
+tags = Array[StringName]([&"tower", &"status", &"burn"])
+modifier_operations = Array[Resource]([SubResource("Op_46_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_47_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"tesla_coil_demo"
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_47"]
+script = ExtResource("2_card")
+id = &"tesla_coil_thermal_arcing_ii"
+display_name = "Thermal Arcing II"
+description = "Desbloquea Burn para Tesla Coil y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:tesla_coil_demo"
+required_card_ids = Array[StringName]([&"tesla_coil_thermal_arcing_i"])
+tags = Array[StringName]([&"tower", &"status", &"burn"])
+modifier_operations = Array[Resource]([SubResource("Op_47_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_48_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"tesla_coil_demo"
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_48"]
+script = ExtResource("2_card")
+id = &"tesla_coil_electrogenesis_i"
+display_name = "Electrogenesis I"
+description = "Desbloquea Poison para Tesla Coil y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:tesla_coil_demo"
+required_card_ids = Array[StringName]([&"tesla_coil_static_permeation_i"])
+tags = Array[StringName]([&"tower", &"status", &"poison"])
+modifier_operations = Array[Resource]([SubResource("Op_48_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_49_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"tesla_coil_demo"
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_49"]
+script = ExtResource("2_card")
+id = &"tesla_coil_electrogenesis_ii"
+display_name = "Electrogenesis II"
+description = "Desbloquea Poison para Tesla Coil y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:tesla_coil_demo"
+required_card_ids = Array[StringName]([&"tesla_coil_electrogenesis_i"])
+tags = Array[StringName]([&"tower", &"status", &"poison"])
+modifier_operations = Array[Resource]([SubResource("Op_49_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_50_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"frost_keep_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_50"]
+script = ExtResource("2_card")
+id = &"frost_keep_frostbite_i"
+display_name = "Frostbite I"
+description = "Aumenta en +1 el multiplicador de daño de Frost Keep contra Health (+1)."
+rarity = 0
+unlock_requirement = &"tower:frost_keep_demo"
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_50_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_51_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"frost_keep_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_51"]
+script = ExtResource("2_card")
+id = &"frost_keep_frostbite_ii"
+display_name = "Frostbite II"
+description = "Aumenta en +2 el multiplicador de daño de Frost Keep contra Health (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:frost_keep_demo"
+required_card_ids = Array[StringName]([&"frost_keep_frostbite_i"])
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_51_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_52_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"frost_keep_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_52"]
+script = ExtResource("2_card")
+id = &"frost_keep_frostbite_iii"
+display_name = "Frostbite III"
+description = "Aumenta en +3 el multiplicador de daño de Frost Keep contra Health (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:frost_keep_demo"
+required_card_ids = Array[StringName]([&"frost_keep_frostbite_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_52_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_53_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"frost_keep_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_53"]
+script = ExtResource("2_card")
+id = &"frost_keep_dehydration_i"
+display_name = "Dehydration I"
+description = "Aumenta en +1 el multiplicador de daño de Frost Keep contra Armor (+1)."
+rarity = 0
+unlock_requirement = &"tower:frost_keep_demo"
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_53_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_54_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"frost_keep_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_54"]
+script = ExtResource("2_card")
+id = &"frost_keep_dehydration_ii"
+display_name = "Dehydration II"
+description = "Aumenta en +2 el multiplicador de daño de Frost Keep contra Armor (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:frost_keep_demo"
+required_card_ids = Array[StringName]([&"frost_keep_dehydration_i"])
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_54_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_55_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"frost_keep_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_55"]
+script = ExtResource("2_card")
+id = &"frost_keep_dehydration_iii"
+display_name = "Dehydration III"
+description = "Aumenta en +3 el multiplicador de daño de Frost Keep contra Armor (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:frost_keep_demo"
+required_card_ids = Array[StringName]([&"frost_keep_dehydration_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_55_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_56_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"frost_keep_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_56"]
+script = ExtResource("2_card")
+id = &"frost_keep_conductive_snow_i"
+display_name = "Conductive Snow I"
+description = "Aumenta en +1 el multiplicador de daño de Frost Keep contra Shield (+1)."
+rarity = 0
+unlock_requirement = &"tower:frost_keep_demo"
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_56_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_57_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"frost_keep_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_57"]
+script = ExtResource("2_card")
+id = &"frost_keep_conductive_snow_ii"
+display_name = "Conductive Snow II"
+description = "Aumenta en +2 el multiplicador de daño de Frost Keep contra Shield (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:frost_keep_demo"
+required_card_ids = Array[StringName]([&"frost_keep_conductive_snow_i"])
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_57_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_58_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"frost_keep_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_58"]
+script = ExtResource("2_card")
+id = &"frost_keep_conductive_snow_iii"
+display_name = "Conductive Snow III"
+description = "Aumenta en +3 el multiplicador de daño de Frost Keep contra Shield (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:frost_keep_demo"
+required_card_ids = Array[StringName]([&"frost_keep_conductive_snow_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_58_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_59_0"]
+script = ExtResource("3_operation")
+type = 9
+value = 0.15
+affected_tower_id = &"frost_keep_demo"
+
+[sub_resource type="Resource" id="Card_59"]
+script = ExtResource("2_card")
+id = &"frost_keep_cooling_rods"
+display_name = "Cooling Rods"
+description = "Aumenta un 15% la probabilidad de crítico de Frost Keep."
+rarity = 1
+unlock_requirement = &"tower:frost_keep_demo"
+any_required_card_ids = Array[StringName]([&"frost_keep_frostbite_iii", &"frost_keep_dehydration_iii", &"frost_keep_conductive_snow_iii"])
+tags = Array[StringName]([&"tower", &"critical"])
+modifier_operations = Array[Resource]([SubResource("Op_59_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_60_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"frost_keep_demo"
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_60"]
+script = ExtResource("2_card")
+id = &"frost_keep_vampiric_snow_i"
+display_name = "Vampiric Snow I"
+description = "Desbloquea Bleed para Frost Keep y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:frost_keep_demo"
+required_card_ids = Array[StringName]([&"frost_keep_frostbite_i"])
+tags = Array[StringName]([&"tower", &"status", &"bleed"])
+modifier_operations = Array[Resource]([SubResource("Op_60_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_61_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"frost_keep_demo"
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_61"]
+script = ExtResource("2_card")
+id = &"frost_keep_vampiric_snow_ii"
+display_name = "Vampiric Snow II"
+description = "Desbloquea Bleed para Frost Keep y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:frost_keep_demo"
+required_card_ids = Array[StringName]([&"frost_keep_vampiric_snow_i"])
+tags = Array[StringName]([&"tower", &"status", &"bleed"])
+modifier_operations = Array[Resource]([SubResource("Op_61_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_62_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"frost_keep_demo"
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_62"]
+script = ExtResource("2_card")
+id = &"frost_keep_flammable_snow_i"
+display_name = "Flammable Snow I"
+description = "Desbloquea Burn para Frost Keep y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:frost_keep_demo"
+required_card_ids = Array[StringName]([&"frost_keep_dehydration_i"])
+tags = Array[StringName]([&"tower", &"status", &"burn"])
+modifier_operations = Array[Resource]([SubResource("Op_62_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_63_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"frost_keep_demo"
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_63"]
+script = ExtResource("2_card")
+id = &"frost_keep_flammable_snow_ii"
+display_name = "Flammable Snow II"
+description = "Desbloquea Burn para Frost Keep y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:frost_keep_demo"
+required_card_ids = Array[StringName]([&"frost_keep_flammable_snow_i"])
+tags = Array[StringName]([&"tower", &"status", &"burn"])
+modifier_operations = Array[Resource]([SubResource("Op_63_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_64_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"frost_keep_demo"
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_64"]
+script = ExtResource("2_card")
+id = &"frost_keep_yellow_snow_i"
+display_name = "Yellow Snow I"
+description = "Desbloquea Poison para Frost Keep y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:frost_keep_demo"
+required_card_ids = Array[StringName]([&"frost_keep_conductive_snow_i"])
+tags = Array[StringName]([&"tower", &"status", &"poison"])
+modifier_operations = Array[Resource]([SubResource("Op_64_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_65_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.25
+affected_tower_id = &"frost_keep_demo"
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_65"]
+script = ExtResource("2_card")
+id = &"frost_keep_yellow_snow_ii"
+display_name = "Yellow Snow II"
+description = "Desbloquea Poison para Frost Keep y aumenta su daño periódico en un 25%."
+rarity = 1
+unlock_requirement = &"tower:frost_keep_demo"
+required_card_ids = Array[StringName]([&"frost_keep_yellow_snow_i"])
+tags = Array[StringName]([&"tower", &"status", &"poison"])
+modifier_operations = Array[Resource]([SubResource("Op_65_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_66_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"flame_thrower_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_66"]
+script = ExtResource("2_card")
+id = &"flame_thrower_napalm_i"
+display_name = "Napalm I"
+description = "Aumenta en +1 el multiplicador de daño de Flame Thrower contra Health (+1)."
+rarity = 0
+unlock_requirement = &"tower:flame_thrower_demo"
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_66_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_67_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"flame_thrower_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_67"]
+script = ExtResource("2_card")
+id = &"flame_thrower_napalm_ii"
+display_name = "Napalm II"
+description = "Aumenta en +2 el multiplicador de daño de Flame Thrower contra Health (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:flame_thrower_demo"
+required_card_ids = Array[StringName]([&"flame_thrower_napalm_i"])
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_67_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_68_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"flame_thrower_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_68"]
+script = ExtResource("2_card")
+id = &"flame_thrower_napalm_iii"
+display_name = "Napalm III"
+description = "Aumenta en +3 el multiplicador de daño de Flame Thrower contra Health (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:flame_thrower_demo"
+required_card_ids = Array[StringName]([&"flame_thrower_napalm_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_68_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_69_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"flame_thrower_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_69"]
+script = ExtResource("2_card")
+id = &"flame_thrower_nitric_acid_i"
+display_name = "Nitric Acid I"
+description = "Aumenta en +1 el multiplicador de daño de Flame Thrower contra Armor (+1)."
+rarity = 0
+unlock_requirement = &"tower:flame_thrower_demo"
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_69_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_70_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"flame_thrower_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_70"]
+script = ExtResource("2_card")
+id = &"flame_thrower_nitric_acid_ii"
+display_name = "Nitric Acid II"
+description = "Aumenta en +2 el multiplicador de daño de Flame Thrower contra Armor (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:flame_thrower_demo"
+required_card_ids = Array[StringName]([&"flame_thrower_nitric_acid_i"])
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_70_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_71_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"flame_thrower_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_71"]
+script = ExtResource("2_card")
+id = &"flame_thrower_nitric_acid_iii"
+display_name = "Nitric Acid III"
+description = "Aumenta en +3 el multiplicador de daño de Flame Thrower contra Armor (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:flame_thrower_demo"
+required_card_ids = Array[StringName]([&"flame_thrower_nitric_acid_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_71_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_72_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"flame_thrower_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_72"]
+script = ExtResource("2_card")
+id = &"flame_thrower_white_phosphorus_i"
+display_name = "White Phosphorus I"
+description = "Aumenta en +1 el multiplicador de daño de Flame Thrower contra Shield (+1)."
+rarity = 0
+unlock_requirement = &"tower:flame_thrower_demo"
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_72_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_73_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"flame_thrower_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_73"]
+script = ExtResource("2_card")
+id = &"flame_thrower_white_phosphorus_ii"
+display_name = "White Phosphorus II"
+description = "Aumenta en +2 el multiplicador de daño de Flame Thrower contra Shield (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:flame_thrower_demo"
+required_card_ids = Array[StringName]([&"flame_thrower_white_phosphorus_i"])
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_73_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_74_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"flame_thrower_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_74"]
+script = ExtResource("2_card")
+id = &"flame_thrower_white_phosphorus_iii"
+display_name = "White Phosphorus III"
+description = "Aumenta en +3 el multiplicador de daño de Flame Thrower contra Shield (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:flame_thrower_demo"
+required_card_ids = Array[StringName]([&"flame_thrower_white_phosphorus_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_74_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_75_0"]
+script = ExtResource("3_operation")
+type = 9
+value = 0.15
+affected_tower_id = &"flame_thrower_demo"
+
+[sub_resource type="Resource" id="Card_75"]
+script = ExtResource("2_card")
+id = &"flame_thrower_pyrochemistry"
+display_name = "Pyrochemistry"
+description = "Aumenta un 15% la probabilidad de crítico de Flame Thrower."
+rarity = 1
+unlock_requirement = &"tower:flame_thrower_demo"
+any_required_card_ids = Array[StringName]([&"flame_thrower_napalm_iii", &"flame_thrower_nitric_acid_iii", &"flame_thrower_white_phosphorus_iii"])
+tags = Array[StringName]([&"tower", &"critical"])
+modifier_operations = Array[Resource]([SubResource("Op_75_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_76_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"poison_sprayer_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_76"]
+script = ExtResource("2_card")
+id = &"poison_sprayer_infection_i"
+display_name = "Infection I"
+description = "Aumenta en +1 el multiplicador de daño de Poison Sprayer contra Health (+1)."
+rarity = 0
+unlock_requirement = &"tower:poison_sprayer_demo"
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_76_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_77_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"poison_sprayer_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_77"]
+script = ExtResource("2_card")
+id = &"poison_sprayer_infection_ii"
+display_name = "Infection II"
+description = "Aumenta en +2 el multiplicador de daño de Poison Sprayer contra Health (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:poison_sprayer_demo"
+required_card_ids = Array[StringName]([&"poison_sprayer_infection_i"])
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_77_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_78_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"poison_sprayer_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_78"]
+script = ExtResource("2_card")
+id = &"poison_sprayer_infection_iii"
+display_name = "Infection III"
+description = "Aumenta en +3 el multiplicador de daño de Poison Sprayer contra Health (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:poison_sprayer_demo"
+required_card_ids = Array[StringName]([&"poison_sprayer_infection_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_78_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_79_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"poison_sprayer_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_79"]
+script = ExtResource("2_card")
+id = &"poison_sprayer_corrosion_i"
+display_name = "Corrosion I"
+description = "Aumenta en +1 el multiplicador de daño de Poison Sprayer contra Armor (+1)."
+rarity = 0
+unlock_requirement = &"tower:poison_sprayer_demo"
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_79_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_80_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"poison_sprayer_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_80"]
+script = ExtResource("2_card")
+id = &"poison_sprayer_corrosion_ii"
+display_name = "Corrosion II"
+description = "Aumenta en +2 el multiplicador de daño de Poison Sprayer contra Armor (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:poison_sprayer_demo"
+required_card_ids = Array[StringName]([&"poison_sprayer_corrosion_i"])
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_80_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_81_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"poison_sprayer_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_81"]
+script = ExtResource("2_card")
+id = &"poison_sprayer_corrosion_iii"
+display_name = "Corrosion III"
+description = "Aumenta en +3 el multiplicador de daño de Poison Sprayer contra Armor (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:poison_sprayer_demo"
+required_card_ids = Array[StringName]([&"poison_sprayer_corrosion_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_81_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_82_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"poison_sprayer_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_82"]
+script = ExtResource("2_card")
+id = &"poison_sprayer_fumigation_i"
+display_name = "Fumigation I"
+description = "Aumenta en +1 el multiplicador de daño de Poison Sprayer contra Shield (+1)."
+rarity = 0
+unlock_requirement = &"tower:poison_sprayer_demo"
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_82_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_83_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"poison_sprayer_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_83"]
+script = ExtResource("2_card")
+id = &"poison_sprayer_fumigation_ii"
+display_name = "Fumigation II"
+description = "Aumenta en +2 el multiplicador de daño de Poison Sprayer contra Shield (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:poison_sprayer_demo"
+required_card_ids = Array[StringName]([&"poison_sprayer_fumigation_i"])
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_83_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_84_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"poison_sprayer_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_84"]
+script = ExtResource("2_card")
+id = &"poison_sprayer_fumigation_iii"
+display_name = "Fumigation III"
+description = "Aumenta en +3 el multiplicador de daño de Poison Sprayer contra Shield (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:poison_sprayer_demo"
+required_card_ids = Array[StringName]([&"poison_sprayer_fumigation_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_84_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_85_0"]
+script = ExtResource("3_operation")
+type = 9
+value = 0.15
+affected_tower_id = &"poison_sprayer_demo"
+
+[sub_resource type="Resource" id="Card_85"]
+script = ExtResource("2_card")
+id = &"poison_sprayer_biochemistry"
+display_name = "Biochemistry"
+description = "Aumenta un 15% la probabilidad de crítico de Poison Sprayer."
+rarity = 1
+unlock_requirement = &"tower:poison_sprayer_demo"
+any_required_card_ids = Array[StringName]([&"poison_sprayer_infection_iii", &"poison_sprayer_corrosion_iii", &"poison_sprayer_fumigation_iii"])
+tags = Array[StringName]([&"tower", &"critical"])
+modifier_operations = Array[Resource]([SubResource("Op_85_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_86_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"shredder_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_86"]
+script = ExtResource("2_card")
+id = &"shredder_sharpened_blades_i"
+display_name = "Sharpened Blades I"
+description = "Aumenta en +1 el multiplicador de daño de Shredder contra Health (+1)."
+rarity = 0
+unlock_requirement = &"tower:shredder_demo"
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_86_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_87_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"shredder_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_87"]
+script = ExtResource("2_card")
+id = &"shredder_sharpened_blades_ii"
+display_name = "Sharpened Blades II"
+description = "Aumenta en +2 el multiplicador de daño de Shredder contra Health (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:shredder_demo"
+required_card_ids = Array[StringName]([&"shredder_sharpened_blades_i"])
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_87_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_88_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"shredder_demo"
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_88"]
+script = ExtResource("2_card")
+id = &"shredder_sharpened_blades_iii"
+display_name = "Sharpened Blades III"
+description = "Aumenta en +3 el multiplicador de daño de Shredder contra Health (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:shredder_demo"
+required_card_ids = Array[StringName]([&"shredder_sharpened_blades_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_88_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_89_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"shredder_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_89"]
+script = ExtResource("2_card")
+id = &"shredder_hardened_blades_i"
+display_name = "Hardened Blades I"
+description = "Aumenta en +1 el multiplicador de daño de Shredder contra Armor (+1)."
+rarity = 0
+unlock_requirement = &"tower:shredder_demo"
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_89_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_90_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"shredder_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_90"]
+script = ExtResource("2_card")
+id = &"shredder_hardened_blades_ii"
+display_name = "Hardened Blades II"
+description = "Aumenta en +2 el multiplicador de daño de Shredder contra Armor (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:shredder_demo"
+required_card_ids = Array[StringName]([&"shredder_hardened_blades_i"])
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_90_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_91_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"shredder_demo"
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_91"]
+script = ExtResource("2_card")
+id = &"shredder_hardened_blades_iii"
+display_name = "Hardened Blades III"
+description = "Aumenta en +3 el multiplicador de daño de Shredder contra Armor (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:shredder_demo"
+required_card_ids = Array[StringName]([&"shredder_hardened_blades_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_91_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_92_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_tower_id = &"shredder_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_92"]
+script = ExtResource("2_card")
+id = &"shredder_magnetic_blades_i"
+display_name = "Magnetic Blades I"
+description = "Aumenta en +1 el multiplicador de daño de Shredder contra Shield (+1)."
+rarity = 0
+unlock_requirement = &"tower:shredder_demo"
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_92_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_93_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 2.0
+affected_tower_id = &"shredder_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_93"]
+script = ExtResource("2_card")
+id = &"shredder_magnetic_blades_ii"
+display_name = "Magnetic Blades II"
+description = "Aumenta en +2 el multiplicador de daño de Shredder contra Shield (+3 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:shredder_demo"
+required_card_ids = Array[StringName]([&"shredder_magnetic_blades_i"])
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_93_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_94_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 3.0
+affected_tower_id = &"shredder_demo"
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_94"]
+script = ExtResource("2_card")
+id = &"shredder_magnetic_blades_iii"
+display_name = "Magnetic Blades III"
+description = "Aumenta en +3 el multiplicador de daño de Shredder contra Shield (+6 acumulado en esta línea)."
+rarity = 0
+unlock_requirement = &"tower:shredder_demo"
+required_card_ids = Array[StringName]([&"shredder_magnetic_blades_ii"])
+tags = Array[StringName]([&"tower", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_94_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_95_0"]
+script = ExtResource("3_operation")
+type = 9
+value = 0.15
+affected_tower_id = &"shredder_demo"
+
+[sub_resource type="Resource" id="Card_95"]
+script = ExtResource("2_card")
+id = &"shredder_shredding"
+display_name = "Shredding"
+description = "Aumenta un 15% la probabilidad de crítico de Shredder."
+rarity = 1
+unlock_requirement = &"tower:shredder_demo"
+any_required_card_ids = Array[StringName]([&"shredder_sharpened_blades_iii", &"shredder_hardened_blades_iii", &"shredder_magnetic_blades_iii"])
+tags = Array[StringName]([&"tower", &"critical"])
+modifier_operations = Array[Resource]([SubResource("Op_95_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_96_0"]
+script = ExtResource("3_operation")
+type = 13
+value = 1.0
+affected_tower_id = &"ballista_demo"
+
+[sub_resource type="Resource" id="Card_96"]
+script = ExtResource("2_card")
+id = &"ballista_longbow_i"
+display_name = "Longbow I"
+description = "Duplica el bonus de alcance que Ballista recibe por elevación."
+rarity = 1
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_heavy_shafts_ii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_96_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_97_0"]
+script = ExtResource("3_operation")
+type = 13
+value = 1.0
+affected_tower_id = &"ballista_demo"
+
+[sub_resource type="Resource" id="Card_97"]
+script = ExtResource("2_card")
+id = &"ballista_longbow_ii"
+display_name = "Longbow II"
+description = "Triplica el bonus de alcance que Ballista recibe por elevación."
+rarity = 1
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_longbow_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_97_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_98_0"]
+script = ExtResource("3_operation")
+type = 13
+value = 1.0
+affected_tower_id = &"ballista_demo"
+
+[sub_resource type="Resource" id="Card_98"]
+script = ExtResource("2_card")
+id = &"ballista_longbow_iii"
+display_name = "Longbow III"
+description = "Cuadruplica el bonus de alcance que Ballista recibe por elevación."
+rarity = 1
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_longbow_ii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_98_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_99_0"]
+script = ExtResource("3_operation")
+type = 22
+value = 0.1
+affected_tower_id = &"ballista_demo"
+
+[sub_resource type="Resource" id="Card_99"]
+script = ExtResource("2_card")
+id = &"ballista_mana_bolts_i"
+display_name = "Mana Bolts I"
+description = "Ballista gana +4 de daño base y consume Mana igual al 10% de su daño por ataque."
+rarity = 1
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_enchanted_bolts_ii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_99_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_100_0"]
+script = ExtResource("3_operation")
+type = 22
+value = 0.1
+affected_tower_id = &"ballista_demo"
+
+[sub_resource type="Resource" id="Card_100"]
+script = ExtResource("2_card")
+id = &"ballista_mana_bolts_ii"
+display_name = "Mana Bolts II"
+description = "Ballista gana otros +4 de daño base y eleva el coste al 20% de su daño."
+rarity = 1
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_mana_bolts_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_100_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_101_0"]
+script = ExtResource("3_operation")
+type = 22
+value = 0.05
+affected_tower_id = &"ballista_demo"
+
+[sub_resource type="Resource" id="Card_101"]
+script = ExtResource("2_card")
+id = &"ballista_mana_bolts_iii"
+display_name = "Mana Bolts III"
+description = "Ballista gana otros +4 de daño base y eleva el coste al 25% de su daño."
+rarity = 1
+unlock_requirement = &"tower:ballista_demo"
+required_card_ids = Array[StringName]([&"ballista_mana_bolts_ii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_101_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_102_0"]
+script = ExtResource("3_operation")
+type = 2
+value = 5.0
+affected_tower_id = &"mortar_demo"
+
+[sub_resource type="Resource" id="Card_102"]
+script = ExtResource("2_card")
+id = &"mortar_long_range_ballistics_i"
+display_name = "Long Range Ballistics I"
+description = "Aumenta en +5 hexes el alcance de Mortar (5 acumulados)."
+rarity = 1
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_he_shells_ii"])
+tags = Array[StringName]([&"tower", &"range"])
+modifier_operations = Array[Resource]([SubResource("Op_102_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_103_0"]
+script = ExtResource("3_operation")
+type = 2
+value = 5.0
+affected_tower_id = &"mortar_demo"
+
+[sub_resource type="Resource" id="Card_103"]
+script = ExtResource("2_card")
+id = &"mortar_long_range_ballistics_ii"
+display_name = "Long Range Ballistics II"
+description = "Aumenta en +5 hexes el alcance de Mortar (10 acumulados)."
+rarity = 1
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_long_range_ballistics_i"])
+tags = Array[StringName]([&"tower", &"range"])
+modifier_operations = Array[Resource]([SubResource("Op_103_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_104_0"]
+script = ExtResource("3_operation")
+type = 2
+value = 5.0
+affected_tower_id = &"mortar_demo"
+
+[sub_resource type="Resource" id="Card_104"]
+script = ExtResource("2_card")
+id = &"mortar_long_range_ballistics_iii"
+display_name = "Long Range Ballistics III"
+description = "Aumenta en +5 hexes el alcance de Mortar (15 acumulados)."
+rarity = 1
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_long_range_ballistics_ii"])
+tags = Array[StringName]([&"tower", &"range"])
+modifier_operations = Array[Resource]([SubResource("Op_104_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_105_0"]
+script = ExtResource("3_operation")
+type = 14
+value = 0.5
+affected_tower_id = &"mortar_demo"
+
+[sub_resource type="Resource" id="Card_105"]
+script = ExtResource("2_card")
+id = &"mortar_area_of_effect_i"
+display_name = "Area of Effect I"
+description = "Aumenta un 50% el radio de explosión de Mortar."
+rarity = 1
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_concussive_shells_ii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_105_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_106_0"]
+script = ExtResource("3_operation")
+type = 14
+value = 0.5
+affected_tower_id = &"mortar_demo"
+
+[sub_resource type="Resource" id="Card_106"]
+script = ExtResource("2_card")
+id = &"mortar_area_of_effect_ii"
+display_name = "Area of Effect II"
+description = "Aumenta otro 50% el radio de explosión de Mortar (100% acumulado)."
+rarity = 1
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_area_of_effect_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_106_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_107_0"]
+script = ExtResource("3_operation")
+type = 14
+value = 0.5
+affected_tower_id = &"mortar_demo"
+
+[sub_resource type="Resource" id="Card_107"]
+script = ExtResource("2_card")
+id = &"mortar_area_of_effect_iii"
+display_name = "Area of Effect III"
+description = "Aumenta otro 50% el radio de explosión de Mortar (150% acumulado)."
+rarity = 1
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_area_of_effect_ii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_107_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_108_0"]
+script = ExtResource("3_operation")
+type = 22
+value = 0.1
+affected_tower_id = &"mortar_demo"
+
+[sub_resource type="Resource" id="Card_108"]
+script = ExtResource("2_card")
+id = &"mortar_mana_bombs_i"
+display_name = "Mana Bombs I"
+description = "Mortar gana +4 de daño base y consume Mana igual al 10% de su daño por disparo."
+rarity = 1
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_emp_ii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_108_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_109_0"]
+script = ExtResource("3_operation")
+type = 22
+value = 0.1
+affected_tower_id = &"mortar_demo"
+
+[sub_resource type="Resource" id="Card_109"]
+script = ExtResource("2_card")
+id = &"mortar_mana_bombs_ii"
+display_name = "Mana Bombs II"
+description = "Mortar gana otros +4 de daño base y eleva el coste al 20% de su daño."
+rarity = 1
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_mana_bombs_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_109_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_110_0"]
+script = ExtResource("3_operation")
+type = 22
+value = 0.05
+affected_tower_id = &"mortar_demo"
+
+[sub_resource type="Resource" id="Card_110"]
+script = ExtResource("2_card")
+id = &"mortar_mana_bombs_iii"
+display_name = "Mana Bombs III"
+description = "Mortar gana otros +4 de daño base y eleva el coste al 25% de su daño."
+rarity = 1
+unlock_requirement = &"tower:mortar_demo"
+required_card_ids = Array[StringName]([&"mortar_mana_bombs_ii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_110_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_111_0"]
+script = ExtResource("3_operation")
+type = 2
+value = 1.0
+affected_tower_id = &"frost_keep_demo"
+
+[sub_resource type="Resource" id="Card_111"]
+script = ExtResource("2_card")
+id = &"frost_keep_blizzard_i"
+display_name = "Blizzard I"
+description = "Aumenta en +1 hex el alcance de Frost Keep."
+rarity = 1
+unlock_requirement = &"tower:frost_keep_demo"
+required_card_ids = Array[StringName]([&"frost_keep_conductive_snow_ii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_111_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_112_0"]
+script = ExtResource("3_operation")
+type = 2
+value = 1.0
+affected_tower_id = &"frost_keep_demo"
+
+[sub_resource type="Resource" id="Card_112"]
+script = ExtResource("2_card")
+id = &"frost_keep_blizzard_ii"
+display_name = "Blizzard II"
+description = "Aumenta en +1 hex adicional el alcance de Frost Keep (+2 total)."
+rarity = 1
+unlock_requirement = &"tower:frost_keep_demo"
+required_card_ids = Array[StringName]([&"frost_keep_blizzard_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_112_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_113_0"]
+script = ExtResource("3_operation")
+type = 2
+value = 1.0
+affected_tower_id = &"frost_keep_demo"
+
+[sub_resource type="Resource" id="Card_113"]
+script = ExtResource("2_card")
+id = &"frost_keep_blizzard_iii"
+display_name = "Blizzard III"
+description = "Aumenta en +1 hex adicional el alcance de Frost Keep (+3 total)."
+rarity = 1
+unlock_requirement = &"tower:frost_keep_demo"
+required_card_ids = Array[StringName]([&"frost_keep_blizzard_ii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_113_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_114_0"]
+script = ExtResource("3_operation")
+type = 28
+value = 10.0
+affected_status_id = &"slow"
+
+[sub_resource type="Resource" id="Card_114"]
+script = ExtResource("2_card")
+id = &"frost_absolute_zero"
+display_name = "Absolute Zero"
+description = "Aumenta en +10 el límite de Slow."
+rarity = 2
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"frost_keep_cooling_rods"])
+tags = Array[StringName]([&"global", &"slow"])
+modifier_operations = Array[Resource]([SubResource("Op_114_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_115_0"]
+script = ExtResource("3_operation")
+type = 15
+value = 100.0
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_115"]
+script = ExtResource("2_card")
+id = &"flame_everything_burns"
+display_name = "Everything Burns"
+description = "Aumenta en +100 el límite de daño de Burn por segundo."
+rarity = 2
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"flame_thrower_pyrochemistry"])
+tags = Array[StringName]([&"global", &"burn"])
+modifier_operations = Array[Resource]([SubResource("Op_115_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_116_0"]
+script = ExtResource("3_operation")
+type = 15
+value = 100.0
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_116"]
+script = ExtResource("2_card")
+id = &"poison_pandemic"
+display_name = "Pandemic"
+description = "Aumenta en +100 el límite de daño de Poison por segundo."
+rarity = 2
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"poison_sprayer_biochemistry"])
+tags = Array[StringName]([&"global", &"poison"])
+modifier_operations = Array[Resource]([SubResource("Op_116_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_117_0"]
+script = ExtResource("3_operation")
+type = 15
+value = 100.0
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_117"]
+script = ExtResource("2_card")
+id = &"shredder_everything_bleeds"
+display_name = "Everything Bleeds"
+description = "Aumenta en +100 el límite de daño de Bleed por segundo."
+rarity = 2
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"shredder_shredding"])
+tags = Array[StringName]([&"global", &"bleed"])
+modifier_operations = Array[Resource]([SubResource("Op_117_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_118_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.5
+affected_tower_id = &"flame_thrower_demo"
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_118"]
+script = ExtResource("2_card")
+id = &"flame_thrower_fuel_saturation_i"
+display_name = "Fuel Saturation I"
+description = "Aumenta un 50% el daño de Burn de Flame Thrower."
+rarity = 1
+unlock_requirement = &"tower:flame_thrower_demo"
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_118_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_119_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.5
+affected_tower_id = &"flame_thrower_demo"
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_119"]
+script = ExtResource("2_card")
+id = &"flame_thrower_fuel_saturation_ii"
+display_name = "Fuel Saturation II"
+description = "Aumenta otro 50% el daño de Burn de Flame Thrower (+100% total)."
+rarity = 1
+unlock_requirement = &"tower:flame_thrower_demo"
+required_card_ids = Array[StringName]([&"flame_thrower_fuel_saturation_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_119_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_120_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.5
+affected_tower_id = &"flame_thrower_demo"
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_120"]
+script = ExtResource("2_card")
+id = &"flame_thrower_fuel_saturation_iii"
+display_name = "Fuel Saturation III"
+description = "Aumenta otro 50% el daño de Burn de Flame Thrower (+150% total)."
+rarity = 1
+unlock_requirement = &"tower:flame_thrower_demo"
+required_card_ids = Array[StringName]([&"flame_thrower_fuel_saturation_ii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_120_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_121_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.5
+affected_tower_id = &"flame_thrower_demo"
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_121"]
+script = ExtResource("2_card")
+id = &"flame_thrower_fuel_saturation_iv"
+display_name = "Fuel Saturation IV"
+description = "Aumenta otro 50% el daño de Burn de Flame Thrower (+200% total)."
+rarity = 1
+unlock_requirement = &"tower:flame_thrower_demo"
+required_card_ids = Array[StringName]([&"flame_thrower_fuel_saturation_iii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_121_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_122_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.5
+affected_tower_id = &"poison_sprayer_demo"
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_122"]
+script = ExtResource("2_card")
+id = &"poison_sprayer_spores_i"
+display_name = "Spores I"
+description = "Aumenta un 50% el daño de Poison de Poison Sprayer."
+rarity = 1
+unlock_requirement = &"tower:poison_sprayer_demo"
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_122_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_123_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.5
+affected_tower_id = &"poison_sprayer_demo"
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_123"]
+script = ExtResource("2_card")
+id = &"poison_sprayer_spores_ii"
+display_name = "Spores II"
+description = "Aumenta otro 50% el daño de Poison de Poison Sprayer (+100% total)."
+rarity = 1
+unlock_requirement = &"tower:poison_sprayer_demo"
+required_card_ids = Array[StringName]([&"poison_sprayer_spores_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_123_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_124_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.5
+affected_tower_id = &"poison_sprayer_demo"
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_124"]
+script = ExtResource("2_card")
+id = &"poison_sprayer_spores_iii"
+display_name = "Spores III"
+description = "Aumenta otro 50% el daño de Poison de Poison Sprayer (+150% total)."
+rarity = 1
+unlock_requirement = &"tower:poison_sprayer_demo"
+required_card_ids = Array[StringName]([&"poison_sprayer_spores_ii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_124_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_125_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.5
+affected_tower_id = &"poison_sprayer_demo"
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_125"]
+script = ExtResource("2_card")
+id = &"poison_sprayer_spores_iv"
+display_name = "Spores IV"
+description = "Aumenta otro 50% el daño de Poison de Poison Sprayer (+200% total)."
+rarity = 1
+unlock_requirement = &"tower:poison_sprayer_demo"
+required_card_ids = Array[StringName]([&"poison_sprayer_spores_iii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_125_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_126_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.5
+affected_tower_id = &"shredder_demo"
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_126"]
+script = ExtResource("2_card")
+id = &"shredder_thrashing_i"
+display_name = "Thrashing I"
+description = "Aumenta un 50% el daño de Bleed de Shredder."
+rarity = 1
+unlock_requirement = &"tower:shredder_demo"
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_126_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_127_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.5
+affected_tower_id = &"shredder_demo"
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_127"]
+script = ExtResource("2_card")
+id = &"shredder_thrashing_ii"
+display_name = "Thrashing II"
+description = "Aumenta otro 50% el daño de Bleed de Shredder (+100% total)."
+rarity = 1
+unlock_requirement = &"tower:shredder_demo"
+required_card_ids = Array[StringName]([&"shredder_thrashing_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_127_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_128_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.5
+affected_tower_id = &"shredder_demo"
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_128"]
+script = ExtResource("2_card")
+id = &"shredder_thrashing_iii"
+display_name = "Thrashing III"
+description = "Aumenta otro 50% el daño de Bleed de Shredder (+150% total)."
+rarity = 1
+unlock_requirement = &"tower:shredder_demo"
+required_card_ids = Array[StringName]([&"shredder_thrashing_ii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_128_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_129_0"]
+script = ExtResource("3_operation")
+type = 11
+value = 0.5
+affected_tower_id = &"shredder_demo"
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_129"]
+script = ExtResource("2_card")
+id = &"shredder_thrashing_iv"
+display_name = "Thrashing IV"
+description = "Aumenta otro 50% el daño de Bleed de Shredder (+200% total)."
+rarity = 1
+unlock_requirement = &"tower:shredder_demo"
+required_card_ids = Array[StringName]([&"shredder_thrashing_iii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_129_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_130_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_hit_point_layer = 0
+
+[sub_resource type="Resource" id="Card_130"]
+script = ExtResource("2_card")
+id = &"rogue_tower_monster_studies_health"
+display_name = "Monster Studies · Health"
+description = "Todas las torres ganan +1 al multiplicador de daño contra Health."
+rarity = 1
+unlock_requirement = &""
+any_required_card_ids = Array[StringName]([&"ballista_advanced_ballistics", &"mortar_advanced_explosives", &"tesla_overcharge", &"frost_keep_cooling_rods", &"flame_thrower_pyrochemistry", &"poison_sprayer_biochemistry", &"shredder_shredding"])
+tags = Array[StringName]([&"global", &"damage", &"health"])
+modifier_operations = Array[Resource]([SubResource("Op_130_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_131_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_hit_point_layer = 1
+
+[sub_resource type="Resource" id="Card_131"]
+script = ExtResource("2_card")
+id = &"rogue_tower_monster_studies_armor"
+display_name = "Monster Studies · Armor"
+description = "Todas las torres ganan +1 al multiplicador de daño contra Armor."
+rarity = 1
+unlock_requirement = &""
+any_required_card_ids = Array[StringName]([&"ballista_advanced_ballistics", &"mortar_advanced_explosives", &"tesla_overcharge", &"frost_keep_cooling_rods", &"flame_thrower_pyrochemistry", &"poison_sprayer_biochemistry", &"shredder_shredding"])
+tags = Array[StringName]([&"global", &"damage", &"armor"])
+modifier_operations = Array[Resource]([SubResource("Op_131_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_132_0"]
+script = ExtResource("3_operation")
+type = 10
+value = 1.0
+affected_hit_point_layer = 2
+
+[sub_resource type="Resource" id="Card_132"]
+script = ExtResource("2_card")
+id = &"rogue_tower_monster_studies_shield"
+display_name = "Monster Studies · Shield"
+description = "Todas las torres ganan +1 al multiplicador de daño contra Shield."
+rarity = 1
+unlock_requirement = &""
+any_required_card_ids = Array[StringName]([&"ballista_advanced_ballistics", &"mortar_advanced_explosives", &"tesla_overcharge", &"frost_keep_cooling_rods", &"flame_thrower_pyrochemistry", &"poison_sprayer_biochemistry", &"shredder_shredding"])
+tags = Array[StringName]([&"global", &"damage", &"shield"])
+modifier_operations = Array[Resource]([SubResource("Op_132_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_133_0"]
+script = ExtResource("3_operation")
+type = 15
+value = 26.0
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_133"]
+script = ExtResource("2_card")
+id = &"bleed_them_dry_i"
+display_name = "Bleed them Dry I"
+description = "Aumenta en +26 el límite de daño de Bleed por segundo (50 DPS totales)."
+rarity = 0
+unlock_requirement = &""
+tags = Array[StringName]([&"global", &"status", &"bleed"])
+modifier_operations = Array[Resource]([SubResource("Op_133_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_134_0"]
+script = ExtResource("3_operation")
+type = 15
+value = 30.0
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_134"]
+script = ExtResource("2_card")
+id = &"bleed_them_dry_ii"
+display_name = "Bleed them Dry II"
+description = "Aumenta en +30 el límite de daño de Bleed por segundo (80 DPS totales)."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"bleed_them_dry_i"])
+tags = Array[StringName]([&"global", &"status", &"bleed"])
+modifier_operations = Array[Resource]([SubResource("Op_134_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_135_0"]
+script = ExtResource("3_operation")
+type = 15
+value = 26.0
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_135"]
+script = ExtResource("2_card")
+id = &"kill_them_with_fire_i"
+display_name = "Kill them with Fire I"
+description = "Aumenta en +26 el límite de daño de Burn por segundo (50 DPS totales)."
+rarity = 0
+unlock_requirement = &""
+tags = Array[StringName]([&"global", &"status", &"burn"])
+modifier_operations = Array[Resource]([SubResource("Op_135_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_136_0"]
+script = ExtResource("3_operation")
+type = 15
+value = 30.0
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_136"]
+script = ExtResource("2_card")
+id = &"kill_them_with_fire_ii"
+display_name = "Kill them with Fire II"
+description = "Aumenta en +30 el límite de daño de Burn por segundo (80 DPS totales)."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"kill_them_with_fire_i"])
+tags = Array[StringName]([&"global", &"status", &"burn"])
+modifier_operations = Array[Resource]([SubResource("Op_136_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_137_0"]
+script = ExtResource("3_operation")
+type = 15
+value = 26.0
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_137"]
+script = ExtResource("2_card")
+id = &"slow_and_steady_i"
+display_name = "Slow and Steady I"
+description = "Aumenta en +26 el límite de daño de Poison por segundo (50 DPS totales)."
+rarity = 0
+unlock_requirement = &""
+tags = Array[StringName]([&"global", &"status", &"poison"])
+modifier_operations = Array[Resource]([SubResource("Op_137_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_138_0"]
+script = ExtResource("3_operation")
+type = 15
+value = 30.0
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_138"]
+script = ExtResource("2_card")
+id = &"slow_and_steady_ii"
+display_name = "Slow and Steady II"
+description = "Aumenta en +30 el límite de daño de Poison por segundo (80 DPS totales)."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"slow_and_steady_i"])
+tags = Array[StringName]([&"global", &"status", &"poison"])
+modifier_operations = Array[Resource]([SubResource("Op_138_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_139_0"]
+script = ExtResource("3_operation")
+type = 15
+value = 40.0
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Op_139_1"]
+script = ExtResource("3_operation")
+type = 15
+value = 40.0
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Op_139_2"]
+script = ExtResource("3_operation")
+type = 15
+value = 40.0
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_139"]
+script = ExtResource("2_card")
+id = &"make_them_suffer"
+display_name = "Make them Suffer"
+description = "Aumenta en +40 por segundo el límite de daño de Bleed, Burn y Poison."
+rarity = 2
+unlock_requirement = &""
+any_required_card_ids = Array[StringName]([&"bleed_them_dry_ii", &"kill_them_with_fire_ii", &"slow_and_steady_ii"])
+tags = Array[StringName]([&"global", &"status"])
+modifier_operations = Array[Resource]([SubResource("Op_139_0"), SubResource("Op_139_1"), SubResource("Op_139_2")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_140_0"]
+script = ExtResource("3_operation")
+type = 17
+value = 0.05
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_140"]
+script = ExtResource("2_card")
+id = &"eviscerate"
+display_name = "Eviscerate"
+description = "Los ataques contra enemigos con Bleed ganan +5% de probabilidad crítica."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"bleed_them_dry_i"])
+tags = Array[StringName]([&"global", &"critical", &"bleed"])
+modifier_operations = Array[Resource]([SubResource("Op_140_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_141_0"]
+script = ExtResource("3_operation")
+type = 16
+value = 1.0
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_141"]
+script = ExtResource("2_card")
+id = &"trail_of_blood_i"
+display_name = "Trail of Blood I"
+description = "Los enemigos con Bleed reciben +1 al daño contra Health de todos los ataques."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"bleed_them_dry_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_141_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_142_0"]
+script = ExtResource("3_operation")
+type = 16
+value = 1.0
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_142"]
+script = ExtResource("2_card")
+id = &"trail_of_blood_ii"
+display_name = "Trail of Blood II"
+description = "Los enemigos con Bleed reciben otro +1 al daño contra Health (+2 total)."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"trail_of_blood_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_142_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_143_0"]
+script = ExtResource("3_operation")
+type = 16
+value = 1.0
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_143"]
+script = ExtResource("2_card")
+id = &"trail_of_blood_iii"
+display_name = "Trail of Blood III"
+description = "Los enemigos con Bleed reciben otro +1 al daño contra Health (+3 total)."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"trail_of_blood_ii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_143_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_144_0"]
+script = ExtResource("3_operation")
+type = 18
+value = 0.1
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_144"]
+script = ExtResource("2_card")
+id = &"exsanguinate_i"
+display_name = "Exsanguinate I"
+description = "Los críticos convierten el 10% del Bleed restante en daño inmediato de Bleed."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"trail_of_blood_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_144_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_145_0"]
+script = ExtResource("3_operation")
+type = 18
+value = 0.1
+affected_status_id = &"bleed"
+
+[sub_resource type="Resource" id="Card_145"]
+script = ExtResource("2_card")
+id = &"exsanguinate_ii"
+display_name = "Exsanguinate II"
+description = "Los críticos convierten otro 10% del Bleed restante (20% total)."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"exsanguinate_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_145_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_146_0"]
+script = ExtResource("3_operation")
+type = 19
+value = 0.833333
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_146"]
+script = ExtResource("2_card")
+id = &"slow_cooker_i"
+display_name = "Slow Cooker I"
+description = "Burn inflige más daño según el Slow del objetivo (1× Slow, hasta 50% adicional)."
+rarity = 0
+unlock_requirement = &""
+tags = Array[StringName]([&"global", &"status", &"burn"])
+modifier_operations = Array[Resource]([SubResource("Op_146_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_147_0"]
+script = ExtResource("3_operation")
+type = 19
+value = 0.833333
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_147"]
+script = ExtResource("2_card")
+id = &"slow_cooker_ii"
+display_name = "Slow Cooker II"
+description = "Burn inflige más daño según el Slow del objetivo (2× Slow, hasta 100% adicional)."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"slow_cooker_i"])
+tags = Array[StringName]([&"global", &"status", &"burn"])
+modifier_operations = Array[Resource]([SubResource("Op_147_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_148_0"]
+script = ExtResource("3_operation")
+type = 19
+value = 0.833334
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_148"]
+script = ExtResource("2_card")
+id = &"slow_cooker_iii"
+display_name = "Slow Cooker III"
+description = "Burn inflige más daño según el Slow del objetivo (3× Slow, hasta 150% adicional)."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"slow_cooker_ii"])
+tags = Array[StringName]([&"global", &"status", &"burn"])
+modifier_operations = Array[Resource]([SubResource("Op_148_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_149_0"]
+script = ExtResource("3_operation")
+type = 16
+value = 1.0
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_149"]
+script = ExtResource("2_card")
+id = &"fire_and_flames_i"
+display_name = "Fire and Flames I"
+description = "Los enemigos con Burn reciben +1 al daño contra Armor de todos los ataques."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"kill_them_with_fire_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_149_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_150_0"]
+script = ExtResource("3_operation")
+type = 16
+value = 1.0
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_150"]
+script = ExtResource("2_card")
+id = &"fire_and_flames_ii"
+display_name = "Fire and Flames II"
+description = "Los enemigos con Burn reciben otro +1 al daño contra Armor (+2 total)."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"fire_and_flames_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_150_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_151_0"]
+script = ExtResource("3_operation")
+type = 16
+value = 1.0
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_151"]
+script = ExtResource("2_card")
+id = &"fire_and_flames_iii"
+display_name = "Fire and Flames III"
+description = "Los enemigos con Burn reciben otro +1 al daño contra Armor (+3 total)."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"fire_and_flames_ii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_151_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_152_0"]
+script = ExtResource("3_operation")
+type = 18
+value = 0.1
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_152"]
+script = ExtResource("2_card")
+id = &"ignite_i"
+display_name = "Ignite I"
+description = "Los críticos convierten el 10% del Burn restante en daño inmediato de Burn."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"fire_and_flames_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_152_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_153_0"]
+script = ExtResource("3_operation")
+type = 18
+value = 0.1
+affected_status_id = &"burn"
+
+[sub_resource type="Resource" id="Card_153"]
+script = ExtResource("2_card")
+id = &"ignite_ii"
+display_name = "Ignite II"
+description = "Los críticos convierten otro 10% del Burn restante (20% total)."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"ignite_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_153_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_154_0"]
+script = ExtResource("3_operation")
+type = 20
+value = 0.05
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_154"]
+script = ExtResource("2_card")
+id = &"creeping_cough"
+display_name = "Creeping Cough"
+description = "Aplicar Poison también aplica Slow equivalente al 5% del daño de Poison."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"slow_and_steady_i"])
+tags = Array[StringName]([&"global", &"poison", &"slow"])
+modifier_operations = Array[Resource]([SubResource("Op_154_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_155_0"]
+script = ExtResource("3_operation")
+type = 16
+value = 1.0
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_155"]
+script = ExtResource("2_card")
+id = &"vile_consumption_i"
+display_name = "Vile Consumption I"
+description = "Los enemigos con Poison reciben +1 al daño contra Shield de todos los ataques."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"slow_and_steady_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_155_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_156_0"]
+script = ExtResource("3_operation")
+type = 16
+value = 1.0
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_156"]
+script = ExtResource("2_card")
+id = &"vile_consumption_ii"
+display_name = "Vile Consumption II"
+description = "Los enemigos con Poison reciben otro +1 al daño contra Shield (+2 total)."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"vile_consumption_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_156_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_157_0"]
+script = ExtResource("3_operation")
+type = 16
+value = 1.0
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_157"]
+script = ExtResource("2_card")
+id = &"vile_consumption_iii"
+display_name = "Vile Consumption III"
+description = "Los enemigos con Poison reciben otro +1 al daño contra Shield (+3 total)."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"vile_consumption_ii"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_157_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_158_0"]
+script = ExtResource("3_operation")
+type = 18
+value = 0.1
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_158"]
+script = ExtResource("2_card")
+id = &"expunge_i"
+display_name = "Expunge I"
+description = "Los críticos convierten el 10% del Poison restante en daño inmediato de Poison."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"vile_consumption_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_158_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_159_0"]
+script = ExtResource("3_operation")
+type = 18
+value = 0.1
+affected_status_id = &"poison"
+
+[sub_resource type="Resource" id="Card_159"]
+script = ExtResource("2_card")
+id = &"expunge_ii"
+display_name = "Expunge II"
+description = "Los críticos convierten otro 10% del Poison restante (20% total)."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"expunge_i"])
+tags = Array[StringName]([&"tower", &"utility"])
+modifier_operations = Array[Resource]([SubResource("Op_159_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_160_0"]
+script = ExtResource("3_operation")
+type = 25
+value = 2.0
+
+[sub_resource type="Resource" id="Op_160_1"]
+script = ExtResource("3_operation")
+type = 26
+value = 1.0
+
+[sub_resource type="Resource" id="Card_160"]
+script = ExtResource("2_card")
+id = &"banditry_i"
+display_name = "Banditry I"
+description = "Cada baja concede +2 Gold y los enemigos infligen +1 daño adicional a la base (2 Gold y +1 daño acumulados)."
+rarity = 1
+unlock_requirement = &""
+tags = Array[StringName]([&"global", &"gold", &"risk"])
+modifier_operations = Array[Resource]([SubResource("Op_160_0"), SubResource("Op_160_1")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_161_0"]
+script = ExtResource("3_operation")
+type = 25
+value = 2.0
+
+[sub_resource type="Resource" id="Op_161_1"]
+script = ExtResource("3_operation")
+type = 26
+value = 1.0
+
+[sub_resource type="Resource" id="Card_161"]
+script = ExtResource("2_card")
+id = &"banditry_ii"
+display_name = "Banditry II"
+description = "Cada baja concede +2 Gold y los enemigos infligen +1 daño adicional a la base (4 Gold y +2 daño acumulados)."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"banditry_i"])
+tags = Array[StringName]([&"global", &"gold", &"risk"])
+modifier_operations = Array[Resource]([SubResource("Op_161_0"), SubResource("Op_161_1")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_162_0"]
+script = ExtResource("3_operation")
+type = 25
+value = 2.0
+
+[sub_resource type="Resource" id="Op_162_1"]
+script = ExtResource("3_operation")
+type = 26
+value = 1.0
+
+[sub_resource type="Resource" id="Card_162"]
+script = ExtResource("2_card")
+id = &"banditry_iii"
+display_name = "Banditry III"
+description = "Cada baja concede +2 Gold y los enemigos infligen +1 daño adicional a la base (6 Gold y +3 daño acumulados)."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"banditry_ii"])
+tags = Array[StringName]([&"global", &"gold", &"risk"])
+modifier_operations = Array[Resource]([SubResource("Op_162_0"), SubResource("Op_162_1")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_163_0"]
+script = ExtResource("3_operation")
+type = 23
+value = 0.01
+
+[sub_resource type="Resource" id="Card_163"]
+script = ExtResource("2_card")
+id = &"sorcery_i"
+display_name = "Sorcery I"
+description = "Regenera 1% adicional del Mana máximo por segundo (1% acumulado)."
+rarity = 1
+unlock_requirement = &""
+tags = Array[StringName]([&"global", &"mana"])
+modifier_operations = Array[Resource]([SubResource("Op_163_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_164_0"]
+script = ExtResource("3_operation")
+type = 23
+value = 0.02
+
+[sub_resource type="Resource" id="Card_164"]
+script = ExtResource("2_card")
+id = &"sorcery_ii"
+display_name = "Sorcery II"
+description = "Regenera 2% adicional del Mana máximo por segundo (3% acumulado)."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"sorcery_i"])
+tags = Array[StringName]([&"global", &"mana"])
+modifier_operations = Array[Resource]([SubResource("Op_164_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_165_0"]
+script = ExtResource("3_operation")
+type = 23
+value = 0.03
+
+[sub_resource type="Resource" id="Card_165"]
+script = ExtResource("2_card")
+id = &"sorcery_iii"
+display_name = "Sorcery III"
+description = "Regenera 3% adicional del Mana máximo por segundo (6% acumulado)."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"sorcery_ii"])
+tags = Array[StringName]([&"global", &"mana"])
+modifier_operations = Array[Resource]([SubResource("Op_165_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_166_0"]
+script = ExtResource("3_operation")
+type = 24
+value = 0.01
+
+[sub_resource type="Resource" id="Card_166"]
+script = ExtResource("2_card")
+id = &"life_steal_i"
+display_name = "Life Steal I"
+description = "Cada baja restaura un 1% del Mana máximo acumulado."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"sorcery_i"])
+tags = Array[StringName]([&"global", &"mana"])
+modifier_operations = Array[Resource]([SubResource("Op_166_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_167_0"]
+script = ExtResource("3_operation")
+type = 24
+value = 0.01
+
+[sub_resource type="Resource" id="Card_167"]
+script = ExtResource("2_card")
+id = &"life_steal_ii"
+display_name = "Life Steal II"
+description = "Cada baja restaura un 2% del Mana máximo acumulado."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"life_steal_i"])
+tags = Array[StringName]([&"global", &"mana"])
+modifier_operations = Array[Resource]([SubResource("Op_167_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_168_0"]
+script = ExtResource("3_operation")
+type = 24
+value = 0.01
+
+[sub_resource type="Resource" id="Card_168"]
+script = ExtResource("2_card")
+id = &"life_steal_iii"
+display_name = "Life Steal III"
+description = "Cada baja restaura un 3% del Mana máximo acumulado."
+rarity = 1
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"life_steal_ii"])
+tags = Array[StringName]([&"global", &"mana"])
+modifier_operations = Array[Resource]([SubResource("Op_168_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_169_0"]
+script = ExtResource("3_operation")
+type = 27
+value = 3.0
+
+[sub_resource type="Resource" id="Card_169"]
+script = ExtResource("2_card")
+id = &"main_tower_fortification_i"
+display_name = "Fortification I"
+description = "La base obtiene +3 Health máximo (3 acumulado) durante esta run."
+rarity = 0
+unlock_requirement = &""
+tags = Array[StringName]([&"global", &"base"])
+modifier_operations = Array[Resource]([SubResource("Op_169_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_170_0"]
+script = ExtResource("3_operation")
+type = 27
+value = 3.0
+
+[sub_resource type="Resource" id="Card_170"]
+script = ExtResource("2_card")
+id = &"main_tower_fortification_ii"
+display_name = "Fortification II"
+description = "La base obtiene +3 Health máximo (6 acumulado) durante esta run."
+rarity = 0
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"main_tower_fortification_i"])
+tags = Array[StringName]([&"global", &"base"])
+modifier_operations = Array[Resource]([SubResource("Op_170_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_171_0"]
+script = ExtResource("3_operation")
+type = 27
+value = 3.0
+
+[sub_resource type="Resource" id="Card_171"]
+script = ExtResource("2_card")
+id = &"main_tower_fortification_iii"
+display_name = "Fortification III"
+description = "La base obtiene +3 Health máximo (9 acumulado) durante esta run."
+rarity = 0
+unlock_requirement = &""
+required_card_ids = Array[StringName]([&"main_tower_fortification_ii"])
+tags = Array[StringName]([&"global", &"base"])
+modifier_operations = Array[Resource]([SubResource("Op_171_0")])
+offer_weight = 1.0
+max_per_run = 1
+
+[sub_resource type="Resource" id="Op_172_0"]
+script = ExtResource("3_operation")
+type = 21
+value = 0.01
+
+[sub_resource type="Resource" id="Op_172_1"]
+script = ExtResource("3_operation")
+type = 0
+value = -1.0
+
+[sub_resource type="Resource" id="Card_172"]
+script = ExtResource("2_card")
+id = &"quality_over_quantity"
+display_name = "Quality over Quantity"
+description = "Cada nivel de torre añade +1% de crítico; todas las torres pierden 1 de daño base."
+rarity = 2
+unlock_requirement = &""
+tags = Array[StringName]([&"global", &"critical", &"damage"])
+modifier_operations = Array[Resource]([SubResource("Op_172_0"), SubResource("Op_172_1")])
+offer_weight = 1.0
+max_per_run = 1
+
+[resource]
+script = ExtResource("1_catalog")
+cards = Array[Resource]([SubResource("Card_0"), SubResource("Card_1"), SubResource("Card_2"), SubResource("Card_3"), SubResource("Card_4"), SubResource("Card_5"), SubResource("Card_6"), SubResource("Card_7"), SubResource("Card_8"), SubResource("Card_9"), SubResource("Card_10"), SubResource("Card_11"), SubResource("Card_12"), SubResource("Card_13"), SubResource("Card_14"), SubResource("Card_15"), SubResource("Card_16"), SubResource("Card_17"), SubResource("Card_18"), SubResource("Card_19"), SubResource("Card_20"), SubResource("Card_21"), SubResource("Card_22"), SubResource("Card_23"), SubResource("Card_24"), SubResource("Card_25"), SubResource("Card_26"), SubResource("Card_27"), SubResource("Card_28"), SubResource("Card_29"), SubResource("Card_30"), SubResource("Card_31"), SubResource("Card_32"), SubResource("Card_33"), SubResource("Card_34"), SubResource("Card_35"), SubResource("Card_36"), SubResource("Card_37"), SubResource("Card_38"), SubResource("Card_39"), SubResource("Card_40"), SubResource("Card_41"), SubResource("Card_42"), SubResource("Card_44"), SubResource("Card_45"), SubResource("Card_46"), SubResource("Card_47"), SubResource("Card_48"), SubResource("Card_49"), SubResource("Card_50"), SubResource("Card_51"), SubResource("Card_52"), SubResource("Card_53"), SubResource("Card_54"), SubResource("Card_55"), SubResource("Card_56"), SubResource("Card_57"), SubResource("Card_58"), SubResource("Card_59"), SubResource("Card_60"), SubResource("Card_61"), SubResource("Card_62"), SubResource("Card_63"), SubResource("Card_64"), SubResource("Card_65"), SubResource("Card_66"), SubResource("Card_67"), SubResource("Card_68"), SubResource("Card_69"), SubResource("Card_70"), SubResource("Card_71"), SubResource("Card_72"), SubResource("Card_73"), SubResource("Card_74"), SubResource("Card_75"), SubResource("Card_76"), SubResource("Card_77"), SubResource("Card_78"), SubResource("Card_79"), SubResource("Card_80"), SubResource("Card_81"), SubResource("Card_82"), SubResource("Card_83"), SubResource("Card_84"), SubResource("Card_85"), SubResource("Card_86"), SubResource("Card_87"), SubResource("Card_88"), SubResource("Card_89"), SubResource("Card_90"), SubResource("Card_91"), SubResource("Card_92"), SubResource("Card_93"), SubResource("Card_94"), SubResource("Card_95"), SubResource("Card_96"), SubResource("Card_97"), SubResource("Card_98"), SubResource("Card_99"), SubResource("Card_100"), SubResource("Card_101"), SubResource("Card_102"), SubResource("Card_103"), SubResource("Card_104"), SubResource("Card_105"), SubResource("Card_106"), SubResource("Card_107"), SubResource("Card_108"), SubResource("Card_109"), SubResource("Card_110"), SubResource("Card_111"), SubResource("Card_112"), SubResource("Card_113"), SubResource("Card_114"), SubResource("Card_115"), SubResource("Card_116"), SubResource("Card_117"), SubResource("Card_118"), SubResource("Card_119"), SubResource("Card_120"), SubResource("Card_121"), SubResource("Card_122"), SubResource("Card_123"), SubResource("Card_124"), SubResource("Card_125"), SubResource("Card_126"), SubResource("Card_127"), SubResource("Card_128"), SubResource("Card_129"), SubResource("Card_130"), SubResource("Card_131"), SubResource("Card_132"), SubResource("Card_133"), SubResource("Card_134"), SubResource("Card_135"), SubResource("Card_136"), SubResource("Card_137"), SubResource("Card_138"), SubResource("Card_139"), SubResource("Card_140"), SubResource("Card_141"), SubResource("Card_142"), SubResource("Card_143"), SubResource("Card_144"), SubResource("Card_145"), SubResource("Card_146"), SubResource("Card_147"), SubResource("Card_148"), SubResource("Card_149"), SubResource("Card_150"), SubResource("Card_151"), SubResource("Card_152"), SubResource("Card_153"), SubResource("Card_154"), SubResource("Card_155"), SubResource("Card_156"), SubResource("Card_157"), SubResource("Card_158"), SubResource("Card_159"), SubResource("Card_160"), SubResource("Card_161"), SubResource("Card_162"), SubResource("Card_163"), SubResource("Card_164"), SubResource("Card_165"), SubResource("Card_166"), SubResource("Card_167"), SubResource("Card_168"), SubResource("Card_169"), SubResource("Card_170"), SubResource("Card_171"), SubResource("Card_172")])
