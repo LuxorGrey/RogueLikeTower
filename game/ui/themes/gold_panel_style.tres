@@ -1,0 +1,10 @@
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://ixki47ks6fdx"]
+
+[ext_resource type="Texture2D" uid="uid://c1t7xrk2lp554" path="res://assets/sprites/ui/start_round_button.png" id="1_texture"]
+
+[resource]
+content_margin_left = 22.0
+content_margin_top = 8.0
+content_margin_right = 22.0
+content_margin_bottom = 13.0
+texture = ExtResource("1_texture")

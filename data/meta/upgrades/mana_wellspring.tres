@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="PermanentUpgradeData" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="PermanentUpgradeData" format=3 uid="uid://dsg0syxi3qh27"]
 
-[ext_resource type="Script" path="res://game/progression/permanent_upgrade_data.gd" id="1_upgrade"]
-[ext_resource type="Script" path="res://game/progression/permanent_upgrade_operation.gd" id="2_operation"]
+[ext_resource type="Script" uid="uid://b34o3k4oxhoc0" path="res://game/progression/permanent_upgrade_data.gd" id="1_upgrade"]
+[ext_resource type="Script" uid="uid://cxjoqba76nkk6" path="res://game/progression/permanent_upgrade_operation.gd" id="2_operation"]
 
 [sub_resource type="Resource" id="PermanentUpgradeOperation_1"]
 script = ExtResource("2_operation")
@@ -24,6 +24,6 @@ id = &"mana_wellspring"
 display_name = "Sourcery"
 description = "+1 Mana/s por nivel en cada nueva run (máximo +3 Mana/s)."
 max_level = 3
-prerequisites = Array[StringName]([&"mana_reservoir"])
 cost_by_level = Array[int]([15, 30, 45])
+prerequisites = Array[StringName]([&"mana_reservoir"])
 operations_by_level = Array[ExtResource("2_operation")]([SubResource("PermanentUpgradeOperation_1"), SubResource("PermanentUpgradeOperation_2"), SubResource("PermanentUpgradeOperation_3")])

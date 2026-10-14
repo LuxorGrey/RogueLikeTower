@@ -36,7 +36,7 @@ Los ADR documentan decisiones de terreno, combate, campaña, progresión y UX en
 | [ADR-0048](ADR-0048-hud-oleadas-cards-y-paredes-texturizadas.md) | HUD sin paneles compartidos, progreso de oleadas, cards con marco y fachadas con sprites | Código y arte integrados; aceptación visual pendiente. |
 | [ADR-0049](ADR-0049-arquitectura-hibrida-ui-editable.md) | Arquitectura híbrida, componentes UI editables y Theme local | Implementación integrada; smoke headless pasado; aceptación visual/interactiva pendiente. |
 | [ADR-0050](ADR-0050-recursos-visuales-ui-en-inspector.md) | Sprites y estilos de UI visibles y editables en el Inspector | Implementado; smoke y escaneo del editor pasados; aceptación visual pendiente. |
-| [ADR-0051](ADR-0051-navegacion-prevision-portales-y-panel-torre.md) | WASD, preview exacto de spawns, torre fantasma, sombras y panel Tower Info | Código y recursos integrados; aceptación visual/interactiva pendiente. |
+| [ADR-0051](ADR-0051-navegacion-prevision-portales-y-panel-torre.md) | WASD, preview exacto de spawns, torre fantasma, sombras y panel Tower Info | Los badges flotantes de portal fueron sustituidos por ADR-0105; el resto conserva su alcance histórico. |
 | [ADR-0052](ADR-0052-numeros-de-dano-animados-y-legibles.md) | Números de daño animados, alternancia, color y énfasis de críticos | Código integrado; aceptación visual pendiente. |
 | [ADR-0053](ADR-0053-paneles-y-sprites-sencillos.md) | Simplificación visual de paneles, cofre y portal | Código y arte integrados; aceptación visual pendiente. Sustituye los acabados de panel de ADR-0048/0051. |
 | [ADR-0054](ADR-0054-tipografia-global-y-sin-sombras-de-codigo.md) | Patrick Hand como fuente del proyecto y eliminación de sombras generadas por código | Implementado; aceptación visual pendiente. |
@@ -57,7 +57,7 @@ Los ADR documentan decisiones de terreno, combate, campaña, progresión y UX en
 | [ADR-0069](ADR-0069-desbloqueos-xp-y-feedback-de-altura.md) | Arsenal inicial, XP de perfil y lectura de altura | Código integrado; aceptación visual/interactiva pendiente. |
 | [ADR-0070](ADR-0070-sin-sombras-y-rutas-limpias-en-expansion.md) | Retirada de sombras generadas y preview PATH limpio | Código integrado; aceptación visual pendiente. |
 | [ADR-0071](ADR-0071-marco-de-cards-y-colocacion-automatica.md) | Marco perimetral de mejoras, miniaturas de terreno limpias y colocación automática | La parte del marco quedó sustituida por ADR-0075; miniaturas/auto-colocación vigentes. |
-| [ADR-0072](ADR-0072-controles-y-tooltip-de-celdas.md) | Rotación Q/E y con rueda, auto-colocación T y tooltip compacto de terreno | Código integrado; aceptación visual/interactiva pendiente. |
+| [ADR-0072](ADR-0072-controles-y-tooltip-de-celdas.md) | Rotación Q/E, rotación histórica con rueda, auto-colocación T y tooltip compacto | ADR-0105 sustituye el uso de la rueda; los demás controles siguen vigentes. |
 | [ADR-0073](ADR-0073-elevaciones-y-bonus-de-torre.md) | Elevaciones 0–3 aleatorias y bonus de altura para torres | Código integrado; aceptación visual pendiente. Amplía ADR-0063/0069. |
 | [ADR-0074](ADR-0074-vida-de-base-y-derrota-por-jefe.md) | Main Tower 10 HP, Fortification I–X y derrota por boss | Datos/código integrados; aceptación manual pendiente. |
 | [ADR-0075](ADR-0075-panel-unico-y-aura-de-rareza.md) | Un solo panel de upgrade card y aura por rareza | Código integrado; aceptación visual pendiente. Sustituye parcialmente ADR-0065/0071. |
@@ -89,6 +89,9 @@ Los ADR documentan decisiones de terreno, combate, campaña, progresión y UX en
 | [ADR-0101](ADR-0101-vfx-animados-de-cozy-chunky-por-evento.md) | Spritesheets Cozy Chunky para combate, estados y feedback por evento; torre única centrada con offset visual de 8 px | Código/assets/documentación integrados; aceptación visual pendiente. Sustituye los VFX Tiny Swords activos de M16 y amplía el anclaje de ADR-0100. |
 | [ADR-0102](ADR-0102-sprites-completos-de-torre-escala-y-feedback.md) | PNG completos de torre, escala de mundo/UI, cadencia de shoot y pickup al construir/quitar obstáculo | Código/documentación integrados; aceptación visual pendiente. Sustituye la composición por regiones de ADR-0100 y extiende ADR-0101. |
 | [ADR-0103](ADR-0103-escala-de-torre-sin-recorte.md) | Reducción de escala de torre/ghost para dejar margen al sprite completo | Código/documentación integrados; aceptación visual pendiente. Sustituye la escala de tablero/ghost de ADR-0102; mantiene sin cambios los tamaños de UI. |
+| [ADR-0104](ADR-0104-reduccion-del-20-por-ciento-de-escala-de-torre.md) | Reducción adicional del 20 % de escala de torre colocada y ghost | Código/documentación integrados; aceptación visual pendiente. Sustituye la escala de mundo/ghost de ADR-0103; mantiene tamaños UI. |
+| [ADR-0105](ADR-0105-tooltip-de-spawn-atajos-oro-zoom-y-escala-de-torre.md) | Tooltip de spawn, atajos secuenciales, zoom/rotación, panel de Gold y reducción de escala | Código/documentación integrados; aceptación visual/interactiva pendiente. Sustituye la escala de mundo/ghost de ADR-0104; mantiene tamaños UI. |
+| [ADR-0106](ADR-0106-vfx-de-evento-anclados-al-mundo-durante-el-paneo.md) | Anclaje de VFX de evento a coordenadas del mundo durante paneo y zoom | Código/documentación integrados; aceptación visual pendiente. Corrige el posicionamiento descrito en ADR-0101; mantiene su capa superior y proceso ALWAYS. |
 
 ## Regla para nuevos ADR
 

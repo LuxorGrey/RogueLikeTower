@@ -1,11 +1,10 @@
-[gd_resource type="Resource" script_class="TerrainPieceData" load_steps=10 format=3]
+[gd_resource type="Resource" script_class="TerrainPieceData" format=3 uid="uid://bu2e1tq8823i8"]
 
-[ext_resource type="Script" path="res://game/board/terrain_piece_cell_data.gd" id="1_cell"]
-[ext_resource type="Script" path="res://game/board/terrain_piece_data.gd" id="2_piece"]
+[ext_resource type="Script" uid="uid://ddtsceg6ewvk8" path="res://game/board/terrain_piece_cell_data.gd" id="1_cell"]
+[ext_resource type="Script" uid="uid://ddttfawhy7s4l" path="res://game/board/terrain_piece_data.gd" id="2_piece"]
 
 [sub_resource type="Resource" id="Cell_center"]
 script = ExtResource("1_cell")
-local_coord = Vector2i(0, 0)
 terrain_type = 1
 elevation = 1
 
@@ -49,7 +48,6 @@ elevation = 1
 script = ExtResource("2_piece")
 id = &"twin_peaks"
 display_name = "Picos gemelos"
-weight = 1.0
 tags = Array[StringName]([&"mountain", &"grass"])
 requires_path_connection = false
 cells = Array[ExtResource("1_cell")]([SubResource("Cell_center"), SubResource("Cell_northwest"), SubResource("Cell_northeast"), SubResource("Cell_east"), SubResource("Cell_southeast"), SubResource("Cell_southwest"), SubResource("Cell_west")])

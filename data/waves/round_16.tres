@@ -1,12 +1,12 @@
-[gd_resource type="Resource" script_class="WaveData" load_steps=13 format=3]
+[gd_resource type="Resource" script_class="WaveData" format=3 uid="uid://i2fdvmlr8dhs"]
 
-[ext_resource type="Script" path="res://data/waves/wave_data.gd" id="1_wave_data"]
-[ext_resource type="Script" path="res://data/waves/wave_enemy_group_data.gd" id="2_group_data"]
-[ext_resource type="Resource" path="res://data/enemies/basic_enemy.tres" id="3_enemy_data"]
-[ext_resource type="Resource" path="res://data/enemies/campaign_armored_raider.tres" id="4_enemy_data"]
-[ext_resource type="Resource" path="res://data/enemies/campaign_battering_ram.tres" id="5_enemy_data"]
-[ext_resource type="Resource" path="res://data/enemies/campaign_cyclops.tres" id="6_enemy_data"]
-[ext_resource type="Resource" path="res://data/enemies/campaign_witch.tres" id="7_enemy_data"]
+[ext_resource type="Script" uid="uid://clo00ii2bhhja" path="res://data/waves/wave_data.gd" id="1_wave_data"]
+[ext_resource type="Script" uid="uid://ufluoibexpck" path="res://data/waves/wave_enemy_group_data.gd" id="2_group_data"]
+[ext_resource type="Resource" uid="uid://dboiixw8f7j16" path="res://data/enemies/basic_enemy.tres" id="3_enemy_data"]
+[ext_resource type="Resource" uid="uid://bkjv71408qxtj" path="res://data/enemies/campaign_armored_raider.tres" id="4_enemy_data"]
+[ext_resource type="Resource" uid="uid://ckim6fc25gfnf" path="res://data/enemies/campaign_battering_ram.tres" id="5_enemy_data"]
+[ext_resource type="Resource" uid="uid://dw3x70gma4oau" path="res://data/enemies/campaign_cyclops.tres" id="6_enemy_data"]
+[ext_resource type="Resource" uid="uid://dpvksilwde2h0" path="res://data/enemies/campaign_witch.tres" id="7_enemy_data"]
 
 [sub_resource type="Resource" id="WaveGroup_16_1"]
 script = ExtResource("2_group_data")
@@ -14,7 +14,6 @@ enemy_data = ExtResource("3_enemy_data")
 count = 10
 spawn_interval = 0.8
 spawn_endpoint_policy = 1
-delay_before_group = 0.0
 
 [sub_resource type="Resource" id="WaveGroup_16_2"]
 script = ExtResource("2_group_data")
@@ -22,7 +21,6 @@ enemy_data = ExtResource("4_enemy_data")
 count = 5
 spawn_interval = 0.8
 spawn_endpoint_policy = 1
-delay_before_group = 0.0
 
 [sub_resource type="Resource" id="WaveGroup_16_3"]
 script = ExtResource("2_group_data")
@@ -30,27 +28,21 @@ enemy_data = ExtResource("5_enemy_data")
 count = 2
 spawn_interval = 0.8
 spawn_endpoint_policy = 1
-delay_before_group = 0.0
 
 [sub_resource type="Resource" id="WaveGroup_16_4"]
 script = ExtResource("2_group_data")
 enemy_data = ExtResource("6_enemy_data")
-count = 1
 spawn_interval = 0.8
 spawn_endpoint_policy = 1
-delay_before_group = 0.0
 
 [sub_resource type="Resource" id="WaveGroup_16_5"]
 script = ExtResource("2_group_data")
 enemy_data = ExtResource("7_enemy_data")
-count = 1
 spawn_interval = 0.8
 spawn_endpoint_policy = 1
-delay_before_group = 0.0
 
 [resource]
 script = ExtResource("1_wave_data")
 round_number = 16
-encounter_type = 0
+groups = Array[ExtResource("2_group_data")]([SubResource("WaveGroup_16_1"), SubResource("WaveGroup_16_2"), SubResource("WaveGroup_16_3"), SubResource("WaveGroup_16_4"), SubResource("WaveGroup_16_5")])
 round_reward = 50
-groups = Array[Resource]([SubResource("WaveGroup_16_1"), SubResource("WaveGroup_16_2"), SubResource("WaveGroup_16_3"), SubResource("WaveGroup_16_4"), SubResource("WaveGroup_16_5")])

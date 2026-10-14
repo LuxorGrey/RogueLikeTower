@@ -24,3 +24,4 @@
 ## Sustituye
 
 - Sustituye únicamente la escala de tablero/ghost 1,44 de [ADR-0102](ADR-0102-sprites-completos-de-torre-escala-y-feedback.md). Los PNG completos, offset, tamaño UI, mirror, contorno y cadencia de VFX siguen vigentes.
+- La escala 1,32 quedó posteriormente reducida por [ADR-0104](ADR-0104-reduccion-del-20-por-ciento-de-escala-de-torre.md).

@@ -1,11 +1,10 @@
-[gd_resource type="Resource" script_class="BaseData" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="BaseData" format=3 uid="uid://bx74vrqi5xy8s"]
 
-[ext_resource type="Script" path="res://data/base/base_data.gd" id="1_base_data"]
-[ext_resource type="Texture2D" path="res://assets/sprites/base/main_tower.png" id="2_base_sprite"]
+[ext_resource type="Script" uid="uid://cx83nowl6tgf1" path="res://data/base/base_data.gd" id="1_base_data"]
+[ext_resource type="Texture2D" uid="uid://bvssh1la4nt82" path="res://assets/sprites/base/main_tower.png" id="2_base_sprite"]
 
 [resource]
 script = ExtResource("1_base_data")
 id = &"provisional_base"
 display_name = "Main Tower"
-max_health = 10
 sprite_texture = ExtResource("2_base_sprite")

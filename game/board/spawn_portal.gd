@@ -18,7 +18,6 @@ const PULSE_MAX_SCALE: float = 1.055
 const OBSTACLE_HOVER_SHADER: Shader = preload("res://game/board/obstacle_hover_glow.gdshader")
 const INTERACTABLE_OUTLINE_SHADER: Shader = preload("res://game/board/interactable_outline.gdshader")
 const PORTAL_OUTLINE_SIZE_PX: float = 3.0
-const PREVIEW_LAYER_SCRIPT: Script = preload("res://game/board/spawn_portal_preview_layer.gd")
 
 @onready var _sprite: AnimatedSprite2D = %Sprite
 @onready var _hover_area: Area2D = %HoverArea
@@ -31,7 +30,6 @@ var _pulse_phase: float = 0.0
 var _base_sprite_scale: Vector2 = Vector2.ONE
 var _outline_sprite: Sprite2D
 var _interactable_outline_sprite: Sprite2D
-var _preview_layer: Node2D
 var _endpoint_key: String = ""
 var _preview_entries: Array[Dictionary] = []
 var _preview_wave_number: int = 0
@@ -60,7 +58,6 @@ func _ready() -> void:
 	_sprite.frame_changed.connect(_sync_hover_outline_texture)
 	_create_interactable_outline()
 	_create_hover_outline()
-	_create_enemy_preview_layer()
 	_create_closing_marker()
 	_update_pulse()
 	set_process(true)
@@ -133,8 +130,6 @@ func set_wave_preview(entries: Array[Dictionary], wave_number: int) -> void:
 	_preview_enemy_count = 0
 	for entry in _preview_entries:
 		_preview_enemy_count += maxi(int(entry.get("count", 0)), 0)
-	if _preview_layer != null and _preview_layer.has_method("set_entries"):
-		_preview_layer.call("set_entries", _preview_entries)
 	if _is_hovered:
 		hover_changed.emit(self, true)
 
@@ -150,11 +145,6 @@ func get_wave_preview_tooltip_text() -> String:
 	if _closing_preview:
 		lines.append("¡ESTE SPAWN SE CERRARÁ SI CONFIRMAS LA PIEZA!")
 	lines.append("Ronda %02d · %d enemigos" % [_preview_wave_number, _preview_enemy_count])
-	if _preview_entries.is_empty():
-		lines.append("Ningún enemigo asignado a esta salida.")
-		return "\n".join(lines)
-	for entry in _preview_entries:
-		lines.append("%s ×%d" % [String(entry.get("display_name", "Enemigo")), int(entry.get("count", 0))])
 	return "\n".join(lines)
 
 func get_wave_preview_entries() -> Array[Dictionary]:
@@ -234,14 +224,6 @@ func _create_hover_outline() -> void:
 	add_child(_outline_sprite)
 	move_child(_outline_sprite, _sprite.get_index())
 	_update_hover_outline()
-
-func _create_enemy_preview_layer() -> void:
-	_preview_layer = PREVIEW_LAYER_SCRIPT.new() as Node2D
-	_preview_layer.name = "NextWaveEnemyPreviews"
-	_preview_layer.position = Vector2(0.0, -178.0)
-	_preview_layer.z_index = 4095
-	_preview_layer.z_as_relative = false
-	add_child(_preview_layer)
 
 func _create_closing_marker() -> void:
 	_closing_marker = Label.new()

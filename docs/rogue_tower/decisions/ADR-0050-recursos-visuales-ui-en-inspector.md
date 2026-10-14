@@ -27,7 +27,7 @@ La petición es poder inspeccionar y sustituir cómodamente los sprites existent
 | Icono usado por retratos, ofertas, tienda, estados y cursores | `game/ui/resources/icon_catalog.tres`, expandir la propiedad del icono |
 | Icono de una tarjeta de torre | Instancia `TowerShortcut1…7` en `game/main/main.tscn`, propiedad `tower_icon_texture` |
 | Icono de Health/Armor/Shield | Instancia `UpgradeHealth`, `UpgradeArmor` o `UpgradeShield`, propiedad `layer_icon_texture` |
-| Sprite Gold/Mana del HUD | `HUD/ResourcesRow/GoldGroup/GoldIcon` o `HUD/ResourcesRow/ManaGroup/ManaIcon` en `main.tscn` |
+| Sprite Gold/Mana del HUD | `HUD/ResourcesRow/GoldPanel/GoldGroup/GoldIcon` o `HUD/ResourcesRow/ManaGroup/ManaIcon` en `main.tscn`; M55 reubica Gold dentro de su panel horizontal |
 | Fondo y estados del botón de ronda | `HUD/RoundPanel/Margin/Content/StartWave`, `Theme Overrides > Styles` |
 | Marco/estados de una card de expansión | `HUD/TerrainCardPanel/.../TerrainCard1…3`, `Theme Overrides > Styles` |
 | Marco de tarjeta de torre | Raíz `TowerShortcutCard` en `game/ui/components/tower_shortcut_card.tscn` |

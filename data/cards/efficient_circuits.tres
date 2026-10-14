@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://cc7n550ye5410"]
 
-[ext_resource type="Script" path="res://game/cards/card_data.gd" id="1_card"]
-[ext_resource type="Script" path="res://game/cards/card_modifier_operation.gd" id="2_operation"]
+[ext_resource type="Script" uid="uid://caqxycoyf65ra" path="res://game/cards/card_data.gd" id="1_card"]
+[ext_resource type="Script" uid="uid://croced7jpbgde" path="res://game/cards/card_modifier_operation.gd" id="2_operation"]
 
 [sub_resource type="Resource" id="CardModifierOperation_mana_cost"]
 script = ExtResource("2_operation")
@@ -17,4 +17,3 @@ rarity = 2
 tags = Array[StringName]([&"global", &"mana", &"efficiency"])
 modifier_operations = Array[Resource]([SubResource("CardModifierOperation_mana_cost")])
 offer_weight = 0.55
-max_per_run = 1

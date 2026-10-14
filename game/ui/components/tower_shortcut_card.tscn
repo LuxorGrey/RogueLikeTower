@@ -1,142 +1,183 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene format=3 uid="uid://deb8o4st6rba"]
 
-[ext_resource type="Script" path="res://game/ui/components/tower_shortcut_card.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://krsrocfocujn" path="res://game/ui/components/tower_shortcut_card.gd" id="1_script"]
 [ext_resource type="Theme" path="res://game/ui/themes/rogue_hud_theme.tres" id="2_theme"]
-[ext_resource type="Texture2D" path="res://assets/sprites/ui/tower_card_button.png" id="3_texture"]
-[ext_resource type="Texture2D" path="res://assets/sprites/ui/icons/gold.png" id="4_gold"]
+[ext_resource type="Texture2D" uid="uid://h6pl4dytx3oo" path="res://assets/sprites/ui/tower_card_button.png" id="3_texture"]
+[ext_resource type="Texture2D" uid="uid://d4li2faa8wpjj" path="res://assets/sprites/ui/icons/gold.png" id="4_gold"]
+[ext_resource type="StyleBox" path="res://game/ui/themes/gold_panel_style.tres" id="5_gold_panel_style"]
 
 [sub_resource type="StyleBoxTexture" id="TowerCardNormal"]
+content_margin_left = 9.0
+content_margin_top = 9.0
+content_margin_right = 9.0
+content_margin_bottom = 9.0
 texture = ExtResource("3_texture")
 texture_margin_left = 4.25
 texture_margin_top = 3.68
 texture_margin_right = 4.25
 texture_margin_bottom = 3.68
-content_margin_left = 9.0
-content_margin_top = 9.0
-content_margin_right = 9.0
-content_margin_bottom = 9.0
-
-[sub_resource type="StyleBoxTexture" id="TowerCardHover"]
-texture = ExtResource("3_texture")
-texture_margin_left = 4.25
-texture_margin_top = 3.68
-texture_margin_right = 4.25
-texture_margin_bottom = 3.68
-content_margin_left = 9.0
-content_margin_top = 9.0
-content_margin_right = 9.0
-content_margin_bottom = 9.0
-modulate_color = Color(1.12, 1.08, 0.92, 1)
 
 [sub_resource type="StyleBoxTexture" id="TowerCardPressed"]
+content_margin_left = 9.0
+content_margin_top = 9.0
+content_margin_right = 9.0
+content_margin_bottom = 9.0
 texture = ExtResource("3_texture")
 texture_margin_left = 4.25
 texture_margin_top = 3.68
 texture_margin_right = 4.25
 texture_margin_bottom = 3.68
-content_margin_left = 9.0
-content_margin_top = 9.0
-content_margin_right = 9.0
-content_margin_bottom = 9.0
 modulate_color = Color(0.82, 0.88, 0.98, 1)
 
-[sub_resource type="StyleBoxTexture" id="TowerCardHoverPressed"]
+[sub_resource type="StyleBoxTexture" id="TowerCardHover"]
+content_margin_left = 9.0
+content_margin_top = 9.0
+content_margin_right = 9.0
+content_margin_bottom = 9.0
 texture = ExtResource("3_texture")
 texture_margin_left = 4.25
 texture_margin_top = 3.68
 texture_margin_right = 4.25
 texture_margin_bottom = 3.68
+modulate_color = Color(1.12, 1.08, 0.92, 1)
+
+[sub_resource type="StyleBoxTexture" id="TowerCardHoverPressed"]
 content_margin_left = 9.0
 content_margin_top = 9.0
 content_margin_right = 9.0
 content_margin_bottom = 9.0
+texture = ExtResource("3_texture")
+texture_margin_left = 4.25
+texture_margin_top = 3.68
+texture_margin_right = 4.25
+texture_margin_bottom = 3.68
 modulate_color = Color(0.92, 0.98, 1.08, 1)
 
 [sub_resource type="StyleBoxTexture" id="TowerCardDisabled"]
+content_margin_left = 9.0
+content_margin_top = 9.0
+content_margin_right = 9.0
+content_margin_bottom = 9.0
 texture = ExtResource("3_texture")
 texture_margin_left = 4.25
 texture_margin_top = 3.68
 texture_margin_right = 4.25
 texture_margin_bottom = 3.68
-content_margin_left = 9.0
-content_margin_top = 9.0
-content_margin_right = 9.0
-content_margin_bottom = 9.0
 modulate_color = Color(0.62, 0.65, 0.7, 0.76)
 
-[node name="TowerShortcutCard" type="Button"]
+[sub_resource type="StyleBoxFlat" id="TowerShortcutBadge"]
+content_margin_left = 2.0
+content_margin_top = 1.0
+content_margin_right = 2.0
+content_margin_bottom = 1.0
+bg_color = Color(0.075, 0.09, 0.085, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.88, 0.7, 0.35, 0.95)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[node name="TowerShortcutCard" type="Button" unique_id=670680452]
 custom_minimum_size = Vector2(162, 198)
 size_flags_horizontal = 4
-toggle_mode = true
 theme = ExtResource("2_theme")
 theme_override_styles/normal = SubResource("TowerCardNormal")
-theme_override_styles/hover = SubResource("TowerCardHover")
 theme_override_styles/pressed = SubResource("TowerCardPressed")
+theme_override_styles/hover = SubResource("TowerCardHover")
 theme_override_styles/hover_pressed = SubResource("TowerCardHoverPressed")
 theme_override_styles/disabled = SubResource("TowerCardDisabled")
+toggle_mode = true
 script = ExtResource("1_script")
 
-[node name="CardMargin" type="MarginContainer" parent="."]
+[node name="CardMargin" type="MarginContainer" parent="." unique_id=1461876370]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 4
 theme_override_constants/margin_top = 4
 theme_override_constants/margin_right = 4
 theme_override_constants/margin_bottom = 4
-mouse_filter = 2
 
-[node name="CardContent" type="VBoxContainer" parent="CardMargin"]
+[node name="CardContent" type="VBoxContainer" parent="CardMargin" unique_id=1305714022]
 layout_mode = 2
-alignment = 1
-theme_override_constants/separation = 2
 mouse_filter = 2
+theme_override_constants/separation = 2
+alignment = 1
 
-[node name="TowerIcon" type="TextureRect" parent="CardMargin/CardContent"]
+[node name="TowerIcon" type="TextureRect" parent="CardMargin/CardContent" unique_id=404928649]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(126, 126)
-pivot_offset = Vector2(63, 63)
 layout_mode = 2
 size_flags_horizontal = 4
+mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
-mouse_filter = 2
 
-[node name="TowerName" type="Label" parent="CardMargin/CardContent"]
+[node name="TowerName" type="Label" parent="CardMargin/CardContent" unique_id=1340500942]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 20
 text = "TORRE"
-autowrap_mode = 3
 horizontal_alignment = 1
 vertical_alignment = 1
-mouse_filter = 2
+autowrap_mode = 3
 
-[node name="PriceRow" type="HBoxContainer" parent="CardMargin/CardContent"]
+[node name="PricePanel" type="PanelContainer" parent="CardMargin/CardContent" unique_id=1100620515]
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("5_gold_panel_style")
+
+[node name="PriceRow" type="HBoxContainer" parent="CardMargin/CardContent/PricePanel" unique_id=1016742870]
+layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 3
 alignment = 1
-mouse_filter = 2
 
-[node name="GoldIcon" type="TextureRect" parent="CardMargin/CardContent/PriceRow"]
+[node name="GoldIcon" type="TextureRect" parent="CardMargin/CardContent/PricePanel/PriceRow" unique_id=113356638]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
+mouse_filter = 2
 texture = ExtResource("4_gold")
 expand_mode = 1
 stretch_mode = 5
-mouse_filter = 2
 
-[node name="PriceLabel" type="Label" parent="CardMargin/CardContent/PriceRow"]
+[node name="PriceLabel" type="Label" parent="CardMargin/CardContent/PricePanel/PriceRow" unique_id=1435483772]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 22
 text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="ShortcutBadge" type="PanelContainer" parent="." unique_id=1069226595]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 34.0
+offset_bottom = 34.0
 mouse_filter = 2
+theme_override_styles/panel = SubResource("TowerShortcutBadge")
+
+[node name="ShortcutNumberLabel" type="Label" parent="ShortcutBadge" unique_id=235078916]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.86, 0.57, 1)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+vertical_alignment = 1

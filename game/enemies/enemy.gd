@@ -675,7 +675,6 @@ func _draw_status_icons() -> void:
 	var start_x: float = -total_width * 0.5
 	var status_y: float = -_body_radius - 48.0
 	for status_id_variant in status_ids:
-		var status_id: StringName = StringName(status_id_variant)
 		var stacks: int = int(stacks_by_id[status_id_variant])
 		if stacks > 1:
 			var count_position: Vector2 = Vector2(start_x + icon_size + 1.0, status_y + icon_size + 1.0)

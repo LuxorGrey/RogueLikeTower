@@ -1,18 +1,15 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="EnemyData" format=3 uid="uid://bgboe4dhxd6nm"]
 
-[ext_resource type="Script" path="res://data/enemies/enemy_data.gd" id="1_enemy_data"]
+[ext_resource type="Script" uid="uid://cytgirue54t5e" path="res://data/enemies/enemy_data.gd" id="1_enemy_data"]
 [ext_resource type="PackedScene" path="res://game/enemies/enemy.tscn" id="2_enemy_scene"]
-[ext_resource type="Texture2D" path="res://assets/sprites/enemies/blink_dog.png" id="3_sprite"]
-[ext_resource type="Script" path="res://data/enemies/enemy_ability_data.gd" id="4_ability_data"]
+[ext_resource type="Texture2D" uid="uid://uxbrhtyyejhh" path="res://assets/sprites/enemies/blink_dog.png" id="3_sprite"]
+[ext_resource type="Script" uid="uid://85i6swj7b7gg" path="res://data/enemies/enemy_ability_data.gd" id="4_ability_data"]
 
 [sub_resource type="Resource" id="EnemyAbilityData_0"]
 script = ExtResource("4_ability_data")
 trigger = 5
 effect = 4
-target_policy = 0
 interval = 6
-near_base_hexes = 5
-radius_hexes = 2
 teleport_tiles = 5
 
 [resource]
@@ -20,7 +17,6 @@ script = ExtResource("1_enemy_data")
 id = &"campaign_blink_dog"
 display_name = "Blink Dog"
 max_health = 6000
-move_speed = 90
 base_damage = 1
 kill_reward = 28
 shield = 2000
@@ -30,4 +26,4 @@ placeholder_radius = 13.8
 sprite_texture = ExtResource("3_sprite")
 sprite_extent = 72.0
 scene = ExtResource("2_enemy_scene")
-abilities = Array[EnemyAbilityData]([SubResource("EnemyAbilityData_0")])
+abilities = Array[ExtResource("4_ability_data")]([SubResource("EnemyAbilityData_0")])

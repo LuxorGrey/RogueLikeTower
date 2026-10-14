@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="PermanentUpgradeData" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="PermanentUpgradeData" format=3 uid="uid://drjbdvs7ivjsm"]
 
-[ext_resource type="Script" path="res://game/progression/permanent_upgrade_data.gd" id="1_upgrade"]
-[ext_resource type="Script" path="res://game/progression/permanent_upgrade_operation.gd" id="2_operation"]
+[ext_resource type="Script" uid="uid://b34o3k4oxhoc0" path="res://game/progression/permanent_upgrade_data.gd" id="1_upgrade"]
+[ext_resource type="Script" uid="uid://cxjoqba76nkk6" path="res://game/progression/permanent_upgrade_operation.gd" id="2_operation"]
 
 [sub_resource type="Resource" id="PermanentUpgradeOperation_1"]
 script = ExtResource("2_operation")
@@ -13,7 +13,6 @@ script = ExtResource("1_upgrade")
 id = &"card_archive"
 display_name = "Archivo de cartas"
 description = "Añade dos cartas globales al pool de ofertas de run."
-max_level = 1
-prerequisites = Array[StringName]([&"meta:chest_finder"])
 cost_by_level = Array[int]([25])
+prerequisites = Array[StringName]([&"meta:chest_finder"])
 operations_by_level = Array[ExtResource("2_operation")]([SubResource("PermanentUpgradeOperation_1")])

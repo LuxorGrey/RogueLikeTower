@@ -294,7 +294,7 @@ M12A queda aceptado cuando barra/daño por capas, stats de los siete perfiles, p
 ## M13 UX/UI
 > La selección simultánea de siete torres, el timeline fijo de 45 puntos y las pestañas de la tienda terminal son descripciones históricas. La interfaz vigente de acceso, tienda, pausa, resumen y ventana móvil se acepta en M35.
 
-- El HUD activo se actualizó en M22: salud/atajos arriba a la izquierda, Gold/Mana arriba a la derecha, ronda centrada y datos de torre a la derecha debajo de los recursos; sin paneles compartidos para salud, recursos ni ronda. El título «RogueTower» no aparece. La salud de Main Tower muestra su valor actual/máximo dentro de una barra segmentada cada 10 puntos, con un segmento final parcial si corresponde. El Gold usa un icono y tamaño visual mayores que el Mana; toda ganancia o gasto anima icono y cifra con escalado y rebote. El Mana se restablece al máximo y se muestra como entero. El timeline de M35 muestra siempre 15 de las 45 rondas, sin selector; el hover de composición y el botón de inicio se conservan.
+- El HUD activo se actualizó en M22: salud/atajos arriba a la izquierda, Gold/Mana arriba a la derecha, ronda centrada y datos de torre a la derecha debajo de los recursos. Salud y ronda no tienen panel compartido; M55 añade un panel horizontal 9-slice solo a Gold y deja Mana sin panel. El título «RogueTower» no aparece. La salud de Main Tower muestra su valor actual/máximo dentro de una barra segmentada cada 10 puntos, con un segmento final parcial si corresponde. El Gold usa un icono y tamaño visual mayores que el Mana; toda ganancia o gasto anima icono y cifra con escalado y rebote. El Mana se restablece al máximo y se muestra como entero. El timeline de M35 muestra siempre 15 de las 45 rondas, sin selector; el hover de composición y el botón de inicio se conservan.
 - El selector de perfiles de oleada y la lectura técnica continua del objetivo no ocupan la vista normal: aparecen dentro del panel F3. Abrir/cerrar F3 no altera la fase ni los saldos; `H` oculta y restaura paneles, barra de torres y panel técnico. La navegación con rueda y botón central continúa funcionando con el HUD visible/oculto.
 - Seleccionar una torre muestra en el panel derecho nivel, daño, H/A/S, alcance, RPM, crítico, patrón, icono de energía si consume y XP por capa. El panel se ajusta al contenido y nunca usa scroll; reduce su escala vertical si el alto del viewport no permite mostrarlo a tamaño natural. Al entrar en build mode presenta el retrato grande de la torre y sus datos; omite la instrucción redundante de elegir Grass/Mountain y muestra el bonus cuantificado de Mountain frente a Grass. Health, Armor y Shield usan negrita y colores distintos. Los tres botones de mejora casi cuadrados enseñan icono, nivel de su capa, barra XP, `+1 Daño`, efecto y precio; Demoler queda debajo. Hover sobre torre no seleccionada muestra el radio y un contorno; al seleccionar, el sprite y card inferior pulsan con brillo alfa, sin círculo y sin pulso del panel. Prioridad 1 aparece sola; botones `+` revelan prioridades únicas 2 y 3. El panel desaparece al deseleccionar la torre o pulsar fuera del tablero.
 - Cada objeto tiene su PNG RGBA transparente independiente en `assets/sprites/ui/icons/` (256×256); no existe un atlas compartido. Los atajos inferiores son botones individuales con un asset de marco estilo carta, sprite grande, nombre y precio con icono de moneda; el contenedor que los alinea no muestra fondo ni marco común. El sprite de torre es idéntico al preview y a la torre colocada. La base usa un sprite PNG configurable desde `BaseData`; su tamaño vigente conserva el archivo fuente 270×352 px y lo estira a 1,8 × el radio de huella de ancho por 2,8 × de alto, manteniendo fijo el borde inferior. La huella lógica y la posición Y-sort siguen separadas. No cambian huellas lógicas ni movimiento. La UI sustituye por iconos las menciones a Gold/Mana en textos enriquecidos. Las cards específicas muestran la torre afectada; las cards de terreno conservan el contrato M10.
@@ -401,7 +401,7 @@ M21 queda aceptado cuando los cheats sirven para preparar una sesión, no altera
 
 ### Prueba manual en el juego
 
-1. Inicia `game/main/main.tscn`. Comprueba que no aparecen errores al resolver `%GoldGroup` y que tanto ganar como gastar Gold animan icono y cifra. La vida de Main Tower queda arriba a la izquierda con los atajos debajo; Gold y Mana quedan arriba a la derecha, con valores enteros y sin fondos compartidos.
+1. Inicia `game/main/main.tscn`. Comprueba que no aparecen errores al resolver `%GoldGroup` y que tanto ganar como gastar Gold animan icono y cifra. La vida de Main Tower queda arriba a la izquierda con los atajos debajo; Gold y Mana quedan arriba a la derecha, con valores enteros. Gold usa el panel 9-slice de Iniciar ronda y Mana permanece sin panel.
 2. Selecciona una torre. El panel lateral debe comenzar debajo de Gold/Mana y no cubrir los recursos. Cambia la resolución entre 1280×720 y 1440×900; el panel de ronda y el botón no deben quedar cortados.
 3. Comprueba que el bloque de ronda no tiene panel de fondo y que el botón usa su sprite completo sin deformación, mantiene el texto legible y adapta su anchura con «Iniciar ronda», «Iniciar ronda NN/45» y los estados deshabilitados.
 4. Criterio histórico reemplazado por M35: el timeline muestra 15 rondas, sin selector, conserva los círculos/tooltip y desvanece el extremo futuro.
@@ -415,14 +415,14 @@ M22 queda aceptado tras pasar esta revisión manual en ventana Godot. La integra
 ### Revisión manual en ventana
 
 1. Ejecuta `game/main/main.tscn`. Mantén `W`, `A`, `S`, `D` y prueba diagonales; la cámara debe moverse continuo sin aceleración diagonal extra y mantener velocidad visual al acercar/alejar. Comprueba que `D` panea a la derecha y que `Ctrl+D` alterna el overlay diagnóstico. Suelta las teclas y cambia el foco de ventana mientras una está pulsada: la cámara no debe quedarse moviéndose. Los controles con foco de interfaz deben conservar su entrada.
-2. Inspecciona las salidas PATH de una ronda mixta con varios endpoints. Encima de cada portal deben aparecer los tipos de enemigo asignados a ese endpoint y una cifra en los grupos repetidos. Al hacer hover aparece el contorno que sigue el alfa del frame actual del portal y un tooltip con ronda, total y cantidades por tipo. El atlas 4×2 se reproduce en bucle continuo a 96×96 px y cada endpoint tiene una fase distinta. Suma todos los portales y compara con la composición directa de esa `WaveData`.
-3. Repite para una ronda siguiente, un fixture DEBUG con `ROUND_ROBIN` y otro con `FIRST`; confirma que los iconos y conteos cambian con la ronda/política. Selecciona una expansión válida y mueve/rota su preview: la vista por portal debe usar los endpoints del grafo candidato. Al cancelar o invalidar, debe volver al grafo activo. El tooltip no debe quedarse visible cuando se oculta el HUD ni capturar clics.
+2. Inspecciona las salidas PATH de una ronda mixta con varios endpoints. Sobre el portal no deben aparecer badges de enemigos. Al hacer hover aparece el contorno que sigue el alfa del frame actual y un tooltip con ronda, total, retratos, nombres y cantidades por tipo; al hacer clic, el panel de información presenta la misma lista. El atlas 4×2 se reproduce en bucle continuo a 96×96 px y cada endpoint tiene una fase distinta. Suma todos los portales y compara con la composición directa de esa `WaveData`.
+3. Repite para una ronda siguiente, un fixture DEBUG con `ROUND_ROBIN` y otro con `FIRST`; confirma que filas, retratos y conteos cambian con la ronda/política. Selecciona una expansión válida y mueve/rota su preview: la vista por portal debe usar los endpoints del grafo candidato. Al cancelar o invalidar, debe volver al grafo activo. El tooltip no debe quedarse visible cuando se oculta el HUD ni capturar clics.
 4. Entra en colocación de torre y mueve el cursor por celdas legales e ilegales, elevadas y con obstáculos. El sprite fantasma debe quedar encima de terreno y props y recibir tinte verde translúcido si es válido o rojo si no. Al cancelar no debe permanecer el sprite fantasma.
 5. Revisa torres, enemigos, base, cofres y obstáculos en profundidad: no deben aparecer sombras generadas por código ni sprites auxiliares de sombra. El cofre conserva su silueta cerrada y simple al tamaño real; los PNG de cofre y portal mantienen alpha y se dibujan con filtro nearest.
 6. Selecciona una torre y revisa Tower Info a 1280×720 y 1440×900. La superficie plana no lleva marco ornamental; el icono pequeño comparte cabecera con el nombre y `NIVEL X DE 45`. El panel se ajusta sin scroll ni recorte. Health/Armor/Shield muestran icono, nivel, barra de XP y coste en tres controles compactos; el tooltip conserva las cifras exactas de XP y el efecto completo. Demoler usa un botón de texto horizontal y conserva su comportamiento. Comprueba que el nivel acumulado avanza tras comprar capas y llega como máximo a 45.
 7. Abre la selección de expansión de terreno. Las tres cards usan superficies planas con un borde fino para hover/selección, sin marco ornamental; preview, nombre y conteos siguen legibles y seleccionar una pieza conserva el comportamiento.
 
-M23 queda aceptado tras completar esta revisión manual en ventana. El cambio está registrado en [ADR-0051](../decisions/ADR-0051-navegacion-prevision-portales-y-panel-torre.md), [ADR-0053](../decisions/ADR-0053-paneles-y-sprites-sencillos.md) y [ADR-0055](../decisions/ADR-0055-feedback-base-seleccion-y-recompensas.md).
+M23 queda aceptado tras completar esta revisión manual en ventana. El cambio está registrado en [ADR-0051](../decisions/ADR-0051-navegacion-prevision-portales-y-panel-torre.md), [ADR-0053](../decisions/ADR-0053-paneles-y-sprites-sencillos.md), [ADR-0055](../decisions/ADR-0055-feedback-base-seleccion-y-recompensas.md) y [ADR-0105](../decisions/ADR-0105-tooltip-de-spawn-atajos-oro-zoom-y-escala-de-torre.md).
 
 ## M24 Feedback legible de daño
 
@@ -542,11 +542,11 @@ La inspección visual/interactiva de este milestone sigue pendiente. Ver [ADR-00
 
 ### Revisión manual en ventana
 
-1. Selecciona una pieza de terreno. Q gira 60° a la izquierda y E 60° a la derecha; la rueda arriba/abajo gira en la misma dirección. La posición sugerida/manual permanece en las mismas reglas y T intenta auto-colocar.
+1. Criterio histórico de M33: Q/E giraban y la rueda rotaba durante colocación. M55 sustituyó el uso de la rueda; la regla vigente se verifica en M55.
 2. Sin pieza, torre ni objeto seleccionados, mueve el cursor por PATH 0, Grass 1/2 y Mountain 2/3. Debe aparecer junto al puntero un tooltip pequeño con el tipo/estado de la celda, la altura y el bonus de daño/alcance compatible. PATH debe indicar ruta no construible.
 3. Comprueba Grass/Mountain con obstáculo, cofre y torre colocada: el estado refleja el bloqueo. El bonus usa los `TowerData` aplicables y aumenta con la elevación. La caja debe permanecer dentro de la ventana incluso junto a sus bordes.
 4. Selecciona/coloca una torre, selecciona una pieza, pasa por un portal y abre oferta/tienda/hacks: el tooltip de celda debe ocultarse y los paneles/acciones existentes deben seguir respondiendo.
-5. Sin pieza de terreno seleccionada, la rueda sigue acercando/alejando el mapa desde el cursor; al seleccionar terreno, no debe hacer zoom.
+5. Criterio histórico de M33: sin pieza, la rueda acercaba/alejaba desde el cursor; al seleccionar terreno, no hacía zoom. M55 sustituyó este comportamiento; la regla vigente se verifica en M55.
 
 La implementación está integrada; no se ejecutaron pruebas ni revisión visual/interactiva en esta actualización. Ver [ADR-0072](../decisions/ADR-0072-controles-y-tooltip-de-celdas.md).
 
@@ -650,7 +650,7 @@ La integración M42 está en código y documentación. La inspección visual/int
 
 ### Revisión manual en ventana
 
-1. Construye cada una de las siete torres en varias celdas de terreno y altura. El ancla debe coincidir con el centro axial del hexágono; las torres y su ghost deben conservar el mismo tamaño, un 20 % mayor que antes, sin alterar rango, daño, ocupación ni selección.
+1. Criterio histórico de M43: construye cada una de las siete torres en varias celdas y confirma el ancla centrada y el tamaño original +20 %. Esa escala fue sustituida por M53/M54/M55; para la build vigente usa la verificación de M55. Rango, daño, ocupación y selección no cambian.
 2. Examina perímetros de varias regiones Grass/Mountain/Path, bordes contra vacío, cambios de altura, superficies Y-sorted y miniaturas. Las líneas deben unirse sin huecos y sus vértices deben verse suaves sin cambiar la forma hexagonal.
 3. La lectura vigente de las fachadas se prueba en M45/ADR-0094: las dos caras delanteras deben verse oscuras con sombreado direccional distinto. Los tonos de `#406e4d` Grass y `#646567` Mountain corresponden al contorno de región de terreno, no sustituyen la textura superior.
 4. Confirma props de 39,6×39,6 px y obstáculos de 94,6×94,6 px. La probabilidad, distribución por celda y orden de dibujo permanecen iguales.
@@ -746,9 +746,9 @@ M50 está implementado en código/documentación; no se ejecutó Godot ni revisi
 3. Sube una torre mediante cada ruta de mejora: `star_burst_gold` y `level_up` deben aparecer sobre ella para la subida manual y la automática por XP. Abre una oferta de cards o una expansión de terreno durante el efecto; la animación debe seguir encima de la interfaz y terminar por sí misma.
 4. Deja aparecer un cofre: `item_glow` debe animar detrás del sprite durante toda su disponibilidad. Al abrirlo deben aparecer `coin_burst_gold`, `pickup` y `ui_click`; confirma `coins_top` en cada muerte final de enemigo y `base_hit` sobre la base al recibir daño.
 5. Confirma una pieza válida de terreno: `sparkle_twinkle_white_loop` debe aparecer centrado sobre las celdas nuevas y completar dos ciclos. Haz clic en obstacle, portal, torre y base; `ui_click` debe aparecer en el cursor. Termina una run y comprueba `confetti_burst_01` en el menú con la tienda de resultado abierta.
-6. Revisa el zoom de cámara y la pausa: el punto de los VFX del mundo debe coincidir con el objeto del evento y su animación no debe congelarse durante ofertas, terreno o pausa. El glow del cofre sigue ligado a su celda y no al overlay.
+6. Mientras se reproduce cada VFX de mundo (baja, disparo, impacto, daño de base, subida de nivel y colocación), panea con el botón central y cambia el zoom. El efecto debe seguir el mismo punto del mundo que su evento, paneando/zoomeando junto con la celda o actor; no debe quedarse pegado a la pantalla. Comprueba que `ui_click` siga sobre el cursor, que la animación no se congele durante ofertas, terreno o pausa, y que el glow del cofre siga ligado a su celda.
 
-M51 está implementado en código/assets/documentación; no se ejecutó Godot ni inspección visual/interactiva. Los criterios anteriores quedan pendientes de aceptación manual. Ver [ADR-0101](../decisions/ADR-0101-vfx-animados-de-cozy-chunky-por-evento.md).
+M51 está implementado en código/assets/documentación; la corrección de anclaje a mundo está en código, pero no se ejecutó Godot ni inspección visual/interactiva. Los criterios anteriores, incluido el paneo/zoom durante la animación, quedan pendientes de aceptación manual. Ver [ADR-0101](../decisions/ADR-0101-vfx-animados-de-cozy-chunky-por-evento.md) y [ADR-0106](../decisions/ADR-0106-vfx-de-evento-anclados-al-mundo-durante-el-paneo.md).
 
 ## M52 Sprites completos de torre, escala y cadencia de feedback
 
@@ -766,7 +766,24 @@ M52 está implementado en código/documentación; no se ejecutó Godot ni revisi
 1. Coloca cada una de las siete torres en terreno plano y elevado. El PNG completo debe quedar visible sin cortes en el tablero; el ghost debe coincidir en tamaño y posición con la torre construida.
 2. Confirma que tablero y ghost usan escala 1,32 × 1,12 y offset visual de +8 px, mientras los iconos de la barra de construcción y Tower Info mantienen sus tamaños de UI.
 
-M53 está implementado en código/documentación; no se ejecutó Godot ni revisión visual/interactiva. La aceptación queda pendiente. Ver [ADR-0103](../decisions/ADR-0103-escala-de-torre-sin-recorte.md).
+M53 está implementado; su escala 1,32 fue sustituida por M54 y luego refinada por M55. La revisión visual de tamaño vigente se rige por los criterios de M55. No se ejecutó Godot ni revisión visual/interactiva. Ver [ADR-0103](../decisions/ADR-0103-escala-de-torre-sin-recorte.md), [ADR-0104](../decisions/ADR-0104-reduccion-del-20-por-ciento-de-escala-de-torre.md) y [ADR-0105](../decisions/ADR-0105-tooltip-de-spawn-atajos-oro-zoom-y-escala-de-torre.md).
+
+## M54 Reducción adicional de escala de torre
+
+1. Compara torre colocada y ghost en terreno plano/elevado; ambos deben usar escala 1,056 × 1,12, mantener el offset de +8 px y mostrar el PNG completo.
+2. Confirma que la reducción de escala es del 20 % respecto a M53 y que cards/Tower Info no cambian de tamaño.
+
+M54 está implementado en código/documentación; su escala 1,056 fue refinada por M55. No se ejecutó Godot ni revisión visual/interactiva. Ver [ADR-0104](../decisions/ADR-0104-reduccion-del-20-por-ciento-de-escala-de-torre.md).
+
+## M55 Tooltip de spawn, atajos, zoom y panel de Gold
+
+1. Pasa el cursor por cada spawn: no debe aparecer ningún retrato flotante encima del portal. El tooltip debe listar los tipos enemigos asignados, su retrato y el conteo exacto; al quitar el hover debe desaparecer.
+2. Inicia una run con Ballista y verifica la tecla `1` tanto en la card como al pulsarla. Recluta otra torre y comprueba que aparece como `2`; recluta más y verifica el orden `1–N` sin huecos. El atajo selecciona la misma torre que su card.
+3. Durante colocación de terreno, rueda arriba/abajo debe acercar/alejar la cámara sin cambiar orientación. `Ctrl+rueda` y Q/E deben rotar la pieza. Fuera de colocación, la rueda mantiene el zoom.
+4. Compara visualmente el precio de Gold dentro de cada card y el saldo Gold del HUD: ambos usan el mismo panel horizontal 9-slice que Iniciar ronda; el panel cabe en 1440×900 y 1280×720, y Mana permanece legible.
+5. En terreno plano y elevado compara torre colocada con ghost. Ambos deben usar escala `0,9504 × 1,12`, mantener el offset visual de +8 px y mostrar el PNG entero. Cards y Tower Info conservan su escala de UI.
+
+M55 está integrado en código/documentación; no se ejecutó Godot ni revisión visual/interactiva. La aceptación queda pendiente. Ver [ADR-0105](../decisions/ADR-0105-tooltip-de-spawn-atajos-oro-zoom-y-escala-de-torre.md).
 
 ## Loop
 - Al completar una oleada de campaña entre las rondas 1–44, se entra en la oferta de expansión y no comienza la siguiente ronda hasta colocar una pieza válida.

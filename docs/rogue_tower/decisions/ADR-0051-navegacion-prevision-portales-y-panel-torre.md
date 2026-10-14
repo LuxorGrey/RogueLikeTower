@@ -1,7 +1,7 @@
 # ADR-0051: Navegación, previsión por portal y panel de torre
 
 - Fecha: 2026-10-10.
-- Estado: aceptado; cambios de código y recursos integrados, aceptación visual/interactiva pendiente.
+- Estado: aceptado; cambios de código y recursos integrados, aceptación visual/interactiva pendiente. M55/ADR-0105 sustituye los retratos flotantes sobre portales por una lista en tooltip.
 - Complementa: ADR-0042, ADR-0043, ADR-0046, ADR-0047, ADR-0048 y ADR-0050.
 - Sustituye: la tecla `D` deja de alternar el overlay diagnóstico para permitir mover la cámara a la derecha; el overlay pasa a `Ctrl+D`.
 
@@ -14,7 +14,7 @@ La composición activa de la campaña se reparte en `WaveDirector._select_campai
 ## Decisiones
 
 1. `W`, `A`, `S`, `D` panean la cámara continuamente. Las diagonales se normalizan y la velocidad del mundo compensa el zoom. Las teclas mantenidas se limpian cuando la ventana pierde el foco. El pan con botón central, zoom, `H` y `R` conservan su función. El overlay de diagnóstico de rutas se asigna a `Ctrl+D`.
-2. Cada portal alcanzable recibe la lista agregada de tipos de enemigo y el conteo que le corresponde en la ronda seleccionada. El tooltip al hover indica ronda, total y grupos por tipo; retratos sobre el portal anticipan los tipos, con contador visible si hay más de uno. La previsión se recalcula al elegir otra ronda, confirmar o mover una expansión válida y sigue el mismo reparto de `WaveDirector`.
+2. Cada portal alcanzable recibe la lista agregada de tipos de enemigo y el conteo que le corresponde en la ronda seleccionada. El tooltip al hover indica ronda, total y grupos por tipo; los retratos flotantes descritos en esta decisión son históricos y M55/ADR-0105 los elimina. La previsión se recalcula al elegir otra ronda, confirmar o mover una expansión válida y sigue el mismo reparto de `WaveDirector`.
 3. El sprite alfa del portal recibe contorno cuando el puntero está sobre su área interactiva. El tooltip vive en la escena de HUD y se mantiene por encima del mundo sin capturar el puntero.
 4. El sprite de la torre en construcción usa un `ShaderMaterial` fantasma verde translúcido si la casilla es legal y rojo si no lo es. Mantiene prioridad Z por encima de terrenos, elevaciones y decoración.
 5. Se eliminan las sombras proyectadas dibujadas por código bajo enemigos, props y trazos de flujo. No se sustituyen por otro tipo de sombra procedural.

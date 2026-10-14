@@ -119,6 +119,7 @@ var _hovered_tower: Tower
 var _debug_hacks_panel: CanvasLayer
 @onready var _portal_wave_tooltip: PanelContainer = %PortalWaveTooltip
 @onready var _portal_wave_tooltip_label: Label = %PortalWaveTooltipLabel
+@onready var _portal_wave_tooltip_entries: VBoxContainer = %PortalWaveTooltipEntries
 @onready var _cell_hover_tooltip: PanelContainer = %CellHoverTooltip
 @onready var _cell_hover_tooltip_label: Label = %CellHoverTooltipLabel
 var _hovered_spawn_portal: SpawnPortal
@@ -179,6 +180,7 @@ var _priority_visibility_tower_instance_id: int = 0
 ]
 @onready var _camera: Camera2D = %Camera2D
 @onready var _feedback_vfx: Node2D = %FeedbackVfx
+var _cursor_feedback_vfx: Node2D
 @onready var _cloud_shadow_material: ShaderMaterial = %CloudShadowOverlay.material as ShaderMaterial
 @onready var _rotate_left: Button = %RotateLeft
 @onready var _rotate_right: Button = %RotateRight
@@ -236,6 +238,7 @@ var _pause_menu: Node
 var _run_end_in_progress: bool = false
 
 func _ready() -> void:
+	_ensure_cursor_feedback_layer()
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	TOWER_PROFILES.assign(TOWER_ROSTER.profiles)
 	_base_coord = STARTING_BOARD.get("base_coord")
@@ -419,6 +422,24 @@ func _sync_selection_backdrop() -> void:
 	var choosing_terrain: bool = _terrain_card_panel.visible and _selected_expansion_piece == null
 	_selection_backdrop.visible = choosing_terrain or _upgrade_card_panel.visible
 
+func _ensure_cursor_feedback_layer() -> void:
+	if is_instance_valid(_cursor_feedback_vfx):
+		return
+	var cursor_layer := get_node_or_null("CursorFeedbackVfxLayer") as CanvasLayer
+	if cursor_layer == null:
+		cursor_layer = CanvasLayer.new()
+		cursor_layer.name = "CursorFeedbackVfxLayer"
+		cursor_layer.layer = 131
+		cursor_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+		add_child(cursor_layer)
+	var cursor_vfx := cursor_layer.get_node_or_null("CursorFeedbackVfx") as Node2D
+	if cursor_vfx == null:
+		cursor_vfx = Node2D.new()
+		cursor_vfx.name = "CursorFeedbackVfx"
+		cursor_vfx.process_mode = Node.PROCESS_MODE_ALWAYS
+		cursor_layer.add_child(cursor_vfx)
+	_cursor_feedback_vfx = cursor_vfx
+
 func _process(_delta: float) -> void:
 	_update_camera_keyboard_pan(_delta)
 	_update_cloud_shadow_transform()
@@ -479,28 +500,17 @@ func _input(event: InputEvent) -> void:
 			_toggle_hud()
 			get_viewport().set_input_as_handled()
 		elif key_event.pressed and not key_event.echo:
+			var shortcut_number: int = _tower_shortcut_number_for_keycode(int(key_event.keycode))
+			if shortcut_number > 0:
+				var profile_index: int = _tower_profile_index_for_shortcut(shortcut_number)
+				if profile_index >= 0:
+					_select_tower_and_build(profile_index)
+					get_viewport().set_input_as_handled()
+					return
+				if shortcut_number <= 7:
+					get_viewport().set_input_as_handled()
+					return
 			match key_event.keycode:
-				KEY_1:
-					_select_tower_and_build(0)
-					get_viewport().set_input_as_handled()
-				KEY_2:
-					_select_tower_and_build(1)
-					get_viewport().set_input_as_handled()
-				KEY_3:
-					_select_tower_and_build(2)
-					get_viewport().set_input_as_handled()
-				KEY_4:
-					_select_tower_and_build(3)
-					get_viewport().set_input_as_handled()
-				KEY_5:
-					_select_tower_and_build(4)
-					get_viewport().set_input_as_handled()
-				KEY_6:
-					_select_tower_and_build(5)
-					get_viewport().set_input_as_handled()
-				KEY_7:
-					_select_tower_and_build(6)
-					get_viewport().set_input_as_handled()
 				KEY_8:
 					_select_debug_tower_and_build(ARMOR_PIERCING_BOLT)
 					get_viewport().set_input_as_handled()
@@ -578,13 +588,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		if mouse_event == null:
 			return
 		if mouse_event.pressed and mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			if _is_terrain_piece_placement_active():
+			if _is_terrain_piece_placement_active() and mouse_event.ctrl_pressed:
 				_rotate_by(-1)
 			else:
 				_zoom_at_cursor(CAMERA_ZOOM_STEP)
 			get_viewport().set_input_as_handled()
 		elif mouse_event.pressed and mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			if _is_terrain_piece_placement_active():
+			if _is_terrain_piece_placement_active() and mouse_event.ctrl_pressed:
 				_rotate_by(1)
 			else:
 				_zoom_at_cursor(1.0 / CAMERA_ZOOM_STEP)
@@ -916,8 +926,8 @@ func _configure_hud_tooltips() -> void:
 	_round_progress.tooltip_text = "Cada punto representa una oleada. Pasa el cursor para ver su composición."
 	_wave_selector.tooltip_text = "Selector técnico de rondas y perfiles DEBUG. Solo aparece en el panel F3."
 	_piece_selector.tooltip_text = "Selecciona una pieza disponible para inspeccionar o colocar."
-	_rotate_left.tooltip_text = "Gira la pieza 60 grados en sentido antihorario. Atajo: Q; también rueda arriba."
-	_rotate_right.tooltip_text = "Gira la pieza 60 grados en sentido horario. Atajo: E; también rueda abajo."
+	_rotate_left.tooltip_text = "Gira la pieza 60 grados en sentido antihorario. Atajo: Q; también Ctrl+rueda arriba."
+	_rotate_right.tooltip_text = "Gira la pieza 60 grados en sentido horario. Atajo: E; también Ctrl+rueda abajo."
 	_confirm_button.tooltip_text = "Confirma la pieza si el preview indica que su posición es válida."
 	_cancel_button.tooltip_text = "Cancela la colocación activa. También puedes pulsar Esc o clic derecho."
 	_combat_debug.tooltip_text = "Inspección técnica de capas, regeneración, daño previsto y estados del objetivo."
@@ -1781,6 +1791,39 @@ func _populate_spawn_enemy_list(entries: Array[Dictionary]) -> void:
 		empty_label.add_theme_font_size_override("font_size", 12)
 		_world_object_enemy_list.add_child(empty_label)
 
+func _populate_portal_wave_tooltip_entries(entries: Array[Dictionary]) -> void:
+	for child in _portal_wave_tooltip_entries.get_children():
+		_portal_wave_tooltip_entries.remove_child(child)
+		child.queue_free()
+	for entry in entries:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		row.custom_minimum_size = Vector2(0.0, 30.0)
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var portrait := TextureRect.new()
+		portrait.custom_minimum_size = Vector2(26.0, 26.0)
+		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		portrait.texture = entry.get("texture") as Texture2D
+		row.add_child(portrait)
+		var enemy_label := Label.new()
+		enemy_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		enemy_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		enemy_label.add_theme_font_size_override("font_size", 13)
+		enemy_label.text = "%s  ×%d" % [
+			String(entry.get("display_name", "Enemigo")),
+			int(entry.get("count", 0)),
+		]
+		enemy_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(enemy_label)
+		_portal_wave_tooltip_entries.add_child(row)
+	if entries.is_empty():
+		var empty_label := Label.new()
+		empty_label.text = "Sin enemigos asignados."
+		empty_label.add_theme_font_size_override("font_size", 12)
+		_portal_wave_tooltip_entries.add_child(empty_label)
+
 func _on_remove_world_object_pressed() -> void:
 	if not _has_selected_world_object() or RunManager.phase != RunManager.Phase.ROUND_PREP:
 		return
@@ -2210,11 +2253,17 @@ func _spawn_impact_vfx(effect_id: StringName, world_position: Vector2) -> void:
 	var effect := IMPACT_VFX_SCRIPT.new() as Sprite2D
 	if effect == null:
 		return
-	_feedback_vfx.add_child(effect)
-	var screen_position: Vector2 = get_viewport().get_canvas_transform() * world_position
-	var zoom_scale: float = 1.0
-	if effect_id != &"ui_click" and is_instance_valid(_camera):
-		zoom_scale = _camera.zoom.x
+	var effect_parent: Node2D = _feedback_vfx
+	var effect_position: Vector2 = world_position
+	if effect_id == &"ui_click":
+		# El marcador de click sigue al cursor en viewport; los VFX de juego siguen el mundo.
+		_ensure_cursor_feedback_layer()
+		effect_parent = _cursor_feedback_vfx
+		effect_position = get_viewport().get_canvas_transform() * world_position
+	if effect_parent == null:
+		effect.queue_free()
+		return
+	effect_parent.add_child(effect)
 	var repeat_count: int = 2 if effect_id == &"terrain_piece_placed" else 1
 	var z_order: int = 120 if effect_id == &"star_burst_gold" else 130
 	if effect_id == &"ui_click":
@@ -2224,8 +2273,8 @@ func _spawn_impact_vfx(effect_id: StringName, world_position: Vector2) -> void:
 		sprite_sheet,
 		frame_count,
 		frames_per_second,
-		display_size * zoom_scale,
-		screen_position,
+		display_size,
+		effect_position,
 		false,
 		columns,
 		source_frame_size,
@@ -2281,6 +2330,43 @@ func _on_tower_selected(tower: Tower, _coord: Vector2i) -> void:
 func _on_tower_upgraded(tower: Tower, _new_level: int) -> void:
 	_on_tower_selected(tower, tower.cell_coord)
 
+func _tower_shortcut_number_for_keycode(keycode: int) -> int:
+	match keycode:
+		KEY_1:
+			return 1
+		KEY_2:
+			return 2
+		KEY_3:
+			return 3
+		KEY_4:
+			return 4
+		KEY_5:
+			return 5
+		KEY_6:
+			return 6
+		KEY_7:
+			return 7
+		KEY_8:
+			return 8
+		KEY_9:
+			return 9
+		KEY_0:
+			return 10
+	return 0
+
+func _tower_profile_index_for_shortcut(shortcut_number: int) -> int:
+	if shortcut_number <= 0:
+		return -1
+	var available_number: int = 0
+	for profile_index in TOWER_PROFILES.size():
+		var tower_data: TowerData = TOWER_PROFILES[profile_index]
+		if not RunManager.has_tower_in_run(tower_data.id):
+			continue
+		available_number += 1
+		if available_number == shortcut_number:
+			return profile_index
+	return -1
+
 func _refresh_tower_controls() -> void:
 	var build_mode: bool = _build_controller.is_build_mode()
 	var selected: Tower = _build_controller.selected_tower
@@ -2292,10 +2378,18 @@ func _refresh_tower_controls() -> void:
 	var can_build: bool = _build_controller.can_build_in_current_phase() and not waiting_for_terrain_card and not terrain_selection_locked
 	var is_run_ended: bool = RunManager.phase == RunManager.Phase.RUN_DEFEAT or RunManager.phase == RunManager.Phase.RUN_VICTORY
 	var selected_card_index: int = -1
+	var visible_shortcut_number: int = 0
 	for index in _tower_shortcut_buttons.size():
 		var shortcut_button: Button = _tower_shortcut_buttons[index]
 		var tower_data: TowerData = TOWER_PROFILES[index]
-		shortcut_button.visible = RunManager.has_tower_in_run(tower_data.id)
+		var tower_available: bool = RunManager.has_tower_in_run(tower_data.id)
+		shortcut_button.visible = tower_available
+		var shortcut_card := shortcut_button as TowerShortcutCard
+		if tower_available:
+			visible_shortcut_number += 1
+			shortcut_card.set_shortcut_number(visible_shortcut_number)
+		else:
+			shortcut_card.set_shortcut_number(0)
 		var effective_mana_cost: float = tower_data.mana_cost_per_attack
 		if effective_mana_cost > 0.0 and _run_card_service != null:
 			effective_mana_cost *= float(_run_card_service.call("get_tower_mana_cost_multiplier", tower_data.id))
@@ -2310,7 +2404,8 @@ func _refresh_tower_controls() -> void:
 		var build_cost: int = _build_controller.get_current_build_cost(tower_data)
 		_tower_shortcut_prices[index].text = "%d" % build_cost
 		var role_summary: String = tower_data.role_summary
-		shortcut_button.tooltip_text = "%s\n%s · precio %d%s · %s" % [
+		shortcut_button.tooltip_text = "Atajo %d · %s\n%s · precio %d%s · %s" % [
+			visible_shortcut_number,
 			tower_data.display_name,
 			role_summary,
 			build_cost,
@@ -2791,6 +2886,8 @@ func _on_spawn_portal_hover_changed(portal_node: Node2D, is_hovered: bool) -> vo
 	_hovered_spawn_portal = portal
 	if _portal_wave_tooltip_label != null:
 		_portal_wave_tooltip_label.text = portal.get_wave_preview_tooltip_text()
+	if _portal_wave_tooltip_entries != null:
+		_populate_portal_wave_tooltip_entries(portal.get_wave_preview_entries())
 	if _portal_wave_tooltip != null:
 		_portal_wave_tooltip.show()
 		_position_portal_wave_tooltip()
@@ -3372,7 +3469,7 @@ func _on_terrain_card_selected(index: int) -> void:
 		if selected_path_extension
 		else "coloca en una posición válida"
 	)
-	_wave_status.text = "Expansión · %s seleccionada · %s\nT · Auto-colocar (no recomendado) · Q/E o rueda: girar" % [
+	_wave_status.text = "Expansión · %s seleccionada · %s\nT · Auto-colocar (no recomendado) · Q/E o Ctrl+rueda: girar" % [
 		_selected_piece.display_name,
 		placement_prompt,
 	]

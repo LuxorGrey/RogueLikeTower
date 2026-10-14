@@ -1,56 +1,46 @@
-[gd_resource type="Resource" script_class="PermanentUpgradeData" load_steps=13 format=3]
+[gd_resource type="Resource" script_class="PermanentUpgradeData" format=3 uid="uid://cr04eon2bv0ck"]
 
-[ext_resource type="Script" path="res://game/progression/permanent_upgrade_data.gd" id="1_upgrade"]
-[ext_resource type="Script" path="res://game/progression/permanent_upgrade_operation.gd" id="2_operation"]
+[ext_resource type="Script" uid="uid://b34o3k4oxhoc0" path="res://game/progression/permanent_upgrade_data.gd" id="1_upgrade"]
+[ext_resource type="Script" uid="uid://cxjoqba76nkk6" path="res://game/progression/permanent_upgrade_operation.gd" id="2_operation"]
 
 [sub_resource type="Resource" id="PermanentUpgradeOperation_1"]
 script = ExtResource("2_operation")
-effect_type = 0
 value = 100.0
 
 [sub_resource type="Resource" id="PermanentUpgradeOperation_2"]
 script = ExtResource("2_operation")
-effect_type = 0
 value = 100.0
 
 [sub_resource type="Resource" id="PermanentUpgradeOperation_3"]
 script = ExtResource("2_operation")
-effect_type = 0
 value = 100.0
 
 [sub_resource type="Resource" id="PermanentUpgradeOperation_4"]
 script = ExtResource("2_operation")
-effect_type = 0
 value = 100.0
 
 [sub_resource type="Resource" id="PermanentUpgradeOperation_5"]
 script = ExtResource("2_operation")
-effect_type = 0
 value = 100.0
 
 [sub_resource type="Resource" id="PermanentUpgradeOperation_6"]
 script = ExtResource("2_operation")
-effect_type = 0
 value = 100.0
 
 [sub_resource type="Resource" id="PermanentUpgradeOperation_7"]
 script = ExtResource("2_operation")
-effect_type = 0
 value = 100.0
 
 [sub_resource type="Resource" id="PermanentUpgradeOperation_8"]
 script = ExtResource("2_operation")
-effect_type = 0
 value = 100.0
 
 [sub_resource type="Resource" id="PermanentUpgradeOperation_9"]
 script = ExtResource("2_operation")
-effect_type = 0
 value = 100.0
 
 [sub_resource type="Resource" id="PermanentUpgradeOperation_10"]
 script = ExtResource("2_operation")
-effect_type = 0
 value = 100.0
 
 [resource]
@@ -59,6 +49,5 @@ id = &"starting_coffers"
 display_name = "Treasury"
 description = "+100 de Gold inicial por nivel en cada nueva run (máximo +1.000)."
 max_level = 10
-prerequisites = Array[StringName]([])
 cost_by_level = Array[int]([10, 15, 20, 25, 30, 35, 40, 45, 50, 60])
 operations_by_level = Array[ExtResource("2_operation")]([SubResource("PermanentUpgradeOperation_1"), SubResource("PermanentUpgradeOperation_2"), SubResource("PermanentUpgradeOperation_3"), SubResource("PermanentUpgradeOperation_4"), SubResource("PermanentUpgradeOperation_5"), SubResource("PermanentUpgradeOperation_6"), SubResource("PermanentUpgradeOperation_7"), SubResource("PermanentUpgradeOperation_8"), SubResource("PermanentUpgradeOperation_9"), SubResource("PermanentUpgradeOperation_10")])

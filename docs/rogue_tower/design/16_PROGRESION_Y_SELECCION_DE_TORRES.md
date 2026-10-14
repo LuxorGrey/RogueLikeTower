@@ -47,7 +47,7 @@ La torre gana XP en la capa de HP activa del objetivo que mantiene en alcance, a
 
 ## Lectura visual por nivel
 
-Cada nivel de torre añade un crecimiento visual lineal pequeño: desde el tamaño base en nivel 1 hasta un máximo de +12 % al completar las 45 mejoras posibles. Se aplica al sprite PNG completo de la torre; el pulso de selección se compone encima. El tamaño base de mundo/ghost usa escala 1,32 × 1,12, compartida para mantener la alineación y evitar cortes. El 12 % es un valor visual provisional de implementación, no modifica alcance, colisión ni área ocupada. Ver [ADR-0094](../decisions/ADR-0094-mapa-de-mejoras-y-legibilidad-del-terreno.md), [ADR-0100](../decisions/ADR-0100-sprite-unico-de-torre-y-tinte-de-altura.md) y [ADR-0103](../decisions/ADR-0103-escala-de-torre-sin-recorte.md).
+Cada nivel de torre añade un crecimiento visual lineal pequeño: desde el tamaño base en nivel 1 hasta un máximo de +12 % al completar las 45 mejoras posibles. Se aplica al sprite PNG completo de la torre; el pulso de selección se compone encima. El tamaño base vigente de mundo/ghost usa escala 0,9504 × 1,12, compartida para mantener la alineación y evitar cortes (M55 aplica un 10 % menos sobre 1,056). El 12 % es un valor visual provisional de implementación, no modifica alcance, colisión ni área ocupada. Ver [ADR-0094](../decisions/ADR-0094-mapa-de-mejoras-y-legibilidad-del-terreno.md), [ADR-0100](../decisions/ADR-0100-sprite-unico-de-torre-y-tinte-de-altura.md), [ADR-0104](../decisions/ADR-0104-reduccion-del-20-por-ciento-de-escala-de-torre.md) y [ADR-0105](../decisions/ADR-0105-tooltip-de-spawn-atajos-oro-zoom-y-escala-de-torre.md).
 
 ## Límites de la referencia
 

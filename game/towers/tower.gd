@@ -7,7 +7,7 @@ signal level_up_effect_requested(world_position: Vector2)
 signal stats_changed(level: int)
 
 const ELEVATION_PIXEL_OFFSET: float = 28.0
-const TOWER_VISUAL_SCALE: float = 1.32
+const TOWER_VISUAL_SCALE: float = 0.9504
 const TOWER_CELL_VISUAL_OFFSET: Vector2 = Vector2(0.0, 8.0)
 const SHOOT_VFX_MIN_INTERVAL: float = 2.0
 const SHOOT_VFX_MAX_INTERVAL: float = 2.5

@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="PermanentUpgradeCatalogData" load_steps=71 format=3]
+[gd_resource type="Resource" script_class="PermanentUpgradeCatalogData" format=3 uid="uid://boprrp4wqvbcp"]
 
-[ext_resource type="Script" path="res://data/meta/permanent_upgrade_catalog_data.gd" id="1_catalog"]
-[ext_resource type="Script" path="res://game/progression/permanent_upgrade_data.gd" id="2_upgrade"]
-[ext_resource type="Script" path="res://game/progression/permanent_upgrade_operation.gd" id="3_operation"]
+[ext_resource type="Script" uid="uid://61wcj533p2kl" path="res://data/meta/permanent_upgrade_catalog_data.gd" id="1_catalog"]
+[ext_resource type="Script" uid="uid://b34o3k4oxhoc0" path="res://game/progression/permanent_upgrade_data.gd" id="2_upgrade"]
+[ext_resource type="Script" uid="uid://cxjoqba76nkk6" path="res://game/progression/permanent_upgrade_operation.gd" id="3_operation"]
 
 [sub_resource type="Resource" id="Op_0_0"]
 script = ExtResource("3_operation")
@@ -25,8 +25,8 @@ id = &"card_draw"
 display_name = "Card Draw I–III"
 description = "Mejora retirada: todas las ofertas de run muestran exactamente tres cartas."
 max_level = 3
-prerequisites = Array[StringName]([&"card_archive"])
 cost_by_level = Array[int]([25, 50, 75])
+prerequisites = Array[StringName]([&"card_archive"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_0_0"), SubResource("Op_0_1"), SubResource("Op_0_2")])
 
 [sub_resource type="Resource" id="Op_1_0"]
@@ -60,8 +60,8 @@ id = &"gold_drop"
 display_name = "Gold Drop I–V"
 description = "Cada enemigo concede +1 Gold adicional al morir por nivel (máximo +5 por baja)."
 max_level = 5
-prerequisites = Array[StringName]([&"starting_coffers"])
 cost_by_level = Array[int]([15, 30, 45, 60, 80])
+prerequisites = Array[StringName]([&"starting_coffers"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_1_0"), SubResource("Op_1_1"), SubResource("Op_1_2"), SubResource("Op_1_3"), SubResource("Op_1_4")])
 
 [sub_resource type="Resource" id="Op_2_0"]
@@ -85,8 +85,8 @@ id = &"main_tower_repair"
 display_name = "Repair I–III"
 description = "Al terminar cada ronda, puede reparar 1 Health. La probabilidad máxima aumenta con la cantidad de Health perdida (hasta 100%)."
 max_level = 3
-prerequisites = Array[StringName]([&"tower_calibration"])
 cost_by_level = Array[int]([25, 50, 100])
+prerequisites = Array[StringName]([&"tower_calibration"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_2_0"), SubResource("Op_2_1"), SubResource("Op_2_2")])
 
 [sub_resource type="Resource" id="Op_3_0"]
@@ -145,8 +145,8 @@ id = &"main_tower_fortification"
 display_name = "Fortification I–X"
 description = "La base gana +1 Health máximo por nivel permanente (hasta +10 en cada run)."
 max_level = 10
-prerequisites = Array[StringName]([&"main_tower_repair"])
 cost_by_level = Array[int]([20, 40, 60, 80, 100, 120, 140, 160, 180, 200])
+prerequisites = Array[StringName]([&"main_tower_repair"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_3_0"), SubResource("Op_3_1"), SubResource("Op_3_2"), SubResource("Op_3_3"), SubResource("Op_3_4"), SubResource("Op_3_5"), SubResource("Op_3_6"), SubResource("Op_3_7"), SubResource("Op_3_8"), SubResource("Op_3_9")])
 
 [sub_resource type="Resource" id="Op_4_0"]
@@ -154,14 +154,12 @@ script = ExtResource("3_operation")
 effect_type = 11
 value = 1.0
 affected_tower_id = &"ballista_demo"
-affected_hit_point_layer = 0
 
 [sub_resource type="Resource" id="Upgrade_4"]
 script = ExtResource("2_upgrade")
 id = &"permanent_ballista_health"
 display_name = "Better Bolts · Health"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Health en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:ballista_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_4_0")])
@@ -178,7 +176,6 @@ script = ExtResource("2_upgrade")
 id = &"permanent_ballista_armor"
 display_name = "Better Bolts · Armor"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Armor en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:ballista_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_5_0")])
@@ -195,7 +192,6 @@ script = ExtResource("2_upgrade")
 id = &"permanent_ballista_shield"
 display_name = "Better Bolts · Shield"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Shield en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:ballista_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_6_0")])
@@ -205,14 +201,12 @@ script = ExtResource("3_operation")
 effect_type = 11
 value = 1.0
 affected_tower_id = &"mortar_demo"
-affected_hit_point_layer = 0
 
 [sub_resource type="Resource" id="Upgrade_7"]
 script = ExtResource("2_upgrade")
 id = &"permanent_mortar_health"
 display_name = "Better Bombs · Health"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Health en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:mortar_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_7_0")])
@@ -229,7 +223,6 @@ script = ExtResource("2_upgrade")
 id = &"permanent_mortar_armor"
 display_name = "Better Bombs · Armor"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Armor en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:mortar_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_8_0")])
@@ -246,7 +239,6 @@ script = ExtResource("2_upgrade")
 id = &"permanent_mortar_shield"
 display_name = "Better Bombs · Shield"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Shield en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:mortar_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_9_0")])
@@ -256,14 +248,12 @@ script = ExtResource("3_operation")
 effect_type = 11
 value = 1.0
 affected_tower_id = &"tesla_coil_demo"
-affected_hit_point_layer = 0
 
 [sub_resource type="Resource" id="Upgrade_10"]
 script = ExtResource("2_upgrade")
 id = &"permanent_tesla_coil_health"
 display_name = "Better Electricity · Health"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Health en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:tesla_coil_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_10_0")])
@@ -280,7 +270,6 @@ script = ExtResource("2_upgrade")
 id = &"permanent_tesla_coil_armor"
 display_name = "Better Electricity · Armor"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Armor en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:tesla_coil_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_11_0")])
@@ -297,7 +286,6 @@ script = ExtResource("2_upgrade")
 id = &"permanent_tesla_coil_shield"
 display_name = "Better Electricity · Shield"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Shield en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:tesla_coil_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_12_0")])
@@ -307,14 +295,12 @@ script = ExtResource("3_operation")
 effect_type = 11
 value = 1.0
 affected_tower_id = &"frost_keep_demo"
-affected_hit_point_layer = 0
 
 [sub_resource type="Resource" id="Upgrade_13"]
 script = ExtResource("2_upgrade")
 id = &"permanent_frost_keep_health"
 display_name = "Better Snow · Health"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Health en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:frost_keep_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_13_0")])
@@ -331,7 +317,6 @@ script = ExtResource("2_upgrade")
 id = &"permanent_frost_keep_armor"
 display_name = "Better Snow · Armor"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Armor en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:frost_keep_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_14_0")])
@@ -348,7 +333,6 @@ script = ExtResource("2_upgrade")
 id = &"permanent_frost_keep_shield"
 display_name = "Better Snow · Shield"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Shield en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:frost_keep_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_15_0")])
@@ -358,14 +342,12 @@ script = ExtResource("3_operation")
 effect_type = 11
 value = 1.0
 affected_tower_id = &"flame_thrower_demo"
-affected_hit_point_layer = 0
 
 [sub_resource type="Resource" id="Upgrade_16"]
 script = ExtResource("2_upgrade")
 id = &"permanent_flame_thrower_health"
 display_name = "Better Fire · Health"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Health en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:flame_thrower_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_16_0")])
@@ -382,7 +364,6 @@ script = ExtResource("2_upgrade")
 id = &"permanent_flame_thrower_armor"
 display_name = "Better Fire · Armor"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Armor en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:flame_thrower_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_17_0")])
@@ -399,7 +380,6 @@ script = ExtResource("2_upgrade")
 id = &"permanent_flame_thrower_shield"
 display_name = "Better Fire · Shield"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Shield en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:flame_thrower_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_18_0")])
@@ -409,14 +389,12 @@ script = ExtResource("3_operation")
 effect_type = 11
 value = 1.0
 affected_tower_id = &"poison_sprayer_demo"
-affected_hit_point_layer = 0
 
 [sub_resource type="Resource" id="Upgrade_19"]
 script = ExtResource("2_upgrade")
 id = &"permanent_poison_sprayer_health"
 display_name = "Better Poison · Health"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Health en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:poison_sprayer_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_19_0")])
@@ -433,7 +411,6 @@ script = ExtResource("2_upgrade")
 id = &"permanent_poison_sprayer_armor"
 display_name = "Better Poison · Armor"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Armor en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:poison_sprayer_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_20_0")])
@@ -450,7 +427,6 @@ script = ExtResource("2_upgrade")
 id = &"permanent_poison_sprayer_shield"
 display_name = "Better Poison · Shield"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Shield en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:poison_sprayer_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_21_0")])
@@ -460,14 +436,12 @@ script = ExtResource("3_operation")
 effect_type = 11
 value = 1.0
 affected_tower_id = &"shredder_demo"
-affected_hit_point_layer = 0
 
 [sub_resource type="Resource" id="Upgrade_22"]
 script = ExtResource("2_upgrade")
 id = &"permanent_shredder_health"
 display_name = "Better Sawblades · Health"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Health en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:shredder_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_22_0")])
@@ -484,7 +458,6 @@ script = ExtResource("2_upgrade")
 id = &"permanent_shredder_armor"
 display_name = "Better Sawblades · Armor"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Armor en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:shredder_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_23_0")])
@@ -501,7 +474,6 @@ script = ExtResource("2_upgrade")
 id = &"permanent_shredder_shield"
 display_name = "Better Sawblades · Shield"
 description = "La torre gana permanentemente +1 al multiplicador de daño contra Shield en cada run."
-max_level = 1
 cost_by_level = Array[int]([60])
 prerequisite_unlock_ids = Array[StringName]([&"tower:shredder_demo"])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_24_0")])

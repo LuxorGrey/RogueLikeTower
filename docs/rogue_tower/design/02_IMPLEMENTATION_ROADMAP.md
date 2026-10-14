@@ -172,7 +172,7 @@ Contrato M12 implementado: `MetaProgression` conserva su estado fuera de las esc
 M12A está implementado en código; la aceptación manual sigue pendiente. Las reglas de capas y estados coinciden con las páginas de referencia indicadas en ADR-0023 y con la confirmación del usuario. Las cifras del roster y el pool siguen siendo configurables/provisionales. El exceso de daño al vaciar una capa se descarta según la implementación; la página de referencia no describe expresamente el overkill, por lo que esa decisión permanece provisional. Los criterios están en `10_ACCEPTANCE_TESTS.md` y [ADR-0023](../decisions/ADR-0023-reglas-de-torres-y-capas-de-vida.md).
 
 ## M13 — UX/UI
-- HUD según M22: salud y atajos arriba a la izquierda; Gold/Mana arriba a la derecha; oleada centrada. El timeline fijo de 45 puntos fue sustituido en M35 por una ventana fija de 15 rondas con fade futuro (ADR-0083). Salud, recursos y ronda no tienen un panel compartido; la información de torre comienza bajo los recursos.
+- HUD según M22: salud y atajos arriba a la izquierda; Gold/Mana arriba a la derecha; oleada centrada. El timeline fijo de 45 puntos fue sustituido en M35 por una ventana fija de 15 rondas con fade futuro (ADR-0083). M55 añade el panel 9-slice compartido por Gold y los precios de torre; Mana, salud y ronda no tienen ese panel. La información de torre comienza bajo los recursos.
 - Barra de Health de base con valor superpuesto y segmentos de 10; sprite de base intercambiable desde `BaseData`. Gold y Mana usan iconos reutilizables, con mayor énfasis para Gold; al cambiar, su icono y cifra escalan y rebotan.
 - El Mana se repone al máximo efectivo cuando empieza cada ronda de campaña, y se presenta como entero sin alterar la precisión de los cálculos internos.
 - Al seleccionar una torre, mostrar en líneas legibles nivel, daño, multiplicadores H/A/S con iconos de Health/Armor/Shield, alcance, RPM, crítico, patrón, Mana y XP; conservar prioridades, mejoras y demolición en el panel derecho, que desaparece al deseleccionar.
@@ -266,7 +266,7 @@ Estas cantidades NO son compromiso de diseño final.
 - Resultado: controles de diagnóstico y selección legibles; implementación integrada, aceptación manual pendiente.
 
 ## M22 — HUD, oleadas, cards y fachadas
-- Distribuir vida/atajos a la izquierda, recursos arriba a la derecha y ronda en el centro, sin paneles compartidos.
+- Distribuir vida/atajos a la izquierda, recursos arriba a la derecha y ronda en el centro. M55 añade un panel horizontal exclusivo para Gold y precios de torre; no crea un panel común de HUD.
 - Presentar el progreso configurable de 45 rondas y tooltip alimentado por `WaveData`/`EnemyData`.
 - Usar marcos editables para iniciar ronda y para las cards de terreno; simplificar conteos a tipos presentes.
 - Sustituir fachadas vectoriales por texturas de roca/suelo con césped sobre quads cerrados.
@@ -334,7 +334,7 @@ Estas cantidades NO son compromiso de diseño final.
 - Resultado: cards legibles y alternativa rápida que conserva las reglas de expansión. Ver [ADR-0071](../decisions/ADR-0071-marco-de-cards-y-colocacion-automatica.md).
 
 ## M33 — Rotación y tooltip compacto de terreno
-- Restaurar `Q`/`E` para rotar en ambos sentidos; la rueda rota durante una colocación y mantiene el zoom fuera de ella.
+- Restaurar `Q`/`E` para rotar en ambos sentidos; M33 asignó la rueda a rotación durante colocación. M55 sustituye esa parte: rueda sin modificador hace zoom siempre y `Ctrl+rueda` rota durante colocación.
 - Asignar `T` a la colocación automática existente y mantener visible su aviso durante la expansión.
 - Mostrar al hover sin selección un tooltip pequeño con tipo/estado de terreno, elevación y bonus de daño/alcance de las torres compatibles; ocultarlo ante selecciones o paneles contextuales.
 - Resultado: interacción de colocación consistente y lectura rápida de los hexes; revisión visual/interactiva pendiente. Ver [ADR-0072](../decisions/ADR-0072-controles-y-tooltip-de-celdas.md).
@@ -403,7 +403,7 @@ Estas cantidades NO son compromiso de diseño final.
 - Ampliar props y obstáculos un 10 % (39,6 y 94,6 px de caja visual) sin cambiar sus reglas de aparición ni orden.
 - Omitir el octavo frame repetido de la animación del portal y ocultar inmediatamente el tooltip al eliminar bajo hover ese portal.
 - Reunir los sprites y sus `.import` bajo `assets/sprites/`, conservar subcarpetas por categoría y actualizar rutas de código, datos, escenas y herramientas. Mantener Tiny Swords ignorado por Git.
-- Resultado: código, assets y documentación integrados; aceptación visual pendiente. Ver [ADR-0092](../decisions/ADR-0092-pulido-visual-y-raiz-comun-de-sprites.md).
+- Resultado: código, assets y documentación integrados; aceptación visual pendiente. La escala original de +20 % fue refinada por M53/M54 y reducida otro 10 % por M55. Ver [ADR-0092](../decisions/ADR-0092-pulido-visual-y-raiz-comun-de-sprites.md) y [ADR-0104](../decisions/ADR-0104-reduccion-del-20-por-ciento-de-escala-de-torre.md).
 
 ## M44 — Preview exacto, oferta fija y torres articuladas
 - Reutilizar el mismo snapshot de celdas candidatas para dibujar la expansión y confirmarla, incluyendo elevación, contenido determinista y celdas auto-rellenadas.
@@ -467,3 +467,16 @@ Estas cantidades NO son compromiso de diseño final.
 - Reducir ligeramente la escala de los sprites de torre en tablero y ghost de 1,44 a 1,32, manteniendo su alineación y el offset visual de 8 px.
 - Mantener sin cambios el tamaño de los iconos de cards y Tower Info.
 - Resultado: código/documentación integrados; aceptación visual pendiente. Ver [ADR-0103](../decisions/ADR-0103-escala-de-torre-sin-recorte.md).
+
+## M54 — Reducción adicional de escala de torre
+- Reducir exactamente un 20 % la escala de tablero/ghost vigente de 1,32 a 1,056, manteniendo alineación, offset de 8 px y PNG completo.
+- Mantener sin cambios el tamaño de cards y Tower Info.
+- Resultado: código/documentación integrados; aceptación visual pendiente. Ver [ADR-0104](../decisions/ADR-0104-reduccion-del-20-por-ciento-de-escala-de-torre.md).
+
+## M55 — Tooltip de spawn, atajos de torres, panel de Gold y zoom
+- Retirar los retratos flotantes de enemigos sobre cada portal y conservar los tipos/conteos en un tooltip de hover con retratos.
+- Numerar las torres reclutadas en orden visible y asignarles atajos dinámicos `1–N`; mostrar la tecla en su card.
+- Reservar la rueda sin modificadores para zoom, incluso durante colocación de terreno; `Ctrl+rueda` rota la pieza y Q/E siguen disponibles.
+- Compartir el panel 9-slice del botón Iniciar ronda entre precios de torre y el Gold del HUD; Mana queda sin panel.
+- Reducir un 10 % adicional la escala de torres colocadas y ghost: 1,056 → 0,9504; los iconos de UI no cambian.
+- Resultado: código/documentación integrados; aceptación visual e interactiva pendiente. Ver [ADR-0105](../decisions/ADR-0105-tooltip-de-spawn-atajos-oro-zoom-y-escala-de-torre.md).
