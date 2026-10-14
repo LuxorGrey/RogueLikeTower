@@ -1,7 +1,7 @@
 # ADR-0084: Retícula axial compartida y profundidad de fachadas por celda
 
 - Fecha: 2026-10-14
-- Estado: Aceptado por petición explícita; retícula axial y orden por celda vigentes. El cierre de esquinas y el cálculo visual de pared quedan sustituidos parcialmente por [ADR-0085](ADR-0085-solo-fachadas-delanteras-y-degradado-de-cliffs.md).
+- Estado: Aceptado parcialmente; la retícula axial y las claves de vértice siguen vigentes. La selección de fachadas se concreta en [ADR-0085](ADR-0085-solo-fachadas-delanteras-y-degradado-de-cliffs.md) y la altura expuesta/visibilidad de tapas en [ADR-0090](ADR-0090-fachadas-limitadas-a-la-diferencia-de-elevacion.md).
 - Amplía el renderer 2D de [ADR-0043](ADR-0043-superficies-de-elevacion-y-preview-de-spawns.md) y [ADR-0079](ADR-0079-limites-de-obstaculos-y-cierre-visual-del-terreno.md). Conserva la elevación lógica, el movimiento axial, los UV y la cámara fija definidos por [ADR-0073](ADR-0073-elevaciones-y-bonus-de-torre.md).
 
 ## Contexto
@@ -12,7 +12,7 @@ La revisión de una captura real mostró dos fallos que sobrevivieron al primer 
 
 1. `HexMath` es la autoridad de los vértices pointy-top y del desplazamiento vertical visual de 28 px por nivel. Calcula cada esquina desde una clave entera de la retícula axial; dos celdas que comparten vértice obtienen el mismo punto de pantalla sin redondeos ni trigonometría independiente.
 2. Tablero, ghost, miniaturas, hover y copias elevadas usan esta función geométrica común. La elevación solo desplaza la superficie en pantalla; no cambia coordenada axial, ocupación ni orden del grid.
-3. El terreno se pinta por celda en orden back-to-front del anclaje de suelo. Para cada celda se dibujan las fachadas expuestas, sus cierres locales por clave axial/altura y luego la tapa texturada. Así una tapa posterior no cubre una fachada de una celda que está delante.
+3. La regla histórica de fachadas expuestas y cierres locales quedó ajustada por ADR-0085 y ADR-0090: cada fachada delantera termina a la altura de la tapa vecina, y la tapa hexagonal no puede quedar cubierta por esa pared.
 4. La profundidad de una fachada es `max(altura_celda − altura_vecina, 0) × 28 px`. En miniaturas o bordes de pieza sin vecina se usa altura 0. Se conservan los PNG intercambiables y el mapeo UV que repite el patrón con densidad estable.
 5. Una tapa sigue siendo un polígono de seis vértices con UV propios. No se deforma la textura en un rectángulo para compensar la elevación. La cámara top-down isométrica permanece fija y las fachadas continúan debajo de actores/props.
 

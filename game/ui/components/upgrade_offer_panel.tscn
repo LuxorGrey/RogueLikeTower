@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" path="res://game/ui/components/upgrade_offer_card.tscn" id="3_card"]
 
 [node name="UpgradeOfferPanel" type="PanelContainer"]
-custom_minimum_size = Vector2(1000, 430)
+custom_minimum_size = Vector2(900, 440)
 mouse_filter = 0
 z_index = 20
 theme = ExtResource("2_theme")
@@ -13,29 +13,31 @@ script = ExtResource("1_script")
 
 [node name="Content" type="VBoxContainer" parent="."]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 7
 mouse_filter = 2
 
 [node name="HeadingLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 21
-text = "MEJORAS DE RUN"
+theme_override_font_sizes/font_size = 25
+text = "Elige una mejora"
 horizontal_alignment = 1
 
 [node name="Subtitle" type="Label" parent="Content"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 14
-theme_override_colors/font_color = Color(0.682353, 0.733333, 0.752941, 1)
-text = "Elige una carta. Sus efectos se mantienen durante esta run."
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.729412, 0.776471, 0.772549, 1)
+text = "Selecciona una carta para mejorar esta run."
 horizontal_alignment = 1
 
-[node name="Cards" type="HBoxContainer" parent="Content"]
+[node name="Cards" type="GridContainer" parent="Content"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 12
-alignment = 1
+size_flags_horizontal = 4
+size_flags_vertical = 4
+columns = 3
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 18
 mouse_filter = 2
 
 [node name="UpgradeCard1" parent="Content/Cards" instance=ExtResource("3_card")]

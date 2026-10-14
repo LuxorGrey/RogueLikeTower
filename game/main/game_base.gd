@@ -30,9 +30,12 @@ func _ready() -> void:
 	_health.initialize(base_data.max_health)
 	_base_sprite.texture = base_data.sprite_texture
 	_base_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	if _base_sprite.texture != null:
+		var source_size: Vector2 = Vector2(_base_sprite.texture.get_size())
+		var display_size: float = footprint_radius * 1.65
+		var uniform_scale: float = display_size / maxf(source_size.x, source_size.y)
+		_base_sprite.scale = Vector2.ONE * uniform_scale
 	_sprite_original_modulate = _base_sprite.modulate
-	if base_data.sprite_texture != null:
-		_base_sprite.scale = base_data.sprite_size / Vector2(base_data.sprite_texture.get_width(), base_data.sprite_texture.get_height())
 	queue_redraw()
 
 func apply_damage(amount: int) -> int:

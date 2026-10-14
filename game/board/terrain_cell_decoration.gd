@@ -10,6 +10,7 @@ const OBSTACLE_CENTER_OFFSET: Vector2 = Vector2.ZERO
 
 var _obstacle_type: int = HexCell.ObstacleType.NONE
 var _chest_available: bool = false
+var _decorative_prop_ids: Array[StringName] = []
 var _chest_appearance_tween: Tween
 var _chest_hover_tween: Tween
 var _obstacle_hovered: bool = false
@@ -65,10 +66,15 @@ func _ready() -> void:
 	_sync_chest_hover_sprite()
 	_sync_obstacle_hover_sprite()
 
-func configure(obstacle_type: int, chest_available: bool) -> void:
+func configure(
+	obstacle_type: int,
+	chest_available: bool,
+	decorative_prop_ids: Array[StringName] = []
+) -> void:
 	var chest_appeared: bool = chest_available and not _chest_available
 	_obstacle_type = obstacle_type
 	_chest_available = chest_available
+	_decorative_prop_ids = decorative_prop_ids.duplicate()
 	_sync_chest_sprite()
 	_sync_chest_hover_sprite()
 	_sync_obstacle_hover_sprite()
@@ -138,7 +144,7 @@ func _sync_obstacle_hover_sprite() -> void:
 		return
 	var texture: Texture2D = TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_texture(_obstacle_type)
 	_obstacle_hover_sprite.texture = texture
-	_obstacle_hover_sprite.position = Vector2(0.0, ART_OFFSET_Y)
+	_obstacle_hover_sprite.position = OBSTACLE_CENTER_OFFSET
 	_obstacle_hover_sprite.scale = TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_DISPLAY_SIZE / Vector2(texture.get_width(), texture.get_height())
 
 func _sync_chest_hover_sprite() -> void:
@@ -190,15 +196,35 @@ func _play_chest_appearance() -> void:
 	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _draw() -> void:
+	var prop_offsets: Array[Vector2] = _prop_offsets(_decorative_prop_ids.size())
+	for prop_index in _decorative_prop_ids.size():
+		var prop_texture: Texture2D = TERRAIN_VISUAL_CATALOG_SCRIPT.get_prop_texture(
+			_decorative_prop_ids[prop_index]
+		)
+		if prop_texture == null:
+			continue
+		var prop_size: Vector2 = TERRAIN_VISUAL_CATALOG_SCRIPT.PROP_DISPLAY_SIZE
+		var prop_center: Vector2 = prop_offsets[prop_index]
+		draw_texture_rect(prop_texture, Rect2(prop_center - prop_size * 0.5, prop_size), false)
+
 	var visual_size: Vector2 = _get_visual_size()
 	if visual_size == Vector2.ZERO:
 		return
 	if _obstacle_type >= 0 and _obstacle_type < TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_COUNT:
 		draw_texture_rect(
 			TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_texture(_obstacle_type),
-			Rect2(-visual_size * 0.5 + OBSTACLE_CENTER_OFFSET + Vector2(0.0, ART_OFFSET_Y), visual_size),
+			Rect2(-visual_size * 0.5 + OBSTACLE_CENTER_OFFSET, visual_size),
 			false
 		)
+
+func _prop_offsets(prop_count: int) -> Array[Vector2]:
+	var offsets: Array[Vector2] = []
+	if prop_count >= 2:
+		offsets.append(Vector2(-20.0, 5.0))
+		offsets.append(Vector2(20.0, 5.0))
+	elif prop_count == 1:
+		offsets.append(Vector2(0.0, 5.0))
+	return offsets
 
 func _sync_chest_sprite() -> void:
 	if _chest_sprite == null:

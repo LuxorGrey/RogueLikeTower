@@ -13,3 +13,4 @@ var flexible_path_edges: int = 0
 # Contenido asignado a una oferta concreta. Las plantillas del catálogo los dejan vacíos.
 var obstacle_type: int = HexCell.ObstacleType.NONE
 var chest_available: bool = false
+var decorative_prop_ids: Array[StringName] = []

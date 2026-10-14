@@ -1,14 +1,16 @@
 # Reestilización de arte para Rogue Tower
 
+> **Histórico:** este paquete registra la integración de arte del 2026-10-13. El pool de obstáculos y los props activos cambiaron en M39. La autoridad de contenido/rutas/dimensiones vigente está en [assets/terrain/README.md](../assets/terrain/README.md); los archivos de esta carpeta son fuentes, respaldos y materiales de proceso.
+
 Este paquete documenta la dirección artística y la sustitución de los 23 PNG solicitados por sus equivalentes nuevos en las rutas runtime existentes.
 
 ## Estado
 
 1. Las cinco muestras representativas fueron aprobadas por el usuario el 2026-10-13; después se generaron las otras 18 piezas.
-2. Los 23 sprites están instalados. Los originales se conservaron en `originals_replaced/2026-10-13/`.
-3. El verificador coteja los píxeles instalados con cada salida asignada y la alfa con el original preservado.
+2. Ese lote de 23 sprites quedó instalado en 2026-10-13 y sus originales se conservaron en `originals_replaced/2026-10-13/`; M39 reemplazó después los obstáculos.
+3. El verificador conserva la comparación de ese lote histórico para los destinos que no se sustituyeron en M39.
 4. El único mapeo entre categorías es explícito: Dirt_01/02/03 reemplazan el arte de Path_01/02/03. La topología PATH, sockets, grafo y flechas se mantienen.
-5. La integración no cambia código, escenas, Resources ni configuración de importación. La revisión visual de los sprites dentro del runtime queda abierta.
+5. La integración de 2026-10-13 no cambiaba código, escenas ni Resources. M39 integra código y assets nuevos; consulta la documentación vigente enlazada arriba. La revisión visual dentro del runtime queda abierta.
 
 La dirección traduce el brief del usuario a un lenguaje visual propio para Rogue Tower: fantasía gótica dibujada a mano, contornos de tinta y color terroso. Don't Starve Together se usa como referencia verbal de alto nivel; no se incorporaron imágenes ni assets de ese juego.
 

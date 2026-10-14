@@ -366,7 +366,12 @@ func _ready() -> void:
 		push_error(_placement_status.text)
 		return
 	for cell_variant in starting_cells.values():
-		TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_cell_contents(cell_variant as HexCell, _run_seed, _chest_spawn_chance)
+		TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_cell_contents(
+			cell_variant as HexCell,
+			_run_seed,
+			_chest_spawn_chance,
+			_base_coord
+		)
 	TERRAIN_VISUAL_CATALOG_SCRIPT.enforce_starting_board_obstacles(starting_cells, _base_coord)
 	_path_graph.rebuild(_board_grid.cells, _base_coord, int(STARTING_BOARD.get("minimum_spawn_route_cells")))
 	_apply_removed_spawn_endpoints(_path_graph)
@@ -1049,7 +1054,9 @@ func _refresh_placement() -> void:
 		_rotation_steps,
 		placement_is_valid,
 		can_edit_terrain,
-		_placement_path_graph
+		_placement_path_graph,
+		_base_coord,
+		_run_seed
 	)
 	_refresh_spawn_portal_previews()
 	_confirm_button.disabled = not can_edit_terrain or not placement_is_valid
@@ -1402,11 +1409,21 @@ func _confirm_placement() -> void:
 	)
 	for cell_variant in cells.values():
 		var placed_cell: HexCell = cell_variant as HexCell
+		TERRAIN_VISUAL_CATALOG_SCRIPT.constrain_base_adjacent_cell(
+			placed_cell,
+			_base_coord,
+			_run_seed
+		)
 		if confirmed_campaign_expansion:
 			TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_visual_variant(placed_cell, _run_seed)
 			TERRAIN_VISUAL_CATALOG_SCRIPT.roll_chest_at_placement(placed_cell, _run_seed, _chest_spawn_chance)
 		else:
-			TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_cell_contents(placed_cell, _run_seed, _chest_spawn_chance)
+			TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_cell_contents(
+				placed_cell,
+				_run_seed,
+				_chest_spawn_chance,
+				_base_coord
+			)
 	TERRAIN_VISUAL_CATALOG_SCRIPT.limit_hex_cell_obstacles(cells, 2)
 	var candidate_board: Dictionary[Vector2i, HexCell] = {}
 	for coord in _board_grid.cells:
@@ -1490,7 +1507,12 @@ func _create_auto_fill_cell(coord: Vector2i) -> HexCell:
 	cell.elevation = 2 if fill_mountain else 1
 	cell.buildable = true
 	cell.visual_variant = &"auto_filled_void"
-	TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_cell_contents(cell, _run_seed, _chest_spawn_chance)
+	TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_cell_contents(
+		cell,
+		_run_seed,
+		_chest_spawn_chance,
+		_base_coord
+	)
 	return cell
 
 func _cancel_placement() -> void:

@@ -73,7 +73,7 @@ Las cartas pueden aumentar:
 - status;
 - economía.
 
-Las cartas de oferta usan una sola card vertical con sprite-panel común; el tier aparece escrito en su cabecera y una separación pequeña distingue cada opción. El aura exterior comunica la rareza con su color, sin cambiar el panel ni el resto de la card. Ver [ADR-0080](../decisions/ADR-0080-sprite-vertical-y-tier-de-upgrade-cards.md).
+Las cartas de oferta usan una superficie plana común sin sprites de borde/fondo. El tier aparece escrito, una separación pequeña distingue cada opción y el aura radial con partículas comunica la rareza con su color, sin cambiar el panel ni el resto de la card. La oferta base usa tres columnas; las opciones adicionales llegan hasta seis en dos filas. Ver [ADR-0088](../decisions/ADR-0088-presentacion-compacta-de-upgrade-cards.md); ADR-0080 conserva el historial del sprite vertical ya retirado.
 
 ## Desbloqueos
 Una torre bloqueada permanentemente no aparece en las opciones de reclutamiento ni en sus cartas específicas. Un unlock permanente tampoco la hace construible inmediatamente durante la run: primero debe reclutarse con una card de run. La barra de construcción muestra únicamente el roster temporal reclutado.

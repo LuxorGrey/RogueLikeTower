@@ -12,7 +12,9 @@ Esta página fija los nombres visibles y términos de juego. Se usa junto con el
 
 ## Contenido del terreno
 
-Los cinco obstáculos del HUD usan estos nombres visibles asociados al orden de `HexCell.ObstacleType`: `ROCK` = Roca, `SHARD` = Cristal, `TALL_GRASS` = Hierba alta, `TOTEM` = Tótem y `STONE_CLUSTER` = Montón de piedra. Son etiquetas descriptivas del proyecto, no equivalencias con contenido externo.
+Los ocho obstáculos del HUD usan estos nombres visibles asociados al orden de `HexCell.ObstacleType`: `BRAMBLE_BUSH` = Zarza, `FALLEN_LOG` = Tronco caído, `BRANCH_PILE` = Montón de ramas, `TREE_STUMP` = Tocón, `ROCK_AND_WOOD` = Roca y madera, `SUPPLY_CRATE` = Caja de suministros, `EXPOSED_ROOTS` = Raíces expuestas y `MOSSY_ROCK_CLUSTER` = Rocas cubiertas de musgo. Son etiquetas descriptivas del proyecto, no equivalencias con contenido externo.
+
+Los props decorativos siguen el patrón `prop_<terreno>_<elemento>.png` bajo `assets/terrain/random_props/<terreno>/`, donde `<terreno>` es `grass`, `mountain` o `path`. Sus nombres de archivo identifican el arte, no una entidad interactiva ni una mecánica de juego. El catálogo de arte con los nombres vigentes está en [README de assets de terreno](../../../assets/terrain/README.md).
 
 ## Entidades de la demo
 

@@ -2,9 +2,7 @@ Add-Type -AssemblyName System.Drawing
 
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $terrainSourcePath = Join-Path $projectRoot 'assets/terrain/terrain_atlas.png'
-$obstacleSourcePath = Join-Path $projectRoot 'assets/terrain/obstacles_atlas.png'
 $tileOutputDirectory = Join-Path $projectRoot 'assets/terrain/tiles'
-$obstacleOutputDirectory = Join-Path $projectRoot 'assets/terrain/obstacles'
 
 function Export-Region {
 	param(
@@ -51,12 +49,11 @@ function Resize-Png {
 	Move-Item -LiteralPath $tempPath -Destination $Path -Force
 }
 
-if (-not (Test-Path -LiteralPath $terrainSourcePath) -or -not (Test-Path -LiteralPath $obstacleSourcePath)) {
-	throw 'Faltan assets/terrain/terrain_atlas.png o assets/terrain/obstacles_atlas.png.'
+if (-not (Test-Path -LiteralPath $terrainSourcePath)) {
+ throw 'Falta assets/terrain/terrain_atlas.png.'
 }
 
 New-Item -ItemType Directory -Path $tileOutputDirectory -Force | Out-Null
-New-Item -ItemType Directory -Path $obstacleOutputDirectory -Force | Out-Null
 
 $terrainAtlas = [System.Drawing.Bitmap]::new($terrainSourcePath)
 try {
@@ -78,28 +75,6 @@ finally {
 	$terrainAtlas.Dispose()
 }
 
-$obstacleAtlas = [System.Drawing.Bitmap]::new($obstacleSourcePath)
-try {
-	$obstacleNames = @('rock', 'crystal_shard', 'tall_grass', 'totem', 'stone_pile')
-	$obstacleBounds = @(
-		@(85, 114, 370, 329),
-		@(159, 59, 212, 405),
-		@(56, 81, 358, 364),
-		@(124, 23, 204, 417),
-		@(72, 138, 389, 263)
-	)
-	for ($index = 0; $index -lt $obstacleNames.Count; $index++) {
-		$bounds = $obstacleBounds[$index]
-		$slotX = ($index % 3) * 512
-		$slotY = [math]::Floor($index / 3) * 512
-		$outputPath = Join-Path $obstacleOutputDirectory ("{0}.png" -f $obstacleNames[$index])
-		Export-Region -Source $obstacleAtlas -SourceX ($slotX + $bounds[0]) -SourceY ($slotY + $bounds[1]) -SourceWidth $bounds[2] -SourceHeight $bounds[3] -OutputWidth 208 -OutputHeight 208 -OutputPath $outputPath
-	}
-}
-finally {
-	$obstacleAtlas.Dispose()
-}
-
 # These are rendered at the logical sizes below with the camera at 1x. Two
 # source pixels per displayed pixel keep them crisp during moderate zoom-in.
 Resize-Png -Path (Join-Path $projectRoot 'assets/base/main_tower.png') -Width 352 -Height 352
@@ -107,4 +82,4 @@ Resize-Png -Path (Join-Path $projectRoot 'assets/terrain/spawn_portal.png') -Wid
 Resize-Png -Path (Join-Path $projectRoot 'assets/terrain/treasure_chest.png') -Width 168 -Height 168
 Resize-Png -Path (Join-Path $projectRoot 'assets/ui/tower_card_button.png') -Width 288 -Height 296
 
-Get-ChildItem -LiteralPath $tileOutputDirectory,$obstacleOutputDirectory -File | Select-Object FullName,Length
+Get-ChildItem -LiteralPath $tileOutputDirectory -File | Select-Object FullName,Length

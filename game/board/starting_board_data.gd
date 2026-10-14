@@ -51,6 +51,8 @@ func validate() -> PackedStringArray:
 			var neighbor_cell: TerrainPieceCellData = cells_by_coord.get(neighbor_coord) as TerrainPieceCellData
 			if neighbor_cell == null:
 				errors.append("Falta el hexágono %s alrededor de la base." % neighbor_coord)
+			elif neighbor_cell.elevation > 1:
+				errors.append("El anillo adyacente a la base no puede superar la elevación 1 (%s)." % neighbor_coord)
 	if not cells_by_coord.is_empty() and not _is_connected(cells_by_coord):
 		errors.append("Las celdas del tablero inicial deben formar una sola región conectada.")
 	return errors

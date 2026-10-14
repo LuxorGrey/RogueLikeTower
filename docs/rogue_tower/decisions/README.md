@@ -69,9 +69,13 @@ Los ADR documentan decisiones de terreno, combate, campaña, progresión y UX en
 | [ADR-0081](ADR-0081-mejoras-de-torre-en-ramas-paralelas.md) | Mejoras de torre H/A/S disponibles en paralelo | Catálogo y mapa integrados; aceptación interactiva pendiente. Amplía ADR-0077. |
 | [ADR-0082](ADR-0082-tinte-multiplicativo-por-elevacion.md) | Tinte multiplicativo tenue por altura de las tapas | Renderer integrado; aceptación visual pendiente. |
 | [ADR-0083](ADR-0083-timeline-fijo-de-quince-rondas-y-preview-fiel.md) | Timeline fijo de 15 rondas y preview fiel de terreno | Código integrado; aceptación visual pendiente. Amplía ADR-0079 y sustituye el tamaño configurable de ADR-0078. |
-| [ADR-0084](ADR-0084-render-axial-de-terreno-y-profundidad-por-celda.md) | Retícula de vértices compartidos y orden de fachadas por celda | Retícula y orden vigentes; cierres y cálculo visual de pared sustituidos parcialmente por ADR-0085. |
-| [ADR-0085](ADR-0085-solo-fachadas-delanteras-y-degradado-de-cliffs.md) | Solo las dos fachadas delanteras; sin grosor lateral y con degradado inferior | Aspecto aprobado por el usuario; verificación de matriz completa pendiente. Limita el render de fachadas y sustituye los cierres de vértice de ADR-0084. |
+| [ADR-0084](ADR-0084-render-axial-de-terreno-y-profundidad-por-celda.md) | Retícula de vértices compartidos y orden de fachadas por celda | Retícula vigente; cierres sustituidos por ADR-0085 y extensión/oclusión de pared actualizadas por ADR-0090. |
+| [ADR-0085](ADR-0085-solo-fachadas-delanteras-y-degradado-de-cliffs.md) | Solo las dos fachadas delanteras; sin grosor lateral y con degradado inferior | Selección de caras y material vigentes; extensión/oclusión parcialmente sustituidas por ADR-0090. Verificación de matriz completa pendiente. |
 | [ADR-0086](ADR-0086-oferta-de-cards-y-cierre-de-derrota.md) | Oferta de mejora independiente de ranuras UI y teardown seguro al perder | Corrección y regresión integradas; smokes de Godot pendientes. |
+| [ADR-0087](ADR-0087-props-obstaculos-y-altura-junto-a-base.md) | Props decorativos, nuevo pool de obstáculos y límite de elevación junto a base | Código y assets integrados; aceptación visual pendiente. Sustituye el catálogo visual previo de ADR-0040/0044/0058/0060. |
+| [ADR-0088](ADR-0088-presentacion-compacta-de-upgrade-cards.md) | Cards compactas de panel plano y aura procedural por rareza | Código integrado; aceptación visual pendiente. Sustituye el sprite-panel de ADR-0080; conserva tier y ramas de ADR-0081. |
+| [ADR-0089](ADR-0089-ajustes-escala-occlusion-portales-props.md) | Escala de base, oclusión de fachadas, portales animados y props | Base, portal y props vigentes; alcance de fachadas actualizado por ADR-0090. Sustituye parcialmente ADR-0055 y ADR-0087. |
+| [ADR-0090](ADR-0090-fachadas-limitadas-a-la-diferencia-de-elevacion.md) | Fachadas limitadas al desnivel para conservar tapas hexagonales visibles | Código integrado; aceptación visual en Godot pendiente. Sustituye parcialmente la extensión y oclusión de paredes de ADR-0085. |
 
 ## Regla para nuevos ADR
 

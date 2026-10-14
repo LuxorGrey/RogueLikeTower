@@ -83,6 +83,7 @@ func rotated_cells(steps: int) -> Array[TerrainPieceCellData]:
 		rotated_cell.path_edges = _rotate_path_edges(source_cell.path_edges, normalized_steps)
 		rotated_cell.obstacle_type = source_cell.obstacle_type
 		rotated_cell.chest_available = source_cell.chest_available
+		rotated_cell.decorative_prop_ids = source_cell.decorative_prop_ids.duplicate()
 		rotated_cell.flexible_path_edges = _rotate_path_edges(
 			_flexible_boundary_edges(source_cell, cells_by_coord),
 			normalized_steps

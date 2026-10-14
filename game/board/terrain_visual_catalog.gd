@@ -21,17 +21,59 @@ const MOUNTAIN_CLIFF_TEXTURE: Texture2D = preload("res://assets/terrain/tiles/mo
 const GRASS_CLIFF_BOTTOM_TINT: Color = Color("#263b2b")
 const MOUNTAIN_CLIFF_BOTTOM_TINT: Color = Color("#24242a")
 const OBSTACLE_TEXTURES: Array[Texture2D] = [
-	preload("res://assets/terrain/obstacles/rock.png"),
-	preload("res://assets/terrain/obstacles/crystal_shard.png"),
-	preload("res://assets/terrain/obstacles/tall_grass.png"),
-	preload("res://assets/terrain/obstacles/totem.png"),
-	preload("res://assets/terrain/obstacles/stone_pile.png"),
+	preload("res://assets/terrain/obstacles/obstacle_bramble_bush.png"),
+	preload("res://assets/terrain/obstacles/obstacle_fallen_log.png"),
+	preload("res://assets/terrain/obstacles/obstacle_branch_pile.png"),
+	preload("res://assets/terrain/obstacles/obstacle_tree_stump.png"),
+	preload("res://assets/terrain/obstacles/obstacle_rock_and_wood.png"),
+	preload("res://assets/terrain/obstacles/obstacle_supply_crate.png"),
+	preload("res://assets/terrain/obstacles/obstacle_exposed_roots.png"),
+	preload("res://assets/terrain/obstacles/obstacle_mossy_rock_cluster.png"),
 ]
+const GRASS_PROP_IDS: Array[StringName] = [
+	&"prop_grass_tuft_small", &"prop_grass_tuft_wide", &"prop_grass_sprout",
+	&"prop_grass_stone_cluster", &"prop_grass_rock", &"prop_grass_mushroom_red",
+	&"prop_grass_mushroom_amber", &"prop_grass_flower_yellow",
+]
+const MOUNTAIN_PROP_IDS: Array[StringName] = [
+	&"prop_mountain_rock_cluster", &"prop_mountain_mossy_rock", &"prop_mountain_tuft_grass",
+	&"prop_mountain_stone_scatter", &"prop_mountain_rock_small",
+]
+const PATH_PROP_IDS: Array[StringName] = [
+	&"prop_path_gold_pebbles", &"prop_path_amber_stones", &"prop_path_dry_grass",
+	&"prop_path_stone_scatter", &"prop_path_sand_pile",
+]
+const PROP_TEXTURES: Dictionary[StringName, Texture2D] = {
+	&"prop_grass_tuft_small": preload("res://assets/terrain/random_props/grass/prop_grass_tuft_small.png"),
+	&"prop_grass_tuft_wide": preload("res://assets/terrain/random_props/grass/prop_grass_tuft_wide.png"),
+	&"prop_grass_sprout": preload("res://assets/terrain/random_props/grass/prop_grass_sprout.png"),
+	&"prop_grass_stone_cluster": preload("res://assets/terrain/random_props/grass/prop_grass_stone_cluster.png"),
+	&"prop_grass_rock": preload("res://assets/terrain/random_props/grass/prop_grass_rock.png"),
+	&"prop_grass_mushroom_red": preload("res://assets/terrain/random_props/grass/prop_grass_mushroom_red.png"),
+	&"prop_grass_mushroom_amber": preload("res://assets/terrain/random_props/grass/prop_grass_mushroom_amber.png"),
+	&"prop_grass_flower_yellow": preload("res://assets/terrain/random_props/grass/prop_grass_flower_yellow.png"),
+	&"prop_mountain_rock_cluster": preload("res://assets/terrain/random_props/mountain/prop_mountain_rock_cluster.png"),
+	&"prop_mountain_mossy_rock": preload("res://assets/terrain/random_props/mountain/prop_mountain_mossy_rock.png"),
+	&"prop_mountain_tuft_grass": preload("res://assets/terrain/random_props/mountain/prop_mountain_tuft_grass.png"),
+	&"prop_mountain_stone_scatter": preload("res://assets/terrain/random_props/mountain/prop_mountain_stone_scatter.png"),
+	&"prop_mountain_rock_small": preload("res://assets/terrain/random_props/mountain/prop_mountain_rock_small.png"),
+	&"prop_path_gold_pebbles": preload("res://assets/terrain/random_props/path/prop_path_gold_pebbles.png"),
+	&"prop_path_amber_stones": preload("res://assets/terrain/random_props/path/prop_path_amber_stones.png"),
+	&"prop_path_dry_grass": preload("res://assets/terrain/random_props/path/prop_path_dry_grass.png"),
+	&"prop_path_stone_scatter": preload("res://assets/terrain/random_props/path/prop_path_stone_scatter.png"),
+	&"prop_path_sand_pile": preload("res://assets/terrain/random_props/path/prop_path_sand_pile.png"),
+}
 const TREASURE_CHEST: Texture2D = preload("res://assets/terrain/treasure_chest.png")
 const TERRAIN_VARIANT_COUNT: int = 3
-const OBSTACLE_COUNT: int = 5
-const OBSTACLE_DISPLAY_NAMES: Array[String] = ["Roca", "Cristal", "Hierba alta", "Tótem", "Montón de piedra"]
+const OBSTACLE_COUNT: int = 8
+const OBSTACLE_DISPLAY_NAMES: Array[String] = [
+	"Matorral", "Tronco caído", "Montón de ramas", "Tocón",
+	"Rocas y madera", "Caja de suministros", "Raíces expuestas", "Roca musgosa",
+]
 const OBSTACLE_DISPLAY_SIZE: Vector2 = Vector2(86.0, 86.0)
+const PROP_DISPLAY_SIZE: Vector2 = Vector2(36.0, 36.0)
+const PROP_CHANCE_PER_ASSET: float = 0.10
+const MAX_PROPS_PER_CELL: int = 2
 const GRASS_OBSTACLE_CHANCE: float = 0.25
 const MOUNTAIN_OBSTACLE_CHANCE: float = 0.15
 const BASE_CHEST_CHANCE: float = 0.01
@@ -58,6 +100,18 @@ static func get_obstacle_texture(obstacle_type: int) -> Texture2D:
 	if obstacle_type < 0 or obstacle_type >= OBSTACLE_TEXTURES.size():
 		return null
 	return OBSTACLE_TEXTURES[obstacle_type]
+
+static func get_prop_texture(prop_id: StringName) -> Texture2D:
+	return PROP_TEXTURES.get(prop_id) as Texture2D
+
+static func get_prop_ids_for_terrain(terrain_type: int) -> Array[StringName]:
+	match terrain_type:
+		HexCell.TerrainType.GRASS:
+			return GRASS_PROP_IDS.duplicate()
+		HexCell.TerrainType.MOUNTAIN:
+			return MOUNTAIN_PROP_IDS.duplicate()
+		_:
+			return PATH_PROP_IDS.duplicate()
 
 static func get_cliff_texture(terrain_type: int) -> Texture2D:
 	if terrain_type == HexCell.TerrainType.GRASS:
@@ -103,14 +157,17 @@ static func create_piece_offer(
 			continue
 		offer_cell.obstacle_type = HexCell.ObstacleType.NONE
 		offer_cell.chest_available = false
+		var offer_key := "%d:%d:%s:%d:%d" % [
+			run_seed,
+			offer_index,
+			String(piece.id),
+			offer_cell.local_coord.x,
+			offer_cell.local_coord.y,
+		]
+		var prop_rng := RandomNumberGenerator.new()
+		prop_rng.seed = hash(offer_key + ":props")
+		offer_cell.decorative_prop_ids = _roll_decorative_props(offer_cell.terrain_type, prop_rng)
 		if offer_cell.terrain_type != HexCell.TerrainType.PATH:
-			var offer_key := "%d:%d:%s:%d:%d" % [
-				run_seed,
-				offer_index,
-				String(piece.id),
-				offer_cell.local_coord.x,
-				offer_cell.local_coord.y,
-			]
 			var obstacle_rng := RandomNumberGenerator.new()
 			obstacle_rng.seed = hash(offer_key + ":obstacle")
 			var elevation_rng := RandomNumberGenerator.new()
@@ -197,11 +254,22 @@ static func roll_chest_at_placement(cell: HexCell, run_seed: int, chest_chance: 
 		MAX_CHEST_CHANCE
 	)
 
-static func set_random_cell_contents(cell: HexCell, run_seed: int, chest_chance: float) -> void:
+static func set_random_cell_contents(
+	cell: HexCell,
+	run_seed: int,
+	chest_chance: float,
+	base_coord: Vector2i
+) -> void:
 	if cell == null:
 		return
 	cell.elevation = get_random_elevation(cell.terrain_type, run_seed, cell.coord.to_key())
+	constrain_base_adjacent_cell(cell, base_coord, run_seed)
 	set_random_visual_variant(cell, run_seed)
+	cell.decorative_prop_ids = get_decorative_prop_ids(
+		cell.terrain_type,
+		run_seed,
+		cell.coord.to_key()
+	)
 	cell.obstacle_type = HexCell.ObstacleType.NONE
 	cell.chest_available = false
 	if cell.terrain_type == HexCell.TerrainType.PATH:
@@ -221,13 +289,64 @@ static func set_random_cell_contents(cell: HexCell, run_seed: int, chest_chance:
 	var chest_rng := _rng_for(run_seed, coord, 47)
 	cell.chest_available = chest_rng.randf() < clampf(chest_chance, BASE_CHEST_CHANCE, MAX_CHEST_CHANCE)
 
+static func constrain_base_adjacent_cell(cell: HexCell, base_coord: Vector2i, run_seed: int) -> void:
+	if cell == null or not _is_adjacent_to_base(cell.coord.to_key(), base_coord):
+		return
+	if cell.terrain_type == HexCell.TerrainType.MOUNTAIN:
+		cell.terrain_type = HexCell.TerrainType.GRASS
+		cell.buildable = true
+	cell.elevation = 0 if cell.terrain_type == HexCell.TerrainType.PATH else 1
+	cell.decorative_prop_ids = get_decorative_prop_ids(
+		cell.terrain_type,
+		run_seed,
+		cell.coord.to_key()
+	)
+	set_random_visual_variant(cell, run_seed)
+
+static func get_decorative_prop_ids(
+	terrain_type: int,
+	run_seed: int,
+	coord: Vector2i
+) -> Array[StringName]:
+	var prop_rng := _rng_for(run_seed, coord, 71)
+	return _roll_decorative_props(terrain_type, prop_rng)
+
+static func _roll_decorative_props(
+	terrain_type: int,
+	rng: RandomNumberGenerator
+) -> Array[StringName]:
+	var selected: Array[StringName] = []
+	for prop_id in get_prop_ids_for_terrain(terrain_type):
+		if rng.randf() < PROP_CHANCE_PER_ASSET:
+			selected.append(prop_id)
+	while selected.size() > MAX_PROPS_PER_CELL:
+		var remove_index: int = rng.randi_range(0, selected.size() - 1)
+		selected.remove_at(remove_index)
+	return selected
+
+static func _is_adjacent_to_base(coord: Vector2i, base_coord: Vector2i) -> bool:
+	for direction in HexCoord.DIRECTION_OFFSETS:
+		if coord == base_coord + direction:
+			return true
+	return false
+
 static func set_random_visual_variant(cell: HexCell, run_seed: int) -> void:
 	if cell == null:
 		return
-	var coord: Vector2i = cell.coord.to_key()
+	cell.visual_variant = get_random_visual_variant(
+		cell.terrain_type,
+		run_seed,
+		cell.coord.to_key()
+	)
+
+static func get_random_visual_variant(
+	terrain_type: int,
+	run_seed: int,
+	coord: Vector2i
+) -> StringName:
 	var visual_rng := _rng_for(run_seed, coord, 17)
-	var terrain_prefix: String = _terrain_prefix(cell.terrain_type)
-	cell.visual_variant = StringName("%s_%d" % [terrain_prefix, visual_rng.randi_range(0, TERRAIN_VARIANT_COUNT - 1)])
+	var terrain_prefix: String = _terrain_prefix(terrain_type)
+	return StringName("%s_%d" % [terrain_prefix, visual_rng.randi_range(0, TERRAIN_VARIANT_COUNT - 1)])
 
 static func get_random_elevation(
 	terrain_type: int,

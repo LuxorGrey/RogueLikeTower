@@ -2,8 +2,10 @@ class_name TerrainPiecePreview
 extends Node2D
 
 const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
+const NO_BASE_COORD: Vector2i = Vector2i(-9999999, -9999999)
 const TERRAIN_CELL_DECORATION_SCRIPT: Script = preload("res://game/board/terrain_cell_decoration.gd")
 const TERRAIN_SURFACE_OCCLUDER_SCRIPT: Script = preload("res://game/board/terrain_surface_occluder.gd")
+const TERRAIN_CLIFF_OCCLUDER_SCRIPT: Script = preload("res://game/board/terrain_cliff_occluder.gd")
 const PATH_FLOW_OVERLAY_SCRIPT: Script = preload("res://game/board/path_flow_overlay.gd")
 const TERRAIN_HOVER_OVERLAY_SCRIPT: Script = preload("res://game/board/terrain_hover_overlay.gd")
 const TOWER_BUILD_GHOST_SCRIPT: Script = preload("res://game/board/tower_build_ghost.gd")
@@ -35,13 +37,18 @@ var _board_cells: Dictionary[Vector2i, HexCell] = {}
 var _decoration_parent: Node2D
 var _decorations_by_coord: Dictionary[Vector2i, Node2D] = {}
 var _terrain_surface_occluders_by_coord: Dictionary[Vector2i, Node2D] = {}
+var _terrain_cliff_occluders_by_edge: Dictionary[Vector3i, Node2D] = {}
 var _spawn_portals_by_key: Dictionary[String, Node2D] = {}
+var _portal_animation_phase_by_key: Dictionary[String, float] = {}
+var _next_portal_animation_phase_index: int = 0
 var _path_flow_overlay: Node2D
 var _terrain_hover_overlay: Node2D
 var _tower_build_ghost: Node2D
 var _board_mode: bool = false
 var _placement_active: bool = false
 var _placement_anchor: Vector2i = Vector2i.ZERO
+var _base_coord: Vector2i = NO_BASE_COORD
+var _run_seed: int = 0
 var _placement_is_valid: bool = false
 var _board_display_cells: Array[TerrainPieceCellData] = []
 var _ghost_coords: Dictionary[Vector2i, bool] = {}
@@ -69,6 +76,7 @@ func set_piece(piece_data: TerrainPieceData) -> void:
 func set_board_cells(board_cells: Dictionary[Vector2i, HexCell]) -> void:
 	_board_mode = true
 	_board_cells = board_cells
+	_sync_elevation_cliff_occluders()
 	_sync_elevation_surface_occluders()
 	_sync_cell_decorations()
 	_rebuild_display_cells()
@@ -95,6 +103,7 @@ func set_decoration_parent(parent: Node2D) -> void:
 	if _terrain_hover_overlay != null:
 		_terrain_hover_overlay.global_position = global_position
 	_sync_path_flow_overlay()
+	_sync_elevation_cliff_occluders()
 	_sync_elevation_surface_occluders()
 	_sync_cell_decorations()
 	_sync_spawn_portals()
@@ -149,7 +158,9 @@ func set_placement_preview(
 	rotation_steps: int,
 	is_valid: bool,
 	active: bool = true,
-	placement_path_graph: PathGraph = null
+	placement_path_graph: PathGraph = null,
+	base_coord: Vector2i = NO_BASE_COORD,
+	run_seed: int = 0
 ) -> void:
 	_board_mode = true
 	_piece_data = piece_data
@@ -158,6 +169,8 @@ func set_placement_preview(
 	_placement_is_valid = is_valid
 	_placement_active = active
 	_placement_path_graph = placement_path_graph
+	_base_coord = base_coord
+	_run_seed = run_seed
 	_sync_path_flow_overlay()
 	_sync_spawn_portals()
 	_rebuild_display_cells()
@@ -188,8 +201,9 @@ func _draw() -> void:
 	cells.sort_custom(Callable(self, "_sort_cells_back_to_front"))
 	var cliff_geometry: Dictionary = _build_cliff_geometry(cells)
 	for cell in cells:
-		_draw_cell_cliff_faces(cell.local_coord, cliff_geometry)
 		var is_ghost: bool = _ghost_coords.has(cell.local_coord)
+		if not _board_mode or is_ghost:
+			_draw_cell_cliff_faces(cell.local_coord, cliff_geometry)
 		_draw_cell_top(cell, is_ghost)
 		if is_ghost:
 			_draw_ghost_cell_content(cell)
@@ -221,6 +235,10 @@ func _build_cliff_geometry(
 	cells: Array[TerrainPieceCellData]
 ) -> Dictionary:
 	var faces_by_coord: Dictionary[Vector2i, Array] = {}
+	var elevations_by_coord: Dictionary[Vector2i, int] = {}
+	for cell in cells:
+		if cell != null:
+			elevations_by_coord[cell.local_coord] = cell.elevation
 	for cell in cells:
 		var cell_faces: Array[Dictionary] = []
 		if cell.elevation <= 0:
@@ -228,11 +246,18 @@ func _build_cliff_geometry(
 		# Con pointy-top, las direcciones axiales 1 y 2 son las dos caras
 		# delanteras. Las cuatro caras traseras/laterales no generan geometría.
 		for direction_index in [1, 2]:
+			var neighbor_coord: Vector2i = (
+				cell.local_coord + HexCoord.DIRECTION_OFFSETS[direction_index]
+			)
+			var neighbor_elevation: int = int(elevations_by_coord.get(neighbor_coord, 0))
+			var exposed_levels: int = cell.elevation - neighbor_elevation
+			if exposed_levels <= 0:
+				continue
 			var edge_start: int = posmod(direction_index + 1, 6)
 			var edge_end: int = posmod(direction_index + 2, 6)
 			var vertical_offset := Vector2(
 				0.0,
-				float(cell.elevation) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET
+				float(exposed_levels) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET
 			)
 			var high_center: Vector2 = _top_center(cell.local_coord, cell.elevation)
 			var upper_start: Vector2 = _cell_corner(cell.local_coord, edge_start, cell.elevation)
@@ -240,8 +265,8 @@ func _build_cliff_geometry(
 			var cliff_edge: Vector2 = upper_end - upper_start
 			var lower_start: Vector2 = upper_start + vertical_offset
 			var lower_end: Vector2 = upper_end + vertical_offset
-			# Cada fachada es un quad vertical derivado de la arista original:
-			# no se expande hacia los lados ni crea cierres o vértices adicionales.
+			# La fachada termina en la tapa vecina. No invade la cara superior
+			# de un hexágono a menor altura.
 			var cliff_quad := PackedVector2Array([upper_start, upper_end, lower_end, lower_start])
 			var cliff_texture: Texture2D = TERRAIN_VISUAL_CATALOG_SCRIPT.get_cliff_texture(cell.terrain_type)
 			var texture_size: Vector2i = cliff_texture.get_size()
@@ -343,8 +368,18 @@ func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 		_draw_path_edges(cell, center, corners, is_ghost)
 
 func _draw_ghost_cell_content(cell: TerrainPieceCellData) -> void:
-	var center: Vector2 = _top_center(cell.local_coord, cell.elevation) + Vector2(0.0, 6.0)
+	var center: Vector2 = _top_center(cell.local_coord, cell.elevation)
 	var content_tint := Color(1.0, 1.0, 1.0, 0.88)
+	var prop_offsets: Array[Vector2] = _prop_offsets(cell.decorative_prop_ids.size())
+	for prop_index in cell.decorative_prop_ids.size():
+		var prop_texture: Texture2D = TERRAIN_VISUAL_CATALOG_SCRIPT.get_prop_texture(
+			cell.decorative_prop_ids[prop_index]
+		)
+		if prop_texture == null:
+			continue
+		var prop_size: Vector2 = TERRAIN_VISUAL_CATALOG_SCRIPT.PROP_DISPLAY_SIZE
+		var prop_center: Vector2 = center + prop_offsets[prop_index]
+		draw_texture_rect(prop_texture, Rect2(prop_center - prop_size * 0.5, prop_size), false, content_tint)
 	if cell.obstacle_type != HexCell.ObstacleType.NONE:
 		var obstacle_size: Vector2 = TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_DISPLAY_SIZE
 		draw_texture_rect(
@@ -353,6 +388,15 @@ func _draw_ghost_cell_content(cell: TerrainPieceCellData) -> void:
 			false,
 			content_tint
 		)
+
+func _prop_offsets(prop_count: int) -> Array[Vector2]:
+	var offsets: Array[Vector2] = []
+	if prop_count >= 2:
+		offsets.append(Vector2(-16.0, 5.0))
+		offsets.append(Vector2(16.0, 5.0))
+	elif prop_count == 1:
+		offsets.append(Vector2(0.0, 5.0))
+	return offsets
 
 func _grid_opacity_for_cell(cell: TerrainPieceCellData) -> float:
 	if _hovered_cell == null:
@@ -375,7 +419,10 @@ func _sync_cell_decorations() -> void:
 	var active_coords: Dictionary[Vector2i, bool] = {}
 	for coord in _board_cells:
 		var cell: HexCell = _board_cells[coord]
-		if cell == null or (cell.obstacle_type < 0 and not cell.chest_available):
+		if (
+			cell == null
+			or (cell.obstacle_type < 0 and not cell.chest_available and cell.decorative_prop_ids.is_empty())
+		):
 			continue
 		active_coords[coord] = true
 		var decoration: Node2D = _decorations_by_coord.get(coord) as Node2D
@@ -385,7 +432,12 @@ func _sync_cell_decorations() -> void:
 			_decoration_parent.add_child(decoration)
 			_decorations_by_coord[coord] = decoration
 		decoration.global_position = global_position + _top_center(coord, cell.elevation)
-		decoration.call("configure", cell.obstacle_type, cell.chest_available)
+		decoration.call(
+			"configure",
+			cell.obstacle_type,
+			cell.chest_available,
+			cell.decorative_prop_ids
+		)
 	for coord in _decorations_by_coord.keys():
 		if active_coords.has(coord):
 			continue
@@ -431,6 +483,56 @@ func _sync_elevation_surface_occluders() -> void:
 			removed_surface.queue_free()
 		_terrain_surface_occluders_by_coord.erase(coord)
 
+func _sync_elevation_cliff_occluders() -> void:
+	if _decoration_parent == null or not is_instance_valid(_decoration_parent):
+		return
+	var active_edges: Dictionary[Vector3i, bool] = {}
+	for coord in _board_cells:
+		var cell: HexCell = _board_cells[coord]
+		if cell == null or cell.elevation <= 0:
+			continue
+		for direction_index in [1, 2]:
+			var neighbor_coord: Vector2i = coord + HexCoord.DIRECTION_OFFSETS[direction_index]
+			var neighbor_cell: HexCell = _board_cells.get(neighbor_coord) as HexCell
+			var neighbor_elevation: int = neighbor_cell.elevation if neighbor_cell != null else 0
+			if cell.elevation <= neighbor_elevation:
+				continue
+			var edge_key := Vector3i(coord.x, coord.y, direction_index)
+			active_edges[edge_key] = true
+			var cliff: Node2D = _terrain_cliff_occluders_by_edge.get(edge_key) as Node2D
+			if cliff == null or not is_instance_valid(cliff):
+				cliff = TERRAIN_CLIFF_OCCLUDER_SCRIPT.new() as Node2D
+				cliff.name = "TerrainCliff_%d_%d_%d" % [coord.x, coord.y, direction_index]
+				_decoration_parent.add_child(cliff)
+				_terrain_cliff_occluders_by_edge[edge_key] = cliff
+			var axial_coord := HexCoord.new(coord.x, coord.y)
+			var ground_center: Vector2 = HexMath.axial_to_world(axial_coord, HEX_RADIUS)
+			var edge_start: int = posmod(direction_index + 1, 6)
+			var edge_end: int = posmod(direction_index + 2, 6)
+			var lower_offset := Vector2(
+				0.0,
+				float(neighbor_elevation) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET
+			)
+			var corner_start: Vector2 = HexMath.axial_hex_corner(axial_coord, edge_start, HEX_RADIUS)
+			var corner_end: Vector2 = HexMath.axial_hex_corner(axial_coord, edge_end, HEX_RADIUS)
+			var sort_anchor: Vector2 = (corner_start + corner_end) * 0.5 - ground_center - lower_offset
+			cliff.global_position = global_position + ground_center + sort_anchor
+			cliff.call(
+				"configure_cliff",
+				cell.terrain_type,
+				coord,
+				cell.elevation,
+				neighbor_elevation,
+				direction_index
+			)
+	for edge_key in _terrain_cliff_occluders_by_edge.keys():
+		if active_edges.has(edge_key):
+			continue
+		var removed_cliff: Node2D = _terrain_cliff_occluders_by_edge[edge_key]
+		if is_instance_valid(removed_cliff):
+			removed_cliff.queue_free()
+		_terrain_cliff_occluders_by_edge.erase(edge_key)
+
 func _sort_surface_coords_back_to_front(a: Vector2i, b: Vector2i) -> bool:
 	var a_cell: HexCell = _board_cells[a] as HexCell
 	var b_cell: HexCell = _board_cells[b] as HexCell
@@ -468,6 +570,7 @@ func _sync_spawn_portals() -> void:
 				continue
 			portal.global_position = global_position + _top_center(endpoint.outside_coord, 0)
 			portal.set_endpoint_key(key)
+			portal.set_animation_phase(_get_portal_animation_phase(key))
 			portal.set_candidate_preview(
 				using_candidate_graph
 				and _placement_is_valid
@@ -491,6 +594,7 @@ func _sync_spawn_portals() -> void:
 				continue
 			closing_portal.global_position = global_position + _top_center(endpoint.outside_coord, 0)
 			closing_portal.set_endpoint_key(key)
+			closing_portal.set_animation_phase(_get_portal_animation_phase(key))
 			closing_portal.set_candidate_preview(false)
 			closing_portal.set_closing_preview(true)
 	for key in _spawn_portals_by_key.keys():
@@ -519,6 +623,16 @@ func _get_or_create_spawn_portal(endpoint: PathEndpoint, key: String) -> SpawnPo
 
 func _spawn_endpoint_key(endpoint: PathEndpoint) -> String:
 	return PathGraph.get_spawn_endpoint_key(endpoint)
+
+func _get_portal_animation_phase(endpoint_key: String) -> float:
+	if _portal_animation_phase_by_key.has(endpoint_key):
+		return _portal_animation_phase_by_key[endpoint_key]
+	# El paso irracional distribuye endpoints nuevos por el ciclo sin repetir
+	# fases ni reiniciar los portales que ya estaban visibles.
+	var phase: float = fposmod(float(_next_portal_animation_phase_index) * 0.6180339887498948, 1.0)
+	_next_portal_animation_phase_index += 1
+	_portal_animation_phase_by_key[endpoint_key] = phase
+	return phase
 
 func _sync_path_flow_overlay() -> void:
 	if _path_flow_overlay == null or not is_instance_valid(_path_flow_overlay):
@@ -608,6 +722,7 @@ func _rebuild_display_cells() -> void:
 		cell.visual_variant = source.visual_variant
 		cell.obstacle_type = source.obstacle_type
 		cell.chest_available = source.chest_available
+		cell.decorative_prop_ids = source.decorative_prop_ids.duplicate()
 		_board_display_cells.append(cell)
 	if _placement_active and _piece_data != null:
 		for local_cell in _display_cells:
@@ -616,7 +731,9 @@ func _rebuild_display_cells() -> void:
 				continue
 			ghost_cell.obstacle_type = local_cell.obstacle_type
 			ghost_cell.chest_available = local_cell.chest_available
+			ghost_cell.decorative_prop_ids = local_cell.decorative_prop_ids.duplicate()
 			ghost_cell.local_coord = _placement_anchor + local_cell.local_coord
+			_apply_base_ring_elevation(ghost_cell)
 			_ghost_coords[ghost_cell.local_coord] = true
 			_board_display_cells.append(ghost_cell)
 	_board_display_cells.sort_custom(Callable(self, "_sort_cells_back_to_front"))
@@ -656,6 +773,19 @@ func _rebuild_combo_highlights() -> void:
 
 func _active_display_cells() -> Array[TerrainPieceCellData]:
 	return _board_display_cells if _board_mode else _display_cells
+
+func _apply_base_ring_elevation(cell: TerrainPieceCellData) -> void:
+	if cell == null or _base_coord == NO_BASE_COORD:
+		return
+	for direction in HexCoord.DIRECTION_OFFSETS:
+		if cell.local_coord != _base_coord + direction:
+			continue
+		if cell.terrain_type == HexCell.TerrainType.MOUNTAIN:
+			cell.terrain_type = HexCell.TerrainType.GRASS
+		cell.elevation = 0 if cell.terrain_type == HexCell.TerrainType.PATH else 1
+		cell.visual_variant = TERRAIN_VISUAL_CATALOG_SCRIPT.get_random_visual_variant(cell.terrain_type, _run_seed, cell.local_coord)
+		cell.decorative_prop_ids = TERRAIN_VISUAL_CATALOG_SCRIPT.get_decorative_prop_ids(cell.terrain_type, _run_seed, cell.local_coord)
+		return
 
 func _draw_path_edges(
 	cell: TerrainPieceCellData,

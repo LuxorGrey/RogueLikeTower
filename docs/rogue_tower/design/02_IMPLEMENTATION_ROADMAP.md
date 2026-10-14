@@ -201,14 +201,14 @@ Estas cantidades NO son compromiso de diseño final.
 - Balance preliminar de campaña de 45 rondas.
 - Resultado: demo jugable de principio a fin.
 
-## M15 — Arte Urtuk-like pipeline
+## M15 — Arte Urtuk-like pipeline (catálogo de obstáculos sustituido por M39)
 - Sustituir placeholders sin tocar lógica.
 - Top sprites de hex.
 - Cliffs por elevación/bordes.
 - Props que pueden sobresalir visualmente.
 - Mantener footprint lógico limpio.
 - Variantes visuales.
-- Tres variantes PNG por tipo Path/Grass/Mountain y cinco obstáculos transparentes asignados por semilla a celdas reales. Obstáculos bloquean construcción.
+- Tres variantes PNG por tipo Path/Grass/Mountain y el pool inicial de cinco obstáculos transparentes asignados por semilla a celdas reales. M39 sustituye los obstáculos por ocho assets y agrega props decorativos. Obstáculos bloquean construcción.
 - Resultado: mapa orgánico que oculta la rigidez de la grid.
 
 ## M16 — Polish
@@ -297,8 +297,8 @@ Estas cantidades NO son compromiso de diseño final.
 - Cerrar las cuñas estrechas de fachadas en vértices sin descartar triángulos pequeños y aumentar el offset visual de elevación de 18 a 28 px por nivel. El rango lógico 0–2 descrito en este hito histórico se amplió a 0–3 en M34/ADR-0073.
 - Resultado: limpieza de mapa y selección informada integradas; aceptación interactiva y revisión visual de fachadas/alturas pendientes. Ver [ADR-0063](../decisions/ADR-0063-seleccion-y-retirada-de-objetos-del-terreno.md).
 
-## M27 — Cards, economía de demolición y lectura de altura (presentación sustituida en M34)
-- Diseño original: reutilizar un panel de Upgrade Card con fondos por rareza, marco compartido e icono grande para toda operación que aparezca en una oferta. M34/ADR-0075 sustituyó los fondos por rareza por una superficie común; M36/ADR-0080 añadió un sprite vertical y etiqueta de tier compartidos, con aura coloreada por rareza.
+## M27 — Cards, economía de demolición y lectura de altura (presentación sustituida en M34/M36/M40)
+- Diseño original: reutilizar un panel de Upgrade Card con fondos por rareza, marco compartido e icono grande para toda operación que aparezca en una oferta. M34/ADR-0075 sustituyó los fondos por rareza por una superficie común; M36 añadió temporalmente un sprite vertical/tier y M40/ADR-0088 volvió a una superficie plana sin sprite.
 - Devolver al demoler el precio marginal del slot ocupado según tipo y cantidad; los niveles de la torre no afectan al reembolso.
 - Sortear cofres al confirmar una expansión, no en la miniatura/ghost, y animar su aparición con un salto.
 - Proyectar sombras alfa de losetas y obstáculos con distancia vinculada a elevación y orientación rotatoria lenta.
@@ -326,8 +326,8 @@ Estas cantidades NO son compromiso de diseño final.
 - Mostrar en Tower Info la altura y el bonus real de daño/rango de la torre seleccionada.
 - Resultado: el jugador ve una progresión de unlock/reclutamiento y entiende el efecto de construir en altura. Ver [ADR-0069](../decisions/ADR-0069-desbloqueos-xp-y-feedback-de-altura.md) y [ADR-0076](../decisions/ADR-0076-economia-inicial-roster-de-run-y-flujo-de-escenas.md).
 
-## M32 — Marco de Upgrade Cards y colocación automática (presentación sustituida en M34/M36)
-- Diseño original: dibujar la textura de tier como fondo y el marco común como borde 9-slice alrededor del panel. M34/ADR-0075 retiró los fondos por rareza; M36/ADR-0080 añadió un único sprite-panel vertical compartido y el texto de tier, conservando el aura por rareza.
+## M32 — Marco de Upgrade Cards y colocación automática (presentación sustituida en M34/M36/M40)
+- Diseño original: dibujar la textura de tier como fondo y el marco común como borde 9-slice alrededor del panel. M34/ADR-0075 retiró los fondos por rareza; M36 añadió temporalmente sprite-panel vertical y tier; M40/ADR-0088 sustituye el sprite por una superficie plana con aura procedural.
 - Quitar de las miniaturas de expansión las ramificaciones y flechas de conexión PATH.
 - Mostrar durante la colocación el atajo `T` y buscar/confirmar una posición válida al pulsarlo; respetar validador, grafo y continuación futura. Si no existe, informar al jugador sin modificar el tablero.
 - Resultado: cards legibles y alternativa rápida que conserva las reglas de expansión. Ver [ADR-0071](../decisions/ADR-0071-marco-de-cards-y-colocacion-automatica.md).
@@ -341,7 +341,7 @@ Estas cantidades NO son compromiso de diseño final.
 ## M34 — Elevaciones 0–3, vida de base y presentación de cards
 - Permitir PATH 0, Grass 1–2 y Mountain 2–3, sorteados de forma reproducible por mapa/oferta; aplicar +1 daño base y +0.5 de alcance por nivel y mostrar el bonus de daño sobre cada torre elevada.
 - Fijar la base en 10 HP iniciales; Fortification permanente añade +1 HP por nivel hasta 20, con costes 20–200 XP y compra secuencial. Fortification I–III de run suman +3 HP cada una. Un boss que toca la base termina la run inmediatamente.
-- Sustituir las variantes PNG por rareza por un panel común a tamaño completo; M36 añade a este panel compartido un sprite vertical y etiqueta de tier. La rareza controla el aura de color, no la superficie.
+- Sustituir las variantes PNG por rareza por un panel común; M36 añade temporalmente un sprite vertical y etiqueta de tier, y M40 vuelve a un panel plano compartido sin sprite. La rareza controla el aura de color, no la superficie.
 - Resultado: código y datos integrados; aceptación visual/interactiva pendiente. Ver [ADR-0073](../decisions/ADR-0073-elevaciones-y-bonus-de-torre.md), [ADR-0074](../decisions/ADR-0074-vida-de-base-y-derrota-por-jefe.md) y [ADR-0075](../decisions/ADR-0075-panel-unico-y-aura-de-rareza.md).
 
 ## M35 — Menú, reclutamiento, tienda de nodos y correcciones de lectura
@@ -352,8 +352,8 @@ Estas cantidades NO son compromiso de diseño final.
 - Cerrar las tapas hexagonales, mantener UV de terreno sin estirar, ordenar celdas delanteras/detrás en la cámara isométrica fija y mostrar bonus de elevación en el ghost de Ballista.
 - Resultado: código/datos integrados; aceptación visual/interactiva pendiente. Ver M35 en `10_ACCEPTANCE_TESTS.md` y ADR-0076–0079.
 
-## M36 — Cards de tier, ramas paralelas y lectura cromática de altura
-- Usar un sprite vertical compartido para todas las upgrade cards, escribir el tier en cada card, separar ligeramente las opciones y comunicar rareza mediante el color del aura.
+## M36 — Cards de tier, ramas paralelas y lectura cromática de altura (presentación de card sustituida por M40)
+- La implementación temporal usó un sprite vertical compartido para las upgrade cards, el tier visible y separación entre opciones; M40 reemplaza el sprite por una superficie plana común con aura radial procedural.
 - Al desbloquear permanentemente una torre, exponer como opciones hermanas sus mejoras Health, Armor y Shield, comprables en cualquier orden.
 - Añadir a las tapas un tinte multiplicativo extremadamente tenue según elevación, usando el mismo cálculo en superficies normales y Y-sorted.
 - Resultado: código y catálogo integrados; aceptación visual/interactiva pendiente. Ver [ADR-0080](../decisions/ADR-0080-sprite-vertical-y-tier-de-upgrade-cards.md), [ADR-0081](../decisions/ADR-0081-mejoras-de-torre-en-ramas-paralelas.md) y [ADR-0082](../decisions/ADR-0082-tinte-multiplicativo-por-elevacion.md).
@@ -366,6 +366,27 @@ Estas cantidades NO son compromiso de diseño final.
 
 ## M38 — Fachadas delanteras simples y degradado de cliff
 - Renderizar solo las dos aristas delanteras del hex pointy-top como quads verticales; no dibujar paredes en las caras laterales/traseras, extrusión radial ni cierres de vértice.
-- Mantener el footprint superior exacto y usar oclusión back-to-front de tapas delanteras para ocultar la pared que queda debajo de su nivel.
+- Mantener la tapa hexagonal completa: cada pared llega solo a la altura de la tapa vecina (o al suelo si el borde está vacío) y nunca la invade. Ver [ADR-0090](../decisions/ADR-0090-fachadas-limitadas-a-la-diferencia-de-elevacion.md).
 - Aplicar a las paredes Grass/Mountain un degradado multiplicativo por vértice desde el color actual arriba hasta un tono muy oscuro abajo; las tapas superiores no cambian.
   - Resultado: renderer y fuente activa de documentación integrados; el usuario aprobó el aspecto actual como referencia visual. La revisión de todas las combinaciones de altura/oclusión sigue pendiente. Ver [ADR-0085](../decisions/ADR-0085-solo-fachadas-delanteras-y-degradado-de-cliffs.md).
+
+## M39 — Props, obstáculos y base en su hexágono
+- Limitar a altura 1 las seis celdas adyacentes a la base: Path continúa a 0, Grass queda en 1 y Mountain se normaliza a Grass.
+- Conservar el PNG fuente 270×352 px de la base, pero escalarlo uniformemente para que ocupe una celda hexagonal dentro de una caja máxima de 86×86 px.
+- Importar los 18 props como PNG de 96×96 px con nombres `prop_<terreno>_<elemento>.png`; cada asset compatible tiene una probabilidad independiente de 10 % por celda, sin IDs duplicados y con máximo dos props de 36×36 px separados para no solaparse. Los props son solo decorativos y los obstáculos se dibujan encima.
+- Reemplazar los cinco obstáculos antiguos por los ocho nuevos PNG de 208×208 px en la carpeta raíz de obstáculos. Mantener sus tasas de aparición, la caja de dibujo de 86×86 px y centrar el sprite en el hex; retirar archivos antiguos y referencias runtime.
+- Resultado: datos, recursos, renderer, herramienta de arte y documentación integrados; aceptación visual pendiente. Ver [ADR-0087](../decisions/ADR-0087-props-obstaculos-y-altura-junto-a-base.md).
+
+## M40 — Presentación compacta de upgrade cards
+- Usar una card compartida con superficie plana, sin sprites/marcos variantes por tier o rareza. Mantener icono grande, etiqueta de tier, título y descripción legibles y separación entre opciones.
+- Mostrar tres opciones en tres columnas; mantener hasta seis opciones en dos filas cuando Card Draw amplíe la oferta.
+- Dibujar detrás de cada card un aura radial tenue con partículas animadas. El color del aura expresa rareza y el hover puede intensificarlo, sin cambiar la superficie.
+- Resultado: escena y shader integrados; aceptación visual en ventana pendiente. Sustituye la presentación de ADR-0080 y conserva las ramas paralelas de ADR-0081. Ver [ADR-0088](../decisions/ADR-0088-presentacion-compacta-de-upgrade-cards.md).
+
+## M41 — Escala, oclusión y animación del terreno
+- Mantener la resolución fuente de la base y reducir solo su escala de presentación a un footprint máximo de 86×86 px.
+- Ordenar las fachadas delanteras por Y con las entidades, de modo que los enemigos detrás queden cubiertos y los que pasan delante permanezcan visibles.
+- Usar los ocho frames del atlas `spawn_portal_SpriteSheet.png` (4×2, 443×443 px por frame) en un bucle continuo a 10 FPS; asignar una fase inicial diferente a cada endpoint visible.
+- Subir los props a 36×36 px y la probabilidad independiente por asset/celda al 10 %, manteniendo un máximo de dos sin solapamiento y el obstáculo delante.
+- Corregir el error de parseo de `TerrainPiecePreview` en la normalización del anillo de base.
+- Resultado: código y documentación integrados; aceptación visual e interactiva pendiente según [M41](10_ACCEPTANCE_TESTS.md). Ver [ADR-0089](../decisions/ADR-0089-ajustes-escala-occlusion-portales-props.md).

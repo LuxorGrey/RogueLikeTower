@@ -98,6 +98,7 @@ static func instantiate_cells(
 		cell.visual_variant = cell_data.visual_variant
 		cell.obstacle_type = cell_data.obstacle_type
 		cell.chest_available = cell_data.chest_available
+		cell.decorative_prop_ids = cell_data.decorative_prop_ids.duplicate()
 		cell.piece_instance_id = piece_instance_id
 		instantiated[global_coord] = cell
 	return instantiated

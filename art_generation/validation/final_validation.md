@@ -1,5 +1,7 @@
 # Validación final de assets
 
+> **Snapshot histórico del 2026-10-13:** la sección de obstáculos registra el pool que se usaba antes de M39. No describe el contenido runtime actual. Consulta [assets/terrain/README.md](../../assets/terrain/README.md) para la fuente vigente.
+
 **Fecha:** 2026-10-13\
 **Resultado:** 23/23 destinos coinciden con su arte; 23/23 originales respaldados.\
 **Método:** canvas y modo RGBA cotejados; píxeles runtime cotejados byte a byte con el arte asignado; canal alfa runtime cotejado byte a byte con el original respaldado.

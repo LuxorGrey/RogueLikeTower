@@ -1,5 +1,7 @@
 # Mapa de sustitución de sprites
 
+> **Histórico:** este mapa registra los destinos del lote 2026-10-13. Los obstáculos antiguos ya no viven en `assets/terrain/obstacles`; M39 los reemplazó por ocho archivos con la nomenclatura actual, documentados en [assets/terrain/README.md](../assets/terrain/README.md).
+
 **Aplicado:** 2026-10-13. Los 23 PNG siguientes ya ocupan su ruta runtime existente. Cada original está guardado en `art_generation/originals_replaced/2026-10-13/`, conservando su ruta relativa al proyecto.
 
 | Equivalente lógico | Ruta runtime sustituida | Sprite instalado | Copia del original |

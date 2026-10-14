@@ -4,14 +4,20 @@ extends Node2D
 signal hover_changed(portal: Node2D, hovered: bool)
 signal selected(portal: Node2D)
 
-const PORTAL_SPRITE_SIZE: Vector2 = Vector2(64.0, 96.0)
+const PORTAL_SPRITE_SIZE: Vector2 = Vector2(96.0, 96.0)
+const PORTAL_SPRITE_SHEET: Texture2D = preload("res://assets/terrain/spawn_portal_SpriteSheet.png")
+const PORTAL_ANIMATION_NAME: StringName = &"portal"
+const PORTAL_FRAME_SIZE: Vector2i = Vector2i(443, 443)
+const PORTAL_FRAME_COLUMNS: int = 4
+const PORTAL_FRAME_ROWS: int = 2
+const PORTAL_ANIMATION_FPS: float = 10.0
 const PULSE_PERIOD: float = 3.8
 const PULSE_MIN_SCALE: float = 0.96
 const PULSE_MAX_SCALE: float = 1.055
 const OBSTACLE_HOVER_SHADER: Shader = preload("res://game/board/obstacle_hover_glow.gdshader")
 const PREVIEW_LAYER_SCRIPT: Script = preload("res://game/board/spawn_portal_preview_layer.gd")
 
-@onready var _sprite: Sprite2D = %Sprite
+@onready var _sprite: AnimatedSprite2D = %Sprite
 @onready var _hover_area: Area2D = %HoverArea
 
 var _candidate_preview: bool = false
@@ -27,12 +33,19 @@ var _preview_entries: Array[Dictionary] = []
 var _preview_wave_number: int = 0
 var _preview_enemy_count: int = 0
 var _closing_marker: Label
+var _animation_phase: float = -1.0
 
 func _ready() -> void:
 	z_as_relative = false
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_base_sprite_scale = PORTAL_SPRITE_SIZE / _sprite.texture.get_size()
+	_configure_looping_animation()
+	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	_sprite.play(PORTAL_ANIMATION_NAME)
+	var starting_phase: float = float(posmod(hash(String(name)), 10000)) / 10000.0
+	set_animation_phase(starting_phase)
+	var frame_texture: Texture2D = _get_current_frame_texture()
+	if frame_texture != null:
+		_base_sprite_scale = PORTAL_SPRITE_SIZE / Vector2(frame_texture.get_size())
 	_sprite.scale = _base_sprite_scale
 	_sprite.position = Vector2(0.0, -44.0)
 	_pulse_phase = float(posmod(absi(hash(String(name))), 10000)) / 10000.0 * TAU
@@ -40,6 +53,7 @@ func _ready() -> void:
 	_hover_area.mouse_entered.connect(_on_mouse_entered)
 	_hover_area.mouse_exited.connect(_on_mouse_exited)
 	_hover_area.input_event.connect(_on_hover_area_input_event)
+	_sprite.frame_changed.connect(_sync_hover_outline_texture)
 	_create_hover_outline()
 	_create_enemy_preview_layer()
 	_create_closing_marker()
@@ -55,6 +69,53 @@ func set_endpoint_key(endpoint_key: String) -> void:
 
 func get_endpoint_key() -> String:
 	return _endpoint_key
+
+func set_animation_phase(phase: float) -> void:
+	if _sprite == null or _sprite.sprite_frames == null:
+		return
+	var normalized_phase: float = fposmod(phase, 1.0)
+	if is_equal_approx(_animation_phase, normalized_phase):
+		return
+	_animation_phase = normalized_phase
+	var frame_count: int = _sprite.sprite_frames.get_frame_count(PORTAL_ANIMATION_NAME)
+	if frame_count <= 0:
+		return
+	var frame_position: float = normalized_phase * float(frame_count)
+	var frame_index: int = mini(int(floor(frame_position)), frame_count - 1)
+	_sprite.set_frame_and_progress(frame_index, frame_position - float(frame_index))
+
+func _configure_looping_animation() -> void:
+	var frames := SpriteFrames.new()
+	frames.add_animation(PORTAL_ANIMATION_NAME)
+	frames.set_animation_loop(PORTAL_ANIMATION_NAME, true)
+	frames.set_animation_speed(PORTAL_ANIMATION_NAME, PORTAL_ANIMATION_FPS)
+	for frame_index in range(PORTAL_FRAME_COLUMNS * PORTAL_FRAME_ROWS):
+		var frame_texture := AtlasTexture.new()
+		frame_texture.atlas = PORTAL_SPRITE_SHEET
+		frame_texture.region = Rect2(
+			float(frame_index % PORTAL_FRAME_COLUMNS) * float(PORTAL_FRAME_SIZE.x),
+			floorf(float(frame_index) / float(PORTAL_FRAME_COLUMNS)) * float(PORTAL_FRAME_SIZE.y),
+			float(PORTAL_FRAME_SIZE.x),
+			float(PORTAL_FRAME_SIZE.y)
+		)
+		frames.add_frame(PORTAL_ANIMATION_NAME, frame_texture)
+	_sprite.sprite_frames = frames
+	_sprite.animation = PORTAL_ANIMATION_NAME
+	_sprite.centered = true
+
+func _get_current_frame_texture() -> Texture2D:
+	if _sprite == null or _sprite.sprite_frames == null:
+		return null
+	var frame_count: int = _sprite.sprite_frames.get_frame_count(PORTAL_ANIMATION_NAME)
+	if frame_count <= 0:
+		return null
+	var frame_index: int = clampi(_sprite.frame, 0, frame_count - 1)
+	return _sprite.sprite_frames.get_frame_texture(PORTAL_ANIMATION_NAME, frame_index)
+
+func _sync_hover_outline_texture() -> void:
+	if _outline_sprite == null or not is_instance_valid(_outline_sprite):
+		return
+	_outline_sprite.texture = _get_current_frame_texture()
 
 func set_wave_preview(entries: Array[Dictionary], wave_number: int) -> void:
 	_preview_entries = entries.duplicate()
@@ -123,11 +184,11 @@ func _create_hover_outline() -> void:
 	_outline_sprite = Sprite2D.new()
 	_outline_sprite.name = "PortalAlphaHoverOutline"
 	_outline_sprite.centered = true
-	_outline_sprite.texture = _sprite.texture
+	_outline_sprite.texture = _get_current_frame_texture()
 	_outline_sprite.position = _sprite.position
 	_outline_sprite.scale = _sprite.scale
 	_outline_sprite.z_index = _sprite.z_index - 1
-	_outline_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_outline_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	var outline_material := ShaderMaterial.new()
 	outline_material.shader = OBSTACLE_HOVER_SHADER
 	_outline_sprite.material = outline_material

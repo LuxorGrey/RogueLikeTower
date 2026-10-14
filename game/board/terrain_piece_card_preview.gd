@@ -24,6 +24,9 @@ func _draw() -> void:
 	if cells.is_empty():
 		return
 	cells.sort_custom(Callable(self, "_sort_cells_back_to_front"))
+	var elevations_by_coord: Dictionary[Vector2i, int] = {}
+	for cell in cells:
+		elevations_by_coord[cell.local_coord] = cell.elevation
 
 	var bounds := Rect2()
 	var has_bounds: bool = false
@@ -53,26 +56,39 @@ func _draw() -> void:
 		)
 
 	for cell in cells:
-		_draw_cliffs(cell, rendered_centers[cell.local_coord], render_scale)
+		_draw_cliffs(
+			cell,
+			rendered_centers[cell.local_coord],
+			render_scale,
+			elevations_by_coord
+		)
 		_draw_cell_top(cell, rendered_centers[cell.local_coord], render_scale)
 		_draw_obstacles([cell], rendered_centers, render_scale)
 
 func _draw_cliffs(
 	cell: TerrainPieceCellData,
 	center: Vector2,
-	render_scale: float
+	render_scale: float,
+	elevations_by_coord: Dictionary[Vector2i, int]
 ) -> void:
 	if cell.elevation <= 0:
 		return
 	var upper_corners: PackedVector2Array = _rendered_cell_corners(cell, center, render_scale)
-	var vertical_offset := Vector2(
-		0.0,
-		float(cell.elevation) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET * render_scale
-	)
 	var cliff_texture: Texture2D = TERRAIN_VISUAL_CATALOG_SCRIPT.get_cliff_texture(cell.terrain_type)
 	var texture_size: Vector2i = cliff_texture.get_size()
 	var source_center: Vector2 = _top_center(cell.local_coord, cell.elevation)
 	for direction_index in [1, 2]:
+		var neighbor_coord: Vector2i = (
+			cell.local_coord + HexCoord.DIRECTION_OFFSETS[direction_index]
+		)
+		var neighbor_elevation: int = int(elevations_by_coord.get(neighbor_coord, 0))
+		var exposed_levels: int = cell.elevation - neighbor_elevation
+		if exposed_levels <= 0:
+			continue
+		var vertical_offset := Vector2(
+			0.0,
+			float(exposed_levels) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET * render_scale
+		)
 		var edge_start: int = posmod(direction_index + 1, 6)
 		var edge_end: int = posmod(direction_index + 2, 6)
 		var upper_start: Vector2 = upper_corners[edge_start]
@@ -128,15 +144,34 @@ func _draw_obstacles(
 	render_scale: float
 ) -> void:
 	for cell in cells:
+		var center: Vector2 = centers[cell.local_coord]
+		var prop_offsets: Array[Vector2] = _prop_offsets(cell.decorative_prop_ids.size(), render_scale)
+		for prop_index in cell.decorative_prop_ids.size():
+			var prop_texture: Texture2D = TERRAIN_VISUAL_CATALOG_SCRIPT.get_prop_texture(
+				cell.decorative_prop_ids[prop_index]
+			)
+			if prop_texture == null:
+				continue
+			var prop_size: Vector2 = TERRAIN_VISUAL_CATALOG_SCRIPT.PROP_DISPLAY_SIZE * render_scale
+			var prop_center: Vector2 = center + prop_offsets[prop_index]
+			draw_texture_rect(prop_texture, Rect2(prop_center - prop_size * 0.5, prop_size), false)
 		if cell.obstacle_type == HexCell.ObstacleType.NONE:
 			continue
-		var center: Vector2 = centers[cell.local_coord] + Vector2(0.0, 6.0 * render_scale)
 		var obstacle_size: Vector2 = TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_DISPLAY_SIZE * render_scale
 		draw_texture_rect(
 			TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_texture(cell.obstacle_type),
 			Rect2(center - obstacle_size * 0.5, obstacle_size),
 			false
 		)
+
+func _prop_offsets(prop_count: int, render_scale: float) -> Array[Vector2]:
+	var offsets: Array[Vector2] = []
+	if prop_count >= 2:
+		offsets.append(Vector2(-16.0, 5.0) * render_scale)
+		offsets.append(Vector2(16.0, 5.0) * render_scale)
+	elif prop_count == 1:
+		offsets.append(Vector2(0.0, 5.0) * render_scale)
+	return offsets
 
 func _top_center(coord: Vector2i, elevation: int) -> Vector2:
 	var ground_center: Vector2 = HexMath.axial_to_world(HexCoord.new(coord.x, coord.y), HEX_RADIUS)
