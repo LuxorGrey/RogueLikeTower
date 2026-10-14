@@ -3,6 +3,7 @@ extends Node2D
 
 const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
 const OBSTACLE_HOVER_SHADER: Shader = preload("res://game/board/obstacle_hover_glow.gdshader")
+const INTERACTABLE_OUTLINE_SHADER: Shader = preload("res://game/board/interactable_outline.gdshader")
 
 const CHEST_DISPLAY_SIZE: Vector2 = Vector2(84.0, 84.0)
 const ART_OFFSET_Y: float = 6.0
@@ -15,6 +16,7 @@ var _chest_appearance_tween: Tween
 var _chest_hover_tween: Tween
 var _obstacle_hovered: bool = false
 var _chest_hovered: bool = false
+var _obstacle_sprite: Sprite2D
 var _obstacle_hover_sprite: Sprite2D
 var _chest_sprite: Sprite2D
 var _chest_hover_sprite: Sprite2D
@@ -41,6 +43,17 @@ func _ready() -> void:
 	_chest_base_position = _chest_sprite.position
 	_chest_base_scale = _chest_sprite.scale
 	add_child(_chest_sprite)
+	_obstacle_sprite = Sprite2D.new()
+	_obstacle_sprite.name = "ObstacleOutlinedSprite"
+	_obstacle_sprite.centered = true
+	_obstacle_sprite.position = OBSTACLE_CENTER_OFFSET
+	_obstacle_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	var obstacle_outline_material := ShaderMaterial.new()
+	obstacle_outline_material.shader = INTERACTABLE_OUTLINE_SHADER
+	obstacle_outline_material.set_shader_parameter("outline_color", Color.WHITE)
+	obstacle_outline_material.set_shader_parameter("outline_size_px", 3.0)
+	_obstacle_sprite.material = obstacle_outline_material
+	add_child(_obstacle_sprite)
 	_chest_hover_sprite = Sprite2D.new()
 	_chest_hover_sprite.name = "TreasureChestHoverGlow"
 	_chest_hover_sprite.centered = true
@@ -60,6 +73,7 @@ func _ready() -> void:
 	_obstacle_hover_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	var glow_material := ShaderMaterial.new()
 	glow_material.shader = OBSTACLE_HOVER_SHADER
+	glow_material.set_shader_parameter("outline_color", Color.WHITE)
 	_obstacle_hover_sprite.material = glow_material
 	add_child(_obstacle_hover_sprite)
 	_sync_chest_sprite()
@@ -135,14 +149,19 @@ func set_chest_hovered(is_hovered: bool) -> void:
 	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _sync_obstacle_hover_sprite() -> void:
-	if _obstacle_hover_sprite == null:
+	if _obstacle_hover_sprite == null or _obstacle_sprite == null:
 		return
 	var has_obstacle: bool = _obstacle_type >= 0 and _obstacle_type < TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_COUNT
+	_obstacle_sprite.visible = has_obstacle
 	_obstacle_hover_sprite.visible = _obstacle_hovered and has_obstacle
 	if not has_obstacle:
+		_obstacle_sprite.texture = null
 		_obstacle_hover_sprite.texture = null
 		return
 	var texture: Texture2D = TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_texture(_obstacle_type)
+	_obstacle_sprite.texture = texture
+	_obstacle_sprite.position = OBSTACLE_CENTER_OFFSET
+	_obstacle_sprite.scale = TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_DISPLAY_SIZE / Vector2(texture.get_width(), texture.get_height())
 	_obstacle_hover_sprite.texture = texture
 	_obstacle_hover_sprite.position = OBSTACLE_CENTER_OFFSET
 	_obstacle_hover_sprite.scale = TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_DISPLAY_SIZE / Vector2(texture.get_width(), texture.get_height())
@@ -207,21 +226,11 @@ func _draw() -> void:
 		var prop_center: Vector2 = prop_offsets[prop_index]
 		draw_texture_rect(prop_texture, Rect2(prop_center - prop_size * 0.5, prop_size), false)
 
-	var visual_size: Vector2 = _get_visual_size()
-	if visual_size == Vector2.ZERO:
-		return
-	if _obstacle_type >= 0 and _obstacle_type < TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_COUNT:
-		draw_texture_rect(
-			TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_texture(_obstacle_type),
-			Rect2(-visual_size * 0.5 + OBSTACLE_CENTER_OFFSET, visual_size),
-			false
-		)
-
 func _prop_offsets(prop_count: int) -> Array[Vector2]:
 	var offsets: Array[Vector2] = []
 	if prop_count >= 2:
-		offsets.append(Vector2(-20.0, 5.0))
-		offsets.append(Vector2(20.0, 5.0))
+		offsets.append(Vector2(-22.0, 5.0))
+		offsets.append(Vector2(22.0, 5.0))
 	elif prop_count == 1:
 		offsets.append(Vector2(0.0, 5.0))
 	return offsets
@@ -230,10 +239,3 @@ func _sync_chest_sprite() -> void:
 	if _chest_sprite == null:
 		return
 	_chest_sprite.visible = _chest_available
-
-func _get_visual_size() -> Vector2:
-	if _obstacle_type >= 0 and _obstacle_type < TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_COUNT:
-		return TERRAIN_VISUAL_CATALOG_SCRIPT.OBSTACLE_DISPLAY_SIZE
-	if _chest_available:
-		return CHEST_DISPLAY_SIZE
-	return Vector2.ZERO

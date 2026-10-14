@@ -2,6 +2,7 @@ class_name TerrainSurfaceOccluder
 extends Node2D
 
 const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
+const TERRAIN_REGION_OUTLINE_SCRIPT: Script = preload("res://game/board/terrain_region_outline.gd")
 const HEX_RADIUS: float = 52.0
 
 var _terrain_type: int = HexCell.TerrainType.GRASS
@@ -50,20 +51,13 @@ func _draw_region_outline(corners: PackedVector2Array) -> void:
 		_terrain_type
 	)
 	var stroke_width: float = 3.0
-	var stroke_inset: float = 1.4
-	for direction_variant in _outline_edge_indices:
-		var direction_index: int = int(direction_variant)
-		var edge_start: Vector2 = corners[posmod(direction_index + 1, 6)]
-		var edge_end: Vector2 = corners[posmod(direction_index + 2, 6)]
-		var inward_offset: Vector2 = (-(edge_start + edge_end) * 0.5).normalized() * stroke_inset
-		var tangent_offset: Vector2 = (edge_end - edge_start).normalized() * stroke_width * 0.5
-		draw_line(
-			edge_start + inward_offset - tangent_offset,
-			edge_end + inward_offset + tangent_offset,
-			outline_color,
-			stroke_width,
-			true
-		)
+	TERRAIN_REGION_OUTLINE_SCRIPT.draw_contour(
+		self,
+		corners,
+		_outline_edge_indices,
+		outline_color,
+		stroke_width
+	)
 
 func _hex_corners(radius: float) -> PackedVector2Array:
 	var corners := PackedVector2Array()

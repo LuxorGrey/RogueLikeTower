@@ -1,9 +1,11 @@
 class_name CardPoolData
 extends Resource
 
+const FIXED_OFFER_SIZE: int = 3
+
 @export var cards: Array[Resource] = []
 @export var catalogs: Array[Resource] = []
-@export_range(1, 6, 1) var offer_size: int = 3
+@export_range(3, 3, 1) var offer_size: int = FIXED_OFFER_SIZE
 @export_range(1, 45, 1) var first_offer_round: int = 3
 @export_range(1, 45, 1) var offer_interval: int = 3
 
@@ -27,8 +29,8 @@ func get_all_cards() -> Array[Resource]:
 
 func validate() -> PackedStringArray:
 	var errors := PackedStringArray()
-	if offer_size < 1 or offer_size > 6:
-		errors.append("El tamaño de oferta debe estar entre 1 y 6 cartas.")
+	if offer_size != FIXED_OFFER_SIZE:
+		errors.append("El tamaño de oferta debe ser exactamente de tres cartas.")
 	if first_offer_round < 1 or first_offer_round > 45:
 		errors.append("La primera ronda de oferta debe estar entre 1 y 45.")
 	if offer_interval < 1 or offer_interval > 45:
@@ -63,6 +65,6 @@ func validate() -> PackedStringArray:
 		for prerequisite_id in card.get("any_required_card_ids"):
 			if not ids.has(prerequisite_id):
 				errors.append("La carta %s requiere un prerrequisito alternativo ausente: %s." % [card.get("id"), prerequisite_id])
-	if eligible_count < offer_size:
+	if eligible_count < FIXED_OFFER_SIZE:
 		errors.append("El pool no contiene suficientes cartas con peso positivo para una oferta.")
 	return errors

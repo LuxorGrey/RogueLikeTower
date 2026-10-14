@@ -47,7 +47,7 @@ Los nombres canónicos se reutilizan cuando la operación coincide con Rogue Tow
 | Dientes afilados | Bleed de Shredder: duración ×1,20. |
 | Advanced Circuits | Tesla Coil: +15 puntos porcentuales de probabilidad crítica. |
 
-El catálogo de mejoras conserva estas 18 cards, añade 172 Resources y representa la 173.ª entrada compatible de Rogue Tower con la Advanced Circuits existente, ya que el efecto coincide. Son 190 IDs de mejora. Seis cards adicionales de reclutamiento elevan el pool runtime a 196. Las cards de torre solo entran en la oferta si la torre está desbloqueada permanentemente y reclutada en esa run; las cartas de reclutamiento añaden una torre al roster temporal. Las cadenas requieren haber elegido el escalón previo. La oferta base aparece tras las rondas 3, 6, 9, …, 42, una vez colocada la expansión; la frecuencia cada tres rondas está confirmada y Card Draw puede aumentar las tres opciones hasta seis. Las opciones de reclutamiento elegibles se incluyen en la oferta y no se pierden por el sorteo ponderado. La rareza y los valores importados son provisionales.
+El catálogo de mejoras conserva estas 18 cards, añade 172 Resources y representa la 173.ª entrada compatible de Rogue Tower con la Advanced Circuits existente, ya que el efecto coincide. Son 190 IDs de mejora. Seis cards adicionales de reclutamiento elevan el pool runtime a 196. Las cards de torre solo entran en la oferta si la torre está desbloqueada permanentemente y reclutada en esa run; las cartas de reclutamiento añaden una torre al roster temporal. Las cadenas requieren haber elegido el escalón previo. La oferta aparece tras las rondas 3, 6, 9, …, 42, una vez colocada la expansión, y contiene siempre tres opciones; reclutamientos elegibles y mejoras se mezclan y el orden es aleatorio. Las opciones de reclutamiento no elegidas siguen disponibles en ofertas futuras. La mejora permanente `card_draw` queda retirada de la tienda y se conserva como ID legado para perfiles guardados. La rareza y los valores importados son provisionales.
 
 | Rama de Upgrade Cards compatible | Cantidad | Familias incluidas |
 |---|---:|---|
@@ -74,7 +74,7 @@ Se compran en la tienda al acabar una run y se aplican desde la siguiente. Coste
 | Archivo de cartas | +2 cartas globales al pool | 1; 25 |
 | Calibración de torres | Daño global ×1,05 | 3; 20 / 35 / 50 |
 | Suerte del explorador | +5 puntos porcentuales por nivel desde 1 % base; máximo total 20 % | 4; 10 / 20 / 35 / 55 |
-| Card Draw I–III | +1 opción por oferta y nivel; máximo 6 | 3; 25 / 50 / 75 |
+| Card Draw I–III (retirada) | Sin efecto sobre la oferta fija de tres cartas; ID legado no disponible para comprar | 3; 25 / 50 / 75 (histórico) |
 | Gold Drop I–V | +1 Gold por baja y nivel; máximo +5 | 5; 15 / 30 / 45 / 60 / 80 |
 | Repair I–III | Hasta 33 / 66 / 100 % de probabilidad de reparar 1 Health al acabar una ronda, escalada por Health perdida | 3; 25 / 50 / 100 |
 | Fortification I–X | +1 Health máximo de base por nivel | 20 / 40 / 60 / 80 / 100 / 120 / 140 / 160 / 180 / 200 XP (1.100 XP total) |
@@ -82,7 +82,7 @@ Se compran en la tienda al acabar una run y se aplican desde la siguiente. Coste
 
 Fortification permanente se compra de forma secuencial: cada nivel exige el anterior y no se aplican gates adicionales por cantidad de cartas desbloqueadas. I–X suma +10 HP como máximo. Las cards de run Fortification I–III son otra progresión y cada una aumenta el máximo de base en +3 HP.
 
-El catálogo ejecutable combina seis mejoras existentes y 25 adicionales. Las siete ramas `Better` son específicas de cada torre y quedan ocultas/bloqueadas hasta su unlock; el resto aparece en la tienda tras terminar una run. Ver [rogue_tower_permanent_catalog.tres](../../../data/meta/rogue_tower_permanent_catalog.tres) y [ADR-0062](../decisions/ADR-0062-catalogo-de-upgrade-cards-y-permanent-upgrades.md).
+El catálogo conserva 31 IDs: 30 mejoras disponibles en el mapa y el ID legado `card_draw`, que no se presenta ni se puede comprar. Las siete ramas `Better` son específicas de cada torre y quedan ocultas/bloqueadas hasta su unlock; el resto aparece en la tienda tras terminar una run. Ver [rogue_tower_permanent_catalog.tres](../../../data/meta/rogue_tower_permanent_catalog.tres), [ADR-0062](../decisions/ADR-0062-catalogo-de-upgrade-cards-y-permanent-upgrades.md) y ADR-0093.
 
 ## Contenido de terreno
 

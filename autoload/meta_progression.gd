@@ -217,9 +217,6 @@ func get_run_economy_bonuses() -> Dictionary:
 func get_gold_per_kill_bonus() -> int:
 	return roundi(_get_permanent_bonus(PermanentUpgradeOperation.EffectType.GOLD_PER_KILL_ADD))
 
-func get_card_offer_bonus() -> int:
-	return clampi(roundi(_get_permanent_bonus(PermanentUpgradeOperation.EffectType.CARD_OFFER_SIZE_ADD)), 0, 3)
-
 func get_base_max_health_bonus() -> int:
 	return roundi(_get_permanent_bonus(PermanentUpgradeOperation.EffectType.BASE_MAX_HEALTH_ADD))
 

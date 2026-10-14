@@ -1,0 +1,15 @@
+# ADR-0094: Mapa de mejoras y legibilidad del terreno
+
+- **Estado:** aceptado e implementado en código; aceptación visual/interactiva pendiente.
+- **Fecha:** 2026-10-14.
+- **Contexto:** la tienda de permanentes todavía mostraba instrucciones y un botón de nueva run en el pie. El árbol era demasiado compacto, las mejoras de torre se apilaban en vertical y no había navegación por arrastre. También se pidió recuperar fachadas oscuras y el contorno cromático regional sin el hover de alta intensidad.
+- **Decisiones:**
+  1. La tienda no contiene controles para iniciar una run ni instrucciones en el pie. El menú conserva “Empezar run”; el mapa tiene un cierre × fijo arriba a la derecha. Desde el menú o al revisar una run terminada, cerrar el panel vuelve a dejar visible el menú principal; desde acceso DEBUG, lo cierra y revela el tablero.
+  2. El mapa crece a 3560×2020 unidades lógicas con clusters separados y nodos de 236×254. La rueda conserva scroll; mantener y arrastrar con botón izquierdo (umbral 8 px) o central desplaza el área. Cada nodo usa su icono canónico del `IconCatalog`, con un icono de daño como fallback.
+  3. El unlock de cada torre conecta a tres mejoras hermanas H/A/S, dispuestas en una misma fila horizontal. El catálogo, las dependencias y los costes no cambian. Los tooltips conservan el detalle completo y los requisitos.
+  4. El sprite de cada torre crece linealmente por nivel: nivel 1 usa la escala base y las 45 mejoras posibles alcanzan como máximo +12 %. Se aplica a sprites únicos y a los componentes divididos; no altera stats, alcance ni celda ocupada. El máximo es un parámetro visual provisional.
+  5. Las fachadas siguen siendo únicamente las dos caras delanteras y mantienen sus quads axiales. Se les aplica un tinte multiplicativo oscuro por dirección (`#666A70` y `#7A7E84`) y se conserva un gradiente inferior más oscuro. No se añaden caras laterales, cierres ni vértices.
+  6. El perímetro exterior sigue agrupando por `(terrain_type, elevation)`, omite aristas internas y comparte vértices redondeados. Grass usa stroke `#53B56F`, Mountain `#8A8B91` y Path mantiene amarillo. Un keyline oscuro y un hover menos luminoso separan las texturas sin devolver el contorno neón.
+- **Consecuencias:** el mapa se navega como un árbol amplio, se identifican visualmente las mejoras H/A/S y cada torre muestra crecimiento acumulativo discreto. La silueta hexagonal y la regla de dos caras delanteras no cambian; las imágenes de pared conservan su textura con más contraste.
+- **Validación:** no se ejecutó Godot ni se hizo inspección visual/interactiva. Ver criterios de M45 en [`10_ACCEPTANCE_TESTS.md`](../design/10_ACCEPTANCE_TESTS.md).
+- **Sustituye:** los textos de tienda y criterios visuales anteriores incompatibles con el mapa limpio, el arrastre, la fila H/A/S, el sombreado direccional oscuro y el hover atenuado; actualiza parcialmente el tono de fachadas de ADR-0092 y los colores de contorno de ADR-0093. Complementa ADR-0077, ADR-0081 y ADR-0091.

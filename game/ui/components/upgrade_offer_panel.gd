@@ -9,6 +9,7 @@ const CARD_GAP: float = 20.0
 const CARD_VERTICAL_GAP: float = 18.0
 const CARD_HEIGHT: float = 352.0
 const COMPACT_CARD_HEIGHT: float = 312.0
+const FIXED_CARD_COUNT: int = CardPoolData.FIXED_OFFER_SIZE
 
 @onready var _card_container: GridContainer = %Cards
 @onready var heading_label: Label = %HeadingLabel
@@ -23,8 +24,8 @@ func _ready() -> void:
 			cards.append(card)
 	_apply_panel_size(1, CARD_HEIGHT)
 
-func set_card_count(count: int) -> void:
-	var target_count: int = clampi(count, 1, 6)
+func set_card_count(_count: int) -> void:
+	var target_count: int = FIXED_CARD_COUNT
 	while cards.size() < target_count:
 		var card := UPGRADE_CARD_SCENE.instantiate() as UpgradeOfferCard
 		card.name = "UpgradeCard%d" % (cards.size() + 1)

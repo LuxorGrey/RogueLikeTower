@@ -18,7 +18,7 @@ func _ready() -> void:
 	add_theme_stylebox_override("pressed", StyleBoxEmpty.new())
 	add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	add_theme_stylebox_override("disabled", StyleBoxEmpty.new())
-	custom_minimum_size = Vector2(172.0, 188.0)
+	custom_minimum_size = Vector2(236.0, 254.0)
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
 
@@ -37,7 +37,7 @@ func configure_node(
 	_description.text = description
 	_status.text = status_text
 	_icon.texture = icon_texture
-	_icon.visible = icon_texture != null
+	_icon.visible = true
 	tooltip_text = tooltip
 	disabled = locked
 	var border_color := Color("#82938a")
@@ -60,10 +60,10 @@ func _make_style(background: Color, border: Color, aura: Color, alpha: float, bl
 	style.border_color = border
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(12)
-	style.content_margin_left = 10.0
-	style.content_margin_right = 10.0
-	style.content_margin_top = 10.0
-	style.content_margin_bottom = 8.0
+	style.content_margin_left = 13.0
+	style.content_margin_right = 13.0
+	style.content_margin_top = 11.0
+	style.content_margin_bottom = 9.0
 	style.shadow_color = Color(aura.r, aura.g, aura.b, alpha)
 	style.shadow_size = blur
 	style.shadow_offset = Vector2.ZERO

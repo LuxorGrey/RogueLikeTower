@@ -3,7 +3,7 @@ extends Node2D
 const HEX_RADIUS: float = 52.0
 const CAMPAIGN_ROUND_COUNT: int = 45
 const DEBUG_WAVE_START_INDEX: int = CAMPAIGN_ROUND_COUNT
-const SPAWN_PORTAL_TEXTURE: Texture2D = preload("res://assets/terrain/spawn_portal.png")
+const SPAWN_PORTAL_TEXTURE: Texture2D = preload("res://assets/sprites/terrain/spawn_portal.png")
 const STARTING_BOARD: Resource = preload("res://data/terrain/starting_board.tres")
 const STRAIGHT_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/straight.tres")
 const GENTLE_TURN_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/gentle_turn.tres")
@@ -276,7 +276,6 @@ func _ready() -> void:
 	)
 	add_child(_meta_shop_panel)
 	_wire_interactable_cursors(_meta_shop_panel)
-	_meta_shop_panel.connect("new_run_requested", _on_new_run_requested)
 	_debug_hacks_panel = DEBUG_HACKS_PANEL_SCENE.instantiate() as DebugHacksPanel
 	add_child(_debug_hacks_panel)
 	_debug_hacks_panel.connect("action_requested", _on_debug_hack_requested)
@@ -334,7 +333,6 @@ func _ready() -> void:
 		unlocked_content_ids,
 		current_run_seed,
 		true,
-		int(MetaProgression.call("get_card_offer_bonus")),
 		RunManager.get_run_tower_ids()
 	)):
 		push_error("No se pudo configurar el pool de cartas M11: %s" % _run_card_service.get("last_error"))
@@ -678,7 +676,11 @@ func _debug_skip_to_next_card_offer() -> void:
 		return
 	var offer_wave: WaveData = _get_campaign_round(offer_round)
 	var upgrade_cards: Array[Resource] = _run_card_service.call("create_offer", offer_round)
-	if offer_wave == null or upgrade_cards.size() > _upgrade_card_buttons.size():
+	if (
+		offer_wave == null
+		or upgrade_cards.size() != CardPoolData.FIXED_OFFER_SIZE
+		or _upgrade_card_buttons.size() < CardPoolData.FIXED_OFFER_SIZE
+	):
 		_wave_status.text = "No se pudo crear la oferta de depuración: %s" % String(_run_card_service.get("last_error"))
 		return
 	if _build_controller.is_build_mode():
@@ -1056,7 +1058,8 @@ func _refresh_placement() -> void:
 		can_edit_terrain,
 		_placement_path_graph,
 		_base_coord,
-		_run_seed
+		_run_seed,
+		_placement_preview_board
 	)
 	_refresh_spawn_portal_previews()
 	_confirm_button.disabled = not can_edit_terrain or not placement_is_valid
@@ -1183,7 +1186,9 @@ func _build_placement_preview_graph() -> PathGraph:
 		_board_grid.cells,
 		_selected_piece,
 		_anchor_coord,
-		_rotation_steps
+		_rotation_steps,
+		_next_piece_instance_id,
+		_awaiting_campaign_expansion
 	)
 	var candidate_graph := PathGraph.new()
 	candidate_graph.rebuild(
@@ -1198,7 +1203,9 @@ func _build_candidate_board(
 	board_cells: Dictionary[Vector2i, HexCell],
 	piece: TerrainPieceData,
 	anchor_coord: Vector2i,
-	rotation_steps: int
+	rotation_steps: int,
+	piece_instance_id: int = -1,
+	campaign_expansion: bool = false
 ) -> Dictionary[Vector2i, HexCell]:
 	var candidate_board: Dictionary[Vector2i, HexCell] = {}
 	for coord in board_cells:
@@ -1207,23 +1214,37 @@ func _build_candidate_board(
 		piece,
 		anchor_coord,
 		rotation_steps,
-		-1
+		piece_instance_id
 	)
+	for coord in piece_cells:
+		var placed_cell: HexCell = piece_cells[coord]
+		TERRAIN_VISUAL_CATALOG_SCRIPT.constrain_base_adjacent_cell(
+			placed_cell,
+			_base_coord,
+			_run_seed
+		)
+		if campaign_expansion:
+			TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_visual_variant(placed_cell, _run_seed)
+			TERRAIN_VISUAL_CATALOG_SCRIPT.roll_chest_at_placement(
+				placed_cell,
+				_run_seed,
+				_chest_spawn_chance
+			)
+		else:
+			TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_cell_contents(
+				placed_cell,
+				_run_seed,
+				_chest_spawn_chance,
+				_base_coord
+			)
+	TERRAIN_VISUAL_CATALOG_SCRIPT.limit_hex_cell_obstacles(piece_cells, 2)
 	for coord in piece_cells:
 		candidate_board[coord] = piece_cells[coord]
 	var candidate_grid := HexGrid.new()
 	candidate_grid.cells = candidate_board
 	for hole_coord in candidate_grid.get_enclosed_void_coords():
 		# El tipo de relleno no cambia el grafo porque solo PATH tiene conexiones.
-		var preview_fill := HexCell.new(HexCoord.new(hole_coord.x, hole_coord.y))
-		preview_fill.terrain_type = HexCell.TerrainType.GRASS
-		preview_fill.elevation = TERRAIN_VISUAL_CATALOG_SCRIPT.get_random_elevation(
-			preview_fill.terrain_type,
-			_run_seed,
-			hole_coord
-		)
-		preview_fill.buildable = true
-		preview_fill.visual_variant = &"auto_filled_void_preview"
+		var preview_fill: HexCell = _create_auto_fill_cell(hole_coord)
 		candidate_board[hole_coord] = preview_fill
 	return candidate_board
 
@@ -1401,44 +1422,16 @@ func _confirm_placement() -> void:
 		_awaiting_campaign_expansion
 		and RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION
 	)
-	var cells := TerrainPlacementValidator.instantiate_cells(
-		_selected_piece,
-		_anchor_coord,
-		_rotation_steps,
-		_next_piece_instance_id
-	)
-	for cell_variant in cells.values():
-		var placed_cell: HexCell = cell_variant as HexCell
-		TERRAIN_VISUAL_CATALOG_SCRIPT.constrain_base_adjacent_cell(
-			placed_cell,
-			_base_coord,
-			_run_seed
-		)
-		if confirmed_campaign_expansion:
-			TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_visual_variant(placed_cell, _run_seed)
-			TERRAIN_VISUAL_CATALOG_SCRIPT.roll_chest_at_placement(placed_cell, _run_seed, _chest_spawn_chance)
-		else:
-			TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_cell_contents(
-				placed_cell,
-				_run_seed,
-				_chest_spawn_chance,
-				_base_coord
-			)
-	TERRAIN_VISUAL_CATALOG_SCRIPT.limit_hex_cell_obstacles(cells, 2)
+	if _placement_preview_board.is_empty():
+		_placement_status.text = "No se confirma: falta el snapshot exacto de la vista previa."
+		return
 	var candidate_board: Dictionary[Vector2i, HexCell] = {}
-	for coord in _board_grid.cells:
-		candidate_board[coord] = _board_grid.cells[coord]
-	for coord in cells:
-		candidate_board[coord] = cells[coord]
-	var candidate_grid := HexGrid.new()
-	candidate_grid.cells = candidate_board
+	for coord in _placement_preview_board:
+		candidate_board[coord] = _placement_preview_board[coord]
 	var cells_to_add: Dictionary[Vector2i, HexCell] = {}
-	for coord in cells:
-		cells_to_add[coord] = cells[coord]
-	for hole_coord in candidate_grid.get_enclosed_void_coords():
-		var filled_cell: HexCell = _create_auto_fill_cell(hole_coord)
-		candidate_board[hole_coord] = filled_cell
-		cells_to_add[hole_coord] = filled_cell
+	for coord in candidate_board:
+		if not _board_grid.cells.has(coord):
+			cells_to_add[coord] = candidate_board[coord]
 	var candidate_graph := PathGraph.new()
 	candidate_graph.rebuild(candidate_board, _base_coord, int(STARTING_BOARD.get("minimum_spawn_route_cells")))
 	_apply_removed_spawn_endpoints(candidate_graph)
@@ -1484,12 +1477,15 @@ func _offer_campaign_upgrade_cards_if_scheduled(round_number: int) -> bool:
 	if not bool(_run_card_service.call("should_offer_after", round_number)):
 		return false
 	var upgrade_cards: Array[Resource] = _run_card_service.call("create_offer", round_number)
-	if upgrade_cards.is_empty() or upgrade_cards.size() > _upgrade_card_buttons.size():
+	if (
+		upgrade_cards.size() != CardPoolData.FIXED_OFFER_SIZE
+		or _upgrade_card_buttons.size() < CardPoolData.FIXED_OFFER_SIZE
+	):
 		var offer_error: String = String(_run_card_service.get("last_error"))
 		if offer_error.is_empty():
-			offer_error = "Se recibieron %d cartas; el panel admite entre 1 y %d." % [
+			offer_error = "Se recibieron %d cartas; la oferta requiere exactamente %d." % [
 				upgrade_cards.size(),
-				_upgrade_card_buttons.size(),
+				CardPoolData.FIXED_OFFER_SIZE,
 			]
 		push_error("No se pudo crear oferta M11: %s" % offer_error)
 		_wave_status.text = "No se pudo preparar la oferta de mejoras · %s" % offer_error
@@ -1501,7 +1497,9 @@ func _offer_campaign_upgrade_cards_if_scheduled(round_number: int) -> bool:
 	return true
 
 func _create_auto_fill_cell(coord: Vector2i) -> HexCell:
-	var fill_mountain: bool = _terrain_rng.randi_range(0, 1) == 1
+	var fill_rng := RandomNumberGenerator.new()
+	fill_rng.seed = hash("%d:%d:%d:101" % [_run_seed, coord.x, coord.y])
+	var fill_mountain: bool = fill_rng.randi_range(0, 1) == 1
 	var cell := HexCell.new(HexCoord.new(coord.x, coord.y))
 	cell.terrain_type = HexCell.TerrainType.MOUNTAIN if fill_mountain else HexCell.TerrainType.GRASS
 	cell.elevation = 2 if fill_mountain else 1
@@ -1830,8 +1828,9 @@ func _refresh_build_preview() -> void:
 		error.is_empty(),
 		_build_controller.get_preview_range_pixels(_hovered_coord),
 		_icon_catalog.call("get_tower_icon", StringName(_selected_tower_data.id)) as Texture2D,
-		_selected_tower_data.visual_icon_size,
-		_selected_tower_data.elevation_damage_bonus_per_level
+		_selected_tower_data.visual_icon_size * Tower.TOWER_VISUAL_SCALE,
+		_selected_tower_data.elevation_damage_bonus_per_level,
+		StringName(_selected_tower_data.id)
 	)
 
 func _populate_targeting_modes() -> void:
@@ -2084,32 +2083,32 @@ func _spawn_impact_vfx(effect_id: StringName, world_position: Vector2) -> void:
 	var display_size: float = 72.0
 	match effect_id:
 		&"dust_01":
-			sheet_path = "res://assets/third_party/tiny_swords/particle_fx/Dust_01.png"
+			sheet_path = "res://assets/sprites/third_party/tiny_swords/particle_fx/Dust_01.png"
 			frame_count = 8
 			display_size = 76.0
 		&"explosion_01":
-			sheet_path = "res://assets/third_party/tiny_swords/particle_fx/Explosion_01.png"
+			sheet_path = "res://assets/sprites/third_party/tiny_swords/particle_fx/Explosion_01.png"
 			frame_count = 8
 			frames_per_second = 14.0
 			display_size = 148.0
 		&"tesla_coil":
-			sheet_path = "res://assets/third_party/tiny_swords/particle_fx/TeslaCoil.png"
+			sheet_path = "res://assets/sprites/third_party/tiny_swords/particle_fx/TeslaCoil.png"
 			frame_count = 8
 			display_size = 108.0
 		&"ice_01":
-			sheet_path = "res://assets/third_party/tiny_swords/particle_fx/Ice_01.png"
+			sheet_path = "res://assets/sprites/third_party/tiny_swords/particle_fx/Ice_01.png"
 			frame_count = 10
 			display_size = 82.0
 		&"fire_03":
-			sheet_path = "res://assets/third_party/tiny_swords/particle_fx/Fire_03.png"
+			sheet_path = "res://assets/sprites/third_party/tiny_swords/particle_fx/Fire_03.png"
 			frame_count = 12
 			display_size = 86.0
 		&"poison":
-			sheet_path = "res://assets/third_party/tiny_swords/particle_fx/Poison.png"
+			sheet_path = "res://assets/sprites/third_party/tiny_swords/particle_fx/Poison.png"
 			frame_count = 9
 			display_size = 142.0
 		&"blood":
-			sheet_path = "res://assets/third_party/tiny_swords/particle_fx/Blood.png"
+			sheet_path = "res://assets/sprites/third_party/tiny_swords/particle_fx/Blood.png"
 			frame_count = 10
 			display_size = 80.0
 		_:
@@ -3095,10 +3094,13 @@ func _begin_campaign_terrain_expansion(round_number: int, round_reward: int) -> 
 	_present_terrain_card_offer()
 
 func _present_upgrade_card_offer(round_number: int, cards: Array[Resource]) -> void:
-	if cards.is_empty() or cards.size() > _upgrade_card_buttons.size():
-		push_error("La oferta M11 excede las seis cards visibles o está vacía.")
+	if (
+		cards.size() != CardPoolData.FIXED_OFFER_SIZE
+		or _upgrade_card_buttons.size() < CardPoolData.FIXED_OFFER_SIZE
+	):
+		push_error("La oferta M11 debe contener exactamente tres cards.")
 		return
-	_upgrade_card_panel.set_card_count(cards.size())
+	_upgrade_card_panel.set_card_count(CardPoolData.FIXED_OFFER_SIZE)
 	if _build_controller.is_build_mode():
 		_build_controller.cancel_build_mode()
 	_build_controller.clear_selection()
@@ -3168,7 +3170,7 @@ func _prepare_next_campaign_round() -> void:
 
 func _configure_upgrade_card_panel() -> void:
 	_upgrade_card_heading = _upgrade_card_panel.heading_label
-	_upgrade_card_panel.set_card_count(6)
+	_upgrade_card_panel.set_card_count(CardPoolData.FIXED_OFFER_SIZE)
 	_upgrade_card_buttons.clear()
 	_upgrade_card_titles.clear()
 	_upgrade_card_descriptions.clear()

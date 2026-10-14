@@ -98,10 +98,11 @@ func _run_smoke() -> void:
 	add_child(shop)
 	var progression_map := shop.get_node("MetaShopRoot/MetaShop/Margin/Content/Scroll/ProgressionMap") as MetaProgressionMap
 	assert(progression_map != null and progression_map.get_child_count() >= 3, "The shop must render its connected progression map and configured nodes.")
-	var new_run_requests: Array[int] = [0]
-	shop.new_run_requested.connect(func() -> void: new_run_requests[0] += 1)
-	shop.get_node("MetaShopRoot/MetaShop/Margin/Content/NewRunButton").emit_signal("pressed")
-	assert(new_run_requests[0] == 1, "The terminal shop must preserve its new-run signal.")
+	var close_requests: Array[int] = [0]
+	shop.close_requested.connect(func() -> void: close_requests[0] += 1)
+	shop.present({"outcome": "MENU"})
+	shop.get_node("MetaShopRoot/CloseButton").emit_signal("pressed")
+	assert(close_requests[0] == 1 and not shop.is_open(), "The progression map must close through its top-right button.")
 
 	var tooltip := WAVE_TOOLTIP_SCENE.instantiate() as WaveHoverTooltip
 	add_child(tooltip)

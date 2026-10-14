@@ -128,7 +128,10 @@ func _draw_cliffs(
 		])
 		draw_polygon(
 			cliff_quad,
-			TERRAIN_VISUAL_CATALOG_SCRIPT.get_cliff_face_colors(cell.terrain_type),
+			TERRAIN_VISUAL_CATALOG_SCRIPT.get_cliff_face_colors(
+				cell.terrain_type,
+				direction_index
+			),
 			cliff_uvs,
 			cliff_texture
 		)
@@ -160,24 +163,13 @@ func _draw_region_outline(
 		cell.terrain_type
 	)
 	var stroke_width: float = maxf(1.0, 2.4 * render_scale)
-	var stroke_inset: float = 1.2 * render_scale
-	for direction_variant in edge_indices:
-		var direction_index: int = int(direction_variant)
-		var edge_start: Vector2 = corners[posmod(direction_index + 1, 6)]
-		var edge_end: Vector2 = corners[posmod(direction_index + 2, 6)]
-		var inward_offset: Vector2 = (
-			(center - (edge_start + edge_end) * 0.5).normalized() * stroke_inset
-		)
-		var tangent_offset: Vector2 = (
-			(edge_end - edge_start).normalized() * stroke_width * 0.5
-		)
-		draw_line(
-			edge_start + inward_offset - tangent_offset,
-			edge_end + inward_offset + tangent_offset,
-			outline_color,
-			stroke_width,
-			true
-		)
+	TERRAIN_REGION_OUTLINE_SCRIPT.draw_contour(
+		self,
+		corners,
+		edge_indices,
+		outline_color,
+		stroke_width
+	)
 
 func _draw_obstacles(
 	cells: Array[TerrainPieceCellData],
@@ -208,8 +200,8 @@ func _draw_obstacles(
 func _prop_offsets(prop_count: int, render_scale: float) -> Array[Vector2]:
 	var offsets: Array[Vector2] = []
 	if prop_count >= 2:
-		offsets.append(Vector2(-16.0, 5.0) * render_scale)
-		offsets.append(Vector2(16.0, 5.0) * render_scale)
+		offsets.append(Vector2(-22.0, 5.0) * render_scale)
+		offsets.append(Vector2(22.0, 5.0) * render_scale)
 	elif prop_count == 1:
 		offsets.append(Vector2(0.0, 5.0) * render_scale)
 	return offsets

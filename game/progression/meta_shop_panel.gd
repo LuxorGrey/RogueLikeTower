@@ -1,20 +1,23 @@
 class_name MetaShopPanel
 extends CanvasLayer
 
-signal new_run_requested
+signal close_requested
 
 var _tower_profiles: Array[TowerData] = []
 var _permanent_upgrades: Array[PermanentUpgradeData] = []
 var _run_summary: Dictionary = {}
 var _is_open: bool = false
-var _debug_access_active: bool = false
+var _pan_button: int = MOUSE_BUTTON_NONE
+var _pan_origin: Vector2 = Vector2.ZERO
+var _pan_last_position: Vector2 = Vector2.ZERO
+var _pan_dragging: bool = false
 
 @onready var _currency_label: Label = %CurrencyLabel
 @onready var _summary_label: Label = %SummaryLabel
 @onready var _outcome_label: Label = %OutcomeLabel
-@onready var _debug_close_button: Button = %DebugCloseButton
-@onready var _status_label: Label = %StatusLabel
+@onready var _close_button: Button = %CloseButton
 @onready var _progression_map: MetaProgressionMap = %ProgressionMap
+@onready var _scroll: ScrollContainer = %Scroll
 
 func configure(tower_profiles: Array[TowerData], permanent_upgrades: Array[PermanentUpgradeData]) -> void:
 	_tower_profiles = tower_profiles.duplicate()
@@ -24,9 +27,7 @@ func _ready() -> void:
 	layer = 10
 	_progression_map.configure(_tower_profiles, _permanent_upgrades)
 	_progression_map.node_selected.connect(_on_progression_node_selected)
-	%NewRunButton.pressed.connect(_on_new_run_pressed)
-	_debug_close_button.pressed.connect(_close_debug_access)
-	_debug_close_button.hide()
+	_close_button.pressed.connect(_close_map)
 	MetaProgression.progress_changed.connect(_refresh)
 	hide()
 
@@ -36,27 +37,23 @@ func is_open() -> bool:
 func present(run_summary: Dictionary) -> void:
 	_run_summary = run_summary.duplicate(true)
 	_is_open = true
-	_debug_access_active = false
-	_debug_close_button.hide()
-	_status_label.text = ""
+	_close_button.tooltip_text = "Volver al menú principal"
 	visible = true
 	_refresh()
 
 func present_for_debug() -> void:
 	_run_summary = {"outcome": "DEBUG", "reached_round": 1, "completed_rounds": 0, "meta_reward": 0, "run_seed": 0}
 	_is_open = true
-	_debug_access_active = true
-	_debug_close_button.show()
-	_status_label.text = ""
+	_close_button.tooltip_text = "Volver al tablero"
 	visible = true
 	_refresh()
 
-func _close_debug_access() -> void:
-	if not _debug_access_active:
-		return
-	_debug_access_active = false
+func _close_map() -> void:
 	_is_open = false
+	_pan_button = MOUSE_BUTTON_NONE
+	_pan_dragging = false
 	hide()
+	close_requested.emit()
 
 func _refresh() -> void:
 	if _currency_label == null or _progression_map == null:
@@ -66,39 +63,35 @@ func _refresh() -> void:
 		"DEBUG":
 			_outcome_label.text = "MAPA DE MEJORAS · DEPURACIÓN"
 			_outcome_label.add_theme_color_override("font_color", Color("#f1cf78"))
-			_summary_label.text = "Las compras permanentes se aplican desde la siguiente run."
+			_summary_label.hide()
 		"VICTORY":
 			_outcome_label.text = "RUN COMPLETADA"
 			_outcome_label.add_theme_color_override("font_color", Color("#8fca8c"))
 			_summary_label.text = _format_run_summary("Victoria")
+			_summary_label.show()
 		"DEFEAT":
 			_outcome_label.text = "DERROTA · VUELVE A INTENTARLO"
 			_outcome_label.add_theme_color_override("font_color", Color("#e58a72"))
 			_summary_label.text = _format_run_summary("Derrota")
+			_summary_label.show()
 		"ABANDONED":
 			_outcome_label.text = "RUN FINALIZADA"
 			_outcome_label.add_theme_color_override("font_color", Color("#e0b85e"))
 			_summary_label.text = _format_run_summary("Run finalizada")
+			_summary_label.show()
 		_:
 			_outcome_label.text = "MAPA DE MEJORAS"
 			_outcome_label.add_theme_color_override("font_color", Color("#f1cf78"))
-			_summary_label.text = "Desbloquea una card para abrir la siguiente parte del árbol. Las compras se aplican en la próxima run."
-	if outcome == "DEBUG":
-		_summary_label.tooltip_text = "Acceso de depuración al mapa de mejoras permanentes."
-	else:
-		_summary_label.tooltip_text = "La tienda se mantiene como progreso permanente entre runs."
+			_summary_label.hide()
 	_currency_label.text = "XP DE PERFIL   %d" % int(MetaProgression.call("get_meta_currency"))
 	_progression_map.refresh()
 	var can_save: bool = bool(MetaProgression.call("can_persist_progress"))
 	if not can_save:
-		_status_label.text = String(MetaProgression.call("get_save_error"))
-		_status_label.add_theme_color_override("font_color", Color("#e58a72"))
-	elif not bool(_run_summary.get("saved", true)) and not _status_label.text.begins_with("Desbloqueada") and not _status_label.text.begins_with("Mejora comprada") and not _status_label.text.begins_with("Error:"):
-		_status_label.text = "La recompensa de esta run no se guardó: %s" % String(MetaProgression.call("get_save_error"))
-		_status_label.add_theme_color_override("font_color", Color("#e58a72"))
-	elif not _status_label.text.begins_with("Desbloqueada") and not _status_label.text.begins_with("Mejora comprada") and not _status_label.text.begins_with("Error:"):
-		_status_label.text = "Haz clic en una card disponible. Los nodos bloqueados muestran sus requisitos al pasar el cursor."
-		_status_label.add_theme_color_override("font_color", Color("#aebbc0"))
+		_currency_label.tooltip_text = String(MetaProgression.call("get_save_error"))
+	elif not bool(_run_summary.get("saved", true)):
+		_currency_label.tooltip_text = "La recompensa de esta run no se guardó: %s" % String(MetaProgression.call("get_save_error"))
+	else:
+		_currency_label.tooltip_text = "XP permanente disponible para las mejoras."
 
 func _format_run_summary(outcome_label: String) -> String:
 	var reached_round: int = int(_run_summary.get("reached_round", 1))
@@ -131,14 +124,45 @@ func _on_progression_node_selected(node_kind: StringName, node_id: StringName, l
 	var purchased: bool = false
 	if node_kind == &"tower":
 		purchased = bool(MetaProgression.call("purchase_tower", node_id))
-		_status_label.text = "Desbloqueada: la torre podrá aparecer como card en las próximas runs." if purchased else "Error: %s" % String(MetaProgression.call("get_save_error"))
 	else:
 		purchased = bool(MetaProgression.call("purchase_upgrade", node_id))
-		_status_label.text = "Mejora comprada: se aplicará desde la siguiente run." if purchased else "Error: %s" % String(MetaProgression.call("get_save_error"))
-	_status_label.add_theme_color_override("font_color", Color("#8fca8c") if purchased else Color("#e58a72"))
 	if purchased:
 		_progression_map.play_unlock_burst(local_position)
+	else:
+		push_warning("No se pudo comprar '%s': %s" % [node_id, String(MetaProgression.call("get_save_error"))])
 	_refresh()
 
-func _on_new_run_pressed() -> void:
-	new_run_requested.emit()
+func _input(event: InputEvent) -> void:
+	if not _is_open or not _scroll.visible:
+		return
+	if event is InputEventMouseButton:
+		var button_event := event as InputEventMouseButton
+		if button_event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_MIDDLE]:
+			if button_event.pressed and _scroll.get_global_rect().has_point(button_event.position):
+				if button_event.button_index == MOUSE_BUTTON_LEFT and _is_pointer_over_upgrade_node(button_event.position):
+					return
+				_pan_button = button_event.button_index
+				_pan_origin = button_event.position
+				_pan_last_position = button_event.position
+				_pan_dragging = false
+			elif not button_event.pressed and button_event.button_index == _pan_button:
+				if _pan_dragging:
+					get_viewport().set_input_as_handled()
+				_pan_button = MOUSE_BUTTON_NONE
+				_pan_dragging = false
+	elif event is InputEventMouseMotion and _pan_button != MOUSE_BUTTON_NONE:
+		var motion := event as InputEventMouseMotion
+		if not _pan_dragging and motion.position.distance_to(_pan_origin) >= 8.0:
+			_pan_dragging = true
+		if _pan_dragging:
+			var delta: Vector2 = motion.position - _pan_last_position
+			_scroll.scroll_horizontal = maxi(_scroll.scroll_horizontal - roundi(delta.x), 0)
+			_scroll.scroll_vertical = maxi(_scroll.scroll_vertical - roundi(delta.y), 0)
+			get_viewport().set_input_as_handled()
+		_pan_last_position = motion.position
+
+func _is_pointer_over_upgrade_node(pointer_position: Vector2) -> bool:
+	for child in _progression_map.get_children():
+		if child is MetaUpgradeNode and child.get_global_rect().has_point(pointer_position):
+			return true
+	return false

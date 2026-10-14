@@ -1,6 +1,6 @@
 # Manifiesto de sustitución de assets
 
-> **Histórico:** describe la instalación del 2026-10-13. Los obstáculos de esa lista fueron sustituidos en M39 y no corresponden al pool activo. Para nombres, dimensiones y rutas vigentes consulta [assets/terrain/README.md](../assets/terrain/README.md).
+> **Histórico:** describe la instalación del 2026-10-13. Los obstáculos de esa lista fueron sustituidos en M39 y no corresponden al pool activo. Para nombres, dimensiones y rutas vigentes consulta [assets/sprites/terrain/README.md](../assets/sprites/terrain/README.md).
 
 **Estado:** los 23 PNG de este lote ya sustituyeron sus equivalentes runtime. Los 23 originales están respaldados y la validación compara cada destino con su arte asignado y con el canal alfa original. El proyecto no recibió cambios de lógica, escenas ni Resources.
 

@@ -27,5 +27,5 @@ mono_crash.*.json
 # *.pck
 
 # Tiny Swords Free Pack is usable in projects but its creator prohibits repackaging the raw assets.
-/assets/third_party/tiny_swords/**
-!/assets/third_party/tiny_swords/README.md
+/assets/sprites/third_party/tiny_swords/**
+!/assets/sprites/third_party/tiny_swords/README.md

@@ -20,9 +20,6 @@ const HEX_OUTLINE: Color = Color(0.82, 0.87, 0.84)
 const PATH_COLOR: Color = Color(0.35, 0.40, 0.43)
 const GRASS_COLOR: Color = Color(0.28, 0.57, 0.34)
 const MOUNTAIN_COLOR: Color = Color(0.63, 0.58, 0.48)
-const PATH_HOVER_COLOR: Color = Color(0.51, 0.75, 0.90)
-const GRASS_HOVER_COLOR: Color = Color(0.50, 0.88, 0.52)
-const MOUNTAIN_HOVER_COLOR: Color = Color(0.96, 0.76, 0.36)
 const CLIFF_TEXTURE_PIXEL_DENSITY: float = 20.0
 const ROUTE_DEBUG_COLORS: Array[Color] = [
 	Color(0.25, 0.78, 1.0, 0.92),
@@ -35,6 +32,7 @@ var _piece_data: TerrainPieceData
 var _rotation_steps: int = 0
 var _display_cells: Array[TerrainPieceCellData] = []
 var _board_cells: Dictionary[Vector2i, HexCell] = {}
+var _placement_candidate_cells: Dictionary[Vector2i, HexCell] = {}
 var _decoration_parent: Node2D
 var _decorations_by_coord: Dictionary[Vector2i, Node2D] = {}
 var _terrain_surface_occluders_by_coord: Dictionary[Vector2i, Node2D] = {}
@@ -138,7 +136,8 @@ func set_tower_build_preview(
 	range_pixels: float = 0.0,
 	icon_texture: Texture2D = null,
 	icon_size: float = 54.0,
-	elevation_damage_bonus_per_level: float = 1.0
+	elevation_damage_bonus_per_level: float = 1.0,
+	tower_id: StringName = &""
 ) -> void:
 	if _tower_build_ghost != null:
 		_tower_build_ghost.call(
@@ -150,7 +149,8 @@ func set_tower_build_preview(
 			icon_texture,
 			icon_size,
 			_board_cells,
-			elevation_damage_bonus_per_level
+			elevation_damage_bonus_per_level,
+			tower_id
 		)
 
 func set_placement_preview(
@@ -161,7 +161,8 @@ func set_placement_preview(
 	active: bool = true,
 	placement_path_graph: PathGraph = null,
 	base_coord: Vector2i = NO_BASE_COORD,
-	run_seed: int = 0
+	run_seed: int = 0,
+	candidate_cells: Dictionary[Vector2i, HexCell] = {}
 ) -> void:
 	_board_mode = true
 	_piece_data = piece_data
@@ -172,6 +173,7 @@ func set_placement_preview(
 	_placement_path_graph = placement_path_graph
 	_base_coord = base_coord
 	_run_seed = run_seed
+	_placement_candidate_cells = candidate_cells
 	_sync_path_flow_overlay()
 	_sync_spawn_portals()
 	_rebuild_display_cells()
@@ -301,7 +303,10 @@ func _build_cliff_geometry(
 			cell_faces.append({
 				"points": cliff_quad,
 				"uvs": cliff_uvs,
-				"colors": TERRAIN_VISUAL_CATALOG_SCRIPT.get_cliff_face_colors(cell.terrain_type),
+				"colors": TERRAIN_VISUAL_CATALOG_SCRIPT.get_cliff_face_colors(
+					cell.terrain_type,
+					direction_index
+				),
 				"texture": cliff_texture,
 			})
 		if not cell_faces.is_empty():
@@ -330,11 +335,14 @@ func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 	var fill_color := _terrain_color(cell.terrain_type)
 	var outline_color := HEX_OUTLINE
 	var outline_width: float = 2.0 if grid_opacity > 0.0 else 0.0
-	var placement_tint: Color = Color(0.20, 0.92, 0.37) if _placement_is_valid else Color(0.96, 0.20, 0.16)
+	var region_color: Color = TERRAIN_VISUAL_CATALOG_SCRIPT.get_region_outline_color(
+		cell.terrain_type
+	)
+	var placement_tint: Color = region_color if _placement_is_valid else Color("#B85C55")
 	if is_ghost:
 		fill_color = fill_color.lerp(placement_tint, 0.48)
 		fill_color.a = 0.78
-		outline_color = placement_tint.lightened(0.12)
+		outline_color = region_color.lightened(0.08) if _placement_is_valid else placement_tint
 		outline_width = 2.5
 		grid_opacity = 1.0
 	if is_hovered:
@@ -342,7 +350,10 @@ func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 		if is_ghost:
 			fill_color = fill_color.lerp(placement_tint, 0.3)
 			fill_color.a = 0.88
-		outline_color = placement_tint.lightened(0.10) if is_ghost else fill_color.lightened(0.18)
+		if is_ghost:
+			outline_color = region_color.lightened(0.12) if _placement_is_valid else placement_tint
+		else:
+			outline_color = fill_color.lightened(0.18)
 		outline_width = 4.5 if is_ghost else 3.5
 	draw_colored_polygon(corners, fill_color)
 	var tile_tint: Color = TERRAIN_VISUAL_CATALOG_SCRIPT.get_elevation_tint(cell.elevation)
@@ -373,7 +384,7 @@ func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 	if not is_ghost:
 		outline_color.a *= grid_opacity if combo_strength < 3 else 1.0
 	if outline_width > 0.0 and (not _board_mode or is_ghost):
-		draw_polyline(closed_corners, outline_color, outline_width, true)
+		_draw_smooth_polyline(closed_corners, outline_color, outline_width)
 	if not _board_mode or is_ghost:
 		_draw_path_edges(cell, center, corners, is_ghost)
 
@@ -384,27 +395,24 @@ func _draw_region_outline(
 	if edge_indices.is_empty():
 		return
 	var corners: PackedVector2Array = _cell_corners(cell.local_coord, cell.elevation)
-	var center: Vector2 = _top_center(cell.local_coord, cell.elevation)
 	var outline_color: Color = TERRAIN_VISUAL_CATALOG_SCRIPT.get_region_outline_color(
 		cell.terrain_type
 	)
 	var stroke_width: float = 3.0
-	var stroke_inset: float = 1.4
-	for direction_variant in edge_indices:
-		var direction_index: int = int(direction_variant)
-		var edge_start: Vector2 = corners[posmod(direction_index + 1, 6)]
-		var edge_end: Vector2 = corners[posmod(direction_index + 2, 6)]
-		var inward_offset: Vector2 = (
-			(center - (edge_start + edge_end) * 0.5).normalized() * stroke_inset
-		)
-		var tangent_offset: Vector2 = (edge_end - edge_start).normalized() * stroke_width * 0.5
-		draw_line(
-			edge_start + inward_offset - tangent_offset,
-			edge_end + inward_offset + tangent_offset,
-			outline_color,
-			stroke_width,
-			true
-		)
+	TERRAIN_REGION_OUTLINE_SCRIPT.draw_contour(
+		self,
+		corners,
+		edge_indices,
+		outline_color,
+		stroke_width
+	)
+
+func _draw_smooth_polyline(points: PackedVector2Array, color: Color, width: float) -> void:
+	if points.size() < 2:
+		return
+	draw_polyline(points, color, width, true)
+	for point_index in range(points.size() - 1):
+		draw_circle(points[point_index], width * 0.5, color)
 
 func _draw_ghost_cell_content(cell: TerrainPieceCellData) -> void:
 	var center: Vector2 = _top_center(cell.local_coord, cell.elevation)
@@ -431,8 +439,8 @@ func _draw_ghost_cell_content(cell: TerrainPieceCellData) -> void:
 func _prop_offsets(prop_count: int) -> Array[Vector2]:
 	var offsets: Array[Vector2] = []
 	if prop_count >= 2:
-		offsets.append(Vector2(-16.0, 5.0))
-		offsets.append(Vector2(16.0, 5.0))
+		offsets.append(Vector2(-22.0, 5.0))
+		offsets.append(Vector2(22.0, 5.0))
 	elif prop_count == 1:
 		offsets.append(Vector2(0.0, 5.0))
 	return offsets
@@ -655,6 +663,9 @@ func _sync_spawn_portals() -> void:
 			continue
 		var removed_portal: Node2D = _spawn_portals_by_key[key]
 		if is_instance_valid(removed_portal):
+			var portal_to_remove := removed_portal as SpawnPortal
+			if portal_to_remove != null:
+				portal_to_remove.clear_hover()
 			removed_portal.queue_free()
 		_spawn_portals_by_key.erase(key)
 
@@ -778,20 +789,47 @@ func _rebuild_display_cells() -> void:
 		cell.decorative_prop_ids = source.decorative_prop_ids.duplicate()
 		_board_display_cells.append(cell)
 	if _placement_active and _piece_data != null:
-		for local_cell in _display_cells:
-			var ghost_cell := local_cell.duplicate(true) as TerrainPieceCellData
-			if ghost_cell == null:
+		for candidate_coord in _placement_candidate_cells:
+			if _board_cells.has(candidate_coord):
 				continue
-			ghost_cell.obstacle_type = local_cell.obstacle_type
-			ghost_cell.chest_available = local_cell.chest_available
-			ghost_cell.decorative_prop_ids = local_cell.decorative_prop_ids.duplicate()
-			ghost_cell.local_coord = _placement_anchor + local_cell.local_coord
-			_apply_base_ring_elevation(ghost_cell)
-			_ghost_coords[ghost_cell.local_coord] = true
+			var source: HexCell = _placement_candidate_cells[candidate_coord] as HexCell
+			if source == null:
+				continue
+			var ghost_cell: TerrainPieceCellData = _preview_cell_from_hex_cell(
+				source,
+				candidate_coord
+			)
+			_ghost_coords[candidate_coord] = true
 			_board_display_cells.append(ghost_cell)
+		# Fallback para vistas antiguas que todavía no pasan el snapshot candidato.
+		if _placement_candidate_cells.is_empty():
+			for local_cell in _display_cells:
+				var ghost_cell := local_cell.duplicate(true) as TerrainPieceCellData
+				if ghost_cell == null:
+					continue
+				ghost_cell.local_coord = _placement_anchor + local_cell.local_coord
+				_apply_base_ring_elevation(ghost_cell)
+				_ghost_coords[ghost_cell.local_coord] = true
+				_board_display_cells.append(ghost_cell)
 	_board_display_cells.sort_custom(Callable(self, "_sort_cells_back_to_front"))
 	_rebuild_combo_highlights()
 	_sync_terrain_hover_overlay()
+
+func _preview_cell_from_hex_cell(
+	source: HexCell,
+	coord: Vector2i
+) -> TerrainPieceCellData:
+	var preview_cell := TerrainPieceCellData.new()
+	preview_cell.local_coord = coord
+	preview_cell.terrain_type = source.terrain_type
+	preview_cell.elevation = source.elevation
+	preview_cell.path_edges = source.path_edges
+	preview_cell.flexible_path_edges = source.flexible_path_edges
+	preview_cell.visual_variant = source.visual_variant
+	preview_cell.obstacle_type = source.obstacle_type
+	preview_cell.chest_available = source.chest_available
+	preview_cell.decorative_prop_ids = source.decorative_prop_ids.duplicate()
+	return preview_cell
 
 func _rebuild_combo_highlights() -> void:
 	_combo_strength_by_coord.clear()
@@ -854,8 +892,12 @@ func _draw_path_edges(
 	var edge_color := Color(0.86, 0.91, 0.93, 0.9)
 	var flexible_edge_color := Color(0.86, 0.91, 0.93, 0.55)
 	if is_ghost:
-		var placement_tint: Color = Color(0.20, 0.92, 0.37) if _placement_is_valid else Color(0.96, 0.20, 0.16)
-		edge_color = placement_tint.lightened(0.28)
+		var placement_tint: Color = (
+			TERRAIN_VISUAL_CATALOG_SCRIPT.get_region_outline_color(cell.terrain_type)
+			if _placement_is_valid
+			else Color("#B85C55")
+		)
+		edge_color = placement_tint.lightened(0.15)
 		flexible_edge_color = edge_color.darkened(0.08)
 	else:
 		edge_color.a *= edge_opacity
@@ -909,15 +951,7 @@ func _terrain_color(terrain_type: int) -> Color:
 			return Color.MAGENTA
 
 func _terrain_hover_color(terrain_type: int) -> Color:
-	match terrain_type:
-		HexCell.TerrainType.PATH:
-			return PATH_HOVER_COLOR
-		HexCell.TerrainType.GRASS:
-			return GRASS_HOVER_COLOR
-		HexCell.TerrainType.MOUNTAIN:
-			return MOUNTAIN_HOVER_COLOR
-		_:
-			return Color.WHITE
+	return TERRAIN_VISUAL_CATALOG_SCRIPT.get_region_outline_color(terrain_type)
 
 func _combo_color(terrain_type: int) -> Color:
 	match terrain_type:

@@ -2,36 +2,36 @@ class_name TerrainVisualCatalog
 extends RefCounted
 
 const PATH_VARIANTS: Array[Texture2D] = [
-	preload("res://assets/terrain/tiles/path_01.png"),
-	preload("res://assets/terrain/tiles/path_02.png"),
-	preload("res://assets/terrain/tiles/path_03.png"),
+	preload("res://assets/sprites/terrain/tiles/path_01.png"),
+	preload("res://assets/sprites/terrain/tiles/path_02.png"),
+	preload("res://assets/sprites/terrain/tiles/path_03.png"),
 ]
 const GRASS_VARIANTS: Array[Texture2D] = [
-	preload("res://assets/terrain/tiles/grass_01.png"),
-	preload("res://assets/terrain/tiles/grass_02.png"),
-	preload("res://assets/terrain/tiles/grass_03.png"),
+	preload("res://assets/sprites/terrain/tiles/grass_01.png"),
+	preload("res://assets/sprites/terrain/tiles/grass_02.png"),
+	preload("res://assets/sprites/terrain/tiles/grass_03.png"),
 ]
 const MOUNTAIN_VARIANTS: Array[Texture2D] = [
-	preload("res://assets/terrain/tiles/mountain_01.png"),
-	preload("res://assets/terrain/tiles/mountain_02.png"),
-	preload("res://assets/terrain/tiles/mountain_03.png"),
+	preload("res://assets/sprites/terrain/tiles/mountain_01.png"),
+	preload("res://assets/sprites/terrain/tiles/mountain_02.png"),
+	preload("res://assets/sprites/terrain/tiles/mountain_03.png"),
 ]
-const GRASS_CLIFF_TEXTURE: Texture2D = preload("res://assets/terrain/tiles/grass_cliff_face.png")
-const MOUNTAIN_CLIFF_TEXTURE: Texture2D = preload("res://assets/terrain/tiles/mountain_cliff_face.png")
+const GRASS_CLIFF_TEXTURE: Texture2D = preload("res://assets/sprites/terrain/tiles/grass_cliff_face.png")
+const MOUNTAIN_CLIFF_TEXTURE: Texture2D = preload("res://assets/sprites/terrain/tiles/mountain_cliff_face.png")
 const GRASS_CLIFF_BOTTOM_TINT: Color = Color("#263b2b")
 const MOUNTAIN_CLIFF_BOTTOM_TINT: Color = Color("#24242a")
 const PATH_REGION_OUTLINE_COLOR: Color = Color("#FFD052")
-const GRASS_REGION_OUTLINE_COLOR: Color = Color("#A8E526")
-const MOUNTAIN_REGION_OUTLINE_COLOR: Color = Color("#B6BBC7")
+const GRASS_REGION_OUTLINE_COLOR: Color = Color("#53B56F")
+const MOUNTAIN_REGION_OUTLINE_COLOR: Color = Color("#8A8B91")
 const OBSTACLE_TEXTURES: Array[Texture2D] = [
-	preload("res://assets/terrain/obstacles/obstacle_bramble_bush.png"),
-	preload("res://assets/terrain/obstacles/obstacle_fallen_log.png"),
-	preload("res://assets/terrain/obstacles/obstacle_branch_pile.png"),
-	preload("res://assets/terrain/obstacles/obstacle_tree_stump.png"),
-	preload("res://assets/terrain/obstacles/obstacle_rock_and_wood.png"),
-	preload("res://assets/terrain/obstacles/obstacle_supply_crate.png"),
-	preload("res://assets/terrain/obstacles/obstacle_exposed_roots.png"),
-	preload("res://assets/terrain/obstacles/obstacle_mossy_rock_cluster.png"),
+	preload("res://assets/sprites/terrain/obstacles/obstacle_bramble_bush.png"),
+	preload("res://assets/sprites/terrain/obstacles/obstacle_fallen_log.png"),
+	preload("res://assets/sprites/terrain/obstacles/obstacle_branch_pile.png"),
+	preload("res://assets/sprites/terrain/obstacles/obstacle_tree_stump.png"),
+	preload("res://assets/sprites/terrain/obstacles/obstacle_rock_and_wood.png"),
+	preload("res://assets/sprites/terrain/obstacles/obstacle_supply_crate.png"),
+	preload("res://assets/sprites/terrain/obstacles/obstacle_exposed_roots.png"),
+	preload("res://assets/sprites/terrain/obstacles/obstacle_mossy_rock_cluster.png"),
 ]
 const GRASS_PROP_IDS: Array[StringName] = [
 	&"prop_grass_tuft_small", &"prop_grass_tuft_wide", &"prop_grass_sprout",
@@ -47,34 +47,34 @@ const PATH_PROP_IDS: Array[StringName] = [
 	&"prop_path_stone_scatter", &"prop_path_sand_pile",
 ]
 const PROP_TEXTURES: Dictionary[StringName, Texture2D] = {
-	&"prop_grass_tuft_small": preload("res://assets/terrain/random_props/grass/prop_grass_tuft_small.png"),
-	&"prop_grass_tuft_wide": preload("res://assets/terrain/random_props/grass/prop_grass_tuft_wide.png"),
-	&"prop_grass_sprout": preload("res://assets/terrain/random_props/grass/prop_grass_sprout.png"),
-	&"prop_grass_stone_cluster": preload("res://assets/terrain/random_props/grass/prop_grass_stone_cluster.png"),
-	&"prop_grass_rock": preload("res://assets/terrain/random_props/grass/prop_grass_rock.png"),
-	&"prop_grass_mushroom_red": preload("res://assets/terrain/random_props/grass/prop_grass_mushroom_red.png"),
-	&"prop_grass_mushroom_amber": preload("res://assets/terrain/random_props/grass/prop_grass_mushroom_amber.png"),
-	&"prop_grass_flower_yellow": preload("res://assets/terrain/random_props/grass/prop_grass_flower_yellow.png"),
-	&"prop_mountain_rock_cluster": preload("res://assets/terrain/random_props/mountain/prop_mountain_rock_cluster.png"),
-	&"prop_mountain_mossy_rock": preload("res://assets/terrain/random_props/mountain/prop_mountain_mossy_rock.png"),
-	&"prop_mountain_tuft_grass": preload("res://assets/terrain/random_props/mountain/prop_mountain_tuft_grass.png"),
-	&"prop_mountain_stone_scatter": preload("res://assets/terrain/random_props/mountain/prop_mountain_stone_scatter.png"),
-	&"prop_mountain_rock_small": preload("res://assets/terrain/random_props/mountain/prop_mountain_rock_small.png"),
-	&"prop_path_gold_pebbles": preload("res://assets/terrain/random_props/path/prop_path_gold_pebbles.png"),
-	&"prop_path_amber_stones": preload("res://assets/terrain/random_props/path/prop_path_amber_stones.png"),
-	&"prop_path_dry_grass": preload("res://assets/terrain/random_props/path/prop_path_dry_grass.png"),
-	&"prop_path_stone_scatter": preload("res://assets/terrain/random_props/path/prop_path_stone_scatter.png"),
-	&"prop_path_sand_pile": preload("res://assets/terrain/random_props/path/prop_path_sand_pile.png"),
+	&"prop_grass_tuft_small": preload("res://assets/sprites/terrain/random_props/grass/prop_grass_tuft_small.png"),
+	&"prop_grass_tuft_wide": preload("res://assets/sprites/terrain/random_props/grass/prop_grass_tuft_wide.png"),
+	&"prop_grass_sprout": preload("res://assets/sprites/terrain/random_props/grass/prop_grass_sprout.png"),
+	&"prop_grass_stone_cluster": preload("res://assets/sprites/terrain/random_props/grass/prop_grass_stone_cluster.png"),
+	&"prop_grass_rock": preload("res://assets/sprites/terrain/random_props/grass/prop_grass_rock.png"),
+	&"prop_grass_mushroom_red": preload("res://assets/sprites/terrain/random_props/grass/prop_grass_mushroom_red.png"),
+	&"prop_grass_mushroom_amber": preload("res://assets/sprites/terrain/random_props/grass/prop_grass_mushroom_amber.png"),
+	&"prop_grass_flower_yellow": preload("res://assets/sprites/terrain/random_props/grass/prop_grass_flower_yellow.png"),
+	&"prop_mountain_rock_cluster": preload("res://assets/sprites/terrain/random_props/mountain/prop_mountain_rock_cluster.png"),
+	&"prop_mountain_mossy_rock": preload("res://assets/sprites/terrain/random_props/mountain/prop_mountain_mossy_rock.png"),
+	&"prop_mountain_tuft_grass": preload("res://assets/sprites/terrain/random_props/mountain/prop_mountain_tuft_grass.png"),
+	&"prop_mountain_stone_scatter": preload("res://assets/sprites/terrain/random_props/mountain/prop_mountain_stone_scatter.png"),
+	&"prop_mountain_rock_small": preload("res://assets/sprites/terrain/random_props/mountain/prop_mountain_rock_small.png"),
+	&"prop_path_gold_pebbles": preload("res://assets/sprites/terrain/random_props/path/prop_path_gold_pebbles.png"),
+	&"prop_path_amber_stones": preload("res://assets/sprites/terrain/random_props/path/prop_path_amber_stones.png"),
+	&"prop_path_dry_grass": preload("res://assets/sprites/terrain/random_props/path/prop_path_dry_grass.png"),
+	&"prop_path_stone_scatter": preload("res://assets/sprites/terrain/random_props/path/prop_path_stone_scatter.png"),
+	&"prop_path_sand_pile": preload("res://assets/sprites/terrain/random_props/path/prop_path_sand_pile.png"),
 }
-const TREASURE_CHEST: Texture2D = preload("res://assets/terrain/treasure_chest.png")
+const TREASURE_CHEST: Texture2D = preload("res://assets/sprites/terrain/treasure_chest.png")
 const TERRAIN_VARIANT_COUNT: int = 3
 const OBSTACLE_COUNT: int = 8
 const OBSTACLE_DISPLAY_NAMES: Array[String] = [
 	"Matorral", "Tronco caído", "Montón de ramas", "Tocón",
 	"Rocas y madera", "Caja de suministros", "Raíces expuestas", "Roca musgosa",
 ]
-const OBSTACLE_DISPLAY_SIZE: Vector2 = Vector2(86.0, 86.0)
-const PROP_DISPLAY_SIZE: Vector2 = Vector2(36.0, 36.0)
+const OBSTACLE_DISPLAY_SIZE: Vector2 = Vector2(94.6, 94.6)
+const PROP_DISPLAY_SIZE: Vector2 = Vector2(39.6, 39.6)
 const PROP_CHANCE_PER_ASSET: float = 0.10
 const MAX_PROPS_PER_CELL: int = 2
 const GRASS_OBSTACLE_CHANCE: float = 0.25
@@ -126,9 +126,23 @@ static func get_cliff_bottom_tint(terrain_type: int) -> Color:
 		return GRASS_CLIFF_BOTTOM_TINT
 	return MOUNTAIN_CLIFF_BOTTOM_TINT
 
-static func get_cliff_face_colors(terrain_type: int) -> PackedColorArray:
+static func get_cliff_face_colors(
+	terrain_type: int,
+	direction_index: int = 1
+) -> PackedColorArray:
 	var bottom_tint: Color = get_cliff_bottom_tint(terrain_type)
-	return PackedColorArray([Color.WHITE, Color.WHITE, bottom_tint, bottom_tint])
+	# Las dos fachadas frontales mantienen el PNG, con sombreado lateral distinto.
+	# Se conserva el gradiente inferior oscuro sin aclarar la textura completa.
+	var side_tint: Color = Color("#666a70")
+	if posmod(direction_index, 6) == 2:
+		side_tint = Color("#7a7e84")
+	var lower_tint: Color = Color(
+		bottom_tint.r * side_tint.r,
+		bottom_tint.g * side_tint.g,
+		bottom_tint.b * side_tint.b,
+		1.0
+	)
+	return PackedColorArray([side_tint, side_tint, lower_tint, lower_tint])
 
 static func get_obstacle_display_name(obstacle_type: int) -> String:
 	if obstacle_type < 0 or obstacle_type >= OBSTACLE_DISPLAY_NAMES.size():

@@ -1,6 +1,6 @@
 # Reestilización de arte para Rogue Tower
 
-> **Histórico:** este paquete registra la integración de arte del 2026-10-13. El pool de obstáculos y los props activos cambiaron en M39. La autoridad de contenido/rutas/dimensiones vigente está en [assets/terrain/README.md](../assets/terrain/README.md); los archivos de esta carpeta son fuentes, respaldos y materiales de proceso.
+> **Histórico:** este paquete registra la integración de arte del 2026-10-13. El pool de obstáculos y los props activos cambiaron en M39. La autoridad de contenido/rutas/dimensiones vigente está en [assets/sprites/terrain/README.md](../assets/sprites/terrain/README.md); los archivos de esta carpeta son fuentes, respaldos y materiales de proceso.
 
 Este paquete documenta la dirección artística y la sustitución de los 23 PNG solicitados por sus equivalentes nuevos en las rutas runtime existentes.
 

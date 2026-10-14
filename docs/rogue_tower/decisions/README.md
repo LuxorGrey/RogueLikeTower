@@ -77,6 +77,9 @@ Los ADR documentan decisiones de terreno, combate, campaña, progresión y UX en
 | [ADR-0089](ADR-0089-ajustes-escala-occlusion-portales-props.md) | Escala de base, oclusión de fachadas, portales animados y props | Base, portal y props vigentes; alcance de fachadas actualizado por ADR-0090. Sustituye parcialmente ADR-0055 y ADR-0087. |
 | [ADR-0090](ADR-0090-fachadas-limitadas-a-la-diferencia-de-elevacion.md) | Fachadas limitadas al desnivel para conservar tapas hexagonales visibles | Código integrado; aceptación visual en Godot pendiente. Sustituye parcialmente la extensión y oclusión de paredes de ADR-0085. |
 | [ADR-0091](ADR-0091-contornos-compartidos-por-region-de-terreno.md) | Contornos compartidos por región de terreno y elevación | Código integrado; aceptación visual en Godot pendiente. |
+| [ADR-0092](ADR-0092-pulido-visual-y-raiz-comun-de-sprites.md) | Escala y centrado de torres, contorno suave, presentación de fachadas, decoración, portales y raíz única de sprites | Código y recursos integrados; los tonos de fachada fueron afinados por ADR-0094; aceptación visual pendiente. |
+| [ADR-0093](ADR-0093-preview-de-terreno-oferta-fija-y-torres-articuladas.md) | Preview exacto, oferta de tres cartas, contornos, torres articuladas y outline blanco | Código/assets/documentación integrados; la paleta visual de terreno se ajusta por ADR-0094. Sustituye cualquier ampliación de oferta por Card Draw. |
+| [ADR-0094](ADR-0094-mapa-de-mejoras-y-legibilidad-del-terreno.md) | Mapa navegable, ramas H/A/S horizontales, crecimiento visual por nivel y fachadas/contornos oscuros | Código/documentación integrados; aceptación visual/interactiva pendiente. |
 
 ## Regla para nuevos ADR
 

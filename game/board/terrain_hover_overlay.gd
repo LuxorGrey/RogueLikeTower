@@ -3,6 +3,7 @@ extends Node2D
 
 const HEX_RADIUS: float = 52.0
 const REDRAW_INTERVAL: float = 1.0 / 30.0
+const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
 
 var _cells: Array[TerrainPieceCellData] = []
 var _hovered_cell: TerrainPieceCellData
@@ -39,16 +40,21 @@ func _draw() -> void:
 		var closed_corners := corners.duplicate()
 		closed_corners.append(corners[0])
 		var color: Color = _terrain_hover_color(cell.terrain_type)
-		color.a = opacity * (0.76 if distance == 0 else 0.62)
+		color.a = opacity * (0.72 if distance == 0 else 0.48)
 		if distance == 0:
 			var pulse: float = 0.5 + 0.5 * sin(_pulse_time * TAU / 1.5)
 			var glow := color
-			glow.a = 0.16 + pulse * 0.08
-			draw_polyline(closed_corners, glow, 10.0 + pulse * 2.0, true)
-			color.a = 0.80 + pulse * 0.16
-			draw_polyline(closed_corners, color, 3.0, true)
+			glow.a = 0.055 + pulse * 0.035
+			_draw_smooth_polyline(closed_corners, glow, 6.0 + pulse)
+			color.a = 0.68 + pulse * 0.10
+			_draw_smooth_polyline(closed_corners, color, 2.5)
 		else:
-			draw_polyline(closed_corners, color, 2.0, true)
+			_draw_smooth_polyline(closed_corners, color, 1.8)
+
+func _draw_smooth_polyline(points: PackedVector2Array, color: Color, width: float) -> void:
+	draw_polyline(points, color, width, true)
+	for point_index in range(points.size() - 1):
+		draw_circle(points[point_index], width * 0.5, color)
 func _grid_opacity(distance: int) -> float:
 	match distance:
 		0:
@@ -74,10 +80,4 @@ func _cell_corners(coord: Vector2i, elevation: int) -> PackedVector2Array:
 	return corners
 
 func _terrain_hover_color(terrain_type: int) -> Color:
-	match terrain_type:
-		HexCell.TerrainType.GRASS:
-			return Color(0.50, 0.88, 0.52)
-		HexCell.TerrainType.MOUNTAIN:
-			return Color(0.96, 0.76, 0.36)
-		_:
-			return Color(0.51, 0.75, 0.90)
+	return TERRAIN_VISUAL_CATALOG_SCRIPT.get_region_outline_color(terrain_type)

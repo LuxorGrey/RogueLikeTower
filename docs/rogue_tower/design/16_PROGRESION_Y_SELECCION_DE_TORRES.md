@@ -45,6 +45,10 @@ La torre gana XP en la capa de HP activa del objetivo que mantiene en alcance, a
 - En modo de colocación de Ballista, el ghost muestra el bonus de daño correspondiente a la altura bajo el cursor, además del badge de las torres construidas.
 - Obstáculos y cards usan la misma caja 86×86 px y el mismo centro visual ligeramente desplazado hacia abajo.
 
+## Lectura visual por nivel
+
+Cada nivel de torre añade un crecimiento visual lineal pequeño: desde el tamaño base en nivel 1 hasta un máximo de +12 % al completar las 45 mejoras posibles. Se aplica tanto a las torres de sprite único como al arte dividido de base y cabeza; el pulso de selección se compone encima. El 12 % es un valor visual provisional de implementación, no modifica alcance, colisión ni área ocupada. Ver [ADR-0094](../decisions/ADR-0094-mapa-de-mejoras-y-legibilidad-del-terreno.md).
+
 ## Límites de la referencia
 
 La [wiki de Rogue Tower](https://rogue-tower.fandom.com/wiki/Towers) documenta las reglas generales de daño y experiencia que se comparan en [Auditoría del sistema de torres](15_AUDITORIA_SISTEMA_DE_TORRES.md). El tope de 15 niveles por capa y los factores exponenciales iniciales de 1,15 son configuración propia. No se importan árboles de investigación, cartas ni valores de progreso del juego de referencia como reglas automáticas.

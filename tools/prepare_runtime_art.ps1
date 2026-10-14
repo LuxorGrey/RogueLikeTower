@@ -1,8 +1,8 @@
 Add-Type -AssemblyName System.Drawing
 
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
-$terrainSourcePath = Join-Path $projectRoot 'assets/terrain/terrain_atlas.png'
-$tileOutputDirectory = Join-Path $projectRoot 'assets/terrain/tiles'
+$terrainSourcePath = Join-Path $projectRoot 'assets/sprites/terrain/terrain_atlas.png'
+$tileOutputDirectory = Join-Path $projectRoot 'assets/sprites/terrain/tiles'
 
 function Export-Region {
 	param(
@@ -50,7 +50,7 @@ function Resize-Png {
 }
 
 if (-not (Test-Path -LiteralPath $terrainSourcePath)) {
- throw 'Falta assets/terrain/terrain_atlas.png.'
+ throw 'Falta assets/sprites/terrain/terrain_atlas.png.'
 }
 
 New-Item -ItemType Directory -Path $tileOutputDirectory -Force | Out-Null
@@ -77,9 +77,9 @@ finally {
 
 # These are rendered at the logical sizes below with the camera at 1x. Two
 # source pixels per displayed pixel keep them crisp during moderate zoom-in.
-Resize-Png -Path (Join-Path $projectRoot 'assets/base/main_tower.png') -Width 352 -Height 352
-Resize-Png -Path (Join-Path $projectRoot 'assets/terrain/spawn_portal.png') -Width 224 -Height 336
-Resize-Png -Path (Join-Path $projectRoot 'assets/terrain/treasure_chest.png') -Width 168 -Height 168
-Resize-Png -Path (Join-Path $projectRoot 'assets/ui/tower_card_button.png') -Width 288 -Height 296
+Resize-Png -Path (Join-Path $projectRoot 'assets/sprites/base/main_tower.png') -Width 352 -Height 352
+Resize-Png -Path (Join-Path $projectRoot 'assets/sprites/terrain/spawn_portal.png') -Width 224 -Height 336
+Resize-Png -Path (Join-Path $projectRoot 'assets/sprites/terrain/treasure_chest.png') -Width 168 -Height 168
+Resize-Png -Path (Join-Path $projectRoot 'assets/sprites/ui/tower_card_button.png') -Width 288 -Height 296
 
 Get-ChildItem -LiteralPath $tileOutputDirectory -File | Select-Object FullName,Length

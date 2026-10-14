@@ -1,6 +1,6 @@
 # Mapa de sustitución de sprites
 
-> **Histórico:** este mapa registra los destinos del lote 2026-10-13. Los obstáculos antiguos ya no viven en `assets/terrain/obstacles`; M39 los reemplazó por ocho archivos con la nomenclatura actual, documentados en [assets/terrain/README.md](../assets/terrain/README.md).
+> **Histórico:** este mapa registra las rutas runtime y copias originales del lote 2026-10-13. M39 sustituyó el pool de obstáculos, y M43 trasladó todos los sprites activos a `assets/sprites/`. La nomenclatura y las rutas vigentes están en [assets/sprites/terrain/README.md](../assets/sprites/terrain/README.md).
 
 **Aplicado:** 2026-10-13. Los 23 PNG siguientes ya ocupan su ruta runtime existente. Cada original está guardado en `art_generation/originals_replaced/2026-10-13/`, conservando su ruta relativa al proyecto.
 
@@ -22,13 +22,13 @@
 | Obstáculo piedras | `assets/terrain/obstacles/stone_pile.png` | `art_generation/generated/obstacles/bones.png` | `art_generation/originals_replaced/2026-10-13/assets/terrain/obstacles/stone_pile.png` |
 | Base | `assets/base/main_tower.png` | `art_generation/generated/structures/base.png` | `art_generation/originals_replaced/2026-10-13/assets/base/main_tower.png` |
 | Portal de aparición | `assets/terrain/spawn_portal.png` | `art_generation/generated/structures/spawn_portal.png` | `art_generation/originals_replaced/2026-10-13/assets/terrain/spawn_portal.png` |
-| Ballista | `game/ui/icons/ballista.png` | `art_generation/generated/samples/ballista.png` | `art_generation/originals_replaced/2026-10-13/game/ui/icons/ballista.png` |
-| Mortar | `game/ui/icons/mortar.png` | `art_generation/generated/towers/mortar.png` | `art_generation/originals_replaced/2026-10-13/game/ui/icons/mortar.png` |
-| Tesla Coil | `game/ui/icons/tesla_coil.png` | `art_generation/generated/towers/tesla_coil.png` | `art_generation/originals_replaced/2026-10-13/game/ui/icons/tesla_coil.png` |
-| Frost Keep | `game/ui/icons/frost_keep.png` | `art_generation/generated/towers/frost_keep.png` | `art_generation/originals_replaced/2026-10-13/game/ui/icons/frost_keep.png` |
-| Flamethrower | `game/ui/icons/flame_thrower.png` | `art_generation/generated/towers/flame_thrower.png` | `art_generation/originals_replaced/2026-10-13/game/ui/icons/flame_thrower.png` |
-| Shredder | `game/ui/icons/shredder.png` | `art_generation/generated/towers/shredder.png` | `art_generation/originals_replaced/2026-10-13/game/ui/icons/shredder.png` |
-| Poison Sprayer | `game/ui/icons/poison_sprayer.png` | `art_generation/generated/towers/poison_sprayer.png` | `art_generation/originals_replaced/2026-10-13/game/ui/icons/poison_sprayer.png` |
+| Ballista | `assets/ui/icons/ballista.png` | `art_generation/generated/samples/ballista.png` | `art_generation/originals_replaced/2026-10-13/assets/ui/icons/ballista.png` |
+| Mortar | `assets/ui/icons/mortar.png` | `art_generation/generated/towers/mortar.png` | `art_generation/originals_replaced/2026-10-13/assets/ui/icons/mortar.png` |
+| Tesla Coil | `assets/ui/icons/tesla_coil.png` | `art_generation/generated/towers/tesla_coil.png` | `art_generation/originals_replaced/2026-10-13/assets/ui/icons/tesla_coil.png` |
+| Frost Keep | `assets/ui/icons/frost_keep.png` | `art_generation/generated/towers/frost_keep.png` | `art_generation/originals_replaced/2026-10-13/assets/ui/icons/frost_keep.png` |
+| Flamethrower | `assets/ui/icons/flame_thrower.png` | `art_generation/generated/towers/flame_thrower.png` | `art_generation/originals_replaced/2026-10-13/assets/ui/icons/flame_thrower.png` |
+| Shredder | `assets/ui/icons/shredder.png` | `art_generation/generated/towers/shredder.png` | `art_generation/originals_replaced/2026-10-13/assets/ui/icons/shredder.png` |
+| Poison Sprayer | `assets/ui/icons/poison_sprayer.png` | `art_generation/generated/towers/poison_sprayer.png` | `art_generation/originals_replaced/2026-10-13/assets/ui/icons/poison_sprayer.png` |
 
 ## Alcance
 

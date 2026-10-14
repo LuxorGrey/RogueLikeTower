@@ -5,11 +5,12 @@ signal hover_changed(portal: Node2D, hovered: bool)
 signal selected(portal: Node2D)
 
 const PORTAL_SPRITE_SIZE: Vector2 = Vector2(96.0, 96.0)
-const PORTAL_SPRITE_SHEET: Texture2D = preload("res://assets/terrain/spawn_portal_SpriteSheet.png")
+const PORTAL_SPRITE_SHEET: Texture2D = preload("res://assets/sprites/terrain/spawn_portal_SpriteSheet.png")
 const PORTAL_ANIMATION_NAME: StringName = &"portal"
 const PORTAL_FRAME_SIZE: Vector2i = Vector2i(443, 443)
 const PORTAL_FRAME_COLUMNS: int = 4
 const PORTAL_FRAME_ROWS: int = 2
+const PORTAL_FRAME_COUNT: int = PORTAL_FRAME_COLUMNS * PORTAL_FRAME_ROWS - 1
 const PORTAL_ANIMATION_FPS: float = 10.0
 const PULSE_PERIOD: float = 3.8
 const PULSE_MIN_SCALE: float = 0.96
@@ -60,6 +61,9 @@ func _ready() -> void:
 	_update_pulse()
 	set_process(true)
 
+func _exit_tree() -> void:
+	clear_hover()
+
 func _process(delta: float) -> void:
 	_pulse_time += delta
 	_update_pulse()
@@ -89,7 +93,7 @@ func _configure_looping_animation() -> void:
 	frames.add_animation(PORTAL_ANIMATION_NAME)
 	frames.set_animation_loop(PORTAL_ANIMATION_NAME, true)
 	frames.set_animation_speed(PORTAL_ANIMATION_NAME, PORTAL_ANIMATION_FPS)
-	for frame_index in range(PORTAL_FRAME_COLUMNS * PORTAL_FRAME_ROWS):
+	for frame_index in range(PORTAL_FRAME_COUNT):
 		var frame_texture := AtlasTexture.new()
 		frame_texture.atlas = PORTAL_SPRITE_SHEET
 		frame_texture.region = Rect2(
@@ -127,6 +131,13 @@ func set_wave_preview(entries: Array[Dictionary], wave_number: int) -> void:
 		_preview_layer.call("set_entries", _preview_entries)
 	if _is_hovered:
 		hover_changed.emit(self, true)
+
+func clear_hover() -> void:
+	if not _is_hovered:
+		return
+	_is_hovered = false
+	_update_hover_outline()
+	hover_changed.emit(self, false)
 
 func get_wave_preview_tooltip_text() -> String:
 	var lines := PackedStringArray()

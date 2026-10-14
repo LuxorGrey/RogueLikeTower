@@ -85,7 +85,10 @@ func _draw() -> void:
 	])
 	draw_polygon(
 		cliff_quad,
-		TERRAIN_VISUAL_CATALOG_SCRIPT.get_cliff_face_colors(_terrain_type),
+		TERRAIN_VISUAL_CATALOG_SCRIPT.get_cliff_face_colors(
+			_terrain_type,
+			_direction_index
+		),
 		cliff_uvs,
 		cliff_texture
 	)

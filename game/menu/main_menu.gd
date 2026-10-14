@@ -18,7 +18,7 @@ func _ready() -> void:
 	_shop_panel = META_SHOP_SCENE.instantiate() as MetaShopPanel
 	_shop_panel.call("configure", TOWER_ROSTER.profiles, MetaProgression.call("get_permanent_upgrades"))
 	add_child(_shop_panel)
-	_shop_panel.connect("new_run_requested", _start_run)
+	_shop_panel.connect("close_requested", _on_shop_closed)
 	var pending_summary: Dictionary = GameState.pending_run_summary.duplicate(true)
 	if not pending_summary.is_empty():
 		GameState.pending_run_summary.clear()
@@ -26,6 +26,9 @@ func _ready() -> void:
 
 func _open_shop() -> void:
 	_shop_panel.call("present", {"outcome": "MENU", "reached_round": 1, "completed_rounds": 0, "meta_reward": 0})
+
+func _on_shop_closed() -> void:
+	_shop_button.grab_focus()
 
 func _start_run() -> void:
 	GameState.pending_run_summary.clear()

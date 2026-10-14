@@ -36,6 +36,8 @@ enum OperationType {
 signal card_selected(card: Resource)
 signal modifiers_changed
 
+const FIXED_UPGRADE_OFFER_SIZE: int = CardPoolData.FIXED_OFFER_SIZE
+
 var last_error: String = ""
 var _pool: Resource
 var _unlocked_content_ids: Dictionary = {}
@@ -46,7 +48,6 @@ var _selected_counts: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 var _is_configured: bool = false
 var _debug_unlock_all: bool = false
-var _offer_size_bonus: int = 0
 var _run_tower_ids: Dictionary[StringName, bool] = {}
 
 func configure(
@@ -54,7 +55,6 @@ func configure(
 	unlocked_content_ids: Array[StringName],
 	run_seed: int = 0,
 	use_run_seed: bool = false,
-	offer_size_bonus: int = 0,
 	run_tower_ids: Array[StringName] = []
 ) -> bool:
 	last_error = ""
@@ -66,7 +66,6 @@ func configure(
 		last_error = "; ".join(errors)
 		return false
 	_pool = card_pool
-	_offer_size_bonus = clampi(offer_size_bonus, 0, 3)
 	_run_tower_ids.clear()
 	for tower_id in run_tower_ids:
 		_run_tower_ids[tower_id] = true
@@ -107,21 +106,20 @@ func create_offer(round_number: int) -> Array[Resource]:
 			recruit_cards.append(card)
 		else:
 			upgrade_cards.append(card)
-	# Toda torre ya desbloqueada en meta y aún no reclutada en esta run aparece
-	# como opción. Las cartas de reclutamiento ocupan primero el espacio visible.
-	var offer_size: int = mini(maxi(get_offer_size(), recruit_cards.size()), 6)
-	for recruit_card in recruit_cards:
-		if _current_offer.size() >= offer_size:
-			break
-		_current_offer.append(recruit_card)
-	while _current_offer.size() < offer_size and not upgrade_cards.is_empty():
+	# Las torres pendientes se reparten aleatoriamente entre ofertas y comparten
+	# los mismos tres espacios con mejoras. Si no salen, siguen disponibles.
+	_shuffle_resources(recruit_cards)
+	for recruit_index in range(mini(recruit_cards.size(), FIXED_UPGRADE_OFFER_SIZE)):
+		_current_offer.append(recruit_cards[recruit_index])
+	while _current_offer.size() < FIXED_UPGRADE_OFFER_SIZE and not upgrade_cards.is_empty():
 		var selected_index: int = _pick_weighted_index(upgrade_cards)
 		_current_offer.append(upgrade_cards[selected_index])
 		upgrade_cards.remove_at(selected_index)
-	if _current_offer.size() != offer_size:
+	if _current_offer.size() != FIXED_UPGRADE_OFFER_SIZE:
 		last_error = "No hay suficientes cartas desbloqueadas para completar la oferta."
 		_current_offer.clear()
 		return empty_offer
+	_shuffle_resources(_current_offer)
 	last_error = ""
 	return _current_offer.duplicate()
 
@@ -208,9 +206,14 @@ func get_mana_on_kill_max_percent_bonus() -> float:
 	return _sum_matching_operations(OperationType.MANA_ON_KILL_MAX_PERCENT_ADD, &"")
 
 func get_offer_size() -> int:
-	if not _is_configured or _pool == null:
-		return 0
-	return clampi(int(_pool.get("offer_size")) + _offer_size_bonus, 1, 6)
+	return FIXED_UPGRADE_OFFER_SIZE
+
+func _shuffle_resources(cards: Array[Resource]) -> void:
+	for index in range(cards.size() - 1, 0, -1):
+		var swap_index: int = _rng.randi_range(0, index)
+		var card: Resource = cards[index]
+		cards[index] = cards[swap_index]
+		cards[swap_index] = card
 
 func get_tower_status_ids(tower_id: StringName) -> Array[StringName]:
 	var result: Array[StringName] = []

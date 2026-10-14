@@ -1,6 +1,6 @@
 # Validación final de assets
 
-> **Snapshot histórico del 2026-10-13:** la sección de obstáculos registra el pool que se usaba antes de M39. No describe el contenido runtime actual. Consulta [assets/terrain/README.md](../../assets/terrain/README.md) para la fuente vigente.
+> **Snapshot histórico del 2026-10-13:** las rutas de la tabla son las que existían cuando se validó ese lote; M43 trasladó los sprites activos bajo `assets/sprites/`. La sección de obstáculos registra el pool anterior a M39 y no describe el contenido runtime actual. Consulta [assets/sprites/terrain/README.md](../../assets/sprites/terrain/README.md) para la fuente vigente.
 
 **Fecha:** 2026-10-13\
 **Resultado:** 23/23 destinos coinciden con su arte; 23/23 originales respaldados.\
@@ -26,13 +26,13 @@ Las tres variantes Dirt se asignan a los tres destinos PATH por decisión explí
 | OBSTACLE_BONES | `assets/terrain/obstacles/stone_pile.png` | `art_generation/generated/obstacles/bones.png` | `art_generation/originals_replaced/2026-10-13/assets/terrain/obstacles/stone_pile.png` | 208×208 | RGBA | idéntica | idéntico | — | OK |
 | BASE | `assets/base/main_tower.png` | `art_generation/generated/structures/base.png` | `art_generation/originals_replaced/2026-10-13/assets/base/main_tower.png` | 352×352 | RGBA | idéntica | idéntico | — | OK |
 | SPAWN_PORTAL | `assets/terrain/spawn_portal.png` | `art_generation/generated/structures/spawn_portal.png` | `art_generation/originals_replaced/2026-10-13/assets/terrain/spawn_portal.png` | 1024×1536 | RGBA | idéntica | idéntico | — | OK |
-| TOWER_BALLISTA | `game/ui/icons/ballista.png` | `art_generation/generated/samples/ballista.png` | `art_generation/originals_replaced/2026-10-13/game/ui/icons/ballista.png` | 256×256 | RGBA | idéntica | idéntico | — | OK |
-| TOWER_MORTAR | `game/ui/icons/mortar.png` | `art_generation/generated/towers/mortar.png` | `art_generation/originals_replaced/2026-10-13/game/ui/icons/mortar.png` | 256×256 | RGBA | idéntica | idéntico | — | OK |
-| TOWER_TESLA_COIL | `game/ui/icons/tesla_coil.png` | `art_generation/generated/towers/tesla_coil.png` | `art_generation/originals_replaced/2026-10-13/game/ui/icons/tesla_coil.png` | 256×256 | RGBA | idéntica | idéntico | — | OK |
-| TOWER_FROST_KEEP | `game/ui/icons/frost_keep.png` | `art_generation/generated/towers/frost_keep.png` | `art_generation/originals_replaced/2026-10-13/game/ui/icons/frost_keep.png` | 256×256 | RGBA | idéntica | idéntico | — | OK |
-| TOWER_FLAMETHROWER | `game/ui/icons/flame_thrower.png` | `art_generation/generated/towers/flame_thrower.png` | `art_generation/originals_replaced/2026-10-13/game/ui/icons/flame_thrower.png` | 256×256 | RGBA | idéntica | idéntico | — | OK |
-| TOWER_SHREDDER | `game/ui/icons/shredder.png` | `art_generation/generated/towers/shredder.png` | `art_generation/originals_replaced/2026-10-13/game/ui/icons/shredder.png` | 256×256 | RGBA | idéntica | idéntico | — | OK |
-| TOWER_POISON_SPRAYER | `game/ui/icons/poison_sprayer.png` | `art_generation/generated/towers/poison_sprayer.png` | `art_generation/originals_replaced/2026-10-13/game/ui/icons/poison_sprayer.png` | 256×256 | RGBA | idéntica | idéntico | — | OK |
+| TOWER_BALLISTA | `assets/ui/icons/ballista.png` | `art_generation/generated/samples/ballista.png` | `art_generation/originals_replaced/2026-10-13/assets/ui/icons/ballista.png` | 256×256 | RGBA | idéntica | idéntico | — | OK |
+| TOWER_MORTAR | `assets/ui/icons/mortar.png` | `art_generation/generated/towers/mortar.png` | `art_generation/originals_replaced/2026-10-13/assets/ui/icons/mortar.png` | 256×256 | RGBA | idéntica | idéntico | — | OK |
+| TOWER_TESLA_COIL | `assets/ui/icons/tesla_coil.png` | `art_generation/generated/towers/tesla_coil.png` | `art_generation/originals_replaced/2026-10-13/assets/ui/icons/tesla_coil.png` | 256×256 | RGBA | idéntica | idéntico | — | OK |
+| TOWER_FROST_KEEP | `assets/ui/icons/frost_keep.png` | `art_generation/generated/towers/frost_keep.png` | `art_generation/originals_replaced/2026-10-13/assets/ui/icons/frost_keep.png` | 256×256 | RGBA | idéntica | idéntico | — | OK |
+| TOWER_FLAMETHROWER | `assets/ui/icons/flame_thrower.png` | `art_generation/generated/towers/flame_thrower.png` | `art_generation/originals_replaced/2026-10-13/assets/ui/icons/flame_thrower.png` | 256×256 | RGBA | idéntica | idéntico | — | OK |
+| TOWER_SHREDDER | `assets/ui/icons/shredder.png` | `art_generation/generated/towers/shredder.png` | `art_generation/originals_replaced/2026-10-13/assets/ui/icons/shredder.png` | 256×256 | RGBA | idéntica | idéntico | — | OK |
+| TOWER_POISON_SPRAYER | `assets/ui/icons/poison_sprayer.png` | `art_generation/generated/towers/poison_sprayer.png` | `art_generation/originals_replaced/2026-10-13/assets/ui/icons/poison_sprayer.png` | 256×256 | RGBA | idéntica | idéntico | — | OK |
 
 ## Revisión visual
 

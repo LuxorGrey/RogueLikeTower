@@ -380,7 +380,7 @@ Estas cantidades NO son compromiso de diseño final.
 
 ## M40 — Presentación compacta de upgrade cards
 - Usar una card compartida con superficie plana, sin sprites/marcos variantes por tier o rareza. Mantener icono grande, etiqueta de tier, título y descripción legibles y separación entre opciones.
-- Mostrar tres opciones en tres columnas; mantener hasta seis opciones en dos filas cuando Card Draw amplíe la oferta.
+- Mostrar exactamente tres opciones en tres columnas; Card Draw queda retirado del mapa porque la oferta no puede ampliarse.
 - Dibujar detrás de cada card un aura radial tenue con partículas animadas. El color del aura expresa rareza y el hover puede intensificarlo, sin cambiar la superficie.
 - Resultado: escena y shader integrados; aceptación visual en ventana pendiente. Sustituye la presentación de ADR-0080 y conserva las ramas paralelas de ADR-0081. Ver [ADR-0088](../decisions/ADR-0088-presentacion-compacta-de-upgrade-cards.md).
 
@@ -391,3 +391,31 @@ Estas cantidades NO son compromiso de diseño final.
 - Subir los props a 36×36 px y la probabilidad independiente por asset/celda al 10 %, manteniendo un máximo de dos sin solapamiento y el obstáculo delante.
 - Corregir el error de parseo de `TerrainPiecePreview` en la normalización del anillo de base.
 - Resultado: código y documentación integrados; aceptación visual e interactiva pendiente según [M41](10_ACCEPTANCE_TESTS.md). Ver [ADR-0089](../decisions/ADR-0089-ajustes-escala-occlusion-portales-props.md).
+
+## M42 — Contornos compartidos por región
+- Omitir las aristas internas entre celdas del mismo tipo de terreno y elevación; dibujar los bordes contra vacío y otras regiones con el color propio de cada terreno.
+- Compartir la regla entre tablero, superficies elevadas, hover y miniaturas, conservando tapas, elevación y oclusión axial.
+- Resultado: código integrado; M43 añade uniones redondeadas para evitar cortes en vértices. Ver [ADR-0091](../decisions/ADR-0091-contornos-compartidos-por-region-de-terreno.md).
+
+## M43 — Centrado, pulido y organización de sprites
+- Dibujar todas las torres un 20 % más grandes y con su ancla centrada en el hexágono; usar el mismo tamaño y posición para el ghost.
+- Cerrar suavemente las juntas de los contornos, y hacer que las fachadas Grass/Mountain empiecen desde su color de terreno actual y mantengan el degradado oscuro inferior.
+- Ampliar props y obstáculos un 10 % (39,6 y 94,6 px de caja visual) sin cambiar sus reglas de aparición ni orden.
+- Omitir el octavo frame repetido de la animación del portal y ocultar inmediatamente el tooltip al eliminar bajo hover ese portal.
+- Reunir los sprites y sus `.import` bajo `assets/sprites/`, conservar subcarpetas por categoría y actualizar rutas de código, datos, escenas y herramientas. Mantener Tiny Swords ignorado por Git.
+- Resultado: código, assets y documentación integrados; aceptación visual pendiente. Ver [ADR-0092](../decisions/ADR-0092-pulido-visual-y-raiz-comun-de-sprites.md).
+
+## M44 — Preview exacto, oferta fija y torres articuladas
+- Reutilizar el mismo snapshot de celdas candidatas para dibujar la expansión y confirmarla, incluyendo elevación, contenido determinista y celdas auto-rellenadas.
+- Dibujar contornos sin inset con los colores de las texturas Grass `#53B56F` y Mountain `#8A8B91`; compartir uniones redondeadas en superficies, preview y miniaturas.
+- Mantener todas las ofertas de mejora exactamente en tres cartas; mezclar los reclutamientos desbloqueados con las mejoras, y preservar para después los reclutamientos no seleccionados.
+- Reemplazar los siete iconos canónicos por las imágenes entregadas. En el mundo, dividir cada sheet mediante `AtlasTexture`: base fija, cabeza rotatoria alrededor del anclaje de la base y montaje equivalente en ghost.
+- Añadir trazo blanco con shader alfa a sprites de torre y obstáculos, conservando el orden Y-sort individual.
+- Resultado: código/assets/documentación integrados; aceptación visual e interactiva pendiente. Ver [ADR-0093](../decisions/ADR-0093-preview-de-terreno-oferta-fija-y-torres-articuladas.md).
+
+## M45 — Navegación de mejoras y contorno legible del terreno
+- Quitar del mapa permanente las instrucciones del pie y el botón de nueva run; poner un cierre fijo arriba a la derecha que vuelve a la escena principal.
+- Separar y ampliar los clusters de progreso, conservar iconos por nodo y permitir scroll o arrastre con botón izquierdo/central. Las ramas Health/Armor/Shield de cada torre ocupan una fila horizontal común.
+- Hacer que cada nivel de torre aumente su escala suavemente, con un máximo visual de +12 % tras sus 45 mejoras posibles.
+- Conservar el perímetro por región `(terrain_type, elevation)` en Grass `#53B56F` y Mountain `#8A8B91`, con línea oscura de separación y hover de baja intensidad. Oscurecer las dos fachadas delanteras con sombreado direccional distinto, sin cambiar sus quads ni dibujar caras laterales/traseras.
+- Resultado: implementación de código/documentación integrada; aceptación visual/interactiva pendiente. Ver [ADR-0094](../decisions/ADR-0094-mapa-de-mejoras-y-legibilidad-del-terreno.md).
