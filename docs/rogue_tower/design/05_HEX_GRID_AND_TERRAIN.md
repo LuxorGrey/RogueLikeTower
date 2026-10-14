@@ -118,15 +118,19 @@ Estado del preview M3: las 19 celdas del tablero inicial y las piezas confirmada
 - El footprint lógico nunca cambia por decoración.
 - La elevación se ve con una cara superior y sprites de pared/fachada cerrados, no geometría 3D.
 - Variantes visuales rompen repetición.
+- Un trazo de color recorre el perímetro de cada región conectada de igual terreno y altura; no se dibuja una línea alrededor de cada celda.
 
 ## 8. Orden de dibujo
 Prioridad aproximada:
 1. fachadas delanteras, limitadas al desnivel expuesto respecto a la celda vecina;
 2. tapas hexagonales completas; ninguna pared puede cubrirlas;
-3. ruta y flujo de flechas sobre las caras PATH;
-4. superficies elevadas texturadas junto con props y entidades bajo `Entities.y_sort_enabled`;
-5. proyectiles/VFX;
-6. overlays de selección.
+3. contornos cromáticos sobre las tapas, en cambios de terreno/altura, límites contra vacío y perímetro exterior de cada región;
+4. ruta y flujo de flechas sobre las caras PATH;
+5. superficies elevadas texturadas junto con props y entidades bajo `Entities.y_sort_enabled`;
+6. proyectiles/VFX;
+7. overlays de selección.
+
+El contorno agrupa por tipo de terreno y elevación. Se omiten aristas entre vecinos del mismo grupo; cada región dibuja su propio lado frente a otra región, por lo que en una frontera compartida ambos colores quedan visibles, ligeramente hacia el interior de su tapa. Grass usa verde, Mountain gris y Path amarillo. El vacío cuenta como límite. Las miniaturas comparten esta regla; el hover mantiene su borde interactivo temporal.
 
 El filtro lineal se aplica a la ilustración de suelo, torres, enemigos, base, props y cofres. Unidades, decoraciones de mundo, tapas elevadas y fachadas usan `Entities.y_sort_enabled`, con la posición Y proyectada del anclaje como autoridad; la posición Z permanece igual para que Godot pueda compararlas. Las tapas se ordenan por la superficie elevada; cada fachada tiene un nodo propio anclado a su borde inferior, que coincide con la tapa vecina o el suelo. Así una fachada cubre actores que pasan detrás y queda detrás de los que pasan por delante, pero no se prolonga sobre las tapas. La malla lógica axial entera es la única autoridad de los seis vértices de cada tapa; cada celda dibuja solo sus dos fachadas delanteras como quads verticales, sin geometría de pared en laterales/trasera ni cierres de esquina. Las fachadas usan la textura del terreno y un degradado inferior oscuro exclusivo de las paredes. En el preview y las miniaturas se conserva el dibujo por celda back-to-front y la misma regla de desnivel. Los VFX y la interfaz conservan sus capas propias. Ver [ADR-0084](../decisions/ADR-0084-render-axial-de-terreno-y-profundidad-por-celda.md), [ADR-0085](../decisions/ADR-0085-solo-fachadas-delanteras-y-degradado-de-cliffs.md), [ADR-0090](../decisions/ADR-0090-fachadas-limitadas-a-la-diferencia-de-elevacion.md) y M41/ADR-0089.
 

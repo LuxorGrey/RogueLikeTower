@@ -1,10 +1,10 @@
 extends Control
 
 const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
+const TERRAIN_REGION_OUTLINE_SCRIPT: Script = preload("res://game/board/terrain_region_outline.gd")
 
 const HEX_RADIUS: float = 52.0
 const CLIFF_TEXTURE_PIXEL_DENSITY: float = 20.0
-const HEX_OUTLINE: Color = Color(0.82, 0.87, 0.84)
 
 var _piece: TerrainPieceData
 
@@ -27,6 +27,12 @@ func _draw() -> void:
 	var elevations_by_coord: Dictionary[Vector2i, int] = {}
 	for cell in cells:
 		elevations_by_coord[cell.local_coord] = cell.elevation
+	var region_ids_by_coord: Dictionary[Vector2i, Vector2i] = {}
+	for cell in cells:
+		region_ids_by_coord[cell.local_coord] = Vector2i(cell.terrain_type, cell.elevation)
+	var exposed_edges_by_coord: Dictionary[Vector2i, PackedInt32Array] = (
+		TERRAIN_REGION_OUTLINE_SCRIPT.get_exposed_edges(region_ids_by_coord)
+	)
 
 	var bounds := Rect2()
 	var has_bounds: bool = false
@@ -63,6 +69,12 @@ func _draw() -> void:
 			elevations_by_coord
 		)
 		_draw_cell_top(cell, rendered_centers[cell.local_coord], render_scale)
+		_draw_region_outline(
+			cell,
+			rendered_centers[cell.local_coord],
+			render_scale,
+			exposed_edges_by_coord.get(cell.local_coord, PackedInt32Array())
+		)
 		_draw_obstacles([cell], rendered_centers, render_scale)
 
 func _draw_cliffs(
@@ -123,8 +135,6 @@ func _draw_cliffs(
 
 func _draw_cell_top(cell: TerrainPieceCellData, center: Vector2, render_scale: float) -> void:
 	var corners: PackedVector2Array = _rendered_cell_corners(cell, center, render_scale)
-	var closed_corners := corners.duplicate()
-	closed_corners.append(corners[0])
 	draw_colored_polygon(corners, _terrain_color(cell.terrain_type))
 	draw_colored_polygon(
 		corners,
@@ -136,7 +146,38 @@ func _draw_cell_top(cell: TerrainPieceCellData, center: Vector2, render_scale: f
 			cell.local_coord
 		)
 	)
-	draw_polyline(closed_corners, HEX_OUTLINE, maxf(1.0, 1.8 * render_scale), true)
+
+func _draw_region_outline(
+	cell: TerrainPieceCellData,
+	center: Vector2,
+	render_scale: float,
+	edge_indices: PackedInt32Array
+) -> void:
+	if edge_indices.is_empty():
+		return
+	var corners: PackedVector2Array = _rendered_cell_corners(cell, center, render_scale)
+	var outline_color: Color = TERRAIN_VISUAL_CATALOG_SCRIPT.get_region_outline_color(
+		cell.terrain_type
+	)
+	var stroke_width: float = maxf(1.0, 2.4 * render_scale)
+	var stroke_inset: float = 1.2 * render_scale
+	for direction_variant in edge_indices:
+		var direction_index: int = int(direction_variant)
+		var edge_start: Vector2 = corners[posmod(direction_index + 1, 6)]
+		var edge_end: Vector2 = corners[posmod(direction_index + 2, 6)]
+		var inward_offset: Vector2 = (
+			(center - (edge_start + edge_end) * 0.5).normalized() * stroke_inset
+		)
+		var tangent_offset: Vector2 = (
+			(edge_end - edge_start).normalized() * stroke_width * 0.5
+		)
+		draw_line(
+			edge_start + inward_offset - tangent_offset,
+			edge_end + inward_offset + tangent_offset,
+			outline_color,
+			stroke_width,
+			true
+		)
 
 func _draw_obstacles(
 	cells: Array[TerrainPieceCellData],

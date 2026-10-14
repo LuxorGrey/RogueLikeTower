@@ -28,6 +28,7 @@ Codex debe ejecutar estos milestones en orden. **No saltar al contenido final.**
 - Elevation 0/1/2 was the original M2 prototype range; current terrain accepts 0–3 under M34/ADR-0073.
 - Offset visual por elevación.
 - Cliff/fachada visual separada de la celda lógica.
+- Contorno cromático compartido por regiones del mismo terreno y elevación; solo en perímetros exteriores, cambios de terreno/altura y bordes contra vacío.
 - Y-sort correcto para torres/enemigos/decoración.
 - Hover en cara superior con color por terreno y coordenadas axiales en HUD.
 - Resultado: pequeño mapa estilo "2.5D dibujado" sin 3D real.

@@ -76,6 +76,7 @@ Los ADR documentan decisiones de terreno, combate, campaña, progresión y UX en
 | [ADR-0088](ADR-0088-presentacion-compacta-de-upgrade-cards.md) | Cards compactas de panel plano y aura procedural por rareza | Código integrado; aceptación visual pendiente. Sustituye el sprite-panel de ADR-0080; conserva tier y ramas de ADR-0081. |
 | [ADR-0089](ADR-0089-ajustes-escala-occlusion-portales-props.md) | Escala de base, oclusión de fachadas, portales animados y props | Base, portal y props vigentes; alcance de fachadas actualizado por ADR-0090. Sustituye parcialmente ADR-0055 y ADR-0087. |
 | [ADR-0090](ADR-0090-fachadas-limitadas-a-la-diferencia-de-elevacion.md) | Fachadas limitadas al desnivel para conservar tapas hexagonales visibles | Código integrado; aceptación visual en Godot pendiente. Sustituye parcialmente la extensión y oclusión de paredes de ADR-0085. |
+| [ADR-0091](ADR-0091-contornos-compartidos-por-region-de-terreno.md) | Contornos compartidos por región de terreno y elevación | Código integrado; aceptación visual en Godot pendiente. |
 
 ## Regla para nuevos ADR
 

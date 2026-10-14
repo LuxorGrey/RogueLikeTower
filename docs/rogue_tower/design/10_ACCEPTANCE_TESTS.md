@@ -636,6 +636,16 @@ El código y la documentación de M40 están integrados. No se ejecutaron prueba
 
 La implementación M41 está integrada en código y documentación. No se ha ejecutado Godot ni se ha realizado revisión visual/interactiva; aceptación pendiente. Ver [ADR-0089](../decisions/ADR-0089-ajustes-escala-occlusion-portales-props.md).
 
+## M42 Contornos compartidos por región de terreno
+
+### Revisión manual en ventana
+
+1. En un tablero con grupos contiguos de Grass, Mountain y Path, confirma que las aristas internas entre celdas del mismo terreno y altura no se dibujan. El perímetro de cada grupo queda continuo y usa verde para Grass, gris para Mountain y amarillo para Path.
+2. Comprueba que los bordes contra celdas de otro terreno, otra altura y vacío se trazan; cuando dos regiones se tocan se ven ambos colores, cada uno dentro de su tapa. El trazo sigue el hex exacto y no tapa props ni caras superiores.
+3. Compara el tablero, las copias elevadas Y-sorted y las miniaturas de expansión. Las alturas y los límites deben coincidir; el hover conserva su contorno temporal y las piezas fantasma mantienen el color de colocación legal/ilegal.
+
+La integración M42 está en código y documentación. La inspección visual/interactiva en Godot queda pendiente. Ver [ADR-0091](../decisions/ADR-0091-contornos-compartidos-por-region-de-terreno.md).
+
 ## Loop
 - Al completar una oleada de campaña entre las rondas 1–44, se entra en la oferta de expansión y no comienza la siguiente ronda hasta colocar una pieza válida.
 - La colocación actualiza el tablero y la ruta una sola vez; la fase de mejora aparece después cuando el calendario de cards la requiere.

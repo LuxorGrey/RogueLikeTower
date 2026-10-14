@@ -20,6 +20,9 @@ const GRASS_CLIFF_TEXTURE: Texture2D = preload("res://assets/terrain/tiles/grass
 const MOUNTAIN_CLIFF_TEXTURE: Texture2D = preload("res://assets/terrain/tiles/mountain_cliff_face.png")
 const GRASS_CLIFF_BOTTOM_TINT: Color = Color("#263b2b")
 const MOUNTAIN_CLIFF_BOTTOM_TINT: Color = Color("#24242a")
+const PATH_REGION_OUTLINE_COLOR: Color = Color("#FFD052")
+const GRASS_REGION_OUTLINE_COLOR: Color = Color("#A8E526")
+const MOUNTAIN_REGION_OUTLINE_COLOR: Color = Color("#B6BBC7")
 const OBSTACLE_TEXTURES: Array[Texture2D] = [
 	preload("res://assets/terrain/obstacles/obstacle_bramble_bush.png"),
 	preload("res://assets/terrain/obstacles/obstacle_fallen_log.png"),
@@ -135,6 +138,17 @@ static func get_obstacle_display_name(obstacle_type: int) -> String:
 static func get_elevation_tint(elevation: int) -> Color:
 	var height_level: int = clampi(elevation, 0, 3)
 	return Color(1.0 - 0.01 * float(height_level), 1.0 - 0.005 * float(height_level), 1.0)
+
+static func get_region_outline_color(terrain_type: int) -> Color:
+	match terrain_type:
+		HexCell.TerrainType.PATH:
+			return PATH_REGION_OUTLINE_COLOR
+		HexCell.TerrainType.GRASS:
+			return GRASS_REGION_OUTLINE_COLOR
+		HexCell.TerrainType.MOUNTAIN:
+			return MOUNTAIN_REGION_OUTLINE_COLOR
+		_:
+			return Color.WHITE
 
 static func create_piece_offer(
 	piece: TerrainPieceData,

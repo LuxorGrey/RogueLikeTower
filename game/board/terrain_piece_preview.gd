@@ -2,6 +2,7 @@ class_name TerrainPiecePreview
 extends Node2D
 
 const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
+const TERRAIN_REGION_OUTLINE_SCRIPT: Script = preload("res://game/board/terrain_region_outline.gd")
 const NO_BASE_COORD: Vector2i = Vector2i(-9999999, -9999999)
 const TERRAIN_CELL_DECORATION_SCRIPT: Script = preload("res://game/board/terrain_cell_decoration.gd")
 const TERRAIN_SURFACE_OCCLUDER_SCRIPT: Script = preload("res://game/board/terrain_surface_occluder.gd")
@@ -200,11 +201,23 @@ func _draw() -> void:
 	var cells: Array[TerrainPieceCellData] = _active_display_cells()
 	cells.sort_custom(Callable(self, "_sort_cells_back_to_front"))
 	var cliff_geometry: Dictionary = _build_cliff_geometry(cells)
+	var region_ids_by_coord: Dictionary[Vector2i, Vector2i] = {}
+	for cell in cells:
+		if not _ghost_coords.has(cell.local_coord):
+			region_ids_by_coord[cell.local_coord] = Vector2i(cell.terrain_type, cell.elevation)
+	var exposed_edges_by_coord: Dictionary[Vector2i, PackedInt32Array] = (
+		TERRAIN_REGION_OUTLINE_SCRIPT.get_exposed_edges(region_ids_by_coord)
+	)
 	for cell in cells:
 		var is_ghost: bool = _ghost_coords.has(cell.local_coord)
 		if not _board_mode or is_ghost:
 			_draw_cell_cliff_faces(cell.local_coord, cliff_geometry)
 		_draw_cell_top(cell, is_ghost)
+		if not is_ghost:
+			_draw_region_outline(
+				cell,
+				exposed_edges_by_coord.get(cell.local_coord, PackedInt32Array())
+			)
 		if is_ghost:
 			_draw_ghost_cell_content(cell)
 	if _board_mode and _path_graph != null:
@@ -357,15 +370,41 @@ func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 			glow_alpha += 0.025
 		combo_color.a = glow_alpha
 		draw_colored_polygon(corners, combo_color)
-		outline_color = _combo_color(cell.terrain_type)
-		outline_color.a = (0.42 + pulse * 0.18) * grid_opacity
-		outline_width = (2.5 if combo_strength < 5 else 3.0) if grid_opacity > 0.0 else 0.0
 	if not is_ghost:
 		outline_color.a *= grid_opacity if combo_strength < 3 else 1.0
-	if outline_width > 0.0 and (not _board_mode or is_ghost or combo_strength >= 3):
+	if outline_width > 0.0 and (not _board_mode or is_ghost):
 		draw_polyline(closed_corners, outline_color, outline_width, true)
 	if not _board_mode or is_ghost:
 		_draw_path_edges(cell, center, corners, is_ghost)
+
+func _draw_region_outline(
+	cell: TerrainPieceCellData,
+	edge_indices: PackedInt32Array
+) -> void:
+	if edge_indices.is_empty():
+		return
+	var corners: PackedVector2Array = _cell_corners(cell.local_coord, cell.elevation)
+	var center: Vector2 = _top_center(cell.local_coord, cell.elevation)
+	var outline_color: Color = TERRAIN_VISUAL_CATALOG_SCRIPT.get_region_outline_color(
+		cell.terrain_type
+	)
+	var stroke_width: float = 3.0
+	var stroke_inset: float = 1.4
+	for direction_variant in edge_indices:
+		var direction_index: int = int(direction_variant)
+		var edge_start: Vector2 = corners[posmod(direction_index + 1, 6)]
+		var edge_end: Vector2 = corners[posmod(direction_index + 2, 6)]
+		var inward_offset: Vector2 = (
+			(center - (edge_start + edge_end) * 0.5).normalized() * stroke_inset
+		)
+		var tangent_offset: Vector2 = (edge_end - edge_start).normalized() * stroke_width * 0.5
+		draw_line(
+			edge_start + inward_offset - tangent_offset,
+			edge_end + inward_offset + tangent_offset,
+			outline_color,
+			stroke_width,
+			true
+		)
 
 func _draw_ghost_cell_content(cell: TerrainPieceCellData) -> void:
 	var center: Vector2 = _top_center(cell.local_coord, cell.elevation)
@@ -452,12 +491,19 @@ func _sync_elevation_surface_occluders() -> void:
 		return
 	var active_coords: Dictionary[Vector2i, bool] = {}
 	var elevated_coords: Array[Vector2i] = []
+	var region_ids_by_coord: Dictionary[Vector2i, Vector2i] = {}
 	for coord in _board_cells:
 		var cell: HexCell = _board_cells[coord]
-		if cell == null or cell.elevation <= 0:
+		if cell == null:
+			continue
+		region_ids_by_coord[coord] = Vector2i(cell.terrain_type, cell.elevation)
+		if cell.elevation <= 0:
 			continue
 		active_coords[coord] = true
 		elevated_coords.append(coord)
+	var exposed_edges_by_coord: Dictionary[Vector2i, PackedInt32Array] = (
+		TERRAIN_REGION_OUTLINE_SCRIPT.get_exposed_edges(region_ids_by_coord)
+	)
 	elevated_coords.sort_custom(Callable(self, "_sort_surface_coords_back_to_front"))
 	for coord in elevated_coords:
 		var cell: HexCell = _board_cells[coord]
@@ -468,7 +514,14 @@ func _sync_elevation_surface_occluders() -> void:
 			_decoration_parent.add_child(surface)
 			_terrain_surface_occluders_by_coord[coord] = surface
 		surface.global_position = global_position + _top_center(coord, cell.elevation)
-		surface.call("configure_surface", cell.terrain_type, cell.visual_variant, coord, cell.elevation)
+		surface.call(
+			"configure_surface",
+			cell.terrain_type,
+			cell.visual_variant,
+			coord,
+			cell.elevation,
+			exposed_edges_by_coord.get(coord, PackedInt32Array())
+		)
 	# Mantiene las tapas elevadas antes de actores y props. El orden estable
 	# del grupo resuelve empates de Y-sort por profundidad y coordenada axial.
 	for surface_index in range(elevated_coords.size()):
