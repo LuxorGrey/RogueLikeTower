@@ -5,7 +5,7 @@ signal build_mode_changed(is_active: bool)
 signal tower_built(tower: Tower, coord: Vector2i)
 signal tower_selected(tower: Tower, coord: Vector2i)
 signal tower_upgraded(tower: Tower, new_level: int)
-signal tower_demolished(tower_data: TowerData, next_build_cost: int)
+signal tower_demolished(tower_data: TowerData, next_build_cost: int, refunded_gold: int)
 
 var last_error: String = ""
 var selected_tower: Tower
@@ -102,6 +102,19 @@ func get_current_build_cost(tower_data: TowerData) -> int:
 	if tower_data == null:
 		return -1
 	return tower_data.build_cost + get_tower_count(tower_data) * tower_data.build_cost_increment
+
+func get_demolition_refund(tower: Tower) -> int:
+	if tower == null or not is_instance_valid(tower):
+		return -1
+	var tower_data: TowerData = tower.get_tower_data()
+	if tower_data == null:
+		return -1
+	var tower_count: int = get_tower_count(tower_data)
+	if tower_count <= 0:
+		return -1
+	# Removing one copy returns the price of the last occupied slot in that
+	# tower type's price curve; levels and paid upgrades do not affect it.
+	return tower_data.build_cost + (tower_count - 1) * tower_data.build_cost_increment
 
 func get_placement_error(coord: Vector2i) -> String:
 	if not _is_build_mode or _tower_data == null:
@@ -228,6 +241,10 @@ func demolish_selected_tower() -> bool:
 	var tower: Tower = selected_tower
 	var coord: Vector2i = tower.cell_coord
 	var tower_data: TowerData = tower.get_tower_data()
+	var refunded_gold: int = get_demolition_refund(tower)
+	if refunded_gold < 0:
+		last_error = "No se pudo calcular la devolución de esta torre."
+		return false
 	if _board_grid != null and _board_grid.cells.has(coord):
 		var cell: HexCell = _board_grid.cells[coord]
 		if cell != null:
@@ -237,7 +254,10 @@ func demolish_selected_tower() -> bool:
 	tower.set_selected(false)
 	selected_tower = null
 	tower.queue_free()
-	tower_demolished.emit(tower_data, get_current_build_cost(tower_data))
+	var credited_refund: int = 0
+	if _run_economy != null:
+		credited_refund = int(_run_economy.call("add_gold", refunded_gold, &"tower_demolish_refund"))
+	tower_demolished.emit(tower_data, get_current_build_cost(tower_data), credited_refund)
 	return true
 
 func set_selected_targeting_mode(mode: int) -> bool:

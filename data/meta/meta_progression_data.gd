@@ -1,7 +1,11 @@
 class_name MetaProgressionData
 extends Resource
 
-@export var starting_unlocked_towers: Array[StringName] = [&"tower:ballista_demo"]
+@export var starting_unlocked_towers: Array[StringName] = [
+	&"tower:ballista_demo",
+	&"tower:mortar_demo",
+	&"tower:tesla_coil_demo",
+]
 @export var permanent_upgrades: Array[PermanentUpgradeData] = []
 @export var permanent_upgrade_catalogs: Array[Resource] = []
 @export_range(0, 1000000, 1) var base_run_reward: int = 5

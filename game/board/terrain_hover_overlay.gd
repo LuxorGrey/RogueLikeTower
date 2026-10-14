@@ -51,29 +51,6 @@ func _draw() -> void:
 			draw_polyline(closed_corners, color, 3.0, true)
 		else:
 			draw_polyline(closed_corners, color, 2.0, true)
-		_draw_path_edges(cell, center, corners, opacity)
-
-func _draw_path_edges(
-	cell: TerrainPieceCellData,
-	center: Vector2,
-	corners: PackedVector2Array,
-	opacity: float
-) -> void:
-	if cell.terrain_type != HexCell.TerrainType.PATH:
-		return
-	for direction_index in range(HexCoord.DIRECTION_OFFSETS.size()):
-		var edge_bit: int = 1 << direction_index
-		var is_explicit_edge: bool = (cell.path_edges & edge_bit) != 0
-		var is_flexible_edge: bool = (cell.flexible_path_edges & edge_bit) != 0
-		if not is_explicit_edge and not is_flexible_edge:
-			continue
-		var edge_start: int = posmod(direction_index + 1, 6)
-		var edge_end: int = posmod(direction_index + 2, 6)
-		var edge_midpoint: Vector2 = (corners[edge_start] + corners[edge_end]) * 0.5
-		var color := Color(0.90, 0.96, 1.0, opacity * (0.82 if is_explicit_edge else 0.50))
-		draw_line(center, edge_midpoint, color, 3.0 if is_explicit_edge else 2.5, true)
-		draw_circle(edge_midpoint, 3.5 if is_explicit_edge else 3.0, color)
-
 func _grid_opacity(distance: int) -> float:
 	match distance:
 		0:

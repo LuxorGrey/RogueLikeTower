@@ -313,7 +313,6 @@ func _execute_event_abilities(enemy: Enemy, trigger: int) -> void:
 	if enemy == null or not is_instance_valid(enemy) or enemy.state != Enemy.State.MOVING:
 		return
 	var enemy_data: EnemyData = enemy.get_enemy_data()
-	var enemy_id: int = enemy.get_instance_id()
 	for ability in enemy_data.abilities:
 		if ability.trigger == trigger and not _execute_enemy_ability(ability, enemy):
 			_fail_wave("Falló una habilidad activada al agotar una capa.")

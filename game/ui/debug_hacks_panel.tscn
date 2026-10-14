@@ -94,6 +94,18 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 38)
 text = "Desbloquear todo (solo esta run): no"
 
+[node name="SkipToCardsButton" type="Button" parent="Root/Center/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+text = "Saltar a la siguiente card · cada 3 rondas"
+
+[node name="OpenGeneralUpgradesButton" type="Button" parent="Root/Center/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+text = "Abrir tienda de mejoras generales"
+
 [node name="StartWaveButton" type="Button" parent="Root/Center/Panel/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -104,10 +116,16 @@ text = "Iniciar la ronda seleccionada"
 unique_name_in_owner = true
 layout_mode = 2
 custom_minimum_size = Vector2(0, 38)
-text = "Empezar una run desde cero"
+text = "Reiniciar run con mejoras actuales"
+
+[node name="CleanRunButton" type="Button" parent="Root/Center/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 38)
+text = "Empezar desde cero · mejoras y arsenal inicial"
 
 [node name="Note" type="Label" parent="Root/Center/Panel/Margin/Content"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "Ctrl+K abre o cierra este menú. Los desbloqueos de depuración no se guardan."
+text = "Ctrl+K abre o cierra este menú. Este reinicio deja Ballista, Mortar y Tesla Coil disponibles, limpia las demás torres y mejoras permanentes, y devuelve el XP invertido en mejoras."
 autowrap_mode = 3

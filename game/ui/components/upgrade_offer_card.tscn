@@ -4,21 +4,52 @@
 [ext_resource type="Theme" path="res://game/ui/themes/rogue_hud_theme.tres" id="2_theme"]
 
 [node name="UpgradeOfferCard" type="Button"]
-custom_minimum_size = Vector2(300, 260)
+custom_minimum_size = Vector2(300, 290)
 size_flags_horizontal = 3
 size_flags_vertical = 3
 text = ""
 theme = ExtResource("2_theme")
 script = ExtResource("1_script")
 
-[node name="CardContent" type="VBoxContainer" parent="."]
+[node name="TierBackground" type="TextureRect" parent="."]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 12
+expand_mode = 1
+stretch_mode = 6
+mouse_filter = 2
+
+[node name="CardFrame" type="NinePatchRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+patch_margin_left = 250
+patch_margin_top = 230
+patch_margin_right = 250
+patch_margin_bottom = 230
+draw_center = false
+mouse_filter = 2
+
+[node name="CardContent" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 48.0
+offset_top = 40.0
+offset_right = -48.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 9
 mouse_filter = 2
 
 [node name="RarityLabel" type="Label" parent="CardContent"]
@@ -32,8 +63,7 @@ mouse_filter = 2
 
 [node name="TowerIcon" type="TextureRect" parent="CardContent"]
 unique_name_in_owner = true
-visible = false
-custom_minimum_size = Vector2(50, 50)
+custom_minimum_size = Vector2(78, 78)
 layout_mode = 2
 size_flags_horizontal = 4
 expand_mode = 1

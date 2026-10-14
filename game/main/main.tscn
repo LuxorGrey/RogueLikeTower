@@ -1,4 +1,4 @@
-[gd_scene load_steps=45 format=3]
+[gd_scene load_steps=46 format=3]
 
 [ext_resource type="Script" path="res://game/main/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://game/board/terrain_piece_preview.gd" id="2_preview"]
@@ -132,6 +132,22 @@ content_margin_left = 10.0
 content_margin_top = 9.0
 content_margin_right = 10.0
 content_margin_bottom = 9.0
+
+[sub_resource type="StyleBoxFlat" id="CellHoverTooltipStyle"]
+bg_color = Color(0.055, 0.075, 0.084, 0.96)
+border_color = Color(0.28, 0.36, 0.38, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+content_margin_left = 6.0
+content_margin_top = 4.0
+content_margin_right = 6.0
+content_margin_bottom = 4.0
 
 [sub_resource type="StyleBoxFlat" id="TowerInfoPanelSimple"]
 bg_color = Color(0.055, 0.075, 0.084, 0.97)
@@ -781,12 +797,12 @@ text = "Cancelar"
 [node name="Hint" type="Label" parent="HUD/TerrainPanel/Margin/Content"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "Terreno: Q/E gira · clic confirma · Esc/clic derecho cancela. D dibuja las rutas."
+text = "Terreno: Q/E o rueda gira · T auto-coloca · clic confirma · Esc/clic derecho cancela."
 
 [node name="CameraHint" type="Label" parent="HUD/TerrainPanel/Margin/Content"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "Mapa: WASD mover · rueda = zoom · botón central + arrastrar · R recentra · H oculta interfaz."
+text = "Mapa: WASD mover · rueda = zoom fuera de colocación · botón central + arrastrar · R recentra · H oculta interfaz."
 
 [node name="TowerToolbar" type="MarginContainer" parent="HUD"]
 unique_name_in_owner = true
@@ -1075,3 +1091,20 @@ autowrap_mode = 2
 theme_override_colors/font_color = Color(0.929412, 0.941176, 0.94902, 1)
 theme_override_font_sizes/font_size = 12
 text = "Ronda 01 · enemigos"
+
+[node name="CellHoverTooltip" type="PanelContainer" parent="HUD"]
+unique_name_in_owner = true
+visible = false
+z_index = 1100
+custom_minimum_size = Vector2(190, 0)
+mouse_filter = 2
+theme = ExtResource("16_ui_theme")
+theme_override_styles/panel = SubResource("CellHoverTooltipStyle")
+
+[node name="CellHoverTooltipLabel" type="Label" parent="HUD/CellHoverTooltip"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.929412, 0.941176, 0.94902, 1)
+theme_override_font_sizes/font_size = 11
+text = "Grass · Construible\nh1 · Torres +1 daño / +0.5 hex"

@@ -49,6 +49,15 @@ Los ADR documentan decisiones de terreno, combate, campaña, progresión y UX en
 | [ADR-0061](ADR-0061-pausa-y-fases-de-expansion.md) | Pausa, exclusividad de la expansión y feedback hover de cofres | Código integrado; aceptación interactiva pendiente. |
 | [ADR-0062](ADR-0062-catalogo-de-upgrade-cards-y-permanent-upgrades.md) | Catálogo compatible de cartas temporales y mejoras permanentes | Catálogos y operaciones integrados; aceptación manual pendiente. Confirma ofertas cada tres rondas. |
 | [ADR-0063](ADR-0063-seleccion-y-retirada-de-objetos-del-terreno.md) | Selección/retirada de obstáculos y portales, redistribución de spawns y elevación visual | Código integrado; aceptación visual/interactiva pendiente. |
+| [ADR-0064](ADR-0064-reembolso-al-demoler-torres.md) | Reembolso al demoler según la curva de precio por tipo | Código integrado; revisión manual de cálculo pendiente. Sustituye el no reembolso provisional de ADR-0023. |
+| [ADR-0065](ADR-0065-panel-y-iconos-de-upgrade-cards.md) | Panel reutilizable, fondos de tier e iconos de cada operación | Código y PNG integrados; revisión visual pendiente. |
+| [ADR-0066](ADR-0066-cofres-al-colocar-y-sombras-de-elevacion.md) | Tirada de cofres al colocar y sombras rotatorias de altura | Tirada de cofres vigente; las sombras fueron retiradas por ADR-0070. |
+| [ADR-0067](ADR-0067-hacks-de-progresion-y-run-limpia.md) | Salto a cards, tienda desde hacks y reinicio limpio de mejoras | Código integrado; ADR-0069 actualiza el reinicio para volver al arsenal inicial. |
+| [ADR-0068](ADR-0068-sombras-recortadas-por-elevacion.md) | Sombras de losetas recortadas a receptores de menor altura | Sustituido; overlay y shader eliminados por ADR-0070. |
+| [ADR-0069](ADR-0069-desbloqueos-xp-y-feedback-de-altura.md) | Arsenal inicial, XP de perfil y lectura de altura | Código integrado; aceptación visual/interactiva pendiente. |
+| [ADR-0070](ADR-0070-sin-sombras-y-rutas-limpias-en-expansion.md) | Retirada de sombras generadas y preview PATH limpio | Código integrado; aceptación visual pendiente. |
+| [ADR-0071](ADR-0071-marco-de-cards-y-colocacion-automatica.md) | Marco perimetral de mejoras, miniaturas de terreno limpias y colocación automática | Código integrado; los controles de terreno se actualizaron en ADR-0072. |
+| [ADR-0072](ADR-0072-controles-y-tooltip-de-celdas.md) | Rotación Q/E y con rueda, auto-colocación T y tooltip compacto de terreno | Código integrado; aceptación visual/interactiva pendiente. |
 
 ## Regla para nuevos ADR
 

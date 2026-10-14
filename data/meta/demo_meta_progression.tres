@@ -12,7 +12,7 @@
 
 [resource]
 script = ExtResource("1_meta_data")
-starting_unlocked_towers = Array[StringName]([&"tower:ballista_demo"])
+starting_unlocked_towers = Array[StringName]([&"tower:ballista_demo", &"tower:mortar_demo", &"tower:tesla_coil_demo"])
 permanent_upgrades = Array[ExtResource("2_upgrade_script")]([ExtResource("3_starting_coffers"), ExtResource("4_mana_reservoir"), ExtResource("5_mana_wellspring"), ExtResource("6_tower_calibration"), ExtResource("7_card_archive"), ExtResource("8_chest_finder")])
 permanent_upgrade_catalogs = Array[Resource]([ExtResource("9_rogue_tower_catalog")])
 base_run_reward = 5

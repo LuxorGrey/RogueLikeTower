@@ -180,8 +180,8 @@ M12A está implementado en código; la aceptación manual sigue pendiente. Las r
 - Las cards de mejora incluyen el icono de torre afectada. Los textos de economía/campaña y descripciones convierten Gold/Mana en iconos PNG reutilizables.
 - La inspección técnica de enemigos y la selección de fixtures DEBUG se pliegan bajo `F3`; las estadísticas de objetivo siguen accesibles como tooltip de la torre seleccionada.
 - Preview/selección de pieza y controles de rotación/confirmación/cancelación conservan indicaciones de uso y tooltips.
-- Pantalla terminal clara para victoria/derrota: resultado, ronda alcanzada, rondas completas, recompensa y saldo de moneda meta.
-- Tienda de fin de run separa desbloqueos de torres y mejoras permanentes en categorías; muestra coste, estado de compra, efecto y acción de nueva run sin mezclar la moneda meta con el Gold de partida.
+- Pantalla terminal clara para victoria/derrota: resultado, ronda alcanzada, rondas completas, recompensa XP y saldo de XP de perfil.
+- Tienda de fin de run separa desbloqueos de torres y mejoras permanentes en categorías; muestra coste, estado de compra, efecto y acción de nueva run sin mezclar el XP de perfil con el Gold de partida.
 - Tooltips explican atajos, coste, patrón de ataque, mejoras, prioridades y operaciones de terreno.
 - Lenguaje visual consistente con el tablero: placas oscuras azul pizarra, bordes de acero, acciones ámbar, éxitos verde bosque y derrota terracota; sin assets externos.
 - Resultado: todos los sistemas comprensibles sin debug.
@@ -295,3 +295,44 @@ Estas cantidades NO son compromiso de diseño final.
 - Repartir el total de enemigos de cada oleada entre los portales que sigan activos.
 - Cerrar las cuñas estrechas de fachadas en vértices sin descartar triángulos pequeños y aumentar el offset visual de elevación de 18 a 28 px por nivel sin cambiar el rango lógico 0–2.
 - Resultado: limpieza de mapa y selección informada integradas; aceptación interactiva y revisión visual de fachadas/alturas pendientes. Ver [ADR-0063](../decisions/ADR-0063-seleccion-y-retirada-de-objetos-del-terreno.md).
+
+## M27 — Cards, economía de demolición y lectura de altura
+- Reutilizar un panel de Upgrade Card con fondos por rareza, marco compartido e icono grande para toda operación que aparezca en una oferta.
+- Devolver al demoler el precio marginal del slot ocupado según tipo y cantidad; los niveles de la torre no afectan al reembolso.
+- Sortear cofres al confirmar una expansión, no en la miniatura/ghost, y animar su aparición con un salto.
+- Proyectar sombras alfa de losetas y obstáculos con distancia vinculada a elevación y orientación rotatoria lenta.
+- Corregir las advertencias de GDScript reportadas.
+- Resultado: cards completas y una lectura más clara de recompensa y altura; código/PNG integrados, revisión visual/interactiva pendiente. Ver ADR-0064/0065/0066.
+
+## M28 — Hacks de progresión para pruebas
+- Añadir un hack que salte a la siguiente ronda con oferta programada de cards y use el pool real.
+- Abrir la tienda de mejoras generales desde el panel de hacks.
+- Añadir un reinicio de prueba que quite los niveles de mejoras permanentes, devuelva el XP invertido y vuelva al arsenal inicial, conservando XP no gastado y estadísticas.
+- Resultado: probar cards y compras desde el inicio sin esperar el loop normal; no se simulan recompensas de las rondas omitidas. Ver ADR-0067.
+
+## M29 — Sombras receptoras por elevación (retirado)
+- La primera versión se implementó brevemente y luego se retiró por petición explícita; no forma parte del estado actual del juego.
+- Ver ADR-0068 como historial técnico y ADR-0070 para el estado vigente sin sombras.
+
+## M30 — Eliminar sombras generadas y despejar preview PATH
+- Eliminar el overlay, el shader, los UID y todas las llamadas que proyectaban sombras de terreno y obstáculos.
+- Durante la selección/colocación de una pieza de expansión, ocultar flechas PATH y trazos de sockets/diagnóstico encima del camino.
+- Resultado: tablero sin sombras generadas y preview de terreno claro; aceptación visual pendiente. Ver [ADR-0070](../decisions/ADR-0070-sin-sombras-y-rutas-limpias-en-expansion.md).
+
+## M31 — Arsenal inicial, XP y lectura de altura
+- Dejar Ballista, Mortar y Tesla Coil como torres gratuitas iniciales; fijar costes de XP de perfil de 50 para Frost Keep/Flame Thrower/Poison Sprayer y 100 para Shredder.
+- Hacer que el hack de reinicio restablezca mejoras permanentes y el arsenal inicial; las runs normales conservan compras.
+- Mostrar en Tower Info la altura y el bonus real de daño/rango de la torre seleccionada.
+- Resultado: el jugador ve una progresión de desbloqueo y entiende el efecto de construir en altura. Ver [ADR-0069](../decisions/ADR-0069-desbloqueos-xp-y-feedback-de-altura.md).
+
+## M32 — Marco de Upgrade Cards y colocación automática
+- Dibujar la textura de tier como fondo y el marco común como borde 9-slice alrededor del panel, sin parche central escalado.
+- Quitar de las miniaturas de expansión las ramificaciones y flechas de conexión PATH.
+- Mostrar durante la colocación el atajo `T` y buscar/confirmar una posición válida al pulsarlo; respetar validador, grafo y continuación futura. Si no existe, informar al jugador sin modificar el tablero.
+- Resultado: cards legibles y alternativa rápida que conserva las reglas de expansión. Ver [ADR-0071](../decisions/ADR-0071-marco-de-cards-y-colocacion-automatica.md).
+
+## M33 — Rotación y tooltip compacto de terreno
+- Restaurar `Q`/`E` para rotar en ambos sentidos; la rueda rota durante una colocación y mantiene el zoom fuera de ella.
+- Asignar `T` a la colocación automática existente y mantener visible su aviso durante la expansión.
+- Mostrar al hover sin selección un tooltip pequeño con tipo/estado de terreno, elevación y bonus de daño/alcance de las torres compatibles; ocultarlo ante selecciones o paneles contextuales.
+- Resultado: interacción de colocación consistente y lectura rápida de los hexes; revisión visual/interactiva pendiente. Ver [ADR-0072](../decisions/ADR-0072-controles-y-tooltip-de-celdas.md).

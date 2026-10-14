@@ -61,6 +61,12 @@ theme_override_font_sizes/font_size = 30
 text = "RUN FINALIZADA"
 horizontal_alignment = 1
 
+[node name="DebugCloseButton" type="Button" parent="MetaShopRoot/MetaShop/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 36)
+text = "Volver al tablero"
+
 [node name="SummaryLabel" type="Label" parent="MetaShopRoot/MetaShop/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2

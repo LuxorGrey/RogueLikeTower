@@ -67,7 +67,7 @@ Los fixtures que solo aparecen mediante DEBUG (dummies, objetivos de entrenamien
 | **Shield** | Capa consumible de enemigo y multiplicador de daño de torre. |
 | **Gold** | Moneda de la run. |
 | **Mana** | Recurso de energía de la run. |
-| **Meta Currency** | Moneda propia de progresión permanente; no es el Gold de una run ni un nombre importado de Rogue Tower. |
+| **XP de perfil** | Saldo persistente que compra unlocks de torres y mejoras permanentes; se guarda en el campo interno `meta_currency` por compatibilidad. No es el Gold de la run. |
 | **XP** | Experiencia de torre. |
 | **Path**, **Grass**, **Mountain** | Tipos de terreno. `Path` no permite construir; `Grass` y `Mountain` son construibles según las reglas propias. |
 

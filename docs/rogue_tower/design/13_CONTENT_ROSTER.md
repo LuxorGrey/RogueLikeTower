@@ -64,7 +64,7 @@ Los 172 recursos añadidos están en [rogue_tower_compatible_cards.tres](../../.
 
 ## Mejoras permanentes
 
-Se compran en la tienda al acabar una run y se aplican desde la siguiente. Costes en Meta Currency por nivel. Las cifras y precios del catálogo son provisionales.
+Se compran en la tienda al acabar una run y se aplican desde la siguiente. Costes en XP de perfil por nivel. Las cifras y precios del catálogo son provisionales.
 
 | Mejora | Efecto por nivel | Niveles y costes |
 |---|---|---|

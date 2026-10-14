@@ -76,7 +76,8 @@ func configure(obstacle_type: int, chest_available: bool) -> void:
 		_play_chest_appearance()
 	elif not chest_available and _chest_appearance_tween != null and _chest_appearance_tween.is_running():
 		_chest_appearance_tween.kill()
-		scale = Vector2.ONE
+		_chest_sprite.position = _chest_base_position
+		_chest_sprite.scale = _chest_base_scale
 	if not chest_available:
 		set_chest_hovered(false)
 	queue_redraw()
@@ -148,11 +149,45 @@ func _sync_chest_hover_sprite() -> void:
 func _play_chest_appearance() -> void:
 	if _chest_appearance_tween != null and _chest_appearance_tween.is_running():
 		_chest_appearance_tween.kill()
-	scale = Vector2(0.32, 0.32)
+	_chest_sprite.position = _chest_base_position + Vector2(0.0, 14.0)
+	_chest_sprite.scale = _chest_base_scale * 0.55
 	_chest_appearance_tween = create_tween()
-	_chest_appearance_tween.tween_property(self, "scale", Vector2(1.18, 1.18), 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	_chest_appearance_tween.tween_property(self, "scale", Vector2(0.94, 0.94), 0.11).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
-	_chest_appearance_tween.tween_property(self, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_chest_appearance_tween.tween_property(
+		_chest_sprite,
+		"position",
+		_chest_base_position + Vector2(0.0, -20.0),
+		0.34
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_chest_appearance_tween.parallel().tween_property(
+		_chest_sprite,
+		"scale",
+		_chest_base_scale * 1.16,
+		0.34
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_chest_appearance_tween.tween_property(
+		_chest_sprite,
+		"position",
+		_chest_base_position + Vector2(0.0, 2.0),
+		0.12
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	_chest_appearance_tween.parallel().tween_property(
+		_chest_sprite,
+		"scale",
+		_chest_base_scale * 0.94,
+		0.12
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	_chest_appearance_tween.tween_property(
+		_chest_sprite,
+		"position",
+		_chest_base_position,
+		0.18
+	).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	_chest_appearance_tween.parallel().tween_property(
+		_chest_sprite,
+		"scale",
+		_chest_base_scale,
+		0.18
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _draw() -> void:
 	var visual_size: Vector2 = _get_visual_size()

@@ -5,6 +5,21 @@ extends Resource
 @export var gold: Texture2D
 @export var mana: Texture2D
 
+@export_group("Efectos de cartas")
+@export var damage: Texture2D
+@export var critical: Texture2D
+@export var range_icon: Texture2D
+@export var attack_speed: Texture2D
+@export var area: Texture2D
+@export var enemy: Texture2D
+@export var elevation: Texture2D
+
+@export_group("Cards de mejora")
+@export var upgrade_card_frame: Texture2D
+@export var tier_common: Texture2D
+@export var tier_uncommon: Texture2D
+@export var tier_rare: Texture2D
+
 @export_group("Capas")
 @export var health: Texture2D
 @export var armor: Texture2D
@@ -36,6 +51,13 @@ func get_icon(icon_name: StringName) -> Texture2D:
 	match icon_name:
 		&"gold": icon = gold
 		&"mana": icon = mana
+		&"damage": icon = damage
+		&"critical": icon = critical
+		&"range": icon = range_icon
+		&"attack_speed": icon = attack_speed
+		&"area": icon = area
+		&"enemy": icon = enemy
+		&"elevation": icon = elevation
 		&"health": icon = health
 		&"armor": icon = armor
 		&"shield": icon = shield
@@ -66,3 +88,61 @@ func normalize_tower_icon_id(tower_id: StringName) -> StringName:
 
 func get_tower_icon(tower_id: StringName) -> Texture2D:
 	return get_icon(normalize_tower_icon_id(tower_id))
+
+func get_card_tier_background(rarity: int) -> Texture2D:
+	match rarity:
+		1:
+			return tier_uncommon
+		2:
+			return tier_rare
+		_:
+			return tier_common
+
+func get_card_icon(card: Resource) -> Texture2D:
+	if card == null:
+		return damage
+	var operations: Array = card.get("modifier_operations")
+	for operation_variant in operations:
+		var operation: Resource = operation_variant as Resource
+		if operation == null:
+			continue
+		var tower_id: StringName = normalize_tower_icon_id(StringName(operation.get("affected_tower_id")))
+		if tower_id in [&"ballista", &"mortar", &"tesla_coil", &"frost_keep", &"flame_thrower", &"poison_sprayer", &"shredder"]:
+			return get_tower_icon(tower_id)
+	for operation_variant in operations:
+		var operation: Resource = operation_variant as Resource
+		if operation == null:
+			continue
+		var operation_type: int = int(operation.get("type"))
+		var icon_name: StringName = &"damage"
+		match operation_type:
+			CardModifierOperation.Type.TOWER_CRIT_CHANCE_ADD, CardModifierOperation.Type.STATUS_CRIT_CHANCE_ADD, CardModifierOperation.Type.STATUS_CRIT_DAMAGE_CONVERSION_ADD, CardModifierOperation.Type.TOWER_CRIT_CHANCE_PER_LEVEL_ADD:
+				icon_name = &"critical"
+			CardModifierOperation.Type.TOWER_RANGE_ADD:
+				icon_name = &"range"
+			CardModifierOperation.Type.TOWER_ELEVATION_RANGE_BONUS_MULTIPLIER_ADD:
+				icon_name = &"elevation"
+			CardModifierOperation.Type.TOWER_ATTACK_RATE_MULTIPLIER:
+				icon_name = &"attack_speed"
+			CardModifierOperation.Type.TOWER_AREA_RADIUS_ADD, CardModifierOperation.Type.TOWER_AREA_RADIUS_MULTIPLIER_ADD:
+				icon_name = &"area"
+			CardModifierOperation.Type.TOWER_MANA_COST_MULTIPLIER, CardModifierOperation.Type.MANA_MAX_ADD, CardModifierOperation.Type.MANA_REGEN_ADD, CardModifierOperation.Type.TOWER_MANA_COST_DAMAGE_RATIO_ADD, CardModifierOperation.Type.MANA_REGEN_MAX_PERCENT_ADD, CardModifierOperation.Type.MANA_ON_KILL_MAX_PERCENT_ADD:
+				icon_name = &"mana"
+			CardModifierOperation.Type.TOWER_HIT_POINT_MULTIPLIER_ADD:
+				icon_name = [&"health", &"armor", &"shield"][clampi(int(operation.get("affected_hit_point_layer")), 0, 2)]
+			CardModifierOperation.Type.BASE_MAX_HEALTH_ADD:
+				icon_name = &"health"
+			CardModifierOperation.Type.GOLD_PER_KILL_ADD:
+				icon_name = &"gold"
+			CardModifierOperation.Type.ENEMY_BASE_DAMAGE_ADD:
+				icon_name = &"enemy"
+			CardModifierOperation.Type.STATUS_DURATION_MULTIPLIER, CardModifierOperation.Type.TOWER_STATUS_DAMAGE_BONUS, CardModifierOperation.Type.STATUS_MAX_DAMAGE_PER_SECOND_ADD, CardModifierOperation.Type.STATUS_CONDITION_LAYER_DAMAGE_ADD, CardModifierOperation.Type.TOWER_SLOW_FRACTION_ADD, CardModifierOperation.Type.STATUS_SLOW_DAMAGE_SCALING_ADD, CardModifierOperation.Type.STATUS_POISON_SLOW_FRACTION_ADD, CardModifierOperation.Type.STATUS_STRENGTH_CAP_ADD:
+				var status_id: StringName = StringName(operation.get("affected_status_id"))
+				if status_id in [&"burn", &"slow", &"poison", &"bleed"]:
+					icon_name = status_id
+			CardModifierOperation.Type.TOWER_DAMAGE_ADD, CardModifierOperation.Type.TOWER_DAMAGE_MULTIPLIER:
+				icon_name = &"damage"
+		var icon: Texture2D = get_icon(icon_name)
+		if icon != null:
+			return icon
+	return damage

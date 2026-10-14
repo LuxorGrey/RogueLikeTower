@@ -14,8 +14,11 @@ func _ready() -> void:
 	%RefillManaButton.pressed.connect(_on_action_pressed.bind(&"refill_mana"))
 	%HealBaseButton.pressed.connect(_on_action_pressed.bind(&"heal_base"))
 	_unlock_button.pressed.connect(_on_action_pressed.bind(&"toggle_unlocks"))
+	%SkipToCardsButton.pressed.connect(_on_action_pressed.bind(&"skip_to_cards"))
+	%OpenGeneralUpgradesButton.pressed.connect(_on_action_pressed.bind(&"open_general_upgrades"))
 	%StartWaveButton.pressed.connect(_on_action_pressed.bind(&"start_wave"))
 	%RestartRunButton.pressed.connect(_on_action_pressed.bind(&"restart_run"))
+	%CleanRunButton.pressed.connect(_on_action_pressed.bind(&"restart_clean_run"))
 
 func set_unlock_status(enabled: bool) -> void:
 	_unlock_button.text = "Desbloquear todo (solo esta run): %s" % ("sí" if enabled else "no")

@@ -58,6 +58,41 @@ func begin_run() -> int:
 	progress_changed.emit()
 	return current_run_seed
 
+func reset_permanent_upgrades_for_clean_run() -> int:
+	last_error = ""
+	if _save_blocked:
+		last_error = "No se pueden reiniciar mejoras: el guardado está bloqueado."
+		return -1
+	var starting_towers: Array[StringName] = PROGRESSION_DATA.starting_unlocked_towers.duplicate()
+	var has_extra_tower_unlocks: bool = false
+	for unlock_id in _save_data.unlocked_towers:
+		if not starting_towers.has(unlock_id):
+			has_extra_tower_unlocks = true
+			break
+	if _save_data.permanent_upgrade_levels.is_empty() and not has_extra_tower_unlocks:
+		return 0
+	var refund: int = 0
+	for upgrade in _all_permanent_upgrades():
+		if upgrade == null:
+			continue
+		var current_level: int = _get_upgrade_level(upgrade)
+		for purchased_level in range(current_level):
+			refund += maxi(upgrade.get_cost_for_next_level(purchased_level), 0)
+	var previous_currency: int = _save_data.meta_currency
+	var previous_levels: Dictionary[StringName, int] = _save_data.permanent_upgrade_levels.duplicate()
+	var previous_unlocks: Array[StringName] = _save_data.unlocked_towers.duplicate()
+	_save_data.permanent_upgrade_levels.clear()
+	_save_data.unlocked_towers = starting_towers
+	_save_data.meta_currency = mini(previous_currency + refund, SaveData.MAX_META_CURRENCY)
+	var accepted_refund: int = _save_data.meta_currency - previous_currency
+	if not _save_progress():
+		_save_data.meta_currency = previous_currency
+		_save_data.permanent_upgrade_levels = previous_levels
+		_save_data.unlocked_towers = previous_unlocks
+		return -1
+	progress_changed.emit()
+	return accepted_refund
+
 func finish_run(outcome: StringName, reached_round: int, run_seed: int) -> Dictionary:
 	if not _active_run:
 		return _save_data.last_run_summary.duplicate(true)
@@ -244,7 +279,7 @@ func purchase_tower(unlock_id: StringName) -> bool:
 		last_error = "Esa torre ya está desbloqueada."
 		return false
 	if _save_data.meta_currency < tower_data.meta_unlock_cost:
-		last_error = "Moneda meta insuficiente: %d disponibles · %d necesarios." % [_save_data.meta_currency, tower_data.meta_unlock_cost]
+		last_error = "XP insuficiente: %d disponibles · %d necesarios." % [_save_data.meta_currency, tower_data.meta_unlock_cost]
 		return false
 	var previous_currency: int = _save_data.meta_currency
 	_save_data.meta_currency -= tower_data.meta_unlock_cost

@@ -63,8 +63,7 @@ static func get_obstacle_display_name(obstacle_type: int) -> String:
 static func create_piece_offer(
 	piece: TerrainPieceData,
 	run_seed: int,
-	offer_index: int,
-	chest_chance: float
+	offer_index: int
 ) -> TerrainPieceData:
 	if piece == null:
 		return null
@@ -99,16 +98,21 @@ static func create_piece_offer(
 			)
 			if obstacle_rng.randf() < obstacle_chance:
 				offer_cell.obstacle_type = obstacle_rng.randi_range(0, OBSTACLE_COUNT - 1)
-			else:
-				var chest_rng := RandomNumberGenerator.new()
-				chest_rng.seed = hash(offer_key + ":chest")
-				offer_cell.chest_available = chest_rng.randf() < clampf(
-					chest_chance,
-					BASE_CHEST_CHANCE,
-					MAX_CHEST_CHANCE
-				)
 		offer.cells.append(offer_cell)
 	return offer
+
+static func roll_chest_at_placement(cell: HexCell, run_seed: int, chest_chance: float) -> void:
+	if cell == null:
+		return
+	cell.chest_available = false
+	if cell.terrain_type == HexCell.TerrainType.PATH or cell.obstacle_type != HexCell.ObstacleType.NONE:
+		return
+	var chest_rng := _rng_for(run_seed, cell.coord.to_key(), 47)
+	cell.chest_available = chest_rng.randf() < clampf(
+		chest_chance,
+		BASE_CHEST_CHANCE,
+		MAX_CHEST_CHANCE
+	)
 
 static func set_random_cell_contents(cell: HexCell, run_seed: int, chest_chance: float) -> void:
 	if cell == null:

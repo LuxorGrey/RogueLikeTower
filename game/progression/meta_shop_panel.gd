@@ -10,6 +10,7 @@ var _tower_profiles: Array[TowerData] = []
 var _permanent_upgrades: Array[PermanentUpgradeData] = []
 var _run_summary: Dictionary = {}
 var _is_open: bool = false
+var _debug_access_active: bool = false
 var _tower_rows: Array[Dictionary] = []
 var _upgrade_rows: Array[Dictionary] = []
 var _icon_catalog: Resource
@@ -17,6 +18,7 @@ var _icon_catalog: Resource
 @onready var _currency_label: Label = %CurrencyLabel
 @onready var _summary_label: Label = %SummaryLabel
 @onready var _outcome_label: Label = %OutcomeLabel
+@onready var _debug_close_button: Button = %DebugCloseButton
 @onready var _status_label: Label = %StatusLabel
 @onready var _tower_tab_button: Button = %TowerTabButton
 @onready var _upgrade_tab_button: Button = %UpgradeTabButton
@@ -52,6 +54,8 @@ func _ready() -> void:
 		row["data"] = upgrade
 		_upgrade_rows.append(row)
 	%NewRunButton.pressed.connect(_on_new_run_pressed)
+	_debug_close_button.pressed.connect(_close_debug_access)
+	_debug_close_button.hide()
 	_select_category(&"towers")
 	hide()
 
@@ -61,10 +65,35 @@ func is_open() -> bool:
 func present(run_summary: Dictionary) -> void:
 	_run_summary = run_summary.duplicate(true)
 	_is_open = true
+	_debug_access_active = false
+	_debug_close_button.hide()
 	_status_label.text = ""
 	_select_category(&"towers")
 	visible = true
 	_refresh()
+
+func present_for_debug() -> void:
+	_run_summary = {
+		"outcome": "DEBUG",
+		"reached_round": 1,
+		"completed_rounds": 0,
+		"meta_reward": 0,
+		"run_seed": 0,
+	}
+	_is_open = true
+	_debug_access_active = true
+	_debug_close_button.show()
+	_status_label.text = ""
+	_select_category(&"upgrades")
+	visible = true
+	_refresh()
+
+func _close_debug_access() -> void:
+	if not _debug_access_active:
+		return
+	_debug_access_active = false
+	_is_open = false
+	hide()
 
 func _create_shop_row(title_text: String, description_text: String) -> Dictionary:
 	var row_container := SHOP_ROW_SCENE.instantiate() as PanelContainer
@@ -109,7 +138,10 @@ func _refresh() -> void:
 	if _currency_label == null or _summary_label == null:
 		return
 	var outcome: String = String(_run_summary.get("outcome", ""))
-	if outcome == "VICTORY":
+	if outcome == "DEBUG":
+		_outcome_label.text = "DEPURACIÓN · MEJORAS GENERALES"
+		_outcome_label.add_theme_color_override("font_color", Color("#f1cf78"))
+	elif outcome == "VICTORY":
 		_outcome_label.text = "VICTORIA · DEMO COMPLETADA"
 		_outcome_label.add_theme_color_override("font_color", Color("#8fca8c"))
 	else:
@@ -119,13 +151,17 @@ func _refresh() -> void:
 	var completed_rounds: int = int(_run_summary.get("completed_rounds", 0))
 	var reward: int = int(_run_summary.get("meta_reward", 0))
 	var run_seed_value: int = int(_run_summary.get("run_seed", 0))
-	_summary_label.text = "Ronda alcanzada %02d/45   ·   %d rondas completas   ·   +%d Meta Currency" % [
-		reached_round,
-		completed_rounds,
-		reward,
-	]
-	_summary_label.tooltip_text = "Semilla de esta run: %d" % run_seed_value
-	_currency_label.text = "META CURRENCY   %d" % int(MetaProgression.call("get_meta_currency"))
+	if outcome == "DEBUG":
+		_summary_label.text = "Tienda abierta desde hacks · las compras se aplican en la próxima run."
+		_summary_label.tooltip_text = "Acceso de depuración a la tienda de mejoras permanentes."
+	else:
+		_summary_label.text = "Ronda alcanzada %02d/45   ·   %d rondas completas   ·   +%d XP de perfil" % [
+			reached_round,
+			completed_rounds,
+			reward,
+		]
+		_summary_label.tooltip_text = "Semilla de esta run: %d" % run_seed_value
+	_currency_label.text = "XP DE PERFIL   %d" % int(MetaProgression.call("get_meta_currency"))
 	_tower_tab_button.text = "TORRES  ·  %d" % _tower_rows.size()
 	_upgrade_tab_button.text = "MEJORAS  ·  %d" % _upgrade_rows.size()
 	var can_save: bool = bool(MetaProgression.call("can_persist_progress"))
@@ -139,9 +175,9 @@ func _refresh() -> void:
 			action_button.disabled = true
 			action_button.tooltip_text = "Ya forma parte del arsenal para las próximas runs."
 		else:
-			action_button.text = "Desbloquear · %d" % tower_data.meta_unlock_cost
+			action_button.text = "Desbloquear · %d XP" % tower_data.meta_unlock_cost
 			action_button.disabled = not can_save or current_currency < tower_data.meta_unlock_cost
-			action_button.tooltip_text = "Añade %s al arsenal permanente por %d monedas meta." % [tower_data.display_name, tower_data.meta_unlock_cost]
+			action_button.tooltip_text = "Añade %s al arsenal permanente por %d XP de perfil." % [tower_data.display_name, tower_data.meta_unlock_cost]
 	for row in _upgrade_rows:
 		var upgrade := row["data"] as PermanentUpgradeData
 		var action_button := row["button"] as Button
@@ -154,7 +190,7 @@ func _refresh() -> void:
 		else:
 			action_button.text = "Mejorar · %d/%d · %d" % [level, upgrade.max_level, cost]
 			action_button.disabled = not can_save or current_currency < cost or not bool(MetaProgression.call("can_purchase_upgrade", upgrade.id))
-			action_button.tooltip_text = "Nivel %d/%d · coste %d monedas meta." % [level, upgrade.max_level, cost]
+			action_button.tooltip_text = "Nivel %d/%d · coste %d XP de perfil." % [level, upgrade.max_level, cost]
 	if not can_save:
 		_status_label.text = String(MetaProgression.call("get_save_error"))
 		_status_label.add_theme_color_override("font_color", Color("#e58a72"))

@@ -27,8 +27,8 @@ func sync_pause_state() -> void:
 		set_pressed_no_signal(is_paused)
 	text = "Reanudar · P" if is_paused else "Pausar · P"
 
-func _on_toggled(is_pressed: bool) -> void:
-	get_tree().paused = is_pressed
+func _on_toggled(toggled_on: bool) -> void:
+	get_tree().paused = toggled_on
 	sync_pause_state()
 
 func _ensure_pause_action() -> void:

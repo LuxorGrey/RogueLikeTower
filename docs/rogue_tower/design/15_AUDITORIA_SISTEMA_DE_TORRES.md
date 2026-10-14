@@ -126,7 +126,7 @@ La wiki describe el daño de estados como un porcentaje del daño de torre habil
 
 ## Efecto de cards y permanente
 
-Las 190 cards del pool pueden sumar daño, multiplicar daño, ampliar alcance/radio, modificar coste y regeneración de Mana, crítico, capas H/A/S, estados, Gold, vida de base y daño que recibe la base. Los nombres y operaciones ejecutables están en el [roster activo](13_CONTENT_ROSTER.md). Los valores aditivos se suman; los multiplicadores se multiplican. Una card no muta el Resource compartido. Los prerrequisitos y unlocks adaptan las ramas al roster y la meta-progresión propios; no se copia la estructura de XP del referente. Las mejoras permanentes compradas después de una run se aplican desde la siguiente.
+Las 190 cards del pool pueden sumar daño, multiplicar daño, ampliar alcance/radio, modificar coste y regeneración de Mana, crítico, capas H/A/S, estados, Gold, vida de base y daño que recibe la base. Los nombres y operaciones ejecutables están en el [roster activo](13_CONTENT_ROSTER.md). Los valores aditivos se suman; los multiplicadores se multiplican. Una card no muta el Resource compartido. Los prerrequisitos y unlocks de cartas adaptan las ramas al roster propio. Para torres sí se adopta el principio de gastar XP de perfil en unlocks: arsenal inicial Ballista/Mortar/Tesla Coil, costes 50 XP para Frost Keep/Flame Thrower/Poison Sprayer y 100 XP para Shredder. La fórmula de recompensa XP sigue siendo propia/configurable. Las mejoras permanentes compradas después de una run se aplican desde la siguiente; ver ADR-0069.
 
 ## Diferencias de diseño abiertas
 

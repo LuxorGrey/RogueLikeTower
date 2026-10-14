@@ -199,7 +199,7 @@ func _draw() -> void:
 		if is_ghost:
 			_draw_ghost_cell_content(cell)
 	if _board_mode and _path_graph != null:
-		if _path_debug_visible:
+		if _path_debug_visible and not _placement_active:
 			_draw_path_debug_overlay()
 
 func _draw_path_debug_overlay() -> void:
@@ -400,21 +400,6 @@ func _draw_ghost_cell_content(cell: TerrainPieceCellData) -> void:
 			false,
 			content_tint
 		)
-	elif cell.chest_available:
-		var chest_texture: Texture2D = TERRAIN_VISUAL_CATALOG_SCRIPT.TREASURE_CHEST
-		var chest_texture_size := Vector2(chest_texture.get_width(), chest_texture.get_height())
-		var chest_scale: float = minf(
-			84.0 / chest_texture_size.x,
-			84.0 / chest_texture_size.y
-		)
-		var chest_size: Vector2 = chest_texture_size * chest_scale
-		var chest_center: Vector2 = _top_center(cell.local_coord, cell.elevation) + Vector2(0.0, -36.0)
-		draw_texture_rect(
-			chest_texture,
-			Rect2(chest_center - chest_size * 0.5, chest_size),
-			false,
-			content_tint
-		)
 
 func _grid_opacity_for_cell(cell: TerrainPieceCellData) -> float:
 	if _hovered_cell == null:
@@ -560,6 +545,7 @@ func _spawn_endpoint_key(endpoint: PathEndpoint) -> String:
 func _sync_path_flow_overlay() -> void:
 	if _path_flow_overlay == null or not is_instance_valid(_path_flow_overlay):
 		return
+	_path_flow_overlay.visible = not _placement_active
 	var preview_graph: PathGraph = null
 	if _placement_active and _placement_is_valid and _placement_path_graph != null and _placement_path_graph.is_valid:
 		preview_graph = _placement_path_graph

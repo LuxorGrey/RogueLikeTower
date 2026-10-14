@@ -4,7 +4,6 @@ const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_
 
 const HEX_RADIUS: float = 52.0
 const ELEVATION_PIXEL_OFFSET: float = 28.0
-const CHEST_DISPLAY_SIZE: Vector2 = Vector2(84.0, 84.0)
 const HEX_OUTLINE: Color = Color(0.82, 0.87, 0.84)
 const PATH_COLOR: Color = Color(0.35, 0.40, 0.43)
 const GRASS_COLOR: Color = Color(0.28, 0.57, 0.34)
@@ -72,7 +71,6 @@ func _draw() -> void:
 			false
 		)
 		draw_polyline(closed_corners, HEX_OUTLINE, maxf(1.0, 1.8 * render_scale), true)
-		_draw_path_edges(cell, center, corners, render_scale)
 	_draw_obstacles(cells, rendered_centers, render_scale)
 
 func _draw_obstacles(
@@ -87,23 +85,6 @@ func _draw_obstacles(
 			draw_texture_rect(
 				TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_texture(cell.obstacle_type),
 				Rect2(center - obstacle_size * 0.5, obstacle_size),
-				false
-			)
-		elif cell.chest_available:
-			var chest_texture: Texture2D = TERRAIN_VISUAL_CATALOG_SCRIPT.TREASURE_CHEST
-			var texture_size := Vector2(chest_texture.get_width(), chest_texture.get_height())
-			var chest_scale: float = minf(
-				CHEST_DISPLAY_SIZE.x / texture_size.x,
-				CHEST_DISPLAY_SIZE.y / texture_size.y
-			)
-			var chest_size: Vector2 = texture_size * chest_scale * render_scale
-			var chest_center: Vector2 = centers[cell.local_coord] + Vector2(
-				0.0,
-				(-CHEST_DISPLAY_SIZE.y * 0.5 + 6.0) * render_scale
-			)
-			draw_texture_rect(
-				chest_texture,
-				Rect2(chest_center - chest_size * 0.5, chest_size),
 				false
 			)
 
@@ -138,27 +119,6 @@ func _draw_cliffs(
 			var cliff_color: Color = _terrain_color(cell.terrain_type).darkened(0.38)
 			draw_colored_polygon(PackedVector2Array([upper_start, upper_end, lower_end]), cliff_color)
 			draw_colored_polygon(PackedVector2Array([upper_start, lower_end, lower_start]), cliff_color)
-
-func _draw_path_edges(
-	cell: TerrainPieceCellData,
-	center: Vector2,
-	corners: PackedVector2Array,
-	render_scale: float
-) -> void:
-	if cell.terrain_type != HexCell.TerrainType.PATH:
-		return
-	for direction_index in range(HexCoord.DIRECTION_OFFSETS.size()):
-		var edge_bit: int = 1 << direction_index
-		var explicit_edge: bool = (cell.path_edges & edge_bit) != 0
-		var flexible_edge: bool = (cell.flexible_path_edges & edge_bit) != 0
-		if not explicit_edge and not flexible_edge:
-			continue
-		var edge_start: int = posmod(direction_index + 1, 6)
-		var edge_end: int = posmod(direction_index + 2, 6)
-		var midpoint: Vector2 = (corners[edge_start] + corners[edge_end]) * 0.5
-		var color := Color(0.9, 0.94, 0.95, 0.92 if explicit_edge else 0.58)
-		draw_line(center, midpoint, color, maxf(1.0, (3.0 if explicit_edge else 2.5) * render_scale), true)
-		draw_circle(midpoint, maxf(1.5, (3.5 if explicit_edge else 3.0) * render_scale), color)
 
 func _cell_center(cell: TerrainPieceCellData) -> Vector2:
 	var coord := HexCoord.new(cell.local_coord.x, cell.local_coord.y)

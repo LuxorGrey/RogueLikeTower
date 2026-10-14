@@ -140,7 +140,7 @@ Para dar M8 por aceptado deben pasar todos los criterios de la sección y la pru
 
 ## M9 Economy + Mana
 - `Main` configura `RunEconomyService` desde `RunEconomyData`; el perfil de prueba inicia con 150 Gold, 100/100 Mana y regen interna de 1.5/s. El tooltip del Mana y las descripciones de mejoras expresan tasas y modificadores como equivalencias con cantidades e intervalos enteros, sin decimales ni redondear el valor runtime.
-- El Gold de construcción es runtime de esta run y no altera `MetaProgression.meta_currency` ni se persiste como moneda meta.
+- El Gold de construcción es runtime de esta run y no altera `MetaProgression.meta_currency` (XP de perfil) ni se persiste.
 - Los siete perfiles principales y sus costes aparecen en la barra según sus Resources: Ballista 10, Mortar 200, Tesla Coil 200, Frost Keep 250, Flame Thrower 300, Poison Sprayer 300 y Shredder 500 Gold, antes de incrementos por cantidad y mejoras de run. Los atajos `8`, `9` y `0` mantienen Armor Piercing Bolt/Sapping Bolt/Status Probe a 40 Gold; Sapping Bolt indica 4 Mana por ataque.
 - Una construcción legal cobra una sola vez antes de ocupar la celda. Terreno inválido, casilla ocupada o saldo insuficiente no cobran ni crean torre/ocupación.
 - Una mejora cobra `TowerData.get_upgrade_cost(nivel_actual)`: en los fixtures M9, nivel 1→2 cuesta 20 Gold y nivel 2→3 cuesta 35. El nivel/stats aumentan una sola vez; tope o fondos insuficientes dejan nivel y saldo intactos.
@@ -207,7 +207,7 @@ M9.5 queda aceptado cuando pasan todos los criterios y se observa cada perfil en
 3. En una oleada con grupos espaciados, comprobar que pendientes llega a cero antes de que la ronda termine si aún hay enemigos vivos. Probar también muerte/llegada a base mientras quedan grupos pendientes.
 4. Completar varias rondas y expansiones, incluyendo una ronda con oferta M11. Verificar bloqueo de acciones entre fases y orden expansión→carta→siguiente ronda.
 5. En cada oferta, comprobar que una card está marcada `EXTIENDE RUTA` y que su ghost empieza en una posición/rotación legales guardadas. La pieza sugerida debe variar entre recta, curva y bifurcación; cuando la elegida no sea recta, las otras cards no deben introducir una recta. Confirma que conecta con una ruta existente, aumenta su longitud y deja otra opción legal para la expansión siguiente. Para las otras cards, mueve y gira el ghost hasta una posición que bloquearía toda futura prolongación: debe verse inválido, explicar el motivo y no permitir confirmar.
-6. Elige una pieza con obstáculos visibles y compara la miniatura, el ghost durante el movimiento/rotación y el tablero tras confirmar: cada obstáculo y cofre debe quedar en el mismo hex. Cancela y vuelve a la oferta: el contenido de cada card debe conservarse.
+6. Elige una pieza con obstáculos visibles y compara la miniatura, el ghost durante el movimiento/rotación y el tablero tras confirmar: cada obstáculo debe quedar en el mismo hex. La miniatura y el ghost no muestran cofres; el contenido de obstáculos de la oferta se conserva al volver a ella.
 7. Previsualiza una posición que cierre uno o más spawns. Los portales afectados deben quedarse visibles en su ubicación y mostrar una X roja; el texto debe indicar claramente cuántos se cerrarían. Al cancelar, los portales activos recuperan su estado normal. No debe ser posible confirmar una posición que deje cero opciones legales para alargar la ruta.
 7. En la ronda 24, observar el jefe Ooogie von Ooogovich, las invocaciones, la transición a Bat y la espera del contador/recompensa hasta la derrota final.
 8. Inspeccionar al menos un enemigo que mira a cada lado del eje horizontal. El sprite debe voltearse solo al moverse hacia la izquierda y volver a su orientación original hacia la derecha.
@@ -237,8 +237,8 @@ La implementación de campaña, recursos, perfiles, habilidades y sprites está 
 M11 queda aceptado cuando se verifican la frecuencia confirmada y el orden expansión→carta→siguiente ronda, bloqueo hasta selección, cantidad de opciones por Card Draw, filtro de unlocks/prerrequisitos/límites y al menos un efecto de cada familia afectada (incluidos estados, Gold, Mana, base y H/A/S), sin mutar recursos compartidos. El gameplay y la UI todavía requieren esta aceptación manual; no se ejecutó Godot en esta revisión.
 
 ## M12 Meta-progresión
-- Una nueva instalación crea `user://rogue_tower_meta.json` con versión 1, 0 de moneda y Ballista desbloqueada. La moneda meta nunca cambia al construir torres ni se confunde con el Gold de la run.
-- Una derrota de campaña y la victoria al limpiar ronda 45 terminan la run, otorgan meta-moneda una sola vez y muestran el resumen con resultado, ronda, recompensa, saldo total y seed. Los fixtures DEBUG no finalizan ni recompensan una run.
+- Una nueva instalación crea `user://rogue_tower_meta.json` con versión 1, 0 XP de perfil y Ballista, Mortar y Tesla Coil desbloqueadas. El XP nunca cambia al construir torres ni se confunde con el Gold de la run.
+- Una derrota de campaña y la victoria al limpiar ronda 45 terminan la run, otorgan XP de perfil una sola vez y muestran el resumen con resultado, ronda, recompensa, saldo total y seed. Los fixtures DEBUG no finalizan ni recompensan una run.
 - Con la configuración demo, la recompensa es `5 + 5 × rondas completas`, más 30 por victoria, con tope 1000: perder en la ronda 1 da 5; perder durante la ronda 2 tras completar la 1 da 10; completar las 45 rondas da 260. Progresar más da una recompensa superior que repetir únicamente una derrota en la primera ronda.
 - La tienda deja comprar torres y niveles permanentes solo con saldo suficiente. El coste se resta una sola vez; un elemento ya desbloqueado/nivel máximo no se vuelve a cobrar. Si falla el guardado, la compra se revierte.
 - Tras comprar una torre, «Empezar nueva run» inicia una run sin cartas/efectos temporales anteriores, mantiene el unlock, muestra la torre en la barra y habilita sus cartas específicas M11. Las torres bloqueadas no aparecen en la barra y `BuildController` rechaza su construcción aunque se invoque desde otro acceso.
@@ -247,10 +247,10 @@ M11 queda aceptado cuando se verifican la frecuencia confirmada y el orden expan
 - `SaveData` contiene solo primitivas, versión y progreso estable. Un archivo corrupto o con versión distinta no se sobrescribe automáticamente; se muestra el error y se deshabilitan compras, conservando el archivo para recuperación. Los guardados normales conservan una copia `.bak` antes de reemplazarse.
 
 ### Prueba manual M12 en el juego
-1. Ejecuta `game/main/main.tscn` con un guardado nuevo. Comprueba que la barra ofrece Ballista como único perfil de demo y que el HUD muestra Gold/Mana de run, separados de cualquier meta-moneda.
-2. Para comprobar el mínimo de 5 en derrota de ronda 1, reduce temporalmente `max_health` a 20 en `data/base/base_data.tres` en una copia de trabajo. La ronda inicial tiene tres enemigos de 10 de daño a base; déjalos pasar y confirma que el resumen indica derrota `1/20`, `+5 moneda meta`, saldo total 5 y seed. Restaura `max_health = 50` al terminar esta comprobación. Si no quieres tocar el fixture, la primera derrota natural será probablemente durante ronda 2 y deberá pagar 10.
+1. Ejecuta `game/main/main.tscn` con un guardado nuevo. Comprueba que la barra ofrece Ballista, Mortar y Tesla Coil; Frost Keep, Flame Thrower y Poison Sprayer muestran coste 50 XP, y Shredder 100 XP. El HUD muestra Gold/Mana de run y la tienda muestra el XP de perfil por separado.
+2. Para comprobar el mínimo de 5 XP en derrota de ronda 1, reduce temporalmente `max_health` a 20 en `data/base/base_data.tres` en una copia de trabajo. La ronda inicial tiene tres enemigos de 10 de daño a base; déjalos pasar y confirma que el resumen indica derrota `1/20`, `+5 XP de perfil`, saldo total 5 y seed. Restaura `max_health = 50` al terminar esta comprobación. Si no quieres tocar el fixture, la primera derrota natural será probablemente durante ronda 2 y deberá pagar 10 XP.
 3. Con el fixture restaurado, inicia una nueva run y deja pasar la ronda 1 completa; después deja caer la base durante la ronda 2. El resumen debe otorgar 10 (5 base + 5 por una ronda completa), dejando 15 en total. Esto confirma que progresar paga más que una derrota temprana.
-4. Con esos 15, compra Mortar en la tienda y pulsa «Empezar nueva run». Mortar debe aparecer en la barra, permitir construcción y habilitar su carta específica; la moneda meta debe conservar el coste descontado aunque cierres y vuelvas a abrir el juego. Comprueba que las demás torres aún bloqueadas no aparecen.
+4. Con al menos 50 XP, compra Frost Keep en la tienda y pulsa «Empezar nueva run». Frost Keep debe aparecer en la barra, permitir construcción y habilitar sus cartas; el XP debe conservar el coste descontado aunque cierres y vuelvas a abrir el juego. Comprueba que las torres que siguen bloqueadas no aparecen.
 5. Compra un nivel de Treasury y una mejora de cada familia: Mana Capacity, Sourcery, daño, Gold por baja, Card Draw, salud/reparación de base y H/A/S de torre cuando estén desbloqueadas. Desde la nueva run compara Gold/Mana, daño, opciones de cartas y stats afectados; solo runtime cambia. Card Draw aumenta las ofertas desde la run siguiente, sin cambiar su frecuencia. El Archivo de cartas habilita «Filos bruñidos» y «Canalización» en una futura oferta; sin comprarlo siguen filtradas.
 6. Verifica saldo insuficiente y máximos: la tienda no cobra, no aumenta niveles ni desbloquea contenido. Abre F3 para iniciar una run de diagnóstico y confirma que completarla no aumenta el contador/recompensa meta ni altera el número de campaña.
 7. Para probar migración, conserva una copia externa del JSON y, en una copia de trabajo, cambia solo `version` a `0` o elimínalo. El juego debe cargar los campos reconocidos, reescribir versión 1 y conservar el formato anterior en `.bak`; un valor JSON como `1.0` también debe cargar sin bloqueo. Como ruta de error, prueba JSON inválido o `version: 999`: el juego debe iniciar en fallback sin sobrescribir el archivo incompatible, mostrar la explicación y bloquear compras hasta recuperar un guardado válido.
@@ -263,7 +263,7 @@ M12 queda aceptado al comprobar las dos salidas de run, fórmula creciente, aisl
 - El modelo de cada enemigo contiene Health, Armor y Shield; el perfil configura los tres máximos y cero desactiva una capa para esa unidad. La oleada `DEBUG · capas Shield/Armor/Health` contiene un objetivo con 40 Shield, 60 Armor y 120 Health, regeneración 1/s por capa y las tres filas visibles. Los valores se consumen Shield→Armor→Health; la barra conserva los colores Shield azul, Armor beige, Health verde y actualiza sus segmentos al recibir daño/curación.
 - El perfil Ballista inicial muestra 10 de daño, H/A/S 10/5/5, rango 5, 20 RPM, sin Mana y precio 10. Comparar los otros seis Resources contra la tabla de `11_INITIAL_CONTENT_PLACEHOLDERS.md`: Mortar 20/10-15-5/10/10/200(+75); Tesla 9/6-3-10/2/30/5/ataque/200(+75); Frost 6/10-5-5/2/180 iniciales/2 Mana/s/250(+100); Flame 6/6-9-3/4/60/1/ataque/300(+75); Poison 5/6-3-9/4/60/1/ataque/300(+75); Shredder 10/20-10-10/5/5/0/500(+100). Desbloquearlos en tienda meta antes de probarlos. Costes de upgrade provisionales por perfil: Ballista/Mortar 10(+10), Tesla/Frost 20(+20), Flame/Poison/Shredder 30(+30), en línea con las páginas comunitarias consultadas.
 - Seleccionar una torre muestra daño, H/A/S, alcance, RPM, crítico, XP H/A/S y Mana. Una elevación de terreno suma +1 al daño base y +0.5 de alcance por nivel. El Frost suma 18 RPM por cada PATH cubierto por el rango cuadrado; los otros perfiles no cambian su RPM.
-- El precio de la primera Ballista es 10, segunda 25, tercera 40; demoler una reduce el siguiente coste según el conteo actual. La demolición no devuelve Gold en este prototipo. Intentar comprar o mejorar sin fondos no cobra ni muta la torre.
+- El precio de la primera Ballista es 10, segunda 25, tercera 40; demoler devuelve el precio marginal del slot ocupado según M27/ADR-0064 y reduce el siguiente coste; el nivel de la torre no altera la devolución. Intentar comprar o mejorar sin fondos no cobra ni muta la torre.
 - Las prioridades se aplican en orden y se revelan con `+`; cada opción secundaria solo desempata la anterior. Repetir una misma opción muestra rechazo/restaura el selector. Validar progreso, menor HP de capa activa, máximo/mínimo H/A/S y velocidad.
 - Una mejora manual cobra el coste del siguiente nivel, añade +1 al daño base y +1 a la capa elegida (botones `+ Health`, `+ Armor`, `+ Shield`). El nivel máximo bloquea los tres botones. Para una comprobación rápida de XP, duplicar un `TowerData` local, poner `targeting_xp_required_per_level = 1`, sostener un enemigo en rango y comprobar que gana +1 daño base y +1 a la capa activa; no modificar los Resources versionados del perfil definitivo. Restaurar la copia después.
 - Críticos empiezan en 0%. Al conseguir una oferta de carta, `Impulso crítico global` suma 15 puntos porcentuales globales y `Advanced Circuits` 15 a Tesla. `Foco de Health`, `Foco de Armor` y `Foco de Shield` suman +1 al multiplicador de esa capa para todas las torres. El resumen debe reflejar los críticos y los tres modificadores H/A/S. Las tiradas muestran de manera aleatoria ×2/×3/×4 según bandas de chance; si no sale la carta, repetir oferta/run.
@@ -273,9 +273,9 @@ M12 queda aceptado al comprobar las dos salidas de run, fórmula creciente, aisl
 
 ### Prueba manual M12A en el juego
 
-1. Ejecutar `game/main/main.tscn`, desbloquear varios perfiles en la tienda al disponer de moneda meta y construir una Ballista. Seleccionarla y comparar su resumen con el perfil actual; debe indicar 20 RPM. Durante combate, medir el tiempo entre dos disparos consecutivos de la Ballista con el mismo objetivo continuamente en rango: debe ser 3 s (20 disparos/minuto); medir el flash o evento de lanzamiento, porque el proyectil viaja después del disparo. Usar `1–7` después de desbloquear las otras torres para confirmar las siete filas de stats.
+1. Ejecutar `game/main/main.tscn`, desbloquear varios perfiles en la tienda al disponer de XP de perfil y construir una Ballista. Seleccionarla y comparar su resumen con el perfil actual; debe indicar 20 RPM. Durante combate, medir el tiempo entre dos disparos consecutivos de la Ballista con el mismo objetivo continuamente en rango: debe ser 3 s (20 disparos/minuto); medir el flash o evento de lanzamiento, porque el proyectil viaja después del disparo. Usar `1–7` después de desbloquear las otras torres para confirmar las siete filas de stats.
    - En la ronda 1, sin mejoras, crítico ni elevación, confirma que un proyectil de Ballista elimina al Goblin: 10 de daño base × 10 al Health = 100 contra sus 100 Health. Si el objetivo tiene Armor o Shield, el impacto debe afectar primero esa capa y respetar el multiplicador de la Ballista para ella.
-2. Construir tres Ballistas (precios 10/25/40), seleccionar una y pulsar `Demoler`. Comprueba que no devuelve Gold y que el precio visible de la próxima Ballista baja al nivel que corresponde al conteo restante.
+2. Construir tres Ballistas (precios 10/25/40), seleccionar una y pulsar `Demoler`. Comprueba que devuelve el precio marginal del slot y que el precio visible de la próxima Ballista baja al conteo restante, según M27/ADR-0064.
 3. Seleccionar la Ballista restante y comprar la mejora `Shield`. Debe cobrar el coste de Shield, subir solo Shield en 1 y añadir +1 al daño base y +1 al multiplicador Shield. Health y Armor conservan su nivel y XP. Comprar después Health y confirmar que Shield no cambia. Las barras muestran progreso/XP propios y los costes usan el nivel de su propia capa.
 4. Abrir F3, elegir `DEBUG · capas Shield/Armor/Health`, iniciar y observar el enemigo. Sus segmentos deben empezar azul/beige/verde; pasar los valores actuales en el inspector técnico. Con la copia de regen=0, confirmar que solo cae Shield al principio; después Armor; Health al final. Restaurar regen=1/s y comprobar cada capa se regenera. No conservar modificaciones temporales.
 5. Construir un Frost Keep y colocar/enlazar celdas PATH adicionales dentro del cuadrado de alcance; su RPM del resumen debe crecer en 18 por cada PATH adicional y los copos deben caer sobre celdas PATH de ese cuadrado. Las demás torres mantienen RPM base aunque se amplíe el mapa.
@@ -292,7 +292,7 @@ M12A queda aceptado cuando barra/daño por capas, stats de los siete perfiles, p
 - Seleccionar una torre muestra en el panel derecho nivel, daño, H/A/S, alcance, RPM, crítico, patrón, icono de energía si consume y XP por capa. El panel se ajusta al contenido y nunca usa scroll; reduce su escala vertical si el alto del viewport no permite mostrarlo a tamaño natural. Al entrar en build mode presenta el retrato grande de la torre y sus datos; omite la instrucción redundante de elegir Grass/Mountain y muestra el bonus cuantificado de Mountain frente a Grass. Health, Armor y Shield usan negrita y colores distintos. Los tres botones de mejora casi cuadrados enseñan icono, nivel de su capa, barra XP, `+1 Daño`, efecto y precio; Demoler queda debajo. Hover sobre torre no seleccionada muestra el radio y un contorno; al seleccionar, el sprite y card inferior pulsan con brillo alfa, sin círculo y sin pulso del panel. Prioridad 1 aparece sola; botones `+` revelan prioridades únicas 2 y 3. El panel desaparece al deseleccionar la torre o pulsar fuera del tablero.
 - Cada objeto tiene su PNG RGBA transparente independiente en `game/ui/icons/` (256×256); no existe un atlas compartido. Los atajos inferiores son botones individuales con un asset de marco estilo carta, sprite grande, nombre y precio con icono de moneda; el contenedor que los alinea no muestra fondo ni marco común. El sprite de torre es idéntico al preview y a la torre colocada. La base usa un sprite PNG configurable desde `BaseData`. Los tamaños por perfil son: torres 84 px, enemigos estándar 72 px con jefes escalados por recurso y base 176×176; todos se dibujan 6 px más abajo. No cambian huellas lógicas ni movimiento. La UI sustituye por iconos las menciones a Gold/Mana en textos enriquecidos. Las cards específicas muestran la torre afectada; las cards de terreno conservan el contrato M10.
 - Los enemigos muestran un marco de Health con carriles de Shield y Armor sobre una Health fragmentada; los iconos de capa identifican cada carril. Los estados activos aparecen encima y solo muestran cifra cuando hay varias acumulaciones. Cada impacto hace destellar y saltar al enemigo, y presenta daño flotante coloreado según Shield, Armor o Health. El efecto no cambia el cálculo de `DamageService`.
-- Al derrotar la base, el overlay terminal identifica claramente derrota; al superar la ronda 45 identifica victoria. Ambos resumen ronda alcanzada, rondas completas, recompensa y saldo total de moneda meta; la seed queda en tooltip técnico.
+- Al derrotar la base, el overlay terminal identifica claramente derrota; al superar la ronda 45 identifica victoria. Ambos resumen ronda alcanzada, rondas completas, recompensa y saldo total de XP de perfil; la seed queda en tooltip técnico.
 - En la tienda, `TORRES` y `MEJORAS` son categorías independientes. Cada fila muestra nombre, descripción, coste/estado y acción; saldo insuficiente o guardado bloqueado impide comprar y no cambia el progreso. «Empezar nueva run» conserva las compras, recarga el tablero y aplica los niveles permanentes.
 - A 1440×900, el HUD principal, el panel F3, la barra de siete torres y las ofertas no se recortan ni bloquean la lectura del mapa. La tienda terminal se adapta al área visible y, si una categoría excede su altura, se puede recorrer con scroll vertical.
 
@@ -411,7 +411,7 @@ M22 queda aceptado tras pasar esta revisión manual en ventana Godot. La integra
 2. Inspecciona las salidas PATH de una ronda mixta con varios endpoints. Encima de cada portal deben aparecer los tipos de enemigo asignados a ese endpoint y una cifra en los grupos repetidos. Al hacer hover aparece el contorno que sigue el alfa del portal y un tooltip con ronda, total y cantidades por tipo. El sprite conserva una silueta pixel art sencilla y se ve nítido a su nueva caja visual de 64×96 px. Suma todos los portales y compara con la composición directa de esa `WaveData`.
 3. Repite para una ronda siguiente, un fixture DEBUG con `ROUND_ROBIN` y otro con `FIRST`; confirma que los iconos y conteos cambian con la ronda/política. Selecciona una expansión válida y mueve/rota su preview: la vista por portal debe usar los endpoints del grafo candidato. Al cancelar o invalidar, debe volver al grafo activo. El tooltip no debe quedarse visible cuando se oculta el HUD ni capturar clics.
 4. Entra en colocación de torre y mueve el cursor por celdas legales e ilegales, elevadas y con obstáculos. El sprite fantasma debe quedar encima de terreno y props y recibir tinte verde translúcido si es válido o rojo si no. Al cancelar no debe permanecer el sprite fantasma.
-5. Revisa torres, enemigos, base, cofres y obstáculos en profundidad: no deben aparecer sombras, pedestales oscuros ni otras formas que simulen sombra generadas por el juego debajo de ellos. El cofre debe conservar su silueta cerrada y simple al tamaño real; los PNG de cofre y portal mantienen alpha y se dibujan con filtro nearest.
+5. Revisa torres, enemigos, base, cofres y obstáculos en profundidad: no deben aparecer sombras generadas por código ni sprites auxiliares de sombra. El cofre conserva su silueta cerrada y simple al tamaño real; los PNG de cofre y portal mantienen alpha y se dibujan con filtro nearest.
 6. Selecciona una torre y revisa Tower Info a 1280×720 y 1440×900. La superficie plana no lleva marco ornamental; el icono pequeño comparte cabecera con el nombre y `NIVEL X DE 45`. El panel se ajusta sin scroll ni recorte. Health/Armor/Shield muestran icono, nivel, barra de XP y coste en tres controles compactos; el tooltip conserva las cifras exactas de XP y el efecto completo. Demoler usa un botón de texto horizontal y conserva su comportamiento. Comprueba que el nivel acumulado avanza tras comprar capas y llega como máximo a 45.
 7. Abre la selección de expansión de terreno. Las tres cards usan superficies planas con un borde fino para hover/selección, sin marco ornamental; preview, nombre y conteos siguen legibles y seleccionar una pieza conserva el comportamiento.
 
@@ -437,15 +437,15 @@ M24 queda aceptado tras completar esta revisión manual en ventana. La decisión
 
 El feedback queda aceptado tras completar esta revisión visual/interactiva. La decisión está registrada en [ADR-0055](../decisions/ADR-0055-feedback-base-seleccion-y-recompensas.md).
 
-## Revisión visual global: tipografía y ausencia de sombras de código
+## Revisión visual global: tipografía y estado sin sombras
 
 ### Revisión manual en ventana
 
 1. Revisa el HUD, selección de terreno, Tower Info, cards de mejora, tienda permanente, tooltips, panel de debug, números de daño y cifras dibujadas junto a iconos. Todos deben usar Patrick Hand; los números de contadores dibujados manualmente también deben coincidir con la tipografía de controles.
 2. Comprueba tamaños legibles y ausencia de recortes en 1280×720 y 1440×900. La sustitución de fuente conserva los tamaños tipográficos y la estructura actuales.
-3. Coloca una torre y un obstáculo, mueve enemigos y abre cofres. Ninguno debe generar debajo sombras, pedestales oscuros ni formas que simulen sombras. Las flechas de flujo PATH no deben añadir un trazo ancho de sombra bajo ellas, y los contadores no deben dibujar texto desplazado como sombra. El feedback de hover y selección se mantiene.
+3. Coloca una torre, un obstáculo, una celda elevada y una celda plana; mueve enemigos y abre cofres. No deben aparecer sombras proyectadas, pedestales oscuros ni formas que simulen sombra generadas por el juego. Las flechas PATH no deben tener un trazo ancho debajo y los contadores no deben dibujar texto desplazado como sombra. El feedback de hover y selección se mantiene.
 
-La revisión queda aceptada tras completar estos puntos en ventana. La decisión está registrada en [ADR-0054](../decisions/ADR-0054-tipografia-global-y-sin-sombras-de-codigo.md).
+La revisión queda aceptada tras completar estos puntos en ventana. La tipografía está registrada en [ADR-0054](../decisions/ADR-0054-tipografia-global-y-sin-sombras-de-codigo.md); la retirada actual de sombras generadas, en [ADR-0070](../decisions/ADR-0070-sin-sombras-y-rutas-limpias-en-expansion.md).
 
 ## M25 Oferta de terreno, pausa y control de fases
 
@@ -454,7 +454,7 @@ La revisión queda aceptada tras completar estos puntos en ventana. La decisión
 1. Pulsa `P` y el botón situado bajo la vida durante `ROUND_PREP` y `COMBAT`. Confirma que pausa/reanuda el árbol y que el texto del botón alterna entre «Pausar» y «Reanudar».
 2. Pausa durante `ROUND_PREP` y pulsa «Iniciar ronda». La partida debe despausarse e iniciar la oleada. Durante una selección de terreno o `CARD_OFFER`, iniciar ronda debe permanecer bloqueado y no debe quitar una pausa activa.
 3. Durante la oferta y la colocación de terreno, comprueba que la barra de torres/panel de torre se oculta, `1–7` no seleccionan torres, `F3`/`Ctrl+D`/`Ctrl+K` no abren herramientas de diagnóstico, y hacer clic en una torre o cofre del tablero no selecciona/abre nada. Elegir, rotar, cancelar y confirmar la pieza siguen funcionando; al volver a `ROUND_PREP` regresan los controles normales.
-4. Elige una card con un obstáculo visible. Verifica que miniatura, ghost al rotar/mover y tablero confirmado enseñan el mismo obstáculo/cofre en el mismo hex. Cancela y vuelve a la misma oferta: los rolls se conservan.
+4. Elige una card con un obstáculo visible. Verifica que miniatura, ghost al rotar/mover y tablero confirmado enseñan el mismo obstáculo en el mismo hex; miniaturas y ghost no muestran cofres. Cancela y vuelve a la misma oferta: los rolls se conservan.
 5. Completa varias ofertas y revisa la pieza marcada `EXTIENDE RUTA`. La posición sugerida debe prolongar una ruta y la geometría debe variar entre recta, curva y bifurcación; cuando la sugerencia sea curva/bifurcación, ninguna card debe ofrecer la pieza recta. Las colocaciones que eliminen toda continuación legal deben seguir bloqueadas.
 6. Haz hover sobre un cofre: debe botar y resplandecer en dorado mientras el cursor permanezca sobre el hex; al salir o abrirlo, el movimiento y el brillo deben detenerse.
 
@@ -473,13 +473,82 @@ La implementación M25 está integrada en código. La aceptación de pausa, cont
 
 M26 está implementado en código. La escena se inició con Godot 4.7 sin errores de parseo/runtime; se mantienen avisos de GDScript. La verificación de interacción y la revisión de seams/elevación en ventana quedan pendientes. Ver [ADR-0063](../decisions/ADR-0063-seleccion-y-retirada-de-objetos-del-terreno.md).
 
+## M27 Upgrade Cards, reembolso y cofres
+
+### Revisión manual en ventana
+
+1. Abre ofertas con efectos generales, de estado y de torre. Todas las cards deben usar la misma plantilla, mostrar su fondo según rareza y tener un icono visible; los iconos deben medir claramente más que antes. Comprueba las rarezas Común, Poco común y Rara, y una oferta con el máximo de seis opciones.
+2. Inspecciona cartas de cada operación general vigente: daño, crítico, alcance, elevación, cadencia, área, Mana, capas Health/Armor/Shield, Gold, enemigo y estados. Ninguna card debe quedar sin imagen. Las cartas de torre específica deben conservar el retrato de la torre.
+3. Coloca dos o más torres del mismo tipo. Comprueba que el reembolso de demoler la última torre seleccionada coincide con `precio_base + (cantidad_antes - 1) × incremento`, el conteo baja y el siguiente precio de compra disminuye. Sube una torre de nivel antes de demolerla y confirma que su reembolso no cambia.
+4. En una oferta de terreno y al mover/rotar su ghost, verifica que no aparecen cofres en miniaturas ni losas seleccionadas. Confirma terreno Grass/Mountain sin obstáculo: si la tirada genera cofre, aparece en la celda ya colocada con un salto visible; PATH y celdas con obstáculo nunca reciben cofre. Abre uno y confirma que conserva hover, pago y retirada.
+5. Abre el proyecto y observa la salida de GDScript: no deben reaparecer los avisos de parámetro/variable sin uso, variable `rotation` en conflicto, `_mana_icon` ni `is_pressed` reportados antes.
+
+La regla M27 de cofres sustituye la visualización de cofres en oferta descrita en M25/ADR-0060. La implementación de sombras descrita en ADR-0066/0068 se retiró posteriormente mediante ADR-0070. Código/PNG integrados; Godot 4.7 inició la escena principal el 2026-10-13 con `errors: []`, incluidos los avisos GDScript listados. La aceptación visual e interactiva sigue pendiente. Ver [ADR-0064](../decisions/ADR-0064-reembolso-al-demoler-torres.md), [ADR-0065](../decisions/ADR-0065-panel-y-iconos-de-upgrade-cards.md), [ADR-0066](../decisions/ADR-0066-cofres-al-colocar-y-sombras-de-elevacion.md) y [ADR-0070](../decisions/ADR-0070-sin-sombras-y-rutas-limpias-en-expansion.md).
+
+## M28 Hacks de progresión para testeo rápido
+
+### Revisión manual en ventana
+
+1. Abre `Ctrl+K` desde preparación y selecciona `Saltar a la siguiente card`. Debe buscar la siguiente ronda elegible del pool (3, 6, 9…) y abrir una oferta real de tres cards sin crear ronda dentro de combate.
+2. Abre la tienda desde hacks. Debe llegar directamente a la pestaña de mejoras generales, indicar que es acceso de depuración y permitir comprar; la mejora se aplica a la próxima run. `Volver al tablero` cierra la tienda sin reiniciar la run.
+3. Usa `Empezar desde cero`. Los niveles permanentes vuelven a cero, se devuelve el XP gastado en mejoras y el arsenal vuelve a Ballista, Mortar y Tesla Coil; el saldo XP no gastado y los contadores históricos permanecen. `Reiniciar run con mejoras actuales` y la nueva run normal conservan desbloqueos y niveles meta.
+
+M28 está integrado en código. El salto omite combate, recompensa y colocación de terreno, por lo que sirve para revisar cards y no para medir la progresión de campaña. La revisión interactiva está pendiente. Ver [ADR-0067](../decisions/ADR-0067-hacks-de-progresion-y-run-limpia.md).
+
+## M29 Sombras receptoras por elevación — sustituido
+
+### Revisión manual en ventana
+
+Este criterio quedó sustituido por ADR-0070. Ya no debe comprobarse ninguna sombra de terreno u obstáculo.
+
+## M30 Sin sombras y preview PATH despejado
+
+### Revisión manual en ventana
+
+1. Inicia el tablero y coloca el cursor sobre terreno, obstáculos y torres. No deben aparecer sombras de losetas, obstáculos, edificios, unidades o base. El hover puede resaltar bordes sin dibujar rayos/socket PATH sobre las celdas.
+2. Selecciona una pieza de expansión. Las flechas de flujo PATH y las líneas de diagnóstico deben ocultarse mientras la pieza está elegida; al cancelar o confirmar vuelven las flechas del tablero normal. La selección de terreno no debe crear otra visualización del camino.
+
+El overlay de sombras, shader y enlaces a runtime se eliminaron; queda pendiente la inspección en ventana. ADR-0070 sustituye las decisiones de sombra de ADR-0066/0068.
+
+## M31 XP de desbloqueo y feedback de altura
+
+### Revisión manual en ventana
+
+1. En un guardado nuevo, comprueba que solo Ballista, Mortar y Tesla Coil aparecen disponibles. La tienda cobra 50 XP por Frost Keep, Flame Thrower y Poison Sprayer, y 100 por Shredder. La compra persiste al iniciar una run normal y habilita las cartas específicas.
+2. Desde `Ctrl+K`, usa `Empezar desde cero`. En la run siguiente solo aparecen las tres torres iniciales, los niveles permanentes son cero y el XP devuelto permite recomprar mejoras. Iniciar una run normal conserva compras.
+3. Selecciona torres sobre Grass y Mountain de niveles 1 y 2. El panel muestra su altura y los extras aplicados: +1 daño base y +0.5 hex de alcance por nivel según `TowerData`. Contrasta el daño y alcance total con los valores del panel.
+
+Los perfiles actuales cargan y el feedback está integrado; la aceptación manual sigue pendiente. Ver [ADR-0069](../decisions/ADR-0069-desbloqueos-xp-y-feedback-de-altura.md).
+
+## M32 Marco de cards y colocación automática
+
+### Revisión manual en ventana
+
+1. Abre una oferta de mejoras y revisa tarjetas Común, Poco común y Rara. El marco queda alrededor del borde de cada panel, el centro conserva el fondo de tier y ningún tramo del marco aparece escalado detrás del icono, título o descripción. Revisa también cards con textos largos y seis opciones.
+2. Abre una oferta de terreno. Las miniaturas de bifurcación y convergencia muestran los hexágonos y obstáculos, sin brazos, ramas ni flechas PATH superpuestos.
+3. Elige una pieza y comprueba que aparece `T · Auto-colocar (no recomendado)`. Pulsa T: la pieza debe colocarse en una posición libre que pase las validaciones geométricas y de PATH, incluida la continuación futura de campaña. Repite en un estado donde no exista una posición válida: debe mostrarse un aviso y el tablero no debe cambiar. Comprueba que la rotación manual y la confirmación usual siguen disponibles.
+
+La inspección visual/interactiva de este milestone sigue pendiente. Ver [ADR-0071](../decisions/ADR-0071-marco-de-cards-y-colocacion-automatica.md) y [ADR-0072](../decisions/ADR-0072-controles-y-tooltip-de-celdas.md).
+
+## M33 Rotación y tooltip compacto de terreno
+
+### Revisión manual en ventana
+
+1. Selecciona una pieza de terreno. Q gira 60° a la izquierda y E 60° a la derecha; la rueda arriba/abajo gira en la misma dirección. La posición sugerida/manual permanece en las mismas reglas y T intenta auto-colocar.
+2. Sin pieza, torre ni objeto seleccionados, mueve el cursor por PATH, Grass y Mountain con alturas 0, 1 y 2. Debe aparecer junto al puntero un tooltip pequeño con el tipo/estado de la celda, la altura y el bonus de daño/alcance compatible. PATH debe indicar ruta no construible.
+3. Comprueba Grass/Mountain con obstáculo, cofre y torre colocada: el estado refleja el bloqueo. El bonus usa los `TowerData` aplicables y aumenta con la elevación. La caja debe permanecer dentro de la ventana incluso junto a sus bordes.
+4. Selecciona/coloca una torre, selecciona una pieza, pasa por un portal y abre oferta/tienda/hacks: el tooltip de celda debe ocultarse y los paneles/acciones existentes deben seguir respondiendo.
+5. Sin pieza de terreno seleccionada, la rueda sigue acercando/alejando el mapa desde el cursor; al seleccionar terreno, no debe hacer zoom.
+
+La implementación está integrada; no se ejecutaron pruebas ni revisión visual/interactiva en esta actualización. Ver [ADR-0072](../decisions/ADR-0072-controles-y-tooltip-de-celdas.md).
+
 ## Loop
 - Al completar una oleada de campaña entre las rondas 1–44, se entra en la oferta de expansión y no comienza la siguiente ronda hasta colocar una pieza válida.
 - La colocación actualiza el tablero y la ruta una sola vez; la fase de mejora aparece después cuando el calendario de cards la requiere.
 - La ronda 45 cierra la campaña al completarse; la victoria/derrota abre el flujo de recompensa y meta-progresión.
 
 ## Meta
-- Derrota -> moneda meta.
+- Derrota -> XP de perfil.
 - Compra persiste tras reiniciar.
 - Torre desbloqueada aparece en siguiente run.
 - Save corrupto/versión desconocida falla de forma segura.
@@ -498,7 +567,7 @@ Ejecutar `tests/ui_migration_smoke.tscn` en Godot 4.7. Debe completar e imprimir
 4. Completa una ronda que ofrezca mejoras: abre/cierra la oferta, inspecciona tres cartas y elige una. Confirma orden, contenido, animación y estado de la run; comprueba también que el número sigue el `offer_size` configurado.
 5. Abre la tienda terminal y cambia entre pestañas. Desplaza listas largas, compra contenido disponible/no disponible, verifica monedas/mensajes, resultado y «Nueva run». Confirma que el guardado y los unlocks conservan el comportamiento anterior.
 6. Pasa el cursor por varios puntos de `RoundProgressStrip`. El tooltip debe conservar anclaje/ocultación y total; una sola fila por tipo repetido, mismo retrato y conteo. Comprueba cursor y hover al salir del strip.
-7. Selecciona `Main` y expande `ui_icon_catalog`: deben verse las 20 texturas del catálogo, agrupadas por recursos, capas, torres, estados y cursor. Cambia un icono de torre y confirma que se refleja en el retrato/cards que consultan el catálogo. Selecciona `TowerShortcut1…7` y `UpgradeHealth/Armor/Shield`; cada instancia debe exponer su `tower_icon_texture` o `layer_icon_texture` y previsualizarla en el `TextureRect` hijo. Comprueba también en esta propiedad los cuatro cursores usados por `BuildCursorOverlay`.
+7. Selecciona `Main` y expande `ui_icon_catalog`: deben verse las 31 texturas del catálogo, agrupadas por recursos, capas, torres, estados y cursor. Cambia un icono de torre y confirma que se refleja en el retrato/cards que consultan el catálogo. Selecciona `TowerShortcut1…7` y `UpgradeHealth/Armor/Shield`; cada instancia debe exponer su `tower_icon_texture` o `layer_icon_texture` y previsualizarla en el `TextureRect` hijo. Comprueba también en esta propiedad los cuatro cursores usados por `BuildCursorOverlay`.
 8. Selecciona `StartWave` y las tres `TerrainCard` en `main.tscn`; expande `Theme Overrides > Styles` y comprueba que sus StyleBoxTexture exponen el PNG, nueve cortes, márgenes y tintes de normal/hover/pressed/disabled. Cambia la textura para comprobar la vista previa. Abre `tower_shortcut_card.tscn` y revisa el marco 9-slice del botón.
 9. Abre `game/ui/themes/rogue_hud_theme.tres` y edita `Panel`/`PanelContainer`. Las superficies generales son StyleBoxFlat y no usan sprite; los cambios se deben ver en HUD, tienda, oferta y debug sin cambiar su jerarquía.
 10. Abre por separado las escenas de componentes en `game/ui/components/` y `game/progression/`. Ajusta tamaños en `custom_minimum_size`, márgenes y separación en sus `Container`, sustituye una textura en el `TextureRect` y confirma que los cambios se reflejan al instanciarlas desde `Main`.
