@@ -34,6 +34,7 @@ const DEBUG_HACKS_PANEL_SCENE: PackedScene = preload("res://game/ui/debug_hacks_
 const ICON_CATALOG_RESOURCE: Resource = preload("res://game/ui/resources/icon_catalog.tres")
 const IMPACT_VFX_SCRIPT: Script = preload("res://game/vfx/animated_impact.gd")
 const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
+const TOWER_ART_CATALOG_SCRIPT: Script = preload("res://game/towers/tower_art_catalog.gd")
 const TOWER_ROSTER: TowerRosterData = preload("res://data/towers/tower_roster.tres")
 const BALLISTA_TOWER: TowerData = preload("res://data/towers/ballista.tres")
 const ARMOR_PIERCING_BOLT: TowerData = preload("res://data/towers/armor_piercing_bolt.tres")
@@ -177,6 +178,8 @@ var _priority_visibility_tower_instance_id: int = 0
 	%TowerShortcut7,
 ]
 @onready var _camera: Camera2D = %Camera2D
+@onready var _feedback_vfx: Node2D = %FeedbackVfx
+@onready var _cloud_shadow_material: ShaderMaterial = %CloudShadowOverlay.material as ShaderMaterial
 @onready var _rotate_left: Button = %RotateLeft
 @onready var _rotate_right: Button = %RotateRight
 @onready var _entities: Node2D = %Entities
@@ -252,6 +255,7 @@ func _ready() -> void:
 	_camera.position = get_viewport_rect().size * 0.5
 	_camera.make_current()
 	_camera_shake_origin = _camera.offset
+	_update_cloud_shadow_transform()
 	_pieces = [
 		STRAIGHT_PIECE, GENTLE_TURN_PIECE, HARD_TURN_PIECE, FORK_PIECE, CONVERGENCE_PIECE,
 		MEADOW_HILLS_PIECE, MOUNTAIN_MASSIF_PIECE, OPEN_GRASSLAND_PIECE, STAGGERED_RIDGE_PIECE,
@@ -298,6 +302,7 @@ func _ready() -> void:
 	_wave_director.wave_completed.connect(_on_wave_completed)
 	_wave_director.wave_failed.connect(_on_wave_failed)
 	_wave_director.enemy_count_changed.connect(_on_enemy_count_changed)
+	_wave_director.enemy_killed.connect(_on_enemy_killed)
 	_wave_director.population_changed.connect(_on_population_changed)
 	_wave_director.base_damaged.connect(_on_base_damaged)
 	_wave_director.reward_earned.connect(_on_reward_earned)
@@ -416,6 +421,7 @@ func _sync_selection_backdrop() -> void:
 
 func _process(_delta: float) -> void:
 	_update_camera_keyboard_pan(_delta)
+	_update_cloud_shadow_transform()
 	_position_portal_wave_tooltip()
 	_update_cell_hover_tooltip()
 	_combat_debug_timer -= _delta
@@ -427,6 +433,13 @@ func _process(_delta: float) -> void:
 	if _is_panning or not _placement_enabled or _build_controller.is_build_mode():
 		return
 	_update_anchor_from_mouse()
+
+func _update_cloud_shadow_transform() -> void:
+	if _cloud_shadow_material == null or _camera == null:
+		return
+	_cloud_shadow_material.set_shader_parameter("camera_world_position", _camera.global_position)
+	_cloud_shadow_material.set_shader_parameter("viewport_size", get_viewport_rect().size)
+	_cloud_shadow_material.set_shader_parameter("camera_zoom", _camera.zoom.x)
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
@@ -789,6 +802,7 @@ func _configure_tower_shortcut_visuals() -> void:
 	for index in _tower_shortcut_buttons.size():
 		var shortcut_button: Button = _tower_shortcut_buttons[index]
 		var shortcut_card := shortcut_button as TowerShortcutCard
+		shortcut_card.tower_icon_texture = _get_tower_display_texture(StringName(TOWER_PROFILES[index].id))
 		shortcut_card.set_tower_visuals(
 			TOWER_PROFILES[index].display_name,
 			TOWER_PROFILES[index].visual_color
@@ -796,6 +810,12 @@ func _configure_tower_shortcut_visuals() -> void:
 		_tower_shortcut_icons.append(shortcut_card.tower_icon)
 		_tower_shortcut_names.append(shortcut_card.name_label)
 		_tower_shortcut_prices.append(shortcut_card.price_label)
+
+func _get_tower_display_texture(tower_id: StringName) -> Texture2D:
+	var tower_texture: Texture2D = TOWER_ART_CATALOG_SCRIPT.get_tower_texture(tower_id)
+	if tower_texture != null:
+		return tower_texture
+	return _icon_catalog.call("get_tower_icon", tower_id) as Texture2D
 
 func _configure_tower_upgrade_visuals() -> void:
 	_tower_upgrade_amounts.clear()
@@ -853,7 +873,7 @@ func _fit_tower_info_panel() -> void:
 		return
 	var viewport_size: Vector2 = _tower_info_panel.get_viewport_rect().size
 	var panel_top: float = 76.0
-	var panel_width: float = minf(344.0, maxf(240.0, viewport_size.x - 48.0))
+	var panel_width: float = minf(460.0, maxf(280.0, viewport_size.x - 48.0))
 	_tower_info_panel.offset_left = -panel_width - 24.0
 	_tower_info_panel.offset_right = -24.0
 	_tower_info_panel.offset_top = panel_top
@@ -1453,6 +1473,7 @@ func _confirm_placement() -> void:
 	if not _board_grid.add_cells(cells_to_add):
 		_placement_status.text = "La pieza dejó de encajar antes de confirmar."
 		return
+	_spawn_impact_vfx(&"terrain_piece_placed", _cells_centroid_world(cells_to_add, candidate_board))
 	_path_graph = candidate_graph
 	_next_piece_instance_id += 1
 	_piece_preview.set_board_cells(_board_grid.cells)
@@ -1560,10 +1581,14 @@ func _handle_board_click() -> void:
 			_clear_selected_world_object()
 			_open_treasure_chest(hovered_cell)
 			return
+	if not _placement_enabled and _has_hovered_cell and _hovered_coord == _base_coord:
+		_play_ui_click_vfx()
 	if _build_controller.is_build_mode():
 		if not _has_hovered_cell:
 			_build_status.text = "Coloca el cursor sobre una casilla existente."
 			return
+		if _build_controller.get_tower_at(_hovered_coord) != null:
+			_play_ui_click_vfx()
 		if _build_controller.place_tower(_hovered_coord):
 			_set_rich_text_with_currency_icons(_build_status, "%s construida por %d Gold en (%d, %d)." % [
 				_selected_tower_data.display_name,
@@ -1582,6 +1607,7 @@ func _handle_board_click() -> void:
 	if _has_hovered_cell:
 		var tower: Tower = _build_controller.get_tower_at(_hovered_coord)
 		if tower != null:
+			_play_ui_click_vfx()
 			_clear_selected_world_object()
 			if _selected_expansion_piece == null:
 				_cancel_placement()
@@ -1600,6 +1626,10 @@ func _handle_board_click() -> void:
 func _open_treasure_chest(cell: HexCell) -> void:
 	if cell == null or not cell.chest_available:
 		return
+	var chest_position: Vector2 = _get_cell_world_position(_hovered_coord, cell)
+	_play_ui_click_vfx()
+	_spawn_impact_vfx(&"coin_burst_gold", chest_position)
+	_spawn_impact_vfx(&"chest_pickup", chest_position)
 	cell.chest_available = false
 	var gold_awarded: int = int(_run_economy.call(
 		"add_gold",
@@ -1620,6 +1650,7 @@ func _select_obstacle(coord: Vector2i) -> void:
 	var cell: HexCell = _board_grid.cells.get(coord) as HexCell
 	if cell == null or cell.obstacle_type == HexCell.ObstacleType.NONE:
 		return
+	_play_ui_click_vfx()
 	_selected_world_object_kind = &"obstacle"
 	_selected_obstacle_coord = coord
 	_selected_spawn_endpoint_key = ""
@@ -1631,6 +1662,7 @@ func _on_spawn_portal_selected(portal_node: Node2D) -> void:
 	var portal := portal_node as SpawnPortal
 	if portal == null or not is_instance_valid(portal) or _is_terrain_selection_locked():
 		return
+	_play_ui_click_vfx()
 	_selected_world_object_kind = &"portal"
 	_selected_spawn_endpoint_key = portal.get_endpoint_key()
 	_selected_obstacle_coord = Vector2i.ZERO
@@ -1756,15 +1788,20 @@ func _on_remove_world_object_pressed() -> void:
 		_refresh_tower_controls()
 		return
 	var removal_cost: int = _world_object_removal_cost()
+	var obstacle_cell: HexCell = null
+	var obstacle_world_position: Vector2 = Vector2.ZERO
+	if _selected_world_object_kind == &"obstacle":
+		obstacle_cell = _board_grid.cells.get(_selected_obstacle_coord) as HexCell
+		if obstacle_cell == null or obstacle_cell.obstacle_type == HexCell.ObstacleType.NONE:
+			return
+		obstacle_world_position = _get_cell_world_position(_selected_obstacle_coord, obstacle_cell)
 	if not bool(_run_economy.call("try_spend_gold", removal_cost, &"remove_terrain_object")):
 		_refresh_tower_controls()
 		return
 	if _selected_world_object_kind == &"obstacle":
-		var cell: HexCell = _board_grid.cells.get(_selected_obstacle_coord) as HexCell
-		if cell == null or cell.obstacle_type == HexCell.ObstacleType.NONE:
-			return
-		cell.obstacle_type = HexCell.ObstacleType.NONE
+		obstacle_cell.obstacle_type = HexCell.ObstacleType.NONE
 		_obstacles_removed_count += 1
+		_spawn_impact_vfx(&"obstacle_removed", obstacle_world_position)
 		_clear_selected_world_object()
 		_piece_preview.set_board_cells(_board_grid.cells)
 		_piece_preview.queue_redraw()
@@ -1827,7 +1864,7 @@ func _refresh_build_preview() -> void:
 		_hovered_coord,
 		error.is_empty(),
 		_build_controller.get_preview_range_pixels(_hovered_coord),
-		_icon_catalog.call("get_tower_icon", StringName(_selected_tower_data.id)) as Texture2D,
+		_get_tower_display_texture(StringName(_selected_tower_data.id)),
 		_selected_tower_data.visual_icon_size * Tower.TOWER_VISUAL_SCALE,
 		_selected_tower_data.elevation_damage_bonus_per_level,
 		StringName(_selected_tower_data.id)
@@ -2050,6 +2087,8 @@ func _on_tower_built_for_vfx(tower: Tower, _coord: Vector2i) -> void:
 	if tower_data != null:
 		RunManager.record_tower_built(tower.get_instance_id(), tower_data.id)
 	tower.impact_effect_requested.connect(_spawn_impact_vfx)
+	tower.level_up_effect_requested.connect(_on_tower_level_up_vfx)
+	_spawn_impact_vfx(&"tower_built", tower.global_position + Tower.TOWER_CELL_VISUAL_OFFSET)
 	_animate_tower_shortcut_icon(tower_data.id)
 
 func _animate_tower_shortcut_icon(tower_id: StringName) -> void:
@@ -2078,39 +2117,83 @@ func _animate_tower_shortcut_icon(tower_id: StringName) -> void:
 
 func _spawn_impact_vfx(effect_id: StringName, world_position: Vector2) -> void:
 	var sheet_path: String = ""
-	var frame_count: int = 1
+	var frame_count: int = 0
+	var columns: int = 0
+	var source_frame_size: Vector2i = Vector2i.ZERO
 	var frames_per_second: float = 12.0
 	var display_size: float = 72.0
 	match effect_id:
-		&"dust_01":
-			sheet_path = "res://assets/sprites/third_party/tiny_swords/particle_fx/Dust_01.png"
-			frame_count = 8
-			display_size = 76.0
-		&"explosion_01":
-			sheet_path = "res://assets/sprites/third_party/tiny_swords/particle_fx/Explosion_01.png"
-			frame_count = 8
-			frames_per_second = 14.0
-			display_size = 148.0
-		&"tesla_coil":
-			sheet_path = "res://assets/sprites/third_party/tiny_swords/particle_fx/TeslaCoil.png"
-			frame_count = 8
-			display_size = 108.0
-		&"ice_01":
-			sheet_path = "res://assets/sprites/third_party/tiny_swords/particle_fx/Ice_01.png"
-			frame_count = 10
-			display_size = 82.0
-		&"fire_03":
-			sheet_path = "res://assets/sprites/third_party/tiny_swords/particle_fx/Fire_03.png"
-			frame_count = 12
+		&"shot_ballista", &"impact_ballista":
+			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/ballista_%s.png" % ("shoot" if effect_id == &"shot_ballista" else "impact")
+			display_size = 78.0 if effect_id == &"shot_ballista" else 68.0
+		&"shot_mortar", &"impact_mortar":
+			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/mortar_%s.png" % ("shoot" if effect_id == &"shot_mortar" else "impact")
+			display_size = 90.0 if effect_id == &"shot_mortar" else 128.0
+		&"shot_tesla", &"impact_tesla":
+			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/teslaCoil_%s.png" % ("shoot" if effect_id == &"shot_tesla" else "impact")
+			display_size = 88.0 if effect_id == &"shot_tesla" else 90.0
+		&"shot_frost", &"impact_frost":
+			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/ice_%s.png" % ("shoot" if effect_id == &"shot_frost" else "impact")
 			display_size = 86.0
-		&"poison":
-			sheet_path = "res://assets/sprites/third_party/tiny_swords/particle_fx/Poison.png"
-			frame_count = 9
-			display_size = 142.0
-		&"blood":
-			sheet_path = "res://assets/sprites/third_party/tiny_swords/particle_fx/Blood.png"
-			frame_count = 10
-			display_size = 80.0
+		&"shot_flame", &"impact_flame":
+			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/fire_%s.png" % ("shoot" if effect_id == &"shot_flame" else "impact")
+			display_size = 92.0
+		&"shot_poison", &"impact_poison":
+			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/poisonSprayer_%s.png" % ("shoot" if effect_id == &"shot_poison" else "impact")
+			display_size = 88.0
+		&"shot_shredder", &"impact_shredder":
+			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/shredder_%s.png" % ("shoot" if effect_id == &"shot_shredder" else "impact")
+			display_size = 84.0
+		&"mortar_target_ripple":
+			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/tap_ripple.png"
+			frame_count = 16
+			columns = 8
+			source_frame_size = Vector2i(192, 192)
+			frames_per_second = 24.0
+			display_size = 108.0
+		&"star_burst_gold":
+			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/Rewards/star_burst_gold.png"
+			frame_count = 24
+			columns = 8
+			source_frame_size = Vector2i(192, 192)
+			frames_per_second = 20.0
+			display_size = 156.0
+		&"coin_burst_gold":
+			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/Rewards/coin_burst_gold.png"
+			frame_count = 32
+			columns = 8
+			source_frame_size = Vector2i(256, 256)
+			frames_per_second = 20.0
+			display_size = 152.0
+		&"terrain_piece_placed":
+			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/sparkle_twinkle_white_loop.png"
+			frame_count = 24
+			columns = 8
+			source_frame_size = Vector2i(192, 192)
+			frames_per_second = 18.0
+			display_size = 126.0
+		&"enemy_killed":
+			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/pickup_ui/coins_top.png"
+			display_size = 86.0
+		&"tower_level_up":
+			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/pickup_ui/level_up.png"
+			display_size = 78.0
+		&"chest_pickup", &"tower_built", &"obstacle_removed":
+			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/pickup_ui/pickup.png"
+			display_size = 96.0
+		&"ui_click":
+			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/pickup_ui/ui_click.png"
+			display_size = 52.0
+		&"base_hit":
+			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/base_hit.png"
+			display_size = 148.0
+		&"game_over_confetti":
+			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/confetti_burst_01.png"
+			frame_count = 40
+			columns = 8
+			source_frame_size = Vector2i(256, 256)
+			frames_per_second = 20.0
+			display_size = 420.0
 		_:
 			return
 	if not ResourceLoader.exists(sheet_path):
@@ -2118,12 +2201,68 @@ func _spawn_impact_vfx(effect_id: StringName, world_position: Vector2) -> void:
 	var sprite_sheet := load(sheet_path) as Texture2D
 	if sprite_sheet == null:
 		return
+	if source_frame_size == Vector2i.ZERO:
+		source_frame_size = Vector2i(128, 128)
+		if sprite_sheet.get_width() % source_frame_size.x != 0:
+			return
+		frame_count = int(float(sprite_sheet.get_width()) / float(source_frame_size.x))
+		columns = frame_count
 	var effect := IMPACT_VFX_SCRIPT.new() as Sprite2D
 	if effect == null:
 		return
-	_entities.add_child(effect)
-	if not bool(effect.call("configure", sprite_sheet, frame_count, frames_per_second, display_size, world_position)):
+	_feedback_vfx.add_child(effect)
+	var screen_position: Vector2 = get_viewport().get_canvas_transform() * world_position
+	var zoom_scale: float = 1.0
+	if effect_id != &"ui_click" and is_instance_valid(_camera):
+		zoom_scale = _camera.zoom.x
+	var repeat_count: int = 2 if effect_id == &"terrain_piece_placed" else 1
+	var z_order: int = 120 if effect_id == &"star_burst_gold" else 130
+	if effect_id == &"ui_click":
+		z_order = 180
+	if not bool(effect.call(
+		"configure",
+		sprite_sheet,
+		frame_count,
+		frames_per_second,
+		display_size * zoom_scale,
+		screen_position,
+		false,
+		columns,
+		source_frame_size,
+		z_order,
+		repeat_count
+	)):
 		effect.queue_free()
+
+func _play_ui_click_vfx() -> void:
+	if not is_inside_tree():
+		return
+	_spawn_impact_vfx(&"ui_click", get_global_mouse_position())
+
+func _on_enemy_killed(world_position: Vector2) -> void:
+	_spawn_impact_vfx(&"enemy_killed", world_position)
+
+func _on_tower_level_up_vfx(world_position: Vector2) -> void:
+	_spawn_impact_vfx(&"star_burst_gold", world_position)
+	_spawn_impact_vfx(&"tower_level_up", world_position + Vector2(0.0, -108.0))
+
+func _get_cell_world_position(coord: Vector2i, cell: HexCell = null) -> Vector2:
+	var world_position: Vector2 = _piece_preview.to_global(
+		HexMath.axial_to_world(HexCoord.new(coord.x, coord.y), HEX_RADIUS)
+	)
+	var resolved_cell: HexCell = cell if cell != null else _board_grid.cells.get(coord) as HexCell
+	if resolved_cell != null:
+		world_position.y -= float(resolved_cell.elevation) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET
+	return world_position
+
+func _cells_centroid_world(cells: Dictionary[Vector2i, HexCell], board: Dictionary[Vector2i, HexCell]) -> Vector2:
+	if cells.is_empty():
+		return _piece_preview.global_position
+	var position_sum: Vector2 = Vector2.ZERO
+	for coord in cells:
+		var cell: HexCell = board.get(coord) as HexCell
+		position_sum += _get_cell_world_position(coord, cell)
+	return position_sum / float(cells.size())
 
 func _on_tower_demolished(_tower_data: TowerData, _next_build_cost: int, refunded_gold: int) -> void:
 	_set_rich_text_with_currency_icons(
@@ -2219,11 +2358,11 @@ func _refresh_tower_controls() -> void:
 		_refresh_world_object_controls()
 	elif build_mode:
 		_tower_title.text = _selected_tower_data.display_name
-		_tower_portrait.texture = _icon_catalog.call("get_tower_icon", StringName(_selected_tower_data.id)) as Texture2D
+		_tower_portrait.texture = _get_tower_display_texture(StringName(_selected_tower_data.id))
 	elif has_selected_tower:
 		var selected_data: TowerData = selected.get_tower_data()
 		_tower_title.text = selected_data.display_name
-		_tower_portrait.texture = _icon_catalog.call("get_tower_icon", StringName(selected_data.id)) as Texture2D
+		_tower_portrait.texture = _get_tower_display_texture(StringName(selected_data.id))
 		var total_upgrades: int = mini(maxi(selected.level - 1, 0), selected.get_max_total_upgrades())
 		_tower_level_label.text = "[b]NIVEL %d DE %d[/b]" % [total_upgrades, selected.get_max_total_upgrades()]
 	else:
@@ -2939,6 +3078,7 @@ func _return_to_menu_from_pause() -> void:
 func _on_base_damaged(amount: int, current_health: int, maximum_health: int) -> void:
 	_on_base_health_changed(current_health, maximum_health)
 	if amount > 0:
+		_spawn_impact_vfx(&"base_hit", _base.global_position + Vector2(0.0, -100.0))
 		_base.show_damage_feedback()
 		_play_camera_shake(amount)
 		_wave_status.text = "La base recibió %d de daño · enemigos en ruta: %d" % [
@@ -3345,9 +3485,9 @@ func _update_cell_hover_tooltip() -> void:
 	_cell_hover_tooltip.size = tooltip_size
 	var mouse_position: Vector2 = get_viewport().get_mouse_position()
 	var viewport_size: Vector2 = get_viewport_rect().size
-	var tooltip_position := mouse_position + Vector2(14.0, 14.0)
+	var tooltip_position := mouse_position + Vector2(24.0, 14.0)
 	if tooltip_position.x + tooltip_size.x > viewport_size.x - 8.0:
-		tooltip_position.x = mouse_position.x - tooltip_size.x - 14.0
+		tooltip_position.x = mouse_position.x - tooltip_size.x - 24.0
 	if tooltip_position.y + tooltip_size.y > viewport_size.y - 8.0:
 		tooltip_position.y = mouse_position.y - tooltip_size.y - 14.0
 	var maximum_position := Vector2(

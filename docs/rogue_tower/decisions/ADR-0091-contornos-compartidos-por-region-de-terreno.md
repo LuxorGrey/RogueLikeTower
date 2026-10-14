@@ -1,7 +1,7 @@
 # ADR-0091: Contornos compartidos por región de terreno y elevación
 
 - Fecha: 2026-10-14
-- Estado: Aceptado por petición explícita del usuario; código integrado, aceptación visual pendiente.
+- Estado: Geometría/agrupación aceptadas y vigentes; la paleta y el estilo del trazo fueron sustituidos parcialmente por ADR-0095. Aceptación visual pendiente.
 - Alcance: presentación 2D de celdas del tablero y miniaturas de piezas.
 - Sustituye: no sustituye decisiones anteriores; añade una regla visual al renderer de terreno.
 

@@ -13,7 +13,6 @@ enum State { UNCONFIGURED, MOVING, REACHED_BASE, DEAD }
 enum HitPointLayer { HEALTH, ARMOR, SHIELD }
 
 const BODY_COLOR: Color = Color(0.82, 0.30, 0.27)
-const BODY_OUTLINE: Color = Color(0.16, 0.07, 0.07)
 const HEALTH_BACK_COLOR: Color = Color(0.12, 0.13, 0.14)
 const HEALTH_FILL_COLOR: Color = Color(0.36, 0.86, 0.40)
 const ARMOR_FILL_COLOR: Color = Color(0.78, 0.69, 0.48)
@@ -24,18 +23,57 @@ const DAMAGE_TEXT_COLORS: Dictionary = {
 	HitPointLayer.SHIELD: Color("#65ceff"),
 }
 const ICON_CATALOG_SCRIPT: Script = preload("res://game/ui/icon_catalog.gd")
+const ANIMATED_IMPACT_SCRIPT: Script = preload("res://game/vfx/animated_impact.gd")
+const COZY_STATUS_ROOT: String = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/status/"
 const PROJECT_FONT: Font = preload("res://assets/fonts/PatrickHand-Regular.ttf")
-const STATUS_ICON_IDS: Dictionary = {
-	"burn": &"burn",
-	"slow": &"slow",
-	"poison": &"poison",
-	"bleed": &"bleed",
-	"haste": &"mana",
-	"fortification": &"armor",
+const STATUS_SPRITE_FILES: Dictionary = {
+	&"burn": "burn.png",
+	&"slow": "frost.png",
+	&"poison": "poison.png",
+	&"bleed": "bleed.png",
+	&"haste": "buff.png",
+	&"fortification": "buff.png",
+	&"stun": "stun.png",
 }
 const HIT_JUMP_DURATION: float = 0.32
 const HIT_FLASH_DURATION: float = 0.14
 const VISUAL_ART_OFFSET_Y: float = 6.0
+const ENEMY_OUTLINE_SHADER: Shader = preload("res://game/board/interactable_outline.gdshader")
+const ENEMY_OUTLINE_SIZE_PX: float = 2.0
+const ENEMY_OUTLINE_FALLBACK_COLOR: Color = Color("#e8f4ff")
+const ENEMY_OUTLINE_COLORS: Dictionary = {
+	&"campaign_armored_goblin": Color("#e7ffa8"),
+	&"campaign_armored_orc": Color("#c5e9ff"),
+	&"campaign_bat": Color("#e7c4ff"),
+	&"campaign_battering_ram": Color("#ffe2b8"),
+	&"campaign_blink_dog": Color("#b9f4ff"),
+	&"campaign_cyclops": Color("#b5e9ff"),
+	&"campaign_demon": Color("#ffb8a8"),
+	&"campaign_dodecahedron": Color("#a8fff1"),
+	&"campaign_fallen_oogie": Color("#fff0b0"),
+	&"campaign_goblin": Color("#d8ffab"),
+	&"campaign_hexahedron": Color("#dbc8ff"),
+	&"campaign_icosahedron": Color("#bddaff"),
+	&"campaign_imp": Color("#ffc2e1"),
+	&"campaign_jack_o_lantern": Color("#ffd69c"),
+	&"campaign_manticore": Color("#ffe0a1"),
+	&"campaign_octahedron": Color("#d4ffa8"),
+	&"campaign_oogie": Color("#fff6b0"),
+	&"campaign_oogie_von_oogovich_haunted": Color("#ffd8f0"),
+	&"campaign_oogiehedron": Color("#b8f1ff"),
+	&"campaign_orc": Color("#d6f7c2"),
+	&"campaign_succubus": Color("#ffbde5"),
+	&"campaign_tetrahedron": Color("#aee7ff"),
+	&"campaign_troll": Color("#aeffc8"),
+	&"campaign_vampire": Color("#ffd0dd"),
+	&"campaign_werewolf": Color("#d6d2ff"),
+	&"campaign_witch": Color("#c8ffe8"),
+	&"armored_regenerator_m7_test": Color("#d3ffb8"),
+	&"cyclops_demo": Color("#a8e4ff"),
+	&"status_training_dummy_m8_test": Color("#cffcff"),
+	&"tower_layer_training_dummy": Color("#f1f1ff"),
+	&"werewolf_demo": Color("#c3c3ff"),
+}
 const DAMAGE_POPUP_SIZE_MIN: int = 12
 const DAMAGE_POPUP_SIZE_MAX: int = 22
 const DAMAGE_POPUP_PUNCH_SCALE: float = 1.75
@@ -46,6 +84,7 @@ const DAMAGE_POPUP_ARC_END_DURATION: float = 0.42
 var state: State = State.UNCONFIGURED
 var _enemy_data: EnemyData
 var _sprite_texture: Texture2D
+var _outline_sprite: Sprite2D
 var _body_color: Color = BODY_COLOR
 var _body_radius: float = 10.0
 var _regen_fraction: float = 0.0
@@ -57,6 +96,7 @@ var _status_speed_multiplier: float = 1.0
 var _regen_counter_strength: float = 0.0
 var _regen_counter_time_left: float = 0.0
 var _icon_catalog: RefCounted
+var _status_icon_sprites: Dictionary[StringName, Sprite2D] = {}
 var _hit_jump_time_left: float = 0.0
 var _hit_flash_time_left: float = 0.0
 var _hit_flash_color: Color = Color.WHITE
@@ -82,6 +122,17 @@ const RT_FORTIFICATION_DAMAGE_REDUCTION: float = 5.0
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	_outline_sprite = Sprite2D.new()
+	_outline_sprite.name = "EnemyOutline"
+	_outline_sprite.centered = true
+	_outline_sprite.show_behind_parent = true
+	_outline_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	var outline_material := ShaderMaterial.new()
+	outline_material.shader = ENEMY_OUTLINE_SHADER
+	outline_material.set_shader_parameter("outline_only", true)
+	outline_material.set_shader_parameter("outline_size_px", ENEMY_OUTLINE_SIZE_PX)
+	_outline_sprite.material = outline_material
+	add_child(_outline_sprite)
 	_icon_catalog = ICON_CATALOG_SCRIPT.new() as RefCounted
 	add_to_group(&"enemies")
 	_health.health_changed.connect(_on_health_changed)
@@ -99,6 +150,7 @@ func _process(delta: float) -> void:
 		queue_redraw()
 	else:
 		_jump_height = 0.0
+	_sync_outline_sprite_position()
 	if state != State.MOVING or _enemy_data == null or delta <= 0.0:
 		return
 	var had_rt_status: bool = _haste_strength > 0.0 or _fortification_strength > 0.0
@@ -107,6 +159,7 @@ func _process(delta: float) -> void:
 	if had_rt_status:
 		_update_move_speed_multiplier()
 		queue_redraw()
+	_sync_status_icon_sprites()
 	var active_status_ids: PackedStringArray = _status_controller.call("get_active_status_ids")
 	var counter_time: float = minf(_regen_counter_time_left, delta)
 	var uncountered_time: float = maxf(delta - counter_time, 0.0)
@@ -148,6 +201,7 @@ func configure(
 	_sprite_texture = enemy_data.sprite_texture
 	_body_color = enemy_data.placeholder_color
 	_body_radius = enemy_data.placeholder_radius
+	_sync_outline_sprite()
 	_regen_fraction = 0.0
 	_armor_regen_fraction = 0.0
 	_shield_regen_fraction = 0.0
@@ -299,12 +353,14 @@ func apply_haste(strength: float) -> void:
 		return
 	_haste_strength = minf(_haste_strength + strength, RT_STATUS_MAX_STRENGTH)
 	_update_move_speed_multiplier()
+	_sync_status_icon_sprites()
 	queue_redraw()
 
 func apply_fortification(strength: float) -> void:
 	if state != State.MOVING or strength <= 0.0:
 		return
 	_fortification_strength = minf(_fortification_strength + strength, RT_STATUS_MAX_STRENGTH)
+	_sync_status_icon_sprites()
 	queue_redraw()
 
 func get_fortification_damage_reduction() -> float:
@@ -335,6 +391,7 @@ func transform_to(enemy_data: EnemyData, health_override: int = 0) -> bool:
 	_sprite_texture = enemy_data.sprite_texture
 	_body_color = enemy_data.placeholder_color
 	_body_radius = enemy_data.placeholder_radius
+	_sync_outline_sprite()
 	_armor_current = enemy_data.armor
 	_shield_current = enemy_data.shield
 	_regen_fraction = 0.0
@@ -546,10 +603,11 @@ func _draw() -> void:
 		draw_texture_rect(_sprite_texture, sprite_rect, false, sprite_tint)
 		draw_set_transform(Vector2(0.0, -_jump_height + VISUAL_ART_OFFSET_Y), 0.0, Vector2.ONE)
 	else:
-		draw_circle(Vector2.ZERO, _body_radius + 3.0, BODY_OUTLINE)
+		var outline_color: Color = _get_enemy_outline_color()
+		draw_circle(Vector2.ZERO, _body_radius + 3.0, outline_color)
 		var body_color: Color = _body_color.lerp(_hit_flash_color, clampf(flash_ratio, 0.0, 1.0))
 		draw_circle(Vector2.ZERO, _body_radius, body_color)
-		draw_arc(Vector2.ZERO, _body_radius + 2.0, 0.0, TAU, 20, Color(1.0, 0.82, 0.62), 1.5, true)
+		draw_arc(Vector2.ZERO, _body_radius + 2.0, 0.0, TAU, 20, outline_color, 1.5, true)
 	var active_status_ids: PackedStringArray = _get_all_active_status_ids()
 	if active_status_ids.has("slow"):
 		draw_arc(Vector2.ZERO, 15.0, 0.0, TAU, 24, Color(0.40, 0.85, 1.0, 0.9), 2.0, true)
@@ -611,23 +669,80 @@ func _draw_status_icons() -> void:
 		return
 	var status_ids: Array = stacks_by_id.keys()
 	status_ids.sort()
-	var icon_size: float = 20.0
+	var icon_size: float = 22.0
 	var gap: float = 4.0
 	var total_width: float = float(status_ids.size()) * icon_size + float(maxi(status_ids.size() - 1, 0)) * gap
 	var start_x: float = -total_width * 0.5
 	var status_y: float = -_body_radius - 48.0
 	for status_id_variant in status_ids:
 		var status_id: StringName = StringName(status_id_variant)
-		var icon_name: StringName = STATUS_ICON_IDS.get(String(status_id), &"")
-		var icon_texture: Texture2D = _icon_catalog.call("get_icon", icon_name) as Texture2D if icon_name != &"" else null
-		if icon_texture != null:
-			var icon_rect := Rect2(start_x, status_y, icon_size, icon_size)
-			draw_texture_rect(icon_texture, icon_rect, false)
 		var stacks: int = int(stacks_by_id[status_id_variant])
 		if stacks > 1:
 			var count_position: Vector2 = Vector2(start_x + icon_size + 1.0, status_y + icon_size + 1.0)
 			draw_string(PROJECT_FONT, count_position, str(stacks), HORIZONTAL_ALIGNMENT_RIGHT, 15.0, 12, Color.WHITE)
 		start_x += icon_size + gap
+
+func _sync_status_icon_sprites() -> void:
+	if not is_inside_tree():
+		return
+	var stacks_by_id: Dictionary = _get_all_active_status_stacks()
+	var status_ids: Array = stacks_by_id.keys()
+	status_ids.sort()
+	var active: Dictionary[StringName, bool] = {}
+	for status_id_variant in status_ids:
+		var status_id: StringName = StringName(status_id_variant)
+		var sprite_file: String = String(STATUS_SPRITE_FILES.get(status_id, ""))
+		if sprite_file.is_empty():
+			continue
+		active[status_id] = true
+		var icon: Sprite2D = _status_icon_sprites.get(status_id) as Sprite2D
+		if icon == null or not is_instance_valid(icon):
+			var sprite_sheet: Texture2D = load(COZY_STATUS_ROOT + sprite_file) as Texture2D
+			if sprite_sheet == null:
+				continue
+			icon = ANIMATED_IMPACT_SCRIPT.new() as Sprite2D
+			if icon == null:
+				continue
+			icon.name = "Status_%s" % String(status_id)
+			add_child(icon)
+			_status_icon_sprites[status_id] = icon
+			var frame_count: int = int(float(sprite_sheet.get_width()) / 128.0)
+			if not bool(icon.call(
+				"configure",
+				sprite_sheet,
+				frame_count,
+				12.0,
+				22.0,
+				global_position,
+				true,
+				frame_count,
+				Vector2i(128, 128),
+				20
+			)):
+				icon.queue_free()
+				_status_icon_sprites.erase(status_id)
+				continue
+	var icon_size: float = 22.0
+	var gap: float = 4.0
+	var visible_ids: Array[StringName] = []
+	for status_id in active:
+		if _status_icon_sprites.has(status_id):
+			visible_ids.append(status_id)
+	var total_width: float = float(visible_ids.size()) * icon_size + float(maxi(visible_ids.size() - 1, 0)) * gap
+	var start_x: float = -total_width * 0.5
+	for status_id in visible_ids:
+		var icon: Sprite2D = _status_icon_sprites[status_id]
+		icon.position = Vector2(start_x + icon_size * 0.5, -_body_radius - 48.0 - _jump_height)
+		icon.visible = true
+		start_x += icon_size + gap
+	for status_id_variant in _status_icon_sprites.keys():
+		var status_id: StringName = StringName(status_id_variant)
+		if active.has(status_id):
+			continue
+		var stale_icon: Sprite2D = _status_icon_sprites[status_id]
+		if is_instance_valid(stale_icon):
+			stale_icon.queue_free()
+		_status_icon_sprites.erase(status_id)
 
 func _on_health_changed(current_health: int, maximum_health: int) -> void:
 	health_changed.emit(current_health, maximum_health)
@@ -643,6 +758,7 @@ func _on_health_depleted() -> void:
 		queue_free()
 
 func _on_status_effects_changed(_active_ids: PackedStringArray) -> void:
+	_sync_status_icon_sprites()
 	queue_redraw()
 
 func _on_route_completed() -> void:
@@ -661,6 +777,7 @@ func _change_state(next_state: State) -> void:
 		_fortification_strength = 0.0
 		_status_speed_multiplier = 1.0
 	state = next_state
+	_sync_status_icon_sprites()
 	state_changed.emit(state)
 
 func _update_move_speed_multiplier() -> void:
@@ -671,4 +788,48 @@ func _on_horizontal_direction_changed(is_facing_left: bool) -> void:
 	if _is_facing_left == is_facing_left:
 		return
 	_is_facing_left = is_facing_left
+	_sync_outline_sprite_orientation()
 	queue_redraw()
+
+func _sync_outline_sprite() -> void:
+	if _outline_sprite == null or not is_instance_valid(_outline_sprite):
+		return
+	_outline_sprite.texture = _sprite_texture
+	_outline_sprite.visible = _sprite_texture != null
+	if _sprite_texture == null:
+		return
+	var sprite_extent: float = _get_sprite_extent()
+	var texture_size: Vector2 = Vector2(_sprite_texture.get_size())
+	_outline_sprite.scale = Vector2(
+		sprite_extent / maxf(texture_size.x, 1.0),
+		sprite_extent / maxf(texture_size.y, 1.0)
+	)
+	var outline_material := _outline_sprite.material as ShaderMaterial
+	if outline_material != null:
+		outline_material.set_shader_parameter("outline_color", _get_enemy_outline_color())
+	_sync_outline_sprite_orientation()
+	_sync_outline_sprite_position()
+
+func _sync_outline_sprite_orientation() -> void:
+	if _outline_sprite != null and is_instance_valid(_outline_sprite):
+		_outline_sprite.flip_h = _is_facing_left
+
+func _sync_outline_sprite_position() -> void:
+	if _outline_sprite != null and is_instance_valid(_outline_sprite):
+		_outline_sprite.position = Vector2(0.0, -_jump_height + VISUAL_ART_OFFSET_Y)
+
+func _get_sprite_extent() -> float:
+	if _enemy_data == null:
+		return maxf(_body_radius * 3.2, 48.0)
+	if _enemy_data.sprite_extent > 0.0:
+		return _enemy_data.sprite_extent
+	return maxf(_body_radius * 3.2, 48.0)
+
+func _get_enemy_outline_color() -> Color:
+	if _enemy_data == null:
+		return ENEMY_OUTLINE_FALLBACK_COLOR
+	var outline_color: Color = ENEMY_OUTLINE_COLORS.get(
+		_enemy_data.id,
+		ENEMY_OUTLINE_FALLBACK_COLOR
+	)
+	return outline_color

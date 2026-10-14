@@ -214,7 +214,7 @@ Estas cantidades NO son compromiso de diseño final.
 
 ## M16 — Polish
 - Audio.
-- VFX; los primeros efectos de impacto se integran por torre con las hojas locales Tiny Swords proporcionadas por el usuario.
+- VFX históricos de M16: los primeros impactos usaron hojas Tiny Swords; el runtime actual queda sustituido por Cozy Chunky en M51/ADR-0101.
 - Cursores de Tiny Swords para normal, hover interactivo, acción inválida y colocación de torre.
 - Feedback impactos.
 - Transiciones.
@@ -356,7 +356,7 @@ Estas cantidades NO son compromiso de diseño final.
 ## M36 — Cards de tier, ramas paralelas y lectura cromática de altura (presentación de card sustituida por M40)
 - La implementación temporal usó un sprite vertical compartido para las upgrade cards, el tier visible y separación entre opciones; M40 reemplaza el sprite por una superficie plana común con aura radial procedural.
 - Al desbloquear permanentemente una torre, exponer como opciones hermanas sus mejoras Health, Armor y Shield, comprables en cualquier orden.
-- Añadir a las tapas un tinte multiplicativo extremadamente tenue según elevación, usando el mismo cálculo en superficies normales y Y-sorted.
+- Añadir a las tapas un tinte multiplicativo según elevación, usando el mismo cálculo en superficies normales y Y-sorted; M49 introdujo 1,00/0,96/0,92/0,88 y M50 actualiza el vigente a 1,00/0,95/0,90/0,85.
 - Resultado: código y catálogo integrados; aceptación visual/interactiva pendiente. Ver [ADR-0080](../decisions/ADR-0080-sprite-vertical-y-tier-de-upgrade-cards.md), [ADR-0081](../decisions/ADR-0081-mejoras-de-torre-en-ramas-paralelas.md) y [ADR-0082](../decisions/ADR-0082-tinte-multiplicativo-por-elevacion.md).
 
 ## M37 — Retícula geométrica axial y profundidad de terreno
@@ -407,9 +407,9 @@ Estas cantidades NO son compromiso de diseño final.
 
 ## M44 — Preview exacto, oferta fija y torres articuladas
 - Reutilizar el mismo snapshot de celdas candidatas para dibujar la expansión y confirmarla, incluyendo elevación, contenido determinista y celdas auto-rellenadas.
-- Dibujar contornos sin inset con los colores de las texturas Grass `#53B56F` y Mountain `#8A8B91`; compartir uniones redondeadas en superficies, preview y miniaturas.
+- Dibujar contornos sin inset y compartir uniones redondeadas en superficies, preview y miniaturas. La paleta y el trazo plano vigentes quedan fijados por M46/ADR-0095.
 - Mantener todas las ofertas de mejora exactamente en tres cartas; mezclar los reclutamientos desbloqueados con las mejoras, y preservar para después los reclutamientos no seleccionados.
-- Reemplazar los siete iconos canónicos por las imágenes entregadas. En el mundo, dividir cada sheet mediante `AtlasTexture`: base fija, cabeza rotatoria alrededor del anclaje de la base y montaje equivalente en ghost.
+- Reemplazar los siete iconos canónicos por las imágenes entregadas. El montaje articulado original quedó sustituido en M50: una textura compuesta cacheada por torre alimenta un solo sprite en mundo y ghost, que mira lateralmente con espejo horizontal.
 - Añadir trazo blanco con shader alfa a sprites de torre y obstáculos, conservando el orden Y-sort individual.
 - Resultado: código/assets/documentación integrados; aceptación visual e interactiva pendiente. Ver [ADR-0093](../decisions/ADR-0093-preview-de-terreno-oferta-fija-y-torres-articuladas.md).
 
@@ -417,5 +417,53 @@ Estas cantidades NO son compromiso de diseño final.
 - Quitar del mapa permanente las instrucciones del pie y el botón de nueva run; poner un cierre fijo arriba a la derecha que vuelve a la escena principal.
 - Separar y ampliar los clusters de progreso, conservar iconos por nodo y permitir scroll o arrastre con botón izquierdo/central. Las ramas Health/Armor/Shield de cada torre ocupan una fila horizontal común.
 - Hacer que cada nivel de torre aumente su escala suavemente, con un máximo visual de +12 % tras sus 45 mejoras posibles.
-- Conservar el perímetro por región `(terrain_type, elevation)` en Grass `#53B56F` y Mountain `#8A8B91`, con línea oscura de separación y hover de baja intensidad. Oscurecer las dos fachadas delanteras con sombreado direccional distinto, sin cambiar sus quads ni dibujar caras laterales/traseras.
+- Conservar el perímetro por región `(terrain_type, elevation)` y el hover de baja intensidad. M46/ADR-0095 sustituye la paleta y elimina la línea oscura de separación; las dos fachadas delanteras mantienen sombreado direccional distinto, sin cambiar sus quads ni dibujar caras laterales/traseras.
 - Resultado: implementación de código/documentación integrada; aceptación visual/interactiva pendiente. Ver [ADR-0094](../decisions/ADR-0094-mapa-de-mejoras-y-legibilidad-del-terreno.md).
+
+## M46 — Contorno regional oscuro y base más visible
+- Nombrar el efecto **contorno de región de terreno**. Mantener el perímetro agrupado por `(terrain_type, elevation)`, sus vértices axiales y uniones redondeadas; dibujarlo con un único tono plano, sin keyline ni relleno interior. Grass usa `#406e4d`, Mountain `#646567` y Path conserva amarillo.
+- Mantener intacto el PNG de la base y su huella lógica de un hexágono. Estirar su sprite a 1,8 × el radio de huella de ancho y 2,8 × de alto, anclando el borde inferior para ampliar la silueta hacia arriba; el valor es visual provisional.
+- Resultado: código y documentación integrados; aceptación visual pendiente. Ver [ADR-0095](../decisions/ADR-0095-contorno-regional-de-terreno-monotono.md) y [ADR-0096](../decisions/ADR-0096-base-mas-alta-y-visible.md).
+
+## M47 — Outline de base y enemigos
+- Aplicar a la base el mismo contorno blanco de dilatación alfa de las torres y los obstáculos.
+- Aplicar el mismo shader a los sprites de enemigos mediante una capa outline-only que siga el tamaño, orientación y salto de impacto de la ilustración; asignar un color claro distinto según el ID de perfil y mantener barras/estados por encima.
+- Conservar el Y-sort de las entidades y fachadas.
+- Resultado: código y documentación integrados; aceptación visual pendiente. Ver [ADR-0097](../decisions/ADR-0097-outline-de-base-y-enemigos.md).
+
+## M48 — Grosor de outlines y contorno de portales
+- Reducir el grosor del outline blanco de la base a `outline_size_px = 6` y aumentar ligeramente el de los enemigos a `2`.
+- Mantener en portales un contorno blanco permanente con el mismo shader y tamaño `3` que los obstáculos; conservar el resplandor contextual que aparece en hover, candidato y cierre previsto.
+- Sincronizar el borde de portal con los frames y el pulso de su animación, sin cambiar su hitbox ni su fase independiente.
+- Resultado: código y documentación integrados; aceptación visual pendiente. Ver [ADR-0098](../decisions/ADR-0098-ajuste-de-outline-y-contorno-de-portales.md).
+
+## M49 — Lectura de altura y velo de nubes
+- Mostrar la insignia de bonus de altura de las torres construidas solo durante hover; mantener la lectura del bonus en el ghost de colocación. Separar el tooltip de celda 24 px horizontalmente del cursor.
+- Oscurecer las tapas de forma neutra y acumulativa por nivel (h0 1,00; h1 0,95; h2 0,90; h3 0,85), compartiendo el cálculo con tablero, previews y superficies Y-sorted.
+- Añadir una capa procedural animada de sombra de nubes sobre los sprites del mundo y debajo del HUD; las sombras individuales por sprite siguen desactivadas.
+- Auditar cada PNG de `assets/sprites/` y registrar referencias activas y archivos sin uso localizado en la documentación.
+- Resultado: código/documentación integrados; aceptación visual pendiente. Ver [ADR-0099](../decisions/ADR-0099-tinte-de-altura-y-sombra-animada-de-nubes.md).
+
+## M50 — Sprite único de torre y tinte de altura
+- Componer y cachear una textura RGBA por torre alineando las partes existentes; usar un solo Sprite2D en el mapa y el ghost, sin pivote ni rotación visual. Apuntar a izquierda con espejo horizontal y mantener la orientación derecha por defecto.
+- Usar el mismo sprite compuesto en la carta de construcción y el retrato de Tower Info; ampliar retrato, nombre y precio para aprovechar el panel.
+- Ajustar el tinte multiplicativo de las tapas a 5 % por nivel (h0 1,00; h1 0,95; h2 0,90; h3 0,85), compartido por tablero, previews y copias elevadas.
+- Resultado: código/documentación integrados; aceptación visual pendiente. Ver [ADR-0100](../decisions/ADR-0100-sprite-unico-de-torre-y-tinte-de-altura.md).
+
+## M51 — VFX de combate, estados y feedback de juego
+- Integrar los spritesheets Cozy Chunky para disparos e impactos de las siete torres; Mortar marca con `tap_ripple` la posición objetivo.
+- Mostrar `star_burst_gold` y `level_up` en cada subida manual o automática; `base_hit` al recibir daño; `coins_top` al derrotar enemigos; `coin_burst_gold` y `pickup` al abrir cofres; `item_glow` detrás de cofres disponibles; `ui_click` en el cursor al interactuar con objetos; `sparkle_twinkle_white_loop` al confirmar terreno y `confetti_burst_01` al volver al menú tras acabar la run.
+- Reemplazar iconos estáticos por hojas animadas de estado y cubrir Bleed, Burn, Poison, Slow, Haste, Fortification y Stun con los recursos Cozy Chunky correspondientes.
+- Ejecutar VFX de evento en una capa superior persistente que no se congele durante cards/terreno; mantener la torre como un solo sprite compuesto centrado en el hexágono con desplazamiento visual uniforme de 8 px hacia abajo en torre y ghost.
+- Resultado: código/assets/documentación integrados; inspección visual e interactiva en Godot pendiente. Ver [ADR-0101](../decisions/ADR-0101-vfx-animados-de-cozy-chunky-por-evento.md).
+
+## M52 — Sprites completos de torre y cadencia de feedback
+- Cargar directamente los siete PNG completos de torre, eliminar recortes/pivotes antiguos y compartir el mismo sprite centrado en mundo, ghost, selección y Tower Info; mantener el offset visual de 8 px y ampliar la escala.
+- Dosificar la partícula `shoot` en las torres de fuego continuo (Tesla Coil, Frost Keep, Flame Thrower, Poison Sprayer y Shredder) con intervalo aleatorio de 2,0–2,5 s; Ballista y Mortar conservan el efecto de cada disparo. No se limitan impactos ni ataques.
+- Reproducir `pickup.png` al construir una torre y al retirar un obstáculo, además de conservarlo al abrir cofres.
+- Resultado: código/documentación integrados; aceptación visual pendiente. Ver [ADR-0102](../decisions/ADR-0102-sprites-completos-de-torre-escala-y-feedback.md).
+
+## M53 — Escala de torre sin recorte
+- Reducir ligeramente la escala de los sprites de torre en tablero y ghost de 1,44 a 1,32, manteniendo su alineación y el offset visual de 8 px.
+- Mantener sin cambios el tamaño de los iconos de cards y Tower Info.
+- Resultado: código/documentación integrados; aceptación visual pendiente. Ver [ADR-0103](../decisions/ADR-0103-escala-de-torre-sin-recorte.md).

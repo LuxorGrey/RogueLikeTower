@@ -7,6 +7,7 @@ signal wave_started(round_number: int)
 signal wave_completed(round_number: int)
 signal wave_failed(reason: String)
 signal enemy_count_changed(alive_count: int)
+signal enemy_killed(world_position: Vector2)
 signal population_changed(pending_count: int, alive_count: int)
 signal base_damaged(amount: int, current_health: int, maximum_health: int)
 signal reward_earned(amount: int, reason: int)
@@ -300,6 +301,8 @@ func _on_enemy_defeated(enemy_id: int) -> void:
 			if ability.trigger == EnemyAbilityData.Trigger.ON_DEATH and not _execute_enemy_ability(ability, enemy):
 				_fail_wave("Falló una habilidad de enemigo al morir.")
 				return
+	if enemy != null and is_instance_valid(enemy):
+		enemy_killed.emit(enemy.global_position)
 	_active_enemies.erase(enemy_id)
 	_ability_runtime.erase(enemy_id)
 	var kill_reward: int = int(_kill_rewards.get(enemy_id, 0))

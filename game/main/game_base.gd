@@ -6,6 +6,10 @@ signal defeated
 
 const BASE_TILE_COLOR: Color = Color(0.36, 0.29, 0.16)
 const BASE_OUTLINE: Color = Color(0.16, 0.13, 0.08)
+const BASE_SPRITE_WIDTH_RADIUS_FACTOR: float = 1.8
+const BASE_SPRITE_HEIGHT_RADIUS_FACTOR: float = 2.8
+const PREVIOUS_BASE_SPRITE_HEIGHT_RADIUS_FACTOR: float = 1.65
+const INTERACTABLE_OUTLINE_SHADER: Shader = preload("res://game/board/interactable_outline.gdshader")
 
 @export var base_data: BaseData
 @export_range(1.0, 200.0, 1.0) var footprint_radius: float = 52.0
@@ -30,11 +34,23 @@ func _ready() -> void:
 	_health.initialize(base_data.max_health)
 	_base_sprite.texture = base_data.sprite_texture
 	_base_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	var outline_material := ShaderMaterial.new()
+	outline_material.shader = INTERACTABLE_OUTLINE_SHADER
+	outline_material.set_shader_parameter("outline_color", Color.WHITE)
+	outline_material.set_shader_parameter("outline_size_px", 6.0)
+	_base_sprite.material = outline_material
 	if _base_sprite.texture != null:
 		var source_size: Vector2 = Vector2(_base_sprite.texture.get_size())
-		var display_size: float = footprint_radius * 1.65
-		var uniform_scale: float = display_size / maxf(source_size.x, source_size.y)
-		_base_sprite.scale = Vector2.ONE * uniform_scale
+		var display_size := Vector2(
+			footprint_radius * BASE_SPRITE_WIDTH_RADIUS_FACTOR,
+			footprint_radius * BASE_SPRITE_HEIGHT_RADIUS_FACTOR
+		)
+		_base_sprite.scale = Vector2(display_size.x / source_size.x, display_size.y / source_size.y)
+		var previous_display_height: float = (
+			footprint_radius * PREVIOUS_BASE_SPRITE_HEIGHT_RADIUS_FACTOR
+		)
+		# Conserva la base del sprite en su ancla y amplía la silueta hacia arriba.
+		_base_sprite.position.y -= (display_size.y - previous_display_height) * 0.5
 	_sprite_original_modulate = _base_sprite.modulate
 	queue_redraw()
 

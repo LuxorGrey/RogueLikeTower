@@ -1,7 +1,7 @@
 # ADR-0082: Tinte multiplicativo tenue por elevación
 
 - Fecha: 2026-10-14
-- Estado: Aceptado por petición explícita; renderer integrado, aceptación visual pendiente.
+- Estado: Sustituido en intensidad y fórmula por [ADR-0099](ADR-0099-tinte-de-altura-y-sombra-animada-de-nubes.md); queda como historial de la primera implementación.
 - Añade una señal de profundidad a las tapas del terreno sin cambiar el modelo 2D ni el orden de dibujo definido en [ADR-0073](ADR-0073-elevaciones-y-bonus-de-torre.md) y [ADR-0079](ADR-0079-limites-de-obstaculos-y-cierre-visual-del-terreno.md).
 
 ## Contexto

@@ -65,7 +65,7 @@ content_margin_bottom = 9.0
 modulate_color = Color(0.62, 0.65, 0.7, 0.76)
 
 [node name="TowerShortcutCard" type="Button"]
-custom_minimum_size = Vector2(144, 148)
+custom_minimum_size = Vector2(162, 198)
 size_flags_horizontal = 4
 toggle_mode = true
 theme = ExtResource("2_theme")
@@ -97,8 +97,8 @@ mouse_filter = 2
 
 [node name="TowerIcon" type="TextureRect" parent="CardMargin/CardContent"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 64)
-pivot_offset = Vector2(32, 32)
+custom_minimum_size = Vector2(126, 126)
+pivot_offset = Vector2(63, 63)
 layout_mode = 2
 size_flags_horizontal = 4
 expand_mode = 1
@@ -109,7 +109,7 @@ mouse_filter = 2
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 16
 text = "TORRE"
 autowrap_mode = 3
 horizontal_alignment = 1
@@ -124,7 +124,7 @@ mouse_filter = 2
 
 [node name="GoldIcon" type="TextureRect" parent="CardMargin/CardContent/PriceRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(17, 17)
+custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
 texture = ExtResource("4_gold")
 expand_mode = 1
@@ -135,7 +135,7 @@ mouse_filter = 2
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 22
 text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1

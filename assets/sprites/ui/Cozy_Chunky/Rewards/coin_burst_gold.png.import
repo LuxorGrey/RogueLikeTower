@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://kck7vwu2ke83"
-path="res://.godot/imported/terrain_expansion_card_frame.png-2170f90cb5f2032e8d735ff5dcb92386.ctex"
+uid="uid://bdmhnsfd4bay8"
+path="res://.godot/imported/coin_burst_gold.png-27efe570bd1b4a71822898ec21b58a85.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/ui/terrain_expansion_card_frame.png"
-dest_files=["res://.godot/imported/terrain_expansion_card_frame.png-2170f90cb5f2032e8d735ff5dcb92386.ctex"]
+source_file="res://assets/sprites/ui/Cozy_Chunky/Rewards/coin_burst_gold.png"
+dest_files=["res://.godot/imported/coin_burst_gold.png-27efe570bd1b4a71822898ec21b58a85.ctex"]
 
 [params]
 

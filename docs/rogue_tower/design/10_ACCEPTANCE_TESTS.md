@@ -39,7 +39,7 @@
 - Path = 0.
 - Grass = 1 o 2; Mountain = 2 o 3.
 - Las alturas construibles se vuelven a sortear con el seed de cada run/oferta y no cambian entre card, ghost y tablero confirmado.
-- Una torre de altura h recibe +h de daño base y +0.5 × h de alcance; una insignia sobre su sprite muestra el bonus de daño.
+- Una torre de altura h recibe +h de daño base y +0.5 × h de alcance; su insignia numérica aparece únicamente al hacer hover y muestra el bonus de daño.
 - La fachada, hover, preview y selección siguen funcionando en desniveles de hasta tres niveles.
 - Torre conserva su HexCoord aunque sprite se dibuje elevado.
 - Click/selección funciona sobre sprite desplazado.
@@ -297,7 +297,7 @@ M12A queda aceptado cuando barra/daño por capas, stats de los siete perfiles, p
 - El HUD activo se actualizó en M22: salud/atajos arriba a la izquierda, Gold/Mana arriba a la derecha, ronda centrada y datos de torre a la derecha debajo de los recursos; sin paneles compartidos para salud, recursos ni ronda. El título «RogueTower» no aparece. La salud de Main Tower muestra su valor actual/máximo dentro de una barra segmentada cada 10 puntos, con un segmento final parcial si corresponde. El Gold usa un icono y tamaño visual mayores que el Mana; toda ganancia o gasto anima icono y cifra con escalado y rebote. El Mana se restablece al máximo y se muestra como entero. El timeline de M35 muestra siempre 15 de las 45 rondas, sin selector; el hover de composición y el botón de inicio se conservan.
 - El selector de perfiles de oleada y la lectura técnica continua del objetivo no ocupan la vista normal: aparecen dentro del panel F3. Abrir/cerrar F3 no altera la fase ni los saldos; `H` oculta y restaura paneles, barra de torres y panel técnico. La navegación con rueda y botón central continúa funcionando con el HUD visible/oculto.
 - Seleccionar una torre muestra en el panel derecho nivel, daño, H/A/S, alcance, RPM, crítico, patrón, icono de energía si consume y XP por capa. El panel se ajusta al contenido y nunca usa scroll; reduce su escala vertical si el alto del viewport no permite mostrarlo a tamaño natural. Al entrar en build mode presenta el retrato grande de la torre y sus datos; omite la instrucción redundante de elegir Grass/Mountain y muestra el bonus cuantificado de Mountain frente a Grass. Health, Armor y Shield usan negrita y colores distintos. Los tres botones de mejora casi cuadrados enseñan icono, nivel de su capa, barra XP, `+1 Daño`, efecto y precio; Demoler queda debajo. Hover sobre torre no seleccionada muestra el radio y un contorno; al seleccionar, el sprite y card inferior pulsan con brillo alfa, sin círculo y sin pulso del panel. Prioridad 1 aparece sola; botones `+` revelan prioridades únicas 2 y 3. El panel desaparece al deseleccionar la torre o pulsar fuera del tablero.
-- Cada objeto tiene su PNG RGBA transparente independiente en `assets/sprites/ui/icons/` (256×256); no existe un atlas compartido. Los atajos inferiores son botones individuales con un asset de marco estilo carta, sprite grande, nombre y precio con icono de moneda; el contenedor que los alinea no muestra fondo ni marco común. El sprite de torre es idéntico al preview y a la torre colocada. La base usa un sprite PNG configurable desde `BaseData`; su tamaño de render vigente es el de M41: conserva el archivo fuente 270×352 px y se escala uniformemente para ocupar una caja máxima de 86×86 px. La huella lógica y la posición Y-sort siguen separadas. No cambian huellas lógicas ni movimiento. La UI sustituye por iconos las menciones a Gold/Mana en textos enriquecidos. Las cards específicas muestran la torre afectada; las cards de terreno conservan el contrato M10.
+- Cada objeto tiene su PNG RGBA transparente independiente en `assets/sprites/ui/icons/` (256×256); no existe un atlas compartido. Los atajos inferiores son botones individuales con un asset de marco estilo carta, sprite grande, nombre y precio con icono de moneda; el contenedor que los alinea no muestra fondo ni marco común. El sprite de torre es idéntico al preview y a la torre colocada. La base usa un sprite PNG configurable desde `BaseData`; su tamaño vigente conserva el archivo fuente 270×352 px y lo estira a 1,8 × el radio de huella de ancho por 2,8 × de alto, manteniendo fijo el borde inferior. La huella lógica y la posición Y-sort siguen separadas. No cambian huellas lógicas ni movimiento. La UI sustituye por iconos las menciones a Gold/Mana en textos enriquecidos. Las cards específicas muestran la torre afectada; las cards de terreno conservan el contrato M10.
 - Los enemigos muestran un marco de Health con carriles de Shield y Armor sobre una Health fragmentada; los iconos de capa identifican cada carril. Los estados activos aparecen encima y solo muestran cifra cuando hay varias acumulaciones. Cada impacto hace destellar y saltar al enemigo, y presenta daño flotante coloreado según Shield, Armor o Health. El efecto no cambia el cálculo de `DamageService`.
 - El resumen de victoria/derrota se presenta en el menú después de cambiar de escena; M35 añade el resumen compacto de cantidad y daño por torre desbloqueada. La seed se conserva como dato técnico.
 - La tienda anterior por categorías/filas quedó reemplazada por el mapa de nodos compartido de M35. Sigue mostrando coste/estado y rechaza compras sin saldo o guardado válido.
@@ -338,7 +338,7 @@ El código y los assets están integrados. M14 requiere ejecutar este procedimie
 1. Coloca una torre y un obstáculo en hexes con distintas posiciones Y y mueve enemigos por PATH delante y detrás de ellos. Confirma que el elemento más cercano a la parte frontal del tablero aparece delante, que los props pueden quedar detrás de torres/enemigos y que la base también participa en el orden por profundidad. El orden debe seguir el pie visual de cada elemento, no su centro gráfico.
 2. Inspecciona cada tipo y variante de terreno. El borde pintado del PNG debe coincidir con el contorno de la cara hexagonal, sin desplazamiento lateral o vertical visible y sin tapar de más las celdas vecinas.
 3. Con `Ctrl+D` desactivado, confirma que cada rama y convergencia de PATH muestra flechas con movimiento continuo hacia la base. Cambia una colocación válida para revisar el grafo candidato; cancélala y comprueba que vuelve a fluir el grafo activo. Los portales pulsantes siguen visibles y no muestran carteles.
-4. Comprueba las dimensiones por recurso (torres 84 px y enemigos estándar 72 px) a zoom 1× y 0,75×. Deben conservar proporción y su arte debe quedar unos 6 px por debajo del centro lógico. El tamaño visual vigente de la base está especificado en M41: el PNG fuente permanece 270×352 y su caja renderizada es como máximo 86×86 px. La ampliación no debe alterar selección, ocupación, alcance, hitboxes de combate ni navegación.
+4. Comprueba las dimensiones por recurso (torres 84 px y enemigos estándar 72 px) a zoom 1× y 0,75×. Deben conservar proporción y su arte debe quedar unos 6 px por debajo del centro lógico. El tamaño visual vigente de la base está especificado en M46: el PNG fuente permanece 270×352 y su caja renderizada es 1,8 × el radio de huella de ancho por 2,8 × de alto. La ampliación no debe alterar selección, ocupación, alcance, hitboxes de combate ni navegación.
 
 ADR-0041 y ADR-0042 implementan en código la ordenación de props, la alineación del arte, el flujo animado por aristas, la profundidad por elevación, el hover selectivo del grid y el portal de spawn. Esta revisión no marca M17/M18 aceptados hasta completar las comprobaciones visuales en una ventana Godot.
 
@@ -574,7 +574,7 @@ La aceptación visual/interactiva de M34 está pendiente; no se ejecutaron prueb
 5. Comprueba que el timeline no tiene selector y muestra siempre 15 rondas. Verifica círculos, tooltip con retratos/conteos y el total de 45 rondas. La ventana empieza en la ronda actual; al llegar al tramo final, muestra 31–45 para mantener los 15 puntos. El extremo futuro se desvanece. La cámara de juego no rota ni cambia de proyección.
 6. Repite la generación del tablero inicial y varias ofertas. En el tablero inicial hay como máximo un obstáculo total y no se coloca en la base ni sus seis vecinas. Cada pieza de siete hexes tiene como máximo dos obstáculos. Confirma los mismos límites al pasar de miniatura a ghost y tablero. Compara las tres vistas de cada oferta: tapa texturada, fachada, altura, props y orden delante/detrás deben coincidir; presta atención a Camino serpenteante. La lista activa de obstáculos y las condiciones de los props se verifican en M39.
 7. Recorre celdas delante y detrás entre alturas 0–3 con los dos tipos de fachada. Cada tapa debe verse como polígono cerrado de seis lados; no aparecen vértices abiertos ni caras rectangulares sueltas, y la textura no se estira al subir altura. En uniones de vértice no quedan huecos, incluidos los extremos aislados de una sola fachada; los UV nunca muestran una franja ajena de textura. Comprueba primero el orden back-to-front por posición axial proyectada de suelo entre tapas y después las copias elevadas junto a actores detrás, delante y sobre la misma superficie; las superficies deben ocluir solo lo que queda detrás y dejar visibles los actores del mismo nivel. La cámara permanece fija.
-8. Selecciona Ballista y haz hover por celdas elevadas de altura 1, 2 y 3. El ghost muestra +1/+2/+3 de daño antes de confirmar la construcción, coincidiendo con la insignia de una torre colocada en esa altura.
+8. Selecciona Ballista y haz hover por celdas elevadas de altura 1, 2 y 3. El ghost muestra +1/+2/+3 de daño antes de confirmar la construcción; después, la insignia de la torre colocada queda oculta hasta pasar el cursor por encima.
 9. Carga la tienda y confirma que la validación del catálogo no informa de prerequisitos ausentes. Archivo de cartas aparece conectado tras Suerte del explorador (ID persistente `meta:chest_finder`); el mapa no emite avisos de división entera al distribuir nodos sueltos. La partida compila con Ballista como torre seleccionada por defecto.
 
 La integración de M35 está en código y documentos. Tras los arreglos de ID, división entera y perfil Ballista, Godot 4.7 arrancó la escena de menú sin errores en la salida de depuración y el escaneo headless no reportó diagnósticos GDScript. No se ejecutaron tests ni se inspeccionó visualmente la interfaz o el tablero. La aceptación de flujo, legibilidad, partículas, ventana y geometría requiere esta revisión visual/interactiva. Ver ADR-0076, ADR-0077, ADR-0079 y ADR-0083.
@@ -583,9 +583,9 @@ La integración de M35 está en código y documentos. Tras los arreglos de ID, d
 
 ### Revisión manual en ventana
 
-1. El criterio de sprite vertical de esta sección quedó sustituido por M40/ADR-0088. Conserva aquí la comprobación de ramas H/A/S paralelas y tinte tenue de altura.
+1. El criterio de sprite vertical de esta sección quedó sustituido por M40/ADR-0088. Conserva aquí la comprobación de ramas H/A/S paralelas; la intensidad del tinte se actualizó en M49.
 2. En el mapa permanente, desbloquea una torre y confirma que sus mejoras Health, Armor y Shield pasan juntas a disponibles y que las tres conexiones salen del nodo de torre. Compra una de ellas y verifica que las otras dos siguen comprables; comprueba que puedes elegir las tres en cualquier orden para Ballista y otra torre.
-3. Compara tapas Grass/Mountain a elevaciones 0, 1, 2 y 3 junto a sus copias elevadas Y-sorted. El nivel 0 conserva el color original y cada nivel añade solo un matiz muy sutil, más frío/oscuro, que ayuda a separar alturas. Deben seguir visibles los detalles de textura y el patrón no debe estirarse. Verifica que la cámara top-down isométrica, UV, geometría cerrada y oclusión delante/detrás no cambian.
+3. Compara tapas Grass/Mountain a elevaciones 0, 1, 2 y 3 junto a sus copias elevadas Y-sorted. El nivel 0 conserva el color original y cada nivel oscurece el RGB con multiplicadores 1,00/0,95/0,90/0,85. Deben seguir visibles los detalles de textura y el patrón no debe estirarse. Verifica que la cámara top-down isométrica, UV, geometría cerrada y oclusión delante/detrás no cambian.
 
 Las ramas H/A/S y el tinte de M36 permanecen vigentes; su presentación de card se reemplazó en M40. No se ejecutaron pruebas automatizadas ni se hizo revisión visual/interactiva; la aceptación queda pendiente. Ver [ADR-0080](../decisions/ADR-0080-sprite-vertical-y-tier-de-upgrade-cards.md), [ADR-0081](../decisions/ADR-0081-mejoras-de-torre-en-ramas-paralelas.md), [ADR-0082](../decisions/ADR-0082-tinte-multiplicativo-por-elevacion.md) y ADR-0088.
 
@@ -604,7 +604,7 @@ M37 estableció la retícula axial compartida. M38 simplifica el renderer para r
 
 ### Revisión manual en ventana
 
-1. Genera varios mapas y ofertas. La base conserva intacto su PNG fuente de 270×352 px y se escala uniformemente hasta una caja visual de 86×86 px, ocupando una celda hexagonal; la cámara sigue aplicando su zoom de mapa uniforme al mundo.
+1. Genera varios mapas y ofertas. La base conserva intacto su PNG fuente de 270×352 px y se estira a 1,8 × el radio de huella de ancho por 2,8 × de alto. La silueta crece hacia arriba, mantiene anclado su borde inferior y sigue ocupando una sola celda lógica; la cámara sigue aplicando su zoom uniforme al mundo.
 2. Inspecciona las seis celdas adyacentes a base en varias semillas: Path es elevación 0, Grass elevación 1 y nunca hay Mountain ni altura mayor que 1.
 3. Verifica que cada uno de los 18 props del catálogo solo aparece en su tipo de terreno, con roll independiente del 10 % por asset/celda, tamaño 36×36 px y máximo dos props únicos en una celda. Los props no reaccionan al hover/clic, no seleccionan nada ni bloquean construcción.
 4. En celdas con dos props, confirma que no se solapan. Cuando una celda tiene obstáculo, este aparece delante de los props; el obstáculo queda centrado en el hex.
@@ -629,7 +629,7 @@ El código y la documentación de M40 están integrados. No se ejecutaron prueba
 ### Revisión manual en ventana
 
 1. Abre un tablero con elevaciones y enemigos en rutas por delante y detrás. La fachada del hex elevado debe ocultar al enemigo tras ella y quedar oculta por el enemigo que pasa delante. Ninguna pared puede tapar una tapa hexagonal; las paredes entre vecinos terminan en la elevación de la tapa vecina.
-2. Confirma que la base conserva el PNG fuente 270×352 sin remuestreo y que su dibujo uniforme no supera una caja visual de 86×86 px.
+2. Confirma que la base conserva el PNG fuente 270×352 sin remuestreo y que se dibuja a 1,8 × el radio de huella de ancho por 2,8 × de alto, con el borde inferior visual anclado.
 3. Inspecciona todos los portales: el atlas 4×2 recorre los primeros siete frames continuamente y omite el último, duplicado del primero; fases iniciales distintas impiden que dos portales avancen sincronizados. El hover sigue el alfa del frame actual.
 4. Revisa varios seeds y celdas con cero, uno y dos props. Cada asset compatible tiene 10 % de probabilidad independiente, el tamaño es 39,6×39,6 px y dos props no se solapan; obstáculos se dibujan a 94,6×94,6 px y por delante.
 5. Abre el proyecto con Godot 4.7 y confirma que `TerrainPiecePreview` carga sin errores de parseo en `_apply_base_ring_elevation`.
@@ -652,21 +652,21 @@ La integración M42 está en código y documentación. La inspección visual/int
 
 1. Construye cada una de las siete torres en varias celdas de terreno y altura. El ancla debe coincidir con el centro axial del hexágono; las torres y su ghost deben conservar el mismo tamaño, un 20 % mayor que antes, sin alterar rango, daño, ocupación ni selección.
 2. Examina perímetros de varias regiones Grass/Mountain/Path, bordes contra vacío, cambios de altura, superficies Y-sorted y miniaturas. Las líneas deben unirse sin huecos y sus vértices deben verse suaves sin cambiar la forma hexagonal.
-3. La lectura vigente de las fachadas y strokes se prueba en M45/ADR-0094: las dos caras delanteras deben verse oscuras con sombreado direccional distinto; `#53B56F` Grass y `#8A8B91` Mountain se verifican en el perímetro regional, no como sustitutos de la textura superior.
+3. La lectura vigente de las fachadas se prueba en M45/ADR-0094: las dos caras delanteras deben verse oscuras con sombreado direccional distinto. Los tonos de `#406e4d` Grass y `#646567` Mountain corresponden al contorno de región de terreno, no sustituyen la textura superior.
 4. Confirma props de 39,6×39,6 px y obstáculos de 94,6×94,6 px. La probabilidad, distribución por celda y orden de dibujo permanecen iguales.
 5. Deja el cursor sobre un portal que vaya a cerrarse, confirma una pieza y comprueba que el tooltip desaparece antes de la siguiente oferta. Observa el loop: usa frames 0–6 y omite el último frame duplicado.
 6. Inspecciona `assets/sprites/`: todos los PNG runtime, iconos, enemigos, terreno, interfaz y sidecars `.import` quedan agrupados en subcarpetas por categoría. Confirma que las hojas Tiny Swords locales siguen ignoradas por Git y que `assets/fonts/` y `art_generation/` siguen siendo fuentes aparte.
 
 La implementación M43 y la documentación están integradas. No se ejecutó Godot ni una inspección visual/interactiva; aceptación pendiente. Ver [ADR-0092](../decisions/ADR-0092-pulido-visual-y-raiz-comun-de-sprites.md).
 
-## M44 Preview exacto, tres cartas y torres articuladas
+## M44 Preview exacto, tres cartas y arte de torre (actualizado por M50)
 
 ### Revisión manual en ventana
 
 1. Mueve y rota varias piezas con celdas Grass/Mountain en desniveles, con una o más celdas que auto-rellenen huecos. Compara cada tapa y fachada del ghost con el tablero después de confirmar: altura, textura, obstáculos, props y cofres deben permanecer idénticos.
-2. Revisa perímetros Grass/Mountain/Path en tablero, superficies elevadas, hover y miniaturas. Las aristas internas desaparecen; las juntas no tienen huecos ni picos, los extremos son redondeados y los tonos son `#53B56F`, `#8A8B91` y amarillo Path, sin borde verde neón.
+2. Revisa el contorno de región de terreno Grass/Mountain/Path en tablero, superficies elevadas, hover y miniaturas. Las aristas internas desaparecen; las juntas no tienen huecos ni picos, los extremos son redondeados y el trazo usa un único color plano por terreno: `#406e4d`, `#646567` y amarillo Path.
 3. Desbloquea varias torres, inicia run y abre ofertas de ronda 3/6/9. Cada panel debe contener exactamente tres cartas, con reclutamientos y mejoras en orden aleatorio. Las torres no elegidas permanecen disponibles en ofertas futuras; no aparece una cuarta opción aunque haya más torres pendientes.
-4. Construye Ballista, Mortar, Tesla Coil, Poison Sprayer, Flame Thrower, Frost Keep y Shredder. La base queda fija en el centro de la tapa y solo la cabeza apunta a enemigos alrededor del pivote de unión. El ghost usa el mismo montaje. Comprueba el contorno blanco en ambas partes y en cada obstáculo, sin pérdida de orden Y-sort ni cortes de alfa.
+4. Construye Ballista, Mortar, Tesla Coil, Poison Sprayer, Flame Thrower, Frost Keep y Shredder. Cada torre debe usar un único sprite completo sin montaje de partes ni rotación visual, mantener el outline blanco y reflejarse horizontalmente al apuntar a enemigos del lado opuesto. El ghost, la card de construcción y Tower Info deben reutilizar la misma imagen; la fachada conserva Y-sort y alfa completos.
 5. Verifica los iconos de los siete tipos en barra, cards y tienda; todos corresponden al sprite nuevo. El séptimo asset se asocia a Shredder, el nombre canónico actual.
 
 La implementación M44 queda integrada en código/documentación. No se ejecutó Godot ni se hizo inspección visual/interactiva; aceptación pendiente. Ver [ADR-0093](../decisions/ADR-0093-preview-de-terreno-oferta-fija-y-torres-articuladas.md).
@@ -679,9 +679,94 @@ La implementación M44 queda integrada en código/documentación. No se ejecutó
 2. Desplaza con rueda en ambos ejes, arrastra con el botón izquierdo una distancia mayor a 8 px y vuelve a probar con el botón central. Verifica que un clic corto todavía selecciona nodos y que el arrastre no compra una mejora al soltar.
 3. Recorre todos los nodos generales y de las siete torres: cada uno debe mostrar un icono relacionado, título legible y descripción breve; los tooltips deben conservar descripción completa, coste y requisitos. En cada torre, Health, Armor y Shield se ven en una sola fila debajo del unlock, conectados como alternativas hermanas, sin superponerse con los clusters vecinos.
 4. Compara una torre de nivel 1, nivel intermedio y nivel 46. El arte aumenta de forma gradual hasta un máximo discreto de 12 %; la base y cabeza mantienen alineación/pivote. El aumento no cambia daño, alcance, colisión ni celda ocupada.
-5. Comprueba una región Grass y una Mountain en elevaciones distintas: las aristas internas de la misma región no se dibujan, los bordes regionales son redondeados y sin huecos, Grass usa `#53B56F` y Mountain `#8A8B91` con un keyline oscuro. Hover conserva esos tonos con baja intensidad. Las fachadas son las dos caras delanteras, una visiblemente más oscura que la otra y ambas más oscuras que la tapa; no aparecen costados, cierres de esquina ni cambios de cámara.
+5. Comprueba una región Grass y una Mountain en elevaciones distintas: las aristas internas de la misma región no se dibujan, los bordes regionales son redondeados y sin huecos, Grass usa únicamente `#406e4d` y Mountain únicamente `#646567`; no debe aparecer keyline ni interior más claro. Hover conserva el mismo color RGB y solo cambia su opacidad. Las fachadas son las dos caras delanteras, una visiblemente más oscura que la otra y ambas más oscuras que la tapa; no aparecen costados, cierres de esquina ni cambios de cámara.
 
 M45 está implementado en código y documentado. No se ejecutó Godot ni revisión visual/interactiva; los cinco criterios anteriores siguen pendientes de aceptación manual. Ver [ADR-0094](../decisions/ADR-0094-mapa-de-mejoras-y-legibilidad-del-terreno.md).
+
+## M46 Contorno de región de terreno y escala de la base
+
+### Revisión manual en ventana
+
+1. Revisa un borde Grass y uno Mountain con y sin hover, en tablero, copias elevadas y miniaturas. Grass debe usar `#406e4d` y Mountain `#646567` en un único trazo redondeado; no debe aparecer línea de keyline, borde doble ni interior más claro. Path conserva su tono amarillo.
+2. Comprueba que el sprite de base mantiene el archivo 270×352 px, se estira a 1,8 × radio de ancho y 2,8 × radio de alto, y crece hacia arriba con su borde inferior anclado. Su huella de reglas y colisiones sigue siendo un hexágono.
+
+M46 está implementado en código/documentación; no se ejecutó Godot ni revisión visual. La aceptación de ambos criterios queda pendiente. Ver [ADR-0095](../decisions/ADR-0095-contorno-regional-de-terreno-monotono.md) y [ADR-0096](../decisions/ADR-0096-base-mas-alta-y-visible.md).
+
+## M47 Outline de base y enemigos
+
+### Revisión manual en ventana
+
+1. Comprueba que la silueta visible de la base tenga un outline blanco limpio que siga el alfa de su sprite, comparable al de torres y obstáculos.
+2. Recorre varios tipos de enemigo: cada perfil debe tener un contorno pastel claro y distinguible. El contorno debe coincidir con la ilustración durante el movimiento, el cambio de dirección, el salto al recibir daño y una transformación de perfil.
+3. Confirma que el outline queda detrás del sprite y que las barras Health/Armor/Shield e iconos de estado se leen encima; al cruzar una fachada, enemigo y contorno deben quedar ocluidos juntos según el orden Y.
+4. Usa un perfil DEBUG sin textura para confirmar que el placeholder vectorial conserva un borde claro del tipo asignado o, si no tiene color configurado, el tono de reserva.
+
+M47 está implementado en código/documentación; no se ejecutó Godot ni revisión visual. La aceptación de los cuatro criterios queda pendiente. Ver [ADR-0097](../decisions/ADR-0097-outline-de-base-y-enemigos.md).
+
+## M48 Ajuste de grosor y contorno de portales
+
+### Revisión manual en ventana
+
+1. Comprueba que el contorno de la base sea visiblemente más fino que el anterior y mantenga un blanco uniforme alrededor de su alfa.
+2. Compara varios enemigos con la versión anterior: el borde debe ser solo un poco más ancho, seguir siendo claro y conservar el color asignado por perfil.
+3. Observa los portales sin hover: debe verse de forma permanente el mismo borde blanco fino que en los obstáculos. Al hacer hover, marcar una salida candidata o indicar un cierre, conserva su resplandor contextual por encima del borde blanco.
+4. Recorre los frames del loop y el pulso de los portales; no debe haber saltos del contorno, arte de otro frame ni cambio de tamaño del hitbox.
+
+M48 está implementado en código/documentación; no se ejecutó Godot ni revisión visual. La aceptación de estos criterios queda pendiente. Ver [ADR-0098](../decisions/ADR-0098-ajuste-de-outline-y-contorno-de-portales.md).
+
+## M49 Lectura de altura y sombra animada de nubes
+
+### Revisión manual en ventana
+
+1. Coloca torres en alturas 0–3: la insignia numérica debe estar oculta en reposo y aparecer al pasar el cursor por encima; el indicador del ghost de Ballista sigue visible durante la colocación.
+2. Pasa el cursor por celdas en varios bordes de la pantalla. El tooltip debe quedar a 24 px a la derecha y, cuando no quepa, a 24 px al lado contrario; el contenido no debe quedar bajo el cursor ni fuera del viewport.
+3. Compara tapas y previews h0–h3: las superficies deben mantener sus texturas y oscurecerse uniformemente por multiplicadores 1,00/0,95/0,90/0,85; el contorno de región y las fachadas no deben cambiar de color ni geometría.
+4. Observa al menos una partida durante varios segundos y mueve/zoomea la cámara: el patrón debe seguir anclado al terreno mientras deriva lentamente, con masas irregulares sobre terreno, fachadas, base, torres, enemigos, obstáculos, props y portales. No debe alterar selección, animación, Y-sort ni interacción.
+5. Confirma que el velo queda bajo todo el HUD y sigue visible al ocultar el HUD. La UI debe conservar su color y contraste normales.
+
+M49 está implementado en código/documentación; no se ejecutó Godot ni revisión visual/interactiva. La aceptación queda pendiente. Ver [ADR-0099](../decisions/ADR-0099-tinte-de-altura-y-sombra-animada-de-nubes.md).
+
+## M50 Sprite único de torre y tinte de altura
+
+### Revisión manual en ventana
+
+1. Construye cada torre canónica. Cada una debe aparecer como una sola ilustración con outline blanco; su anclaje queda en el centro del hexágono y el arte se ve ligeramente más abajo (8 px), sin partes que roten de forma independiente.
+2. Deja que los enemigos pasen primero por la derecha y luego por la izquierda. La torre mira a la derecha por defecto y usa espejo horizontal para seguir un objetivo a su izquierda; no gira ni se inclina. Comprueba que el disparo sigue llegando al objetivo.
+3. Compara la torre colocada, su ghost de construcción, la card de la barra y el retrato de Tower Info: todos deben cargar el mismo PNG completo, sin recortes, y conservar su proporción. El retrato, el nombre y el coste en Gold deben leerse con claridad y aprovechar el panel.
+4. Compara tapas y previews de elevación 0–3. El multiplicador RGB debe ser 1,00/0,95/0,90/0,85; el contorno de región y las fachadas conservan color y geometría.
+
+M50 está implementado en código/documentación; no se ejecutó Godot ni revisión visual/interactiva. La aceptación queda pendiente. Ver [ADR-0100](../decisions/ADR-0100-sprite-unico-de-torre-y-tinte-de-altura.md).
+
+## M51 VFX de combate, estados y feedback de juego
+
+### Revisión manual en ventana
+
+1. Deja disparar a cada una de las siete torres: debe reproducirse su hoja `shoot` sobre la torre y su hoja `impact` donde ocurre el impacto. Dispara con Mortar y confirma que `tap_ripple` marca la posición objetivo al lanzar el proyectil.
+2. Aplica Bleed, Burn, Poison y Slow; también Haste/Fortification en un perfil compatible. Cada uno debe mostrar su spritesheet animado correcto encima del personaje, mantener su contador actual y desaparecer al terminar el estado. El mapeo vigente está en ADR-0101.
+3. Sube una torre mediante cada ruta de mejora: `star_burst_gold` y `level_up` deben aparecer sobre ella para la subida manual y la automática por XP. Abre una oferta de cards o una expansión de terreno durante el efecto; la animación debe seguir encima de la interfaz y terminar por sí misma.
+4. Deja aparecer un cofre: `item_glow` debe animar detrás del sprite durante toda su disponibilidad. Al abrirlo deben aparecer `coin_burst_gold`, `pickup` y `ui_click`; confirma `coins_top` en cada muerte final de enemigo y `base_hit` sobre la base al recibir daño.
+5. Confirma una pieza válida de terreno: `sparkle_twinkle_white_loop` debe aparecer centrado sobre las celdas nuevas y completar dos ciclos. Haz clic en obstacle, portal, torre y base; `ui_click` debe aparecer en el cursor. Termina una run y comprueba `confetti_burst_01` en el menú con la tienda de resultado abierta.
+6. Revisa el zoom de cámara y la pausa: el punto de los VFX del mundo debe coincidir con el objeto del evento y su animación no debe congelarse durante ofertas, terreno o pausa. El glow del cofre sigue ligado a su celda y no al overlay.
+
+M51 está implementado en código/assets/documentación; no se ejecutó Godot ni inspección visual/interactiva. Los criterios anteriores quedan pendientes de aceptación manual. Ver [ADR-0101](../decisions/ADR-0101-vfx-animados-de-cozy-chunky-por-evento.md).
+
+## M52 Sprites completos de torre, escala y cadencia de feedback
+
+### Revisión manual en ventana
+
+1. Revisa las siete torres en el tablero, el ghost, las cards de selección y Tower Info. Cada una debe usar su PNG completo, sin cortes ni partes compuestas; debe verse más grande, centrada en la celda y desplazada 8 px hacia abajo. El ghost y la torre construida deben coincidir.
+2. Mantén ataques rápidos durante varios segundos. En Tesla Coil, Frost Keep, Flame Thrower, Poison Sprayer y Shredder, el primer `shoot` aparece inmediatamente y los siguientes quedan separados por intervalos aleatorios de 2,0–2,5 s. Ballista y Mortar conservan un efecto por disparo discreto. Comprueba que todos los `impact`, proyectiles, ataques y daños siguen ocurriendo con su cadencia normal.
+3. Construye varias torres y retira obstáculos. `pickup.png` debe aparecer una vez en el centro visual de cada acción exitosa; un intento fallido o cancelado no debe mostrar el efecto ni cobrar Gold.
+4. Compara las cards (sprite 126×126 px) y Tower Info (152×176 px); los siete PNG deben mantener proporción, transparencia, outline y encuadre completo.
+
+M52 está implementado en código/documentación; no se ejecutó Godot ni revisión visual/interactiva. La aceptación queda pendiente. Ver [ADR-0102](../decisions/ADR-0102-sprites-completos-de-torre-escala-y-feedback.md).
+
+## M53 Escala de torre sin recorte
+
+1. Coloca cada una de las siete torres en terreno plano y elevado. El PNG completo debe quedar visible sin cortes en el tablero; el ghost debe coincidir en tamaño y posición con la torre construida.
+2. Confirma que tablero y ghost usan escala 1,32 × 1,12 y offset visual de +8 px, mientras los iconos de la barra de construcción y Tower Info mantienen sus tamaños de UI.
+
+M53 está implementado en código/documentación; no se ejecutó Godot ni revisión visual/interactiva. La aceptación queda pendiente. Ver [ADR-0103](../decisions/ADR-0103-escala-de-torre-sin-recorte.md).
 
 ## Loop
 - Al completar una oleada de campaña entre las rondas 1–44, se entra en la oferta de expansión y no comienza la siguiente ronda hasta colocar una pieza válida.

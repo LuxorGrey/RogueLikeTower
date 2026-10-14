@@ -4,6 +4,7 @@
 [ext_resource type="Theme" path="res://game/ui/themes/rogue_hud_theme.tres" id="2_theme"]
 
 [node name="DebugHacksPanel" type="CanvasLayer"]
+layer = 30
 script = ExtResource("1_script")
 
 [node name="Root" type="Control" parent="."]

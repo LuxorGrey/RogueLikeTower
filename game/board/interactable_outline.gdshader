@@ -3,6 +3,7 @@ render_mode unshaded;
 
 uniform vec4 outline_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
 uniform float outline_size_px : hint_range(1.0, 24.0, 1.0) = 3.0;
+uniform bool outline_only = false;
 
 void fragment() {
 	vec4 texel = texture(TEXTURE, UV);
@@ -16,7 +17,12 @@ void fragment() {
 			}
 		}
 	}
-	float alpha = max(texel.a, expanded_alpha * outline_color.a);
-	vec3 rgb = mix(outline_color.rgb, texel.rgb, texel.a);
-	COLOR = vec4(rgb, alpha);
+	if (outline_only) {
+		float outline_alpha = max(expanded_alpha - texel.a, 0.0) * outline_color.a;
+		COLOR = vec4(outline_color.rgb, outline_alpha);
+	} else {
+		float alpha = max(texel.a, expanded_alpha * outline_color.a);
+		vec3 rgb = mix(outline_color.rgb, texel.rgb, texel.a);
+		COLOR = vec4(rgb, alpha);
+	}
 }

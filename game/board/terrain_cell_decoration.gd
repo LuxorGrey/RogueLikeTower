@@ -2,6 +2,8 @@ class_name TerrainCellDecoration
 extends Node2D
 
 const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
+const ANIMATED_IMPACT_SCRIPT: Script = preload("res://game/vfx/animated_impact.gd")
+const ITEM_GLOW_SHEET: Texture2D = preload("res://assets/sprites/ui/Cozy_Chunky/PNG_1x/pickup_ui/item_glow.png")
 const OBSTACLE_HOVER_SHADER: Shader = preload("res://game/board/obstacle_hover_glow.gdshader")
 const INTERACTABLE_OUTLINE_SHADER: Shader = preload("res://game/board/interactable_outline.gdshader")
 
@@ -20,6 +22,7 @@ var _obstacle_sprite: Sprite2D
 var _obstacle_hover_sprite: Sprite2D
 var _chest_sprite: Sprite2D
 var _chest_hover_sprite: Sprite2D
+var _chest_item_glow: Sprite2D
 var _chest_base_position: Vector2 = Vector2.ZERO
 var _chest_base_scale: Vector2 = Vector2.ONE
 
@@ -43,6 +46,25 @@ func _ready() -> void:
 	_chest_base_position = _chest_sprite.position
 	_chest_base_scale = _chest_sprite.scale
 	add_child(_chest_sprite)
+	_chest_item_glow = ANIMATED_IMPACT_SCRIPT.new() as Sprite2D
+	_chest_item_glow.name = "TreasureItemGlow"
+	_chest_item_glow.show_behind_parent = true
+	_chest_sprite.add_child(_chest_item_glow)
+	var glow_frame_count: int = int(float(ITEM_GLOW_SHEET.get_width()) / 128.0)
+	_chest_item_glow.call(
+		"configure",
+		ITEM_GLOW_SHEET,
+		glow_frame_count,
+		12.0,
+		68.0,
+		_chest_sprite.global_position,
+		true,
+		glow_frame_count,
+		Vector2i(128, 128),
+		0
+	)
+	_chest_item_glow.position = Vector2.ZERO
+	_chest_item_glow.visible = false
 	_obstacle_sprite = Sprite2D.new()
 	_obstacle_sprite.name = "ObstacleOutlinedSprite"
 	_obstacle_sprite.centered = true
@@ -79,6 +101,7 @@ func _ready() -> void:
 	_sync_chest_sprite()
 	_sync_chest_hover_sprite()
 	_sync_obstacle_hover_sprite()
+	_sync_chest_item_glow()
 
 func configure(
 	obstacle_type: int,
@@ -90,6 +113,22 @@ func configure(
 	_chest_available = chest_available
 	_decorative_prop_ids = decorative_prop_ids.duplicate()
 	_sync_chest_sprite()
+	if chest_appeared and _chest_item_glow != null:
+		var glow_frame_count: int = int(float(ITEM_GLOW_SHEET.get_width()) / 128.0)
+		_chest_item_glow.call(
+			"configure",
+			ITEM_GLOW_SHEET,
+			glow_frame_count,
+			12.0,
+			68.0,
+			_chest_sprite.global_position,
+			true,
+			glow_frame_count,
+			Vector2i(128, 128),
+			0
+		)
+		_chest_item_glow.position = Vector2.ZERO
+	_sync_chest_item_glow()
 	_sync_chest_hover_sprite()
 	_sync_obstacle_hover_sprite()
 	if chest_appeared:
@@ -239,3 +278,9 @@ func _sync_chest_sprite() -> void:
 	if _chest_sprite == null:
 		return
 	_chest_sprite.visible = _chest_available
+	_sync_chest_item_glow()
+
+func _sync_chest_item_glow() -> void:
+	if _chest_item_glow == null or not is_instance_valid(_chest_item_glow):
+		return
+	_chest_item_glow.visible = _chest_available

@@ -1,7 +1,7 @@
 # ADR-0089: Ajustes de escala, oclusión, portales y props
 
 - Fecha: 2026-10-14
-- Estado: Aceptado parcialmente; la escala de base, portales y props sigue vigente. El alcance geométrico de fachadas y tapas se ajusta por [ADR-0090](ADR-0090-fachadas-limitadas-a-la-diferencia-de-elevacion.md). Aceptación visual pendiente.
+- Estado: Aceptado parcialmente; portales y props siguen vigentes. La regla de escala visual de la base fue sustituida por [ADR-0096](ADR-0096-base-mas-alta-y-visible.md); el alcance geométrico de fachadas y tapas se ajusta por [ADR-0090](ADR-0090-fachadas-limitadas-a-la-diferencia-de-elevacion.md). Aceptación visual pendiente.
 - Decisión de usuario: mensaje del 2026-10-14 en esta conversación
 - Sustituye parcialmente: [ADR-0055](ADR-0055-feedback-base-seleccion-y-recompensas.md) (tamaño de portal) y [ADR-0087](ADR-0087-props-obstaculos-y-altura-junto-a-base.md) (tamaño de base y parámetros de props)
 
@@ -11,7 +11,7 @@ La resolución fuente de la base se había confundido con su tamaño dibujado. L
 
 ## Decisiones
 
-1. `assets/base/main_tower.png` conserva su PNG original de 270×352 px. `GameBase` no remuestrea el recurso y lo dibuja con escala uniforme dentro de una caja máxima de 86×86 px, suficiente para ocupar visualmente una sola celda hexagonal.
+1. `assets/base/main_tower.png` conserva su PNG original de 270×352 px. La escala uniforme de hasta 86×86 px fue la regla anterior; ADR-0096 la sustituye por una presentación estirada más alta sin cambiar la celda lógica.
 2. Cada fachada expuesta obtiene un nodo propio bajo `Entities.y_sort_enabled`, anclado en su borde inferior para ocluir actores detrás y quedar detrás de actores delante. La altura de la pared y la prioridad completa de las tapas se definen en ADR-0090.
 3. `spawn_portal_SpriteSheet.png` se interpreta como ocho frames de 443×443 px en una cuadrícula 4×2. Los portales animan los ocho frames en bucle continuo a 10 FPS. Cada endpoint recibe y conserva una fase determinista única durante la run; añadir o retirar otros endpoints no reinicia la animación ya visible. `spawn_portal.png` permanece como icono estático del panel de selección.
 4. Los props compatibles con cada terreno tienen un 10 % de probabilidad independiente por asset y celda, mantienen un máximo de dos elementos únicos y pasan de 30×30 a 36×36 px. Sus offsets se separan para que dos props no se solapen; un obstáculo sigue dibujándose delante.

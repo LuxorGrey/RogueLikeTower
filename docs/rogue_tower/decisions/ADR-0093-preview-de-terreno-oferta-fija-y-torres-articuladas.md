@@ -1,6 +1,6 @@
 # ADR-0093: Preview exacto, oferta fija y torres articuladas
 
-- **Estado:** aceptado e implementado en código; aceptación visual/interactiva pendiente.
+- **Estado:** preview/oferta/contornos siguen vigentes; la decisión de torre articulada quedó sustituida por ADR-0100.
 - **Fecha:** 2026-10-14.
 - **Contexto:** las celdas del ghost podían tener alturas y contenido distintos a los de la colocación confirmada. Los contornos de regiones conservaban colores neón y pequeños insets que separaban juntas. El servicio de cartas podía ampliar la oferta por encima de tres. El arte nuevo de torres incluye una base y una cabeza separadas que deben poder girar por separado.
 - **Decisiones:**
@@ -11,6 +11,7 @@
   5. Un shader alfa de `CanvasItem` dibuja un contorno blanco por Sprite2D en las bases/cabezas de torre y obstáculos. Esto conserva su orden de profundidad individual y evita agruparlos en `CanvasGroup`.
   6. El asset proporcionado como séptima torreta se asigna a Shredder, porque ese es el séptimo tipo del roster canónico y no existe una torre Raider en el proyecto.
 - **Consecuencias:** preview y estado confirmado comparten elevación, variantes, obstáculos, props, cofres y auto-rellenos; todas las ofertas mantienen un panel de tres opciones y no dejan botones extra seleccionables; las torres pueden seguir visualmente la dirección de sus objetivos; los objetos interactuables tienen un borde legible. El panel no cambia de rareza ni de tamaño.
+- **Nota de vigencia:** las decisiones originales 4–5 describen el montaje anterior de partes articuladas. ADR-0100 lo reemplaza por una única textura y un único Sprite2D con espejo horizontal.
 - **Validación:** no se ejecutó Godot ni la inspección visual/manual en esta actualización. Ver criterios M44 en [`10_ACCEPTANCE_TESTS.md`](../design/10_ACCEPTANCE_TESTS.md).
-- **Referencias:** imágenes de torre aportadas por el usuario en `assets/sprites/ui/icons/newTowers/`; [Canvas Group Outline — Godot Shaders](https://godotshaders.com/shader/canvas-group-outline/), consultado 2026-10-14. El shader del proyecto implementa la dilatación alfa para sprites individuales; no copia el código publicado.
-- **Sustituye:** cualquier comportamiento de Card Draw que aumentase las ofertas por encima de tres y las reglas visuales anteriores de color/inset del contorno. Complementa ADR-0084, ADR-0091 y ADR-0092.
+- **Referencias:** imágenes de torre aportadas por el usuario y actualmente localizadas bajo `assets/sprites/ui/icons/`; [Canvas Group Outline — Godot Shaders](https://godotshaders.com/shader/canvas-group-outline/), consultado 2026-10-14. El shader del proyecto implementa la dilatación alfa para sprites individuales; no copia el código publicado.
+- **Sustituye:** cualquier comportamiento de Card Draw que aumentase las ofertas por encima de tres y las reglas visuales anteriores de color/inset del contorno. La paleta/estilo de trazo vigentes quedan sustituidos parcialmente por ADR-0095. Complementa ADR-0084, ADR-0091 y ADR-0092.

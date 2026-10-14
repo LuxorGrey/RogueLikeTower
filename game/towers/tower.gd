@@ -3,13 +3,16 @@ extends Node2D
 
 signal attack_fired(target: Enemy, damage: int)
 signal impact_effect_requested(effect_id: StringName, world_position: Vector2)
+signal level_up_effect_requested(world_position: Vector2)
 signal stats_changed(level: int)
 
 const ELEVATION_PIXEL_OFFSET: float = 28.0
-const TOWER_VISUAL_SCALE: float = 1.2
+const TOWER_VISUAL_SCALE: float = 1.32
+const TOWER_CELL_VISUAL_OFFSET: Vector2 = Vector2(0.0, 8.0)
+const SHOOT_VFX_MIN_INTERVAL: float = 2.0
+const SHOOT_VFX_MAX_INTERVAL: float = 2.5
 const MAX_LEVEL_VISUAL_UPGRADES: int = 45
 const MAX_LEVEL_VISUAL_GROWTH: float = 0.12
-const VISUAL_ART_OFFSET_Y: float = 8.0
 const PROJECT_FONT: Font = preload("res://assets/fonts/PatrickHand-Regular.ttf")
 const SCAN_INTERVAL: float = 0.1
 const SHOT_FLASH_DURATION: float = 0.12
@@ -49,11 +52,7 @@ var _is_hovered: bool = false
 var _icon_catalog: RefCounted
 var _tower_icon: Texture2D
 var _tower_art_root: Node2D
-var _tower_base_sprite: Sprite2D
-var _turret_pivot: Node2D
-var _turret_sprite: Sprite2D
-var _has_split_art: bool = false
-var _turret_rest_aim_angle: float = 0.0
+var _tower_sprite: Sprite2D
 var _current_target: Enemy
 var _targeting_mode: int = TowerData.TargetingMode.FIRST_PROGRESS
 var _targeting_priorities: Array[int] = [TowerData.TargetingMode.FIRST_PROGRESS, -1, -1]
@@ -65,13 +64,14 @@ var _ballista_shot_cycle_id: int = 0
 var _active_ballista_reload_cycle_id: int = 0
 var _active_ballista_reload_duration: float = 0.0
 var _shot_flash_timer: float = 0.0
+var _shoot_vfx_cooldown_remaining: float = 0.0
 var _shot_target_position: Vector2 = Vector2.ZERO
 var _shot_target_positions: Array[Vector2] = []
-var _turret_angle: float = -PI * 0.5
 var _is_mana_blocked: bool = false
 var _selection_pulse_time: float = 0.0
 var _critical_rng := RandomNumberGenerator.new()
 var _frost_rng := RandomNumberGenerator.new()
+var _shoot_vfx_rng := RandomNumberGenerator.new()
 
 func configure(
 	tower_data: TowerData,
@@ -97,7 +97,9 @@ func configure(
 	_tower_data = tower_data
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	_icon_catalog = ICON_CATALOG_SCRIPT.new() as RefCounted
-	_tower_icon = _icon_catalog.call("get_tower_icon", StringName(tower_data.id)) as Texture2D
+	_tower_icon = TOWER_ART_CATALOG_SCRIPT.get_tower_texture(StringName(tower_data.id))
+	if _tower_icon == null:
+		_tower_icon = _icon_catalog.call("get_tower_icon", StringName(tower_data.id)) as Texture2D
 	_configure_tower_art(StringName(tower_data.id))
 	_damage_service = damage_service
 	_run_economy = run_economy
@@ -113,6 +115,7 @@ func configure(
 	_targeting_priorities = [tower_data.targeting_mode, -1, -1]
 	_critical_rng.seed = int(GameState.run_seed) ^ int(get_instance_id())
 	_frost_rng.seed = int(GameState.run_seed) ^ int(get_instance_id()) ^ 19349663
+	_shoot_vfx_rng.seed = int(GameState.run_seed) ^ int(get_instance_id()) ^ 83492791
 	_targeting_xp_by_layer = {
 		Enemy.HitPointLayer.HEALTH: 0.0,
 		Enemy.HitPointLayer.ARMOR: 0.0,
@@ -123,6 +126,7 @@ func configure(
 		Enemy.HitPointLayer.ARMOR: 0,
 		Enemy.HitPointLayer.SHIELD: 0,
 	}
+	set_process(_is_selected)
 	global_position = map_origin + HexMath.axial_to_world(
 		HexCoord.new(coord.x, coord.y),
 		hex_radius
@@ -140,8 +144,9 @@ func set_selected(is_selected: bool) -> void:
 		return
 	_is_selected = is_selected
 	_selection_pulse_time = 0.0
-	set_process(is_selected)
+	set_process(is_selected or _shoot_vfx_cooldown_remaining > 0.0)
 	_sync_tower_art_scale()
+	_sync_tower_art_tint()
 	z_as_relative = not is_selected
 	z_index = 100 if is_selected else 0
 	queue_redraw()
@@ -150,6 +155,7 @@ func set_hovered(is_hovered: bool) -> void:
 	if _is_hovered == is_hovered:
 		return
 	_is_hovered = is_hovered
+	_sync_tower_art_tint()
 	queue_redraw()
 
 func set_targeting_mode(mode: int) -> bool:
@@ -215,6 +221,7 @@ func upgrade(hit_point_layer: int = Enemy.HitPointLayer.HEALTH) -> bool:
 	_layer_upgrade_levels[hit_point_layer] = get_layer_upgrade_level(hit_point_layer) + 1
 	_sync_tower_art_scale()
 	stats_changed.emit(level)
+	level_up_effect_requested.emit(global_position + TOWER_CELL_VISUAL_OFFSET)
 	queue_redraw()
 	return true
 
@@ -609,15 +616,16 @@ func _physics_process(delta: float) -> void:
 		_acquire_target()
 		_scan_timer = SCAN_INTERVAL
 	if _current_target == null:
+		_sync_tower_facing(global_position)
 		_is_mana_blocked = false
 		return
 	if not _is_target_in_range(_current_target):
 		_current_target = null
+		_sync_tower_facing(global_position)
 		_is_mana_blocked = false
 		return
 	_gain_targeting_xp(_current_target, delta)
-	_turret_angle = global_position.direction_to(_current_target.global_position).angle()
-	_sync_turret_rotation()
+	_sync_tower_facing(_current_target.global_position)
 	_attack_cooldown = maxf(_attack_cooldown - delta, 0.0)
 	if _attack_cooldown <= 0.0:
 		_fire_at_target()
@@ -701,11 +709,14 @@ func _fire_at_target() -> void:
 	if _tower_data.attack_pattern == TowerData.AttackPattern.FROST_SNOWFALL:
 		if not _launch_frost_snowflake():
 			_attack_cooldown = 0.25
+		else:
+			_emit_shoot_effect()
 		return
 	if _tower_data.attack_pattern == TowerData.AttackPattern.SAWBLADE:
 		if not _launch_sawblade(target):
 			_attack_cooldown = 0.25
 			return
+		_emit_shoot_effect()
 		_shot_target_position = target.global_position - global_position
 		_shot_target_positions = [_shot_target_position]
 		_shot_flash_timer = SHOT_FLASH_DURATION
@@ -724,6 +735,10 @@ func _fire_at_target() -> void:
 			if cooldown_cycle_id == _active_ballista_reload_cycle_id:
 				_active_ballista_reload_cycle_id = 0
 				_active_ballista_reload_duration = 0.0
+		else:
+			_emit_shoot_effect()
+			if _tower_data.visual_archetype == TowerData.VisualArchetype.MORTAR:
+				impact_effect_requested.emit(&"mortar_target_ripple", target.global_position)
 		return
 	var packet: RefCounted = create_damage_packet(target)
 	var targets: Array[Enemy] = _get_attack_targets(target)
@@ -746,6 +761,7 @@ func _fire_at_target() -> void:
 		attack_fired.emit(affected_target, int(result.get("total_damage")))
 	if not did_hit:
 		return
+	_emit_shoot_effect()
 	_shot_flash_timer = SHOT_FLASH_DURATION
 	queue_redraw()
 
@@ -892,6 +908,7 @@ func _gain_targeting_xp(target: Enemy, delta: float) -> void:
 		_layer_upgrade_levels[layer] = get_layer_upgrade_level(layer) + 1
 		_sync_tower_art_scale()
 		stats_changed.emit(level)
+		level_up_effect_requested.emit(global_position + TOWER_CELL_VISUAL_OFFSET)
 		queue_redraw()
 	_targeting_xp_by_layer[layer] = new_total
 
@@ -1008,26 +1025,66 @@ func _emit_impact_effect(world_position: Vector2) -> void:
 	var effect_id: StringName = &""
 	match _tower_data.visual_archetype:
 		TowerData.VisualArchetype.BALLISTA:
-			effect_id = &"dust_01"
+			effect_id = &"impact_ballista"
 		TowerData.VisualArchetype.MORTAR:
-			effect_id = &"explosion_01"
+			effect_id = &"impact_mortar"
 		TowerData.VisualArchetype.TESLA:
-			effect_id = &"tesla_coil"
+			effect_id = &"impact_tesla"
 		TowerData.VisualArchetype.FROST:
-			effect_id = &"ice_01"
+			effect_id = &"impact_frost"
 		TowerData.VisualArchetype.FLAME:
-			effect_id = &"fire_03"
+			effect_id = &"impact_flame"
 		TowerData.VisualArchetype.POISON:
-			effect_id = &"poison"
+			effect_id = &"impact_poison"
 		TowerData.VisualArchetype.SHREDDER:
-			effect_id = &"blood"
+			effect_id = &"impact_shredder"
 	if effect_id != &"":
 		impact_effect_requested.emit(effect_id, world_position)
+
+func _emit_shoot_effect() -> void:
+	if _tower_data == null:
+		return
+	var rate_limit_continuous_vfx: bool = _uses_continuous_shoot_vfx()
+	if rate_limit_continuous_vfx and _shoot_vfx_cooldown_remaining > 0.0:
+		return
+	var effect_id: StringName = &""
+	match _tower_data.visual_archetype:
+		TowerData.VisualArchetype.BALLISTA:
+			effect_id = &"shot_ballista"
+		TowerData.VisualArchetype.MORTAR:
+			effect_id = &"shot_mortar"
+		TowerData.VisualArchetype.TESLA:
+			effect_id = &"shot_tesla"
+		TowerData.VisualArchetype.FROST:
+			effect_id = &"shot_frost"
+		TowerData.VisualArchetype.FLAME:
+			effect_id = &"shot_flame"
+		TowerData.VisualArchetype.POISON:
+			effect_id = &"shot_poison"
+		TowerData.VisualArchetype.SHREDDER:
+			effect_id = &"shot_shredder"
+	if effect_id != &"":
+		impact_effect_requested.emit(effect_id, global_position + TOWER_CELL_VISUAL_OFFSET)
+		if rate_limit_continuous_vfx:
+			_shoot_vfx_cooldown_remaining = _shoot_vfx_rng.randf_range(SHOOT_VFX_MIN_INTERVAL, SHOOT_VFX_MAX_INTERVAL)
+			set_process(true)
+
+func _uses_continuous_shoot_vfx() -> bool:
+	if _tower_data == null:
+		return false
+	return _tower_data.visual_archetype not in [
+		TowerData.VisualArchetype.BALLISTA,
+		TowerData.VisualArchetype.MORTAR,
+	]
 
 func _hex_neighbor_distance() -> float:
 	return HexMath.axial_to_world(HexCoord.new(1, 0), _hex_radius).length()
 
 func _process(delta: float) -> void:
+	_shoot_vfx_cooldown_remaining = maxf(_shoot_vfx_cooldown_remaining - delta, 0.0)
+	if not _is_selected and _shoot_vfx_cooldown_remaining <= 0.0:
+		set_process(false)
+		return
 	if _is_selected:
 		_selection_pulse_time += delta
 		queue_redraw()
@@ -1039,11 +1096,10 @@ func _draw() -> void:
 	var pulse: float = 0.5 + 0.5 * sin(_selection_pulse_time * TAU / 1.15) if _is_selected else 0.0
 	if _is_hovered and not _is_selected:
 		draw_arc(Vector2.ZERO, get_current_range_pixels(), 0.0, TAU, 72, Color(0.65, 0.9, 1.0, 0.2), 1.4, true)
-	var icon_scale: float = _get_level_visual_scale() * (1.0 + pulse * 0.055)
-	var icon_size: float = _tower_data.visual_icon_size * TOWER_VISUAL_SCALE * icon_scale
-	var icon_center := Vector2(0.0, -icon_size * 0.5 + VISUAL_ART_OFFSET_Y)
-	var icon_rect := Rect2(icon_center - Vector2.ONE * icon_size * 0.5, Vector2.ONE * icon_size)
-	if _tower_icon != null and not _has_split_art:
+	var visual_scale: float = _get_level_visual_scale() * (1.0 + pulse * 0.055)
+	var icon_rect := _get_tower_art_rect(visual_scale)
+	if _tower_icon != null and _tower_sprite == null:
+		var icon_center: Vector2 = icon_rect.get_center()
 		if _is_selected:
 			var glow_size: Vector2 = icon_rect.size * (1.075 + pulse * 0.035)
 			var glow_alpha: float = 0.075 + pulse * 0.055
@@ -1065,52 +1121,35 @@ func _draw() -> void:
 				Color(0.82, 0.94, 1.0, 0.18)
 			)
 		if _is_hovered and not _is_selected:
-			draw_arc(icon_center, icon_size * 0.56, 0.0, TAU, 48, Color(0.82, 0.94, 1.0, 0.68), 1.6, true)
+			draw_arc(icon_center, icon_rect.size.y * 0.56, 0.0, TAU, 48, Color(0.82, 0.94, 1.0, 0.68), 1.6, true)
 		draw_texture_rect(_tower_icon, icon_rect, false)
-	if elevation > 0:
+	if elevation > 0 and _is_hovered:
 		_draw_elevation_bonus_badge(icon_rect)
 	if _shot_flash_timer > 0.0:
-		var shot_origin: Vector2 = _turret_pivot.position if _turret_pivot != null else icon_center
+		var shot_origin := Vector2(0.0, -8.0)
 		for target_offset in _shot_target_positions:
 			draw_line(shot_origin, target_offset, SHOT_COLOR, 2.0, true)
 
 func _configure_tower_art(tower_id: StringName) -> void:
-	var definition: Dictionary = TOWER_ART_CATALOG_SCRIPT.get_definition(tower_id)
-	_has_split_art = not definition.is_empty()
-	if not _has_split_art:
+	if _tower_icon == null or TOWER_ART_CATALOG_SCRIPT.get_definition(tower_id).is_empty():
 		return
 	if _tower_art_root == null:
 		_tower_art_root = Node2D.new()
 		_tower_art_root.name = "TowerArtwork"
 		add_child(_tower_art_root)
-		_tower_base_sprite = _create_outlined_sprite("StationaryBase")
-		_tower_art_root.add_child(_tower_base_sprite)
-		_turret_pivot = Node2D.new()
-		_turret_pivot.name = "RotatingTurretPivot"
-		_tower_art_root.add_child(_turret_pivot)
-		_turret_sprite = _create_outlined_sprite("AimingTurret")
-		_turret_pivot.add_child(_turret_sprite)
-	_tower_base_sprite.texture = TOWER_ART_CATALOG_SCRIPT.get_part_texture(tower_id, &"base")
-	_tower_base_sprite.position = TOWER_ART_CATALOG_SCRIPT.get_part_offset(
-		tower_id,
-		&"base",
-		_tower_data.visual_icon_size * TOWER_VISUAL_SCALE * 1.12
+		_tower_sprite = _create_outlined_sprite("TowerSprite")
+		_tower_art_root.add_child(_tower_sprite)
+	_tower_sprite.texture = _tower_icon
+	var texture_size: Vector2 = _tower_icon.get_size()
+	var display_height: float = (
+		_tower_data.visual_icon_size
+		* TOWER_VISUAL_SCALE
+		* TOWER_ART_CATALOG_SCRIPT.DISPLAY_HEIGHT_MULTIPLIER
 	)
-	_turret_sprite.texture = TOWER_ART_CATALOG_SCRIPT.get_part_texture(tower_id, &"turret")
-	_turret_sprite.position = TOWER_ART_CATALOG_SCRIPT.get_part_offset(
-		tower_id,
-		&"turret",
-		_tower_data.visual_icon_size * TOWER_VISUAL_SCALE * 1.12
-	)
-	var component_scale: float = TOWER_ART_CATALOG_SCRIPT.get_component_scale(
-		tower_id,
-		_tower_data.visual_icon_size * TOWER_VISUAL_SCALE * 1.12
-	)
-	_tower_base_sprite.scale = Vector2.ONE * component_scale
-	_turret_sprite.scale = Vector2.ONE * component_scale
-	_turret_rest_aim_angle = TOWER_ART_CATALOG_SCRIPT.get_rest_aim_angle(tower_id)
-	_turret_angle = _turret_rest_aim_angle
-	_turret_pivot.rotation = 0.0
+	var sprite_scale: float = display_height / maxf(texture_size.y, 1.0)
+	_tower_sprite.position = TOWER_ART_CATALOG_SCRIPT.get_tower_anchor_offset(tower_id) * sprite_scale
+	_tower_sprite.scale = Vector2.ONE * sprite_scale
+	_sync_tower_art_tint()
 	_sync_tower_art_scale()
 
 func _create_outlined_sprite(sprite_name: String) -> Sprite2D:
@@ -1125,15 +1164,44 @@ func _create_outlined_sprite(sprite_name: String) -> Sprite2D:
 	sprite.material = outline_material
 	return sprite
 
-func _sync_turret_rotation() -> void:
-	if _turret_pivot == null:
+func _sync_tower_facing(target_position: Vector2) -> void:
+	if _tower_sprite == null:
 		return
-	_turret_pivot.rotation = _turret_angle - _turret_rest_aim_angle
+	var flip_h: bool = target_position.x < global_position.x
+	_tower_sprite.flip_h = flip_h
+	var anchor_offset: Vector2 = TOWER_ART_CATALOG_SCRIPT.get_tower_anchor_offset(StringName(_tower_data.id))
+	_tower_sprite.position = Vector2(
+		anchor_offset.x * _tower_sprite.scale.x * (-1.0 if flip_h else 1.0),
+		anchor_offset.y * _tower_sprite.scale.y
+	)
+
+func _sync_tower_art_tint() -> void:
+	if _tower_sprite == null:
+		return
+	if _is_selected:
+		_tower_sprite.modulate = Color(1.12, 1.10, 1.02, 1.0)
+	elif _is_hovered:
+		_tower_sprite.modulate = Color(1.08, 1.08, 1.04, 1.0)
+	else:
+		_tower_sprite.modulate = Color.WHITE
+
+func _get_tower_art_rect(visual_scale: float) -> Rect2:
+	if _tower_icon == null:
+		return Rect2()
+	if _tower_sprite != null:
+		var combined_scale: float = _tower_sprite.scale.x * visual_scale
+		var size: Vector2 = _tower_icon.get_size() * combined_scale
+		var center: Vector2 = _tower_art_root.position + _tower_sprite.position * visual_scale
+		return Rect2(center - size * 0.5, size)
+	var fallback_size: float = _tower_data.visual_icon_size * TOWER_VISUAL_SCALE * visual_scale
+	var fallback_center := Vector2(0.0, -fallback_size * 0.5 + 8.0)
+	return Rect2(fallback_center - Vector2.ONE * fallback_size * 0.5, Vector2.ONE * fallback_size)
 
 func _sync_tower_art_scale() -> void:
 	if _tower_art_root == null:
 		return
 	var pulse: float = 0.5 + 0.5 * sin(_selection_pulse_time * TAU / 1.15) if _is_selected else 0.0
+	_tower_art_root.position = TOWER_CELL_VISUAL_OFFSET
 	var art_scale: float = _get_level_visual_scale() * (1.0 + pulse * 0.055)
 	_tower_art_root.scale = Vector2.ONE * art_scale
 

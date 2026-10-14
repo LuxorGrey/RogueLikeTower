@@ -3,6 +3,7 @@ extends Node2D
 
 const HEX_RADIUS: float = 52.0
 const ART_OFFSET_Y: float = 8.0
+const TOWER_CELL_VISUAL_OFFSET: Vector2 = Vector2(0.0, 8.0)
 const TOWER_GHOST_SHADER: Shader = preload("res://game/board/tower_placement_ghost.gdshader")
 const TOWER_ART_CATALOG_SCRIPT: Script = preload("res://game/towers/tower_art_catalog.gd")
 
@@ -16,9 +17,6 @@ var _tower_id: StringName = &""
 var _icon_size: float = 54.0
 var _elevation_damage_bonus_per_level: float = 1.0
 var _icon_sprite: Sprite2D
-var _base_sprite: Sprite2D
-var _turret_pivot: Node2D
-var _turret_sprite: Sprite2D
 var _ghost_material: ShaderMaterial
 
 func _ready() -> void:
@@ -61,79 +59,29 @@ func set_preview(
 func _sync_ghost_sprite() -> void:
 	if _icon_sprite == null:
 		return
-	var definition: Dictionary = TOWER_ART_CATALOG_SCRIPT.get_definition(_tower_id)
-	var has_split_art: bool = not definition.is_empty()
-	_icon_sprite.visible = _active and _icon != null and not has_split_art
-	if has_split_art:
-		_sync_split_ghost_art()
-		_base_sprite.visible = _active
-		_turret_pivot.visible = _active
-	elif _base_sprite != null:
-		_base_sprite.visible = false
-		_turret_pivot.visible = false
+	var tower_texture: Texture2D = TOWER_ART_CATALOG_SCRIPT.get_tower_texture(_tower_id)
+	var use_tower_art: bool = tower_texture != null
+	var preview_texture: Texture2D = tower_texture if use_tower_art else _icon
+	_icon_sprite.visible = _active and preview_texture != null
 	if not _active:
 		return
 	var cell: HexCell = _board_cells.get(_coord) as HexCell
 	if cell == null:
 		_icon_sprite.visible = false
-		if _base_sprite != null:
-			_base_sprite.visible = false
-		if _turret_pivot != null:
-			_turret_pivot.visible = false
 		return
 	var center: Vector2 = HexMath.axial_to_world(HexCoord.new(_coord.x, _coord.y), HEX_RADIUS)
 	center.y -= float(cell.elevation) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET
-	if not has_split_art and _icon != null:
+	_icon_sprite.texture = preview_texture
+	if use_tower_art:
+		var display_height: float = _icon_size * TOWER_ART_CATALOG_SCRIPT.DISPLAY_HEIGHT_MULTIPLIER
+		var sprite_scale: float = display_height / maxf(preview_texture.get_size().y, 1.0)
+		_icon_sprite.scale = Vector2.ONE * sprite_scale
+		_icon_sprite.position = center + TOWER_ART_CATALOG_SCRIPT.get_tower_anchor_offset(_tower_id) * sprite_scale + TOWER_CELL_VISUAL_OFFSET
+	else:
 		_icon_sprite.position = center + Vector2(0.0, -_icon_size * 0.5 + ART_OFFSET_Y)
-		_icon_sprite.texture = _icon
-		_icon_sprite.scale = Vector2.ONE * _icon_size / Vector2(_icon.get_size())
+		_icon_sprite.scale = Vector2.ONE * _icon_size / Vector2(preview_texture.get_size())
 	var ghost_color: Color = Color("#55f28a") if _is_valid else Color("#ff5056")
 	_ghost_material.set_shader_parameter("ghost_color", ghost_color)
-	if has_split_art:
-		_base_sprite.visible = true
-		_turret_pivot.visible = true
-		_base_sprite.position = center + TOWER_ART_CATALOG_SCRIPT.get_part_offset(
-			_tower_id,
-			&"base",
-			_icon_size * 1.12
-		)
-		_turret_pivot.position = center
-		_turret_sprite.position = TOWER_ART_CATALOG_SCRIPT.get_part_offset(
-			_tower_id,
-			&"turret",
-			_icon_size * 1.12
-		)
-		var component_scale: float = TOWER_ART_CATALOG_SCRIPT.get_component_scale(
-			_tower_id,
-			_icon_size * 1.12
-		)
-		_base_sprite.scale = Vector2.ONE * component_scale
-		_turret_sprite.scale = Vector2.ONE * component_scale
-		_base_sprite.material.set_shader_parameter("ghost_color", ghost_color)
-		_turret_sprite.material.set_shader_parameter("ghost_color", ghost_color)
-
-func _sync_split_ghost_art() -> void:
-	if _base_sprite != null:
-		return
-	_base_sprite = _create_ghost_part("PlacementGhostBase")
-	add_child(_base_sprite)
-	_turret_pivot = Node2D.new()
-	_turret_pivot.name = "PlacementGhostTurretPivot"
-	add_child(_turret_pivot)
-	_turret_sprite = _create_ghost_part("PlacementGhostTurret")
-	_turret_pivot.add_child(_turret_sprite)
-	_base_sprite.texture = TOWER_ART_CATALOG_SCRIPT.get_part_texture(_tower_id, &"base")
-	_turret_sprite.texture = TOWER_ART_CATALOG_SCRIPT.get_part_texture(_tower_id, &"turret")
-
-func _create_ghost_part(sprite_name: String) -> Sprite2D:
-	var sprite := Sprite2D.new()
-	sprite.name = sprite_name
-	sprite.centered = true
-	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	var material := ShaderMaterial.new()
-	material.shader = TOWER_GHOST_SHADER
-	sprite.material = material
-	return sprite
 
 func _draw() -> void:
 	if not _active:

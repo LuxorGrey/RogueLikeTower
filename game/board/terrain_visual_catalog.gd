@@ -21,8 +21,8 @@ const MOUNTAIN_CLIFF_TEXTURE: Texture2D = preload("res://assets/sprites/terrain/
 const GRASS_CLIFF_BOTTOM_TINT: Color = Color("#263b2b")
 const MOUNTAIN_CLIFF_BOTTOM_TINT: Color = Color("#24242a")
 const PATH_REGION_OUTLINE_COLOR: Color = Color("#FFD052")
-const GRASS_REGION_OUTLINE_COLOR: Color = Color("#53B56F")
-const MOUNTAIN_REGION_OUTLINE_COLOR: Color = Color("#8A8B91")
+const GRASS_REGION_OUTLINE_COLOR: Color = Color("#406e4d")
+const MOUNTAIN_REGION_OUTLINE_COLOR: Color = Color("#646567")
 const OBSTACLE_TEXTURES: Array[Texture2D] = [
 	preload("res://assets/sprites/terrain/obstacles/obstacle_bramble_bush.png"),
 	preload("res://assets/sprites/terrain/obstacles/obstacle_fallen_log.png"),
@@ -151,7 +151,8 @@ static func get_obstacle_display_name(obstacle_type: int) -> String:
 
 static func get_elevation_tint(elevation: int) -> Color:
 	var height_level: int = clampi(elevation, 0, 3)
-	return Color(1.0 - 0.01 * float(height_level), 1.0 - 0.005 * float(height_level), 1.0)
+	var shade_multiplier: float = 1.0 - 0.05 * float(height_level)
+	return Color(shade_multiplier, shade_multiplier, shade_multiplier, 1.0)
 
 static func get_region_outline_color(terrain_type: int) -> Color:
 	match terrain_type:

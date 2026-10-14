@@ -14,6 +14,10 @@ Esta página fija los nombres visibles y términos de juego. Se usa junto con el
 
 Los ocho obstáculos del HUD usan estos nombres visibles asociados al orden de `HexCell.ObstacleType`: `BRAMBLE_BUSH` = Zarza, `FALLEN_LOG` = Tronco caído, `BRANCH_PILE` = Montón de ramas, `TREE_STUMP` = Tocón, `ROCK_AND_WOOD` = Roca y madera, `SUPPLY_CRATE` = Caja de suministros, `EXPOSED_ROOTS` = Raíces expuestas y `MOSSY_ROCK_CLUSTER` = Rocas cubiertas de musgo. Son etiquetas descriptivas del proyecto, no equivalencias con contenido externo.
 
+El stroke compartido que rodea regiones con el mismo tipo de terreno y elevación se denomina **contorno de región de terreno** (`TerrainRegionOutline`). Grass usa `#406e4d`, Mountain `#646567` y Path amarillo. El contorno es de un solo tono, sin keyline ni franja interior de otro color; la geometría y sus uniones redondeadas son comunes a tablero, preview y miniaturas. Ver [ADR-0095](../decisions/ADR-0095-contorno-regional-de-terreno-monotono.md).
+
+La capa procedural animada que simula sombras de nubes sobre el mundo se denomina `CloudShadowOverlay`. Es un efecto global bajo el HUD, no una sombra individual proyectada por los sprites. Ver [ADR-0099](../decisions/ADR-0099-tinte-de-altura-y-sombra-animada-de-nubes.md).
+
 Los sprites del juego se encuentran bajo `assets/sprites/`, agrupados por base, enemigos, terreno y UI. Los props decorativos siguen el patrón `prop_<terreno>_<elemento>.png` bajo `assets/sprites/terrain/random_props/<terreno>/`, donde `<terreno>` es `grass`, `mountain` o `path`. Sus nombres de archivo identifican el arte, no una entidad interactiva ni una mecánica de juego. El catálogo de arte con los nombres vigentes está en [README de assets de terreno](../../../assets/sprites/terrain/README.md).
 
 ## Entidades de la demo

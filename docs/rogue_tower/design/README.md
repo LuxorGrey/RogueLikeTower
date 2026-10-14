@@ -20,6 +20,7 @@ Este directorio define el diseño propio vigente de Rogue Tower. El índice de a
 | [14 — Campaña de 45 rondas](14_CAMPANA_45_RONDAS.md) | Tabla única de cantidades directas, orden, ritmo y clasificación de las rondas. |
 | [15 — Auditoría del sistema de torres](15_AUDITORIA_SISTEMA_DE_TORRES.md) | Comparación de fórmulas, mejoras y balance runtime con Rogue Tower; discrepancias y límites pendientes de verificar. |
 | [16 — Progresión y selección de torres](16_PROGRESION_Y_SELECCION_DE_TORRES.md) | Regla activa de 15 mejoras independientes por capa, XP, controles de prioridad y feedback de colocación. |
+| [17 — Auditoría de sprites](17_AUDITORIA_DE_SPRITES.md) | Inventario del PNG actual bajo assets/sprites y resultado de búsqueda de referencias runtime. |
 
 ## Interpretación
 
@@ -28,5 +29,6 @@ Este directorio define el diseño propio vigente de Rogue Tower. El índice de a
 - `12` es el glosario vigente de nombres visibles y términos; las páginas temáticas deben seguirlo.
 - `13` es el índice legible de los Resources activos; los valores numéricos ejecutables siguen viviendo en esos Resources. Sus valores base de torres y enemigos normales promovidos por el usuario se consideran parámetros adoptados; los valores propios aún no aprobados se etiquetan **provisionales**.
 - `14` es la autoridad única para composición directa de oleadas. Las habilidades pueden añadir invocaciones y fases por encima del conteo de la tabla.
+- `17` es una fotografía estática de referencias de assets del runtime; no autoriza eliminar archivos sin uso ni sustituye los catálogos del código.
 - La autoridad de nombres, parámetros promovidos, excepciones propias y backlog de candidatos se resume en la raíz de documentación. La referencia Rogue Tower no autoriza por sí sola mecánicas, árboles de cartas ni conteos de oleadas que no hayan sido seleccionados.
 - Ooogie von Ooogovich (Haunted) mantiene su identidad y habilidades adaptadas aprobadas en ADR-0032, con balance propio provisional. La tabla exacta de 45 rondas, incluida la ausencia de Minibosses propios en 17/19, prevalece según [ADR-0037](../decisions/ADR-0037-campana-de-45-rondas-y-habilidades.md).

@@ -23,6 +23,14 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.055, 0.09, 0.095, 1)
 
+[node name="GameOverFeedbackLayer" type="CanvasLayer" parent="."]
+layer = 11
+process_mode = 3
+
+[node name="GameOverEffects" type="Node2D" parent="GameOverFeedbackLayer"]
+unique_name_in_owner = true
+process_mode = 3
+
 [node name="MenuPanel" type="PanelContainer" parent="."]
 layout_mode = 1
 anchors_preset = 8

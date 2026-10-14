@@ -11,17 +11,11 @@ static func draw_contour(
 	if canvas == null or corners.size() != 6 or edge_indices.is_empty():
 		return
 	var cap_radius: float = width * 0.5
-	var keyline_color := Color(0.012, 0.018, 0.02, 0.76)
-	var keyline_width: float = width + 2.2
 	for direction_variant in edge_indices:
 		var direction_index: int = int(direction_variant)
 		var edge_start: Vector2 = corners[posmod(direction_index + 1, 6)]
 		var edge_end: Vector2 = corners[posmod(direction_index + 2, 6)]
-		# Trazo oscuro y color centrado imitan el outline de objetos sin alterar
-		# la geometría axial ni introducir juntas entre celdas de una región.
-		canvas.draw_line(edge_start, edge_end, keyline_color, keyline_width, true)
-		canvas.draw_circle(edge_start, keyline_width * 0.5, keyline_color)
-		canvas.draw_circle(edge_end, keyline_width * 0.5, keyline_color)
+		# El contorno de región usa un único tono, sin keyline ni relleno interior.
 		canvas.draw_line(edge_start, edge_end, color, width, true)
 		canvas.draw_circle(edge_start, cap_radius, color)
 		canvas.draw_circle(edge_end, cap_radius, color)

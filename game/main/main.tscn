@@ -1,4 +1,4 @@
-[gd_scene load_steps=46 format=3]
+[gd_scene load_steps=40 format=3]
 
 [ext_resource type="Script" path="res://game/main/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://game/board/terrain_piece_preview.gd" id="2_preview"]
@@ -20,17 +20,11 @@
 [ext_resource type="Texture2D" path="res://assets/sprites/ui/icons/gold.png" id="18_gold_icon"]
 [ext_resource type="Texture2D" path="res://assets/sprites/ui/icons/mana.png" id="19_mana_icon"]
 [ext_resource type="Script" path="res://game/ui/pause_toggle_button.gd" id="31_pause_toggle_button"]
-[ext_resource type="Texture2D" path="res://assets/sprites/ui/icons/ballista.png" id="20_ballista_icon"]
-[ext_resource type="Texture2D" path="res://assets/sprites/ui/icons/mortar.png" id="21_mortar_icon"]
-[ext_resource type="Texture2D" path="res://assets/sprites/ui/icons/tesla_coil.png" id="22_tesla_icon"]
-[ext_resource type="Texture2D" path="res://assets/sprites/ui/icons/frost_keep.png" id="23_frost_icon"]
-[ext_resource type="Texture2D" path="res://assets/sprites/ui/icons/flame_thrower.png" id="24_flame_icon"]
-[ext_resource type="Texture2D" path="res://assets/sprites/ui/icons/poison_sprayer.png" id="25_poison_icon"]
-[ext_resource type="Texture2D" path="res://assets/sprites/ui/icons/shredder.png" id="26_shredder_icon"]
 [ext_resource type="Texture2D" path="res://assets/sprites/ui/icons/health.png" id="27_health_icon"]
 [ext_resource type="Texture2D" path="res://assets/sprites/ui/icons/armor.png" id="28_armor_icon"]
 [ext_resource type="Texture2D" path="res://assets/sprites/ui/icons/shield.png" id="29_shield_icon"]
 [ext_resource type="Texture2D" path="res://assets/sprites/ui/start_round_button.png" id="30_start_round_texture"]
+[ext_resource type="ShaderMaterial" path="res://game/board/cloud_shadow_overlay_material.tres" id="32_cloud_shadow_material"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_transparent_panel"]
 
@@ -257,8 +251,23 @@ script = ExtResource("7_run_economy")
 unique_name_in_owner = true
 script = ExtResource("9_run_card_service")
 
+[node name="CloudShadowLayer" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="CloudShadowOverlay" type="ColorRect" parent="CloudShadowLayer"]
+unique_name_in_owner = true
+material = ExtResource("32_cloud_shadow_material")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+z_index = 0
+
 [node name="HUD" type="CanvasLayer" parent="."]
 unique_name_in_owner = true
+layer = 2
 
 [node name="SelectionBackdrop" type="ColorRect" parent="HUD"]
 unique_name_in_owner = true
@@ -459,10 +468,10 @@ theme_override_styles/panel = SubResource("TowerInfoPanelSimple")
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 0.0
-offset_left = -420.0
+offset_left = -524.0
 offset_top = 76.0
 offset_right = -24.0
-offset_bottom = 402.0
+offset_bottom = 426.0
 
 [node name="Margin" type="MarginContainer" parent="HUD/TowerInfoPanel"]
 layout_mode = 2
@@ -485,7 +494,7 @@ theme_override_constants/separation = 6
 [node name="TowerPortrait" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerHeader"]
 unique_name_in_owner = true
 layout_mode = 2
-custom_minimum_size = Vector2(36, 36)
+custom_minimum_size = Vector2(152, 176)
 expand_mode = 1
 stretch_mode = 5
 
@@ -494,7 +503,7 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.913725, 0.898039, 0.847059, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 28
 text = "Ballista"
 
 [node name="TowerLevel" type="RichTextLabel" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerHeader"]
@@ -811,9 +820,9 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -536.0
-offset_top = -190.0
-offset_right = 536.0
+offset_left = -590.0
+offset_top = -232.0
+offset_right = 590.0
 offset_bottom = -20.0
 theme_override_constants/margin_left = 8
 theme_override_constants/margin_top = 7
@@ -828,37 +837,30 @@ theme_override_constants/separation = 2
 [node name="TowerShortcut1" parent="HUD/TowerToolbar/Buttons" instance=ExtResource("13_tower_shortcut_card")]
 unique_name_in_owner = true
 layout_mode = 2
-tower_icon_texture = ExtResource("20_ballista_icon")
 
 [node name="TowerShortcut2" parent="HUD/TowerToolbar/Buttons" instance=ExtResource("13_tower_shortcut_card")]
 unique_name_in_owner = true
 layout_mode = 2
-tower_icon_texture = ExtResource("21_mortar_icon")
 
 [node name="TowerShortcut3" parent="HUD/TowerToolbar/Buttons" instance=ExtResource("13_tower_shortcut_card")]
 unique_name_in_owner = true
 layout_mode = 2
-tower_icon_texture = ExtResource("22_tesla_icon")
 
 [node name="TowerShortcut4" parent="HUD/TowerToolbar/Buttons" instance=ExtResource("13_tower_shortcut_card")]
 unique_name_in_owner = true
 layout_mode = 2
-tower_icon_texture = ExtResource("23_frost_icon")
 
 [node name="TowerShortcut5" parent="HUD/TowerToolbar/Buttons" instance=ExtResource("13_tower_shortcut_card")]
 unique_name_in_owner = true
 layout_mode = 2
-tower_icon_texture = ExtResource("24_flame_icon")
 
 [node name="TowerShortcut6" parent="HUD/TowerToolbar/Buttons" instance=ExtResource("13_tower_shortcut_card")]
 unique_name_in_owner = true
 layout_mode = 2
-tower_icon_texture = ExtResource("25_poison_icon")
 
 [node name="TowerShortcut7" parent="HUD/TowerToolbar/Buttons" instance=ExtResource("13_tower_shortcut_card")]
 unique_name_in_owner = true
 layout_mode = 2
-tower_icon_texture = ExtResource("26_shredder_icon")
 
 [node name="TerrainCardPanel" type="PanelContainer" parent="HUD"]
 unique_name_in_owner = true
@@ -965,6 +967,14 @@ layer = 128
 unique_name_in_owner = true
 mouse_filter = 2
 script = ExtResource("12_build_cursor")
+
+[node name="FeedbackVfxLayer" type="CanvasLayer" parent="."]
+layer = 130
+process_mode = 3
+
+[node name="FeedbackVfx" type="Node2D" parent="FeedbackVfxLayer"]
+unique_name_in_owner = true
+process_mode = 3
 
 [node name="TerrainCard2" type="Button" parent="HUD/TerrainCardPanel/Margin/Content/Cards"]
 unique_name_in_owner = true

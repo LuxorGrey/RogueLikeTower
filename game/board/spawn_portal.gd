@@ -16,6 +16,8 @@ const PULSE_PERIOD: float = 3.8
 const PULSE_MIN_SCALE: float = 0.96
 const PULSE_MAX_SCALE: float = 1.055
 const OBSTACLE_HOVER_SHADER: Shader = preload("res://game/board/obstacle_hover_glow.gdshader")
+const INTERACTABLE_OUTLINE_SHADER: Shader = preload("res://game/board/interactable_outline.gdshader")
+const PORTAL_OUTLINE_SIZE_PX: float = 3.0
 const PREVIEW_LAYER_SCRIPT: Script = preload("res://game/board/spawn_portal_preview_layer.gd")
 
 @onready var _sprite: AnimatedSprite2D = %Sprite
@@ -28,6 +30,7 @@ var _pulse_time: float = 0.0
 var _pulse_phase: float = 0.0
 var _base_sprite_scale: Vector2 = Vector2.ONE
 var _outline_sprite: Sprite2D
+var _interactable_outline_sprite: Sprite2D
 var _preview_layer: Node2D
 var _endpoint_key: String = ""
 var _preview_entries: Array[Dictionary] = []
@@ -55,6 +58,7 @@ func _ready() -> void:
 	_hover_area.mouse_exited.connect(_on_mouse_exited)
 	_hover_area.input_event.connect(_on_hover_area_input_event)
 	_sprite.frame_changed.connect(_sync_hover_outline_texture)
+	_create_interactable_outline()
 	_create_hover_outline()
 	_create_enemy_preview_layer()
 	_create_closing_marker()
@@ -117,9 +121,11 @@ func _get_current_frame_texture() -> Texture2D:
 	return _sprite.sprite_frames.get_frame_texture(PORTAL_ANIMATION_NAME, frame_index)
 
 func _sync_hover_outline_texture() -> void:
-	if _outline_sprite == null or not is_instance_valid(_outline_sprite):
-		return
-	_outline_sprite.texture = _get_current_frame_texture()
+	var current_frame: Texture2D = _get_current_frame_texture()
+	if _outline_sprite != null and is_instance_valid(_outline_sprite):
+		_outline_sprite.texture = current_frame
+	if _interactable_outline_sprite != null and is_instance_valid(_interactable_outline_sprite):
+		_interactable_outline_sprite.texture = current_frame
 
 func set_wave_preview(entries: Array[Dictionary], wave_number: int) -> void:
 	_preview_entries = entries.duplicate()
@@ -190,6 +196,27 @@ func _update_pulse() -> void:
 	_sprite.modulate = resting_color.lerp(Color.WHITE, pulse * 0.22)
 	if _outline_sprite != null:
 		_outline_sprite.scale = _sprite.scale
+	if _interactable_outline_sprite != null:
+		_interactable_outline_sprite.scale = _sprite.scale
+
+func _create_interactable_outline() -> void:
+	_interactable_outline_sprite = Sprite2D.new()
+	_interactable_outline_sprite.name = "PortalInteractableOutline"
+	_interactable_outline_sprite.centered = true
+	_interactable_outline_sprite.texture = _get_current_frame_texture()
+	_interactable_outline_sprite.position = _sprite.position
+	_interactable_outline_sprite.scale = _sprite.scale
+	_interactable_outline_sprite.z_index = _sprite.z_index - 1
+	_interactable_outline_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	var outline_material := ShaderMaterial.new()
+	outline_material.shader = INTERACTABLE_OUTLINE_SHADER
+	outline_material.set_shader_parameter("outline_only", true)
+	outline_material.set_shader_parameter("outline_color", Color.WHITE)
+	outline_material.set_shader_parameter("outline_size_px", PORTAL_OUTLINE_SIZE_PX)
+	_interactable_outline_sprite.material = outline_material
+	_interactable_outline_sprite.visible = true
+	add_child(_interactable_outline_sprite)
+	move_child(_interactable_outline_sprite, _sprite.get_index())
 
 func _create_hover_outline() -> void:
 	_outline_sprite = Sprite2D.new()

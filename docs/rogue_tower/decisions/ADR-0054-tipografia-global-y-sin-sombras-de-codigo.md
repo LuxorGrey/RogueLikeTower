@@ -1,7 +1,7 @@
 # ADR-0054: Tipografía global y ausencia de sombras generadas por código
 
 - Fecha: 2026-10-13.
-- Estado: aceptado; integración en código/configuración completada, aceptación visual pendiente.
+- Estado: sustituido parcialmente por [ADR-0099](ADR-0099-tinte-de-altura-y-sombra-animada-de-nubes.md): sigue vigente la ausencia de sombras proyectadas individualmente por sprite; el velo global de nubes es la excepción visual aprobada.
 - Complementa: ADR-0051 y ADR-0053.
 - Alcance: presentación tipográfica global y sombras procedurales de la escena 2D. No cambia gameplay, estado, profundidad ni feedback de hover/selección.
 
@@ -19,7 +19,7 @@ El usuario pidió que ningún elemento del juego genere sombras por código, en 
 ## Consecuencias
 
 - La fuente predeterminada cubre los controles del proyecto y los dos usos de texto dibujado manualmente.
-- Las torres ya no muestran la base/polígono oscuro generado por código, las flechas PATH no tienen trazo ancho debajo y los contadores no dibujan una copia de texto desplazada. Obstáculos, enemigos, base y props no reciben sombras runtime.
+- Las torres ya no muestran la base/polígono oscuro generado por código, las flechas PATH no tienen trazo ancho debajo y los contadores no dibujan una copia de texto desplazada. Obstáculos, enemigos, base y props no reciben sombras individuales runtime; el velo global animado está documentado en ADR-0099.
 - La legibilidad, el ajuste de texto y la apariencia final deben confirmarse en ventana Godot a 1280×720 y 1440×900.
 
 ## Referencias

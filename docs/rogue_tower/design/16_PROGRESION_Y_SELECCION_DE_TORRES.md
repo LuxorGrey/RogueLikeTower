@@ -42,12 +42,12 @@ La torre gana XP en la capa de HP activa del objetivo que mantiene en alcance, a
 - El hover sobre un obstáculo dibuja una aureola a partir del alfa del mismo PNG, siguiendo su silueta recortada.
 - PATH siempre está a elevación 0; Grass usa 1–2 y Mountain 2–3, sorteados de forma reproducible por seed de run. El anillo de la base no impone una elevación plana.
 - Ballista, Mortar y Tesla Coil son unlocks permanentes iniciales, pero cada run comienza solo con Ballista reclutada. Mortar/Tesla se ofrecen como reclutamientos en la primera oferta programada; otros unlocks permanentes pasan a ser elegibles en runs futuras. Sin la card de reclutamiento elegida, una torre no aparece en la barra ni se puede construir.
-- En modo de colocación de Ballista, el ghost muestra el bonus de daño correspondiente a la altura bajo el cursor, además del badge de las torres construidas.
+- En modo de colocación de Ballista, el ghost muestra el bonus de daño correspondiente a la altura bajo el cursor. La insignia de las torres construidas permanece oculta y solo aparece al hacer hover sobre la torre, según ADR-0099.
 - Obstáculos y cards usan la misma caja 86×86 px y el mismo centro visual ligeramente desplazado hacia abajo.
 
 ## Lectura visual por nivel
 
-Cada nivel de torre añade un crecimiento visual lineal pequeño: desde el tamaño base en nivel 1 hasta un máximo de +12 % al completar las 45 mejoras posibles. Se aplica tanto a las torres de sprite único como al arte dividido de base y cabeza; el pulso de selección se compone encima. El 12 % es un valor visual provisional de implementación, no modifica alcance, colisión ni área ocupada. Ver [ADR-0094](../decisions/ADR-0094-mapa-de-mejoras-y-legibilidad-del-terreno.md).
+Cada nivel de torre añade un crecimiento visual lineal pequeño: desde el tamaño base en nivel 1 hasta un máximo de +12 % al completar las 45 mejoras posibles. Se aplica al sprite PNG completo de la torre; el pulso de selección se compone encima. El tamaño base de mundo/ghost usa escala 1,32 × 1,12, compartida para mantener la alineación y evitar cortes. El 12 % es un valor visual provisional de implementación, no modifica alcance, colisión ni área ocupada. Ver [ADR-0094](../decisions/ADR-0094-mapa-de-mejoras-y-legibilidad-del-terreno.md), [ADR-0100](../decisions/ADR-0100-sprite-unico-de-torre-y-tinte-de-altura.md) y [ADR-0103](../decisions/ADR-0103-escala-de-torre-sin-recorte.md).
 
 ## Límites de la referencia
 
