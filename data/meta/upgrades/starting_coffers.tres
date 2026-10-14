@@ -59,5 +59,6 @@ id = &"starting_coffers"
 display_name = "Treasury"
 description = "+100 de Gold inicial por nivel en cada nueva run (máximo +1.000)."
 max_level = 10
+prerequisites = Array[StringName]([])
 cost_by_level = Array[int]([10, 15, 20, 25, 30, 35, 40, 45, 50, 60])
 operations_by_level = Array[ExtResource("2_operation")]([SubResource("PermanentUpgradeOperation_1"), SubResource("PermanentUpgradeOperation_2"), SubResource("PermanentUpgradeOperation_3"), SubResource("PermanentUpgradeOperation_4"), SubResource("PermanentUpgradeOperation_5"), SubResource("PermanentUpgradeOperation_6"), SubResource("PermanentUpgradeOperation_7"), SubResource("PermanentUpgradeOperation_8"), SubResource("PermanentUpgradeOperation_9"), SubResource("PermanentUpgradeOperation_10")])

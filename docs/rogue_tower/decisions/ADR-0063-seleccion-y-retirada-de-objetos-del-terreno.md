@@ -1,6 +1,6 @@
 # ADR-0063 — Selección y retirada de objetos del terreno
 
-- Estado: decisión aprobada por petición del usuario; código integrado; aceptación visual/interactiva pendiente.
+- Estado: decisión aprobada por petición del usuario; código integrado; aceptación visual/interactiva pendiente. El rango lógico 0–2 de la decisión 6 fue ampliado a 0–3 por ADR-0073.
 - Fecha: 2026-10-13.
 - Contexto: los obstáculos no se podían inspeccionar ni retirar y los portales eran solo indicadores de rutas. Las capturas del usuario mostraron vértices de fachadas que parecen abiertos; además, el offset de elevación de 18 px por nivel ofrecía poca separación visual.
 
@@ -11,7 +11,7 @@
 3. Al hacer clic en un portal, el panel muestra la composición que tiene asignada en la ronda seleccionada como lista con sprite, nombre y cantidad de cada tipo. Se conserva el tooltip de hover existente.
 4. Se puede retirar un portal solo cuando quedan más de tres spawns activos. Su coste es dos veces el siguiente coste de retirada de obstáculo. Retirar portales no incrementa el contador de obstáculos retirados.
 5. `PathGraph` conserva los endpoints retirados durante la run y expone únicamente rutas activas al `WaveDirector`, el overlay de flujo y la previsión. Las cantidades de `WaveData` permanecen iguales; el round-robin redistribuye los enemigos entre los endpoints activos.
-6. El desplazamiento visual de cada nivel pasa de 18 a 28 px en terrenos, hover, fantasmas y torres; la altura lógica continúa en 0–2. Las uniones de fachadas se rellenan con una cuña única sin descartar wedges por un umbral de área.
+6. El desplazamiento visual de cada nivel pasa de 18 a 28 px en terrenos, hover, fantasmas y torres. En esta decisión se conservaba el rango lógico 0–2, ampliado a 0–3 por ADR-0073. Las uniones de fachadas se rellenan con una cuña única sin descartar wedges por un umbral de área.
 7. Las compras ocurren solo en preparación de ronda. No alteran el grafo PATH, las coordenadas, el terreno, los sockets ni el contenido guardado entre runs.
 
 ## Consecuencias y aceptación

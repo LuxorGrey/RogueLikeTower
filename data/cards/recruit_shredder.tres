@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/cards/card_data.gd" id="1_card"]
+
+[resource]
+script = ExtResource("1_card")
+id = &"recruit_shredder"
+display_name = "Reclutar · Shredder"
+description = "Añade Shredder al arsenal de esta run."
+rarity = 0
+unlock_requirement = &"tower:shredder_demo"
+grant_tower_id = &"shredder_demo"
+modifier_operations = Array[Resource]([])

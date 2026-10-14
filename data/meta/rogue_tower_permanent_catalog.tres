@@ -25,6 +25,7 @@ id = &"card_draw"
 display_name = "Card Draw I–III"
 description = "Aumenta en una opción las cartas visibles en cada oferta de run por nivel (4, 5 y hasta 6 opciones)."
 max_level = 3
+prerequisites = Array[StringName]([&"card_archive"])
 cost_by_level = Array[int]([25, 50, 75])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_0_0"), SubResource("Op_0_1"), SubResource("Op_0_2")])
 
@@ -59,6 +60,7 @@ id = &"gold_drop"
 display_name = "Gold Drop I–V"
 description = "Cada enemigo concede +1 Gold adicional al morir por nivel (máximo +5 por baja)."
 max_level = 5
+prerequisites = Array[StringName]([&"starting_coffers"])
 cost_by_level = Array[int]([15, 30, 45, 60, 80])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_1_0"), SubResource("Op_1_1"), SubResource("Op_1_2"), SubResource("Op_1_3"), SubResource("Op_1_4")])
 
@@ -83,6 +85,7 @@ id = &"main_tower_repair"
 display_name = "Repair I–III"
 description = "Al terminar cada ronda, puede reparar 1 Health. La probabilidad máxima aumenta con la cantidad de Health perdida (hasta 100%)."
 max_level = 3
+prerequisites = Array[StringName]([&"tower_calibration"])
 cost_by_level = Array[int]([25, 50, 100])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_2_0"), SubResource("Op_2_1"), SubResource("Op_2_2")])
 
@@ -142,7 +145,8 @@ id = &"main_tower_fortification"
 display_name = "Fortification I–X"
 description = "La base gana +1 Health máximo por nivel permanente (hasta +10 en cada run)."
 max_level = 10
-cost_by_level = Array[int]([10, 15, 20, 25, 30, 35, 40, 45, 50, 60])
+prerequisites = Array[StringName]([&"main_tower_repair"])
+cost_by_level = Array[int]([20, 40, 60, 80, 100, 120, 140, 160, 180, 200])
 operations_by_level = Array[ExtResource("3_operation")]([SubResource("Op_3_0"), SubResource("Op_3_1"), SubResource("Op_3_2"), SubResource("Op_3_3"), SubResource("Op_3_4"), SubResource("Op_3_5"), SubResource("Op_3_6"), SubResource("Op_3_7"), SubResource("Op_3_8"), SubResource("Op_3_9")])
 
 [sub_resource type="Resource" id="Op_4_0"]

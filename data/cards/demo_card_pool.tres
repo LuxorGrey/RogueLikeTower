@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CardPoolData" load_steps=21 format=3]
+[gd_resource type="Resource" script_class="CardPoolData" load_steps=27 format=3]
 
 [ext_resource type="Script" path="res://data/cards/card_pool_data.gd" id="1_pool"]
 [ext_resource type="Resource" path="res://data/cards/ballista_calibrated_shot.tres" id="2_ballista"]
@@ -20,10 +20,16 @@
 [ext_resource type="Resource" path="res://data/cards/monster_studies_armor.tres" id="18_armor"]
 [ext_resource type="Resource" path="res://data/cards/monster_studies_shield.tres" id="19_shield"]
 [ext_resource type="Resource" path="res://data/cards/rogue_tower_compatible_cards.tres" id="20_rogue_tower_catalog"]
+[ext_resource type="Resource" path="res://data/cards/recruit_mortar.tres" id="21_recruit_mortar"]
+[ext_resource type="Resource" path="res://data/cards/recruit_tesla_coil.tres" id="22_recruit_tesla"]
+[ext_resource type="Resource" path="res://data/cards/recruit_frost_keep.tres" id="23_recruit_frost"]
+[ext_resource type="Resource" path="res://data/cards/recruit_flame_thrower.tres" id="24_recruit_flame"]
+[ext_resource type="Resource" path="res://data/cards/recruit_poison_sprayer.tres" id="25_recruit_poison"]
+[ext_resource type="Resource" path="res://data/cards/recruit_shredder.tres" id="26_recruit_shredder"]
 
 [resource]
 script = ExtResource("1_pool")
-cards = Array[Resource]([ExtResource("2_ballista"), ExtResource("3_mortar"), ExtResource("4_tesla"), ExtResource("5_frost"), ExtResource("6_flame"), ExtResource("7_poison"), ExtResource("8_shredder"), ExtResource("9_range"), ExtResource("10_damage"), ExtResource("11_mana_max"), ExtResource("12_mana_regen"), ExtResource("13_efficiency"), ExtResource("14_archive_damage"), ExtResource("15_archive_mana"), ExtResource("16_critical"), ExtResource("17_health"), ExtResource("18_armor"), ExtResource("19_shield")])
+cards = Array[Resource]([ExtResource("2_ballista"), ExtResource("3_mortar"), ExtResource("4_tesla"), ExtResource("5_frost"), ExtResource("6_flame"), ExtResource("7_poison"), ExtResource("8_shredder"), ExtResource("9_range"), ExtResource("10_damage"), ExtResource("11_mana_max"), ExtResource("12_mana_regen"), ExtResource("13_efficiency"), ExtResource("14_archive_damage"), ExtResource("15_archive_mana"), ExtResource("16_critical"), ExtResource("17_health"), ExtResource("18_armor"), ExtResource("19_shield"), ExtResource("21_recruit_mortar"), ExtResource("22_recruit_tesla"), ExtResource("23_recruit_frost"), ExtResource("24_recruit_flame"), ExtResource("25_recruit_poison"), ExtResource("26_recruit_shredder")])
 catalogs = Array[Resource]([ExtResource("20_rogue_tower_catalog")])
 offer_size = 3
 first_offer_round = 3

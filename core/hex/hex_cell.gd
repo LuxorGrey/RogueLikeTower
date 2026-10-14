@@ -19,3 +19,13 @@ var visual_variant: StringName = &""
 
 func _init(cell_coord: HexCoord) -> void:
 	coord = cell_coord
+
+static func is_valid_terrain_elevation(terrain: int, cell_elevation: int) -> bool:
+	match terrain:
+		TerrainType.PATH:
+			return cell_elevation == 0
+		TerrainType.GRASS:
+			return cell_elevation == 1 or cell_elevation == 2
+		TerrainType.MOUNTAIN:
+			return cell_elevation == 2 or cell_elevation == 3
+	return false

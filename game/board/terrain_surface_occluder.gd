@@ -7,33 +7,39 @@ const HEX_RADIUS: float = 52.0
 var _terrain_type: int = HexCell.TerrainType.GRASS
 var _visual_variant: StringName = &""
 var _coord: Vector2i = Vector2i.ZERO
+var _elevation: int = 0
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 
-func configure_surface(terrain_type: int, visual_variant: StringName, coord: Vector2i) -> void:
+func configure_surface(terrain_type: int, visual_variant: StringName, coord: Vector2i, elevation: int) -> void:
 	_terrain_type = terrain_type
 	_visual_variant = visual_variant
 	_coord = coord
+	_elevation = elevation
 	queue_redraw()
 
 func _draw() -> void:
 	var radius: float = HEX_RADIUS
-	var tile_size := Vector2(HEX_RADIUS * sqrt(3.0), HEX_RADIUS * 2.0)
 	var corners := _hex_corners(radius)
-	draw_colored_polygon(corners, _terrain_color(_terrain_type))
 	var texture: Texture2D = TERRAIN_VISUAL_CATALOG_SCRIPT.get_terrain_texture(
 		_terrain_type,
 		_visual_variant,
 		_coord
 	)
-	draw_texture_rect(texture, Rect2(-tile_size * 0.5, tile_size), false)
+	draw_colored_polygon(
+		corners,
+		TERRAIN_VISUAL_CATALOG_SCRIPT.get_elevation_tint(_elevation),
+		_hex_texture_uvs(),
+		texture
+	)
 
 func _hex_corners(radius: float) -> PackedVector2Array:
 	var corners := PackedVector2Array()
+	var axial_coord := HexCoord.new(_coord.x, _coord.y)
+	var center: Vector2 = HexMath.axial_to_world(axial_coord, radius)
 	for corner_index in range(6):
-		var angle_radians: float = deg_to_rad(-90.0 + 60.0 * float(corner_index))
-		corners.append(Vector2(cos(angle_radians), sin(angle_radians)) * radius)
+		corners.append(HexMath.axial_hex_corner(axial_coord, corner_index, radius) - center)
 	return corners
 
 func _terrain_color(terrain_type: int) -> Color:
@@ -46,3 +52,13 @@ func _terrain_color(terrain_type: int) -> Color:
 			return Color(0.63, 0.58, 0.48)
 		_:
 			return Color.MAGENTA
+
+func _hex_texture_uvs() -> PackedVector2Array:
+	return PackedVector2Array([
+		Vector2(0.5, 0.0),
+		Vector2(1.0, 0.25),
+		Vector2(1.0, 0.75),
+		Vector2(0.5, 1.0),
+		Vector2(0.0, 0.75),
+		Vector2(0.0, 0.25),
+	])

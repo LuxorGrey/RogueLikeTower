@@ -7,6 +7,6 @@
 script = ExtResource("1_base_data")
 id = &"provisional_base"
 display_name = "Main Tower"
-max_health = 50
+max_health = 10
 sprite_texture = ExtResource("2_base_sprite")
 sprite_size = Vector2(176, 176)

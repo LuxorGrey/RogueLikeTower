@@ -133,6 +133,12 @@ func finish_run(outcome: StringName, reached_round: int, run_seed: int) -> Dicti
 	run_ended.emit(result)
 	return result
 
+func abandon_run() -> void:
+	if not _active_run:
+		return
+	_active_run = false
+	_active_run_id = ""
+
 func get_meta_currency() -> int:
 	return _save_data.meta_currency
 

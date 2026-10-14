@@ -1,6 +1,6 @@
 # Progresión y selección de torres
 
-Esta página explica la progresión vigente implementada para las siete torres. Las reglas aprobadas están en [Diseño del juego](01_GAME_DESIGN_SOURCE_OF_TRUTH.md); los Resources `data/towers/*.tres` son la configuración ejecutable. Los valores de curva siguen provisionales. Las reglas de progreso están en [ADR-0046](../decisions/ADR-0046-progresion-de-mejoras-y-feedback-de-seleccion.md) y su UI de targeting/selección en [ADR-0047](../decisions/ADR-0047-herramientas-de-depuracion-y-claridad-de-seleccion.md).
+Esta página explica la progresión vigente implementada para las siete torres. Las reglas aprobadas están en [Diseño del juego](01_GAME_DESIGN_SOURCE_OF_TRUTH.md); los Resources `data/towers/*.tres` son la configuración ejecutable. Los valores de curva siguen provisionales. Las reglas de progreso están en [ADR-0046](../decisions/ADR-0046-progresion-de-mejoras-y-feedback-de-seleccion.md), su UI de targeting/selección en [ADR-0047](../decisions/ADR-0047-herramientas-de-depuracion-y-claridad-de-seleccion.md) y el roster temporal de run en [ADR-0076](../decisions/ADR-0076-economia-inicial-roster-de-run-y-flujo-de-escenas.md).
 
 ## Tres niveles separados
 
@@ -40,7 +40,9 @@ La torre gana XP en la capa de HP activa del objetivo que mantiene en alcance, a
 - `Ctrl+K` abre herramientas temporales de depuración: Gold, Mana, curación de base, inicio de ronda, reinicio de run y desbloqueo temporal de torres/cartas. Los desbloqueos solo modifican el estado de memoria de la run y no se escriben al guardado.
 - Al ganar o gastar Gold, moneda e importe rebotan juntos en el HUD. El feedback escala el grupo completo y no desplaza controles hijos dentro del contenedor de recursos.
 - El hover sobre un obstáculo dibuja una aureola a partir del alfa del mismo PNG, siguiendo su silueta recortada.
-- Los seis hexes alrededor de Main Tower están a elevación 0 para que una loseta alta no oculte el edificio.
+- PATH siempre está a elevación 0; Grass usa 1–2 y Mountain 2–3, sorteados de forma reproducible por seed de run. El anillo de la base no impone una elevación plana.
+- Ballista, Mortar y Tesla Coil son unlocks permanentes iniciales, pero cada run comienza solo con Ballista reclutada. Mortar/Tesla se ofrecen como reclutamientos en la primera oferta programada; otros unlocks permanentes pasan a ser elegibles en runs futuras. Sin la card de reclutamiento elegida, una torre no aparece en la barra ni se puede construir.
+- En modo de colocación de Ballista, el ghost muestra el bonus de daño correspondiente a la altura bajo el cursor, además del badge de las torres construidas.
 - Obstáculos y cards usan la misma caja 86×86 px y el mismo centro visual ligeramente desplazado hacia abajo.
 
 ## Límites de la referencia

@@ -29,5 +29,6 @@ id = &"meta:chest_finder"
 display_name = "Suerte del explorador"
 description = "+5 puntos porcentuales de probabilidad de cofre por nivel. Parte de 1 % y llega hasta 20 % por loseta."
 max_level = 4
+prerequisites = Array[StringName]([&"gold_drop"])
 cost_by_level = Array[int]([10, 20, 35, 55])
 operations_by_level = Array[ExtResource("2_operation")]([SubResource("ChestLuck1"), SubResource("ChestLuck2"), SubResource("ChestLuck3"), SubResource("ChestLuck4")])

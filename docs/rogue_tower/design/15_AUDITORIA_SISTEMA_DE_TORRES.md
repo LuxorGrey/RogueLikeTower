@@ -22,7 +22,7 @@ RPM efectivo = (RPM base + bonus Frost por Path) × multiplicador de cadencia de
 alcance efectivo = alcance base + E × bonus_alcance_altura + bonus de alcance de cartas
 ```
 
-Los Resources activos tienen `bonus_daño_altura = 1` y `bonus_alcance_altura = 0,5`. El multiplicador de cadencia ahora se consulta en runtime; ninguna de las 190 cards combinadas lo usa.
+Los Resources activos tienen `bonus_daño_altura = 1` y `bonus_alcance_altura = 0,5`. El multiplicador de cadencia ahora se consulta en runtime; ninguna de las 190 cards de mejora lo usa.
 
 Para un ataque directo a la capa activa:
 
@@ -126,7 +126,7 @@ La wiki describe el daño de estados como un porcentaje del daño de torre habil
 
 ## Efecto de cards y permanente
 
-Las 190 cards del pool pueden sumar daño, multiplicar daño, ampliar alcance/radio, modificar coste y regeneración de Mana, crítico, capas H/A/S, estados, Gold, vida de base y daño que recibe la base. Los nombres y operaciones ejecutables están en el [roster activo](13_CONTENT_ROSTER.md). Los valores aditivos se suman; los multiplicadores se multiplican. Una card no muta el Resource compartido. Los prerrequisitos y unlocks de cartas adaptan las ramas al roster propio. Para torres sí se adopta el principio de gastar XP de perfil en unlocks: arsenal inicial Ballista/Mortar/Tesla Coil, costes 50 XP para Frost Keep/Flame Thrower/Poison Sprayer y 100 XP para Shredder. La fórmula de recompensa XP sigue siendo propia/configurable. Las mejoras permanentes compradas después de una run se aplican desde la siguiente; ver ADR-0069.
+Las 190 cards de mejora pueden sumar daño, multiplicar daño, ampliar alcance/radio, modificar coste y regeneración de Mana, crítico, capas H/A/S, estados, Gold, vida de base y daño que recibe la base. Seis cards de reclutamiento elevan el pool total a 196 IDs. Los nombres y operaciones ejecutables están en el [roster activo](13_CONTENT_ROSTER.md). Los valores aditivos se suman; los multiplicadores se multiplican. Una card no muta el Resource compartido. Las cards específicas de torre exigen unlock permanente y reclutamiento en la run; las cards de reclutamiento incorporan perfiles desbloqueados al roster temporal. El conjunto de unlocks inicial incluye Ballista/Mortar/Tesla Coil, pero solo Ballista está reclutada al entrar en run; ver ADR-0069/0076. Frost Keep/Flame Thrower/Poison Sprayer cuestan 50 XP y Shredder 100. La fórmula de recompensa XP sigue siendo propia/configurable. Las mejoras permanentes compradas después de una run se aplican desde la siguiente.
 
 ## Diferencias de diseño abiertas
 

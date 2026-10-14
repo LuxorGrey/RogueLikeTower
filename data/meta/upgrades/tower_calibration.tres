@@ -24,5 +24,6 @@ id = &"tower_calibration"
 display_name = "Calibración de torres"
 description = "+5 % de daño global por nivel en cada nueva run."
 max_level = 3
+prerequisites = Array[StringName]([&"mana_wellspring"])
 cost_by_level = Array[int]([20, 35, 50])
 operations_by_level = Array[ExtResource("2_operation")]([SubResource("PermanentUpgradeOperation_1"), SubResource("PermanentUpgradeOperation_2"), SubResource("PermanentUpgradeOperation_3")])

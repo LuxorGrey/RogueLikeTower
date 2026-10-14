@@ -29,11 +29,14 @@ func _run_smoke() -> void:
 	if not controller.configure(grid, _entities, MAP_ORIGIN, HEX_RADIUS, damage_service):
 		_fail("BuildController no aceptó el grid de prueba.")
 		return
-	if controller.begin_build(BASIC_BOLT):
+	var test_bolt := BASIC_BOLT.duplicate(true) as TowerData
+	test_bolt.id = &"ballista_demo"
+	test_bolt.max_layer_upgrades = 2
+	if controller.begin_build(test_bolt):
 		_fail("Se permitió activar construcción durante RUN_SETUP.")
 		return
 	RunManager.transition_to(RunManager.Phase.ROUND_PREP)
-	if not controller.begin_build(BASIC_BOLT):
+	if not controller.begin_build(test_bolt):
 		_fail("No se pudo iniciar Build mode: %s" % controller.last_error)
 		return
 	if controller.place_tower(Vector2i.ZERO):
@@ -67,7 +70,7 @@ func _run_smoke() -> void:
 		_fail("La torre superó su nivel máximo configurado.")
 		return
 	controller.cancel_build_mode()
-	if not controller.begin_build(BASIC_BOLT) or not controller.place_tower(Vector2i(0, 1)):
+	if not controller.begin_build(test_bolt) or not controller.place_tower(Vector2i(0, 1)):
 		_fail("No se pudo construir Basic Bolt en Montaña: %s" % controller.last_error)
 		return
 	controller.cancel_build_mode()
@@ -75,7 +78,7 @@ func _run_smoke() -> void:
 	if mountain_tower == null or mountain_tower.elevation != 2:
 		_fail("La torre de montaña no conservó la altura lógica de su celda.")
 		return
-	if mountain_tower.get_current_range_hexes() <= BASIC_BOLT.range_hexes:
+	if mountain_tower.get_current_range_hexes() <= test_bolt.range_hexes:
 		_fail("La altura de montaña no aplicó el bonus de alcance provisional.")
 		return
 
@@ -107,7 +110,7 @@ func _run_smoke() -> void:
 		_fail("No se pudo preparar el objetivo fuera de alcance.")
 		return
 	RunManager.transition_to(RunManager.Phase.COMBAT)
-	if not controller.begin_build(BASIC_BOLT) or not controller.place_tower(Vector2i(-1, 1)):
+	if not controller.begin_build(test_bolt) or not controller.place_tower(Vector2i(-1, 1)):
 		_fail("No se permitió construir durante COMBAT: %s" % controller.last_error)
 		return
 	controller.cancel_build_mode()
@@ -165,12 +168,11 @@ func _run_smoke() -> void:
 		return
 
 	RunManager.transition_to(RunManager.Phase.TERRAIN_EXPANSION)
-	if not controller.begin_build(BASIC_BOLT):
-		_fail("No se permitió construir durante TERRAIN_EXPANSION.")
+	if controller.begin_build(test_bolt):
+		_fail("Se permitió construir durante TERRAIN_EXPANSION.")
 		return
-	controller.cancel_build_mode()
 	RunManager.transition_to(RunManager.Phase.RUN_DEFEAT)
-	if controller.begin_build(BASIC_BOLT):
+	if controller.begin_build(test_bolt):
 		_fail("Se permitió activar construcción durante RUN_DEFEAT.")
 		return
 	print("M6 tower smoke: build, fases, prioridades, rango/cadencia, daño y limpieza de objetivo liberado correctos.")

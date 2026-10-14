@@ -1,7 +1,7 @@
 # ADR-0065: Panel común e iconos para Upgrade Cards
 
 - Fecha: 2026-10-13
-- Estado: Aceptado; marco 9-slice corregido por ADR-0071, revisión visual pendiente.
+- Estado: Parcialmente sustituido por ADR-0075: ya no se usan fondos PNG ni marco 9-slice; se conservan el panel reutilizable y los iconos de efecto.
 
 ## Contexto
 

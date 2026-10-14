@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="TowerRosterData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://data/towers/tower_roster_data.gd" id="1_roster"]
+[ext_resource type="Resource" path="res://data/towers/ballista.tres" id="2_ballista"]
+[ext_resource type="Resource" path="res://data/towers/mortar.tres" id="3_mortar"]
+[ext_resource type="Resource" path="res://data/towers/tesla_coil.tres" id="4_tesla"]
+[ext_resource type="Resource" path="res://data/towers/frost_keep.tres" id="5_frost"]
+[ext_resource type="Resource" path="res://data/towers/flame_thrower.tres" id="6_flame"]
+[ext_resource type="Resource" path="res://data/towers/poison_sprayer.tres" id="7_poison"]
+[ext_resource type="Resource" path="res://data/towers/shredder.tres" id="8_shredder"]
+
+[resource]
+script = ExtResource("1_roster")
+profiles = Array[ExtResource("2_ballista")]([ExtResource("2_ballista"), ExtResource("3_mortar"), ExtResource("4_tesla"), ExtResource("5_frost"), ExtResource("6_flame"), ExtResource("7_poison"), ExtResource("8_shredder")])

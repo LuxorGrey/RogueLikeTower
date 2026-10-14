@@ -14,5 +14,6 @@ id = &"card_archive"
 display_name = "Archivo de cartas"
 description = "Añade dos cartas globales al pool de ofertas de run."
 max_level = 1
+prerequisites = Array[StringName]([&"meta:chest_finder"])
 cost_by_level = Array[int]([25])
 operations_by_level = Array[ExtResource("2_operation")]([SubResource("PermanentUpgradeOperation_1")])

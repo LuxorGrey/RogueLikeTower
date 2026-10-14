@@ -32,12 +32,8 @@ func validate() -> PackedStringArray:
 		cells_by_coord[cell.local_coord] = cell
 		if cell.terrain_type < HexCell.TerrainType.PATH or cell.terrain_type > HexCell.TerrainType.MOUNTAIN:
 			errors.append("La celda %s tiene un terreno desconocido." % cell.local_coord)
-		if cell.elevation < 0 or cell.elevation > 2:
-			errors.append("La elevación de %s debe estar entre 0 y 2." % cell.local_coord)
-		if cell.terrain_type == HexCell.TerrainType.PATH and cell.elevation != 0:
-			errors.append("PATH debe tener elevación 0 (%s)." % cell.local_coord)
-		if cell.terrain_type == HexCell.TerrainType.MOUNTAIN and cell.elevation != 2:
-			errors.append("MOUNTAIN debe tener elevación 2 (%s)." % cell.local_coord)
+		if not HexCell.is_valid_terrain_elevation(cell.terrain_type, cell.elevation):
+			errors.append("La elevación de %s no corresponde a su terreno (PATH 0, GRASS 1–2, MOUNTAIN 2–3)." % cell.local_coord)
 		if cell.path_edges < 0 or cell.path_edges > 63:
 			errors.append("Las conexiones de camino de %s no caben en seis bits." % cell.local_coord)
 		if cell.terrain_type != HexCell.TerrainType.PATH and cell.path_edges != 0:

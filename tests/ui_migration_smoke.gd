@@ -10,6 +10,7 @@ const SHOP_ROW_SCENE: PackedScene = preload("res://game/progression/meta_shop_ro
 const WAVE_TOOLTIP_SCENE: PackedScene = preload("res://game/ui/components/wave_hover_tooltip.tscn")
 const ROUND_PROGRESS_SCRIPT: Script = preload("res://game/ui/round_progress_strip.gd")
 const ICON_CATALOG_SCRIPT: Script = preload("res://game/ui/icon_catalog.gd")
+const TERRAIN_PREVIEW_SCRIPT: Script = preload("res://game/board/terrain_piece_preview.gd")
 const BALLISTA: TowerData = preload("res://data/towers/ballista.tres")
 const STARTING_COFFERS: PermanentUpgradeData = preload("res://data/meta/upgrades/starting_coffers.tres")
 const FIRST_WAVE: WaveData = preload("res://data/waves/round_01.tres")
@@ -42,7 +43,22 @@ func _run_smoke() -> void:
 	assert(toolbar_card.tower_icon_texture != null and toolbar_card.tower_icon.texture == toolbar_card.tower_icon_texture)
 	var health_upgrade := main_instance.get_node("HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/UpgradeRow/UpgradeHealth") as TowerLayerUpgradeButton
 	assert(health_upgrade.layer_icon_texture != null and health_upgrade.layer_icon.texture == health_upgrade.layer_icon_texture)
+	var campaign_upgrade_panel := main_instance.get_node("HUD/UpgradeCardPanel") as UpgradeOfferPanel
+	for offer_round in [3, 6, 9]:
+		assert(bool(main_instance.call("_offer_campaign_upgrade_cards_if_scheduled", offer_round)), "Round %d must be handled as a scheduled upgrade offer." % offer_round)
+		assert(RunManager.phase == RunManager.Phase.CARD_OFFER, "A scheduled offer must enter CARD_OFFER before the next round.")
+		assert(campaign_upgrade_panel.visible, "The scheduled upgrade offer must open its card panel.")
+		var visible_upgrade_cards: int = 0
+		for card in campaign_upgrade_panel.cards:
+			if card.visible:
+				visible_upgrade_cards += 1
+		assert(visible_upgrade_cards == 3, "Round %d must show the configured three cards despite six panel slots." % offer_round)
+		if offer_round < 9:
+			main_instance.call("_on_upgrade_card_selected", 0)
 	main_instance.free()
+	var detached_preview := TERRAIN_PREVIEW_SCRIPT.new() as Node2D
+	detached_preview.call("_refresh_hovered_cell")
+	detached_preview.free()
 
 	var debug_panel := DEBUG_PANEL_SCENE.instantiate() as DebugHacksPanel
 	add_child(debug_panel)
@@ -65,7 +81,11 @@ func _run_smoke() -> void:
 	add_child(upgrade_panel)
 	assert(upgrade_panel.cards.size() == 3, "The authored offer preview must contain three cards.")
 	upgrade_panel.set_card_count(5)
-	assert(upgrade_panel.cards.size() == 5, "Offer size must remain data-configurable above the preview count.")
+	var visible_preview_cards: int = 0
+	for card in upgrade_panel.cards:
+		if card.visible:
+			visible_preview_cards += 1
+	assert(upgrade_panel.cards.size() == 6 and visible_preview_cards == 5, "Offer size must control visible cards while preserving six reusable UI slots.")
 	upgrade_panel.set_card_count(3)
 
 	var shop_row := SHOP_ROW_SCENE.instantiate() as PanelContainer
@@ -76,10 +96,8 @@ func _run_smoke() -> void:
 	var shop := META_SHOP_SCENE.instantiate() as MetaShopPanel
 	shop.configure([BALLISTA], [STARTING_COFFERS])
 	add_child(shop)
-	var tower_list := shop.get_node("MetaShopRoot/MetaShop/Margin/Content/Scroll/Lists/TowerList") as VBoxContainer
-	var upgrade_list := shop.get_node("MetaShopRoot/MetaShop/Margin/Content/Scroll/Lists/UpgradeList") as VBoxContainer
-	assert(tower_list.get_child_count() == 2, "The tower tab must add one reusable shop row after its heading.")
-	assert(upgrade_list.get_child_count() == 2, "The upgrade tab must add one reusable shop row after its heading.")
+	var progression_map := shop.get_node("MetaShopRoot/MetaShop/Margin/Content/Scroll/ProgressionMap") as MetaProgressionMap
+	assert(progression_map != null and progression_map.get_child_count() >= 3, "The shop must render its connected progression map and configured nodes.")
 	var new_run_requests: Array[int] = [0]
 	shop.new_run_requested.connect(func() -> void: new_run_requests[0] += 1)
 	shop.get_node("MetaShopRoot/MetaShop/Margin/Content/NewRunButton").emit_signal("pressed")

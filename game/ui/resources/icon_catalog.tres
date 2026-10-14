@@ -1,4 +1,4 @@
-[gd_resource type="Resource" load_steps=33 format=3]
+[gd_resource type="Resource" load_steps=30 format=3]
 
 [ext_resource type="Script" path="res://game/ui/icon_catalog_data.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://game/ui/icons/gold.png" id="2_gold"]
@@ -28,10 +28,7 @@
 [ext_resource type="Texture2D" path="res://game/ui/icons/area.png" id="26_area"]
 [ext_resource type="Texture2D" path="res://game/ui/icons/enemy.png" id="27_enemy"]
 [ext_resource type="Texture2D" path="res://game/ui/icons/elevation.png" id="28_elevation"]
-[ext_resource type="Texture2D" path="res://game/ui/cards/upgrade_card_frame.png" id="29_card_frame"]
-[ext_resource type="Texture2D" path="res://game/ui/cards/tier_common.png" id="30_tier_common"]
-[ext_resource type="Texture2D" path="res://game/ui/cards/tier_uncommon.png" id="31_tier_uncommon"]
-[ext_resource type="Texture2D" path="res://game/ui/cards/tier_rare.png" id="32_tier_rare"]
+[ext_resource type="Texture2D" path="res://game/ui/icons/card_archive.png" id="29_card_archive"]
 
 [resource]
 script = ExtResource("1_script")
@@ -62,7 +59,4 @@ attack_speed = ExtResource("25_attack_speed")
 area = ExtResource("26_area")
 enemy = ExtResource("27_enemy")
 elevation = ExtResource("28_elevation")
-upgrade_card_frame = ExtResource("29_card_frame")
-tier_common = ExtResource("30_tier_common")
-tier_uncommon = ExtResource("31_tier_uncommon")
-tier_rare = ExtResource("32_tier_rare")
+card_archive = ExtResource("29_card_archive")

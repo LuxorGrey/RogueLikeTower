@@ -1,17 +1,18 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://game/ui/components/upgrade_offer_card.gd" id="1_script"]
 [ext_resource type="Theme" path="res://game/ui/themes/rogue_hud_theme.tres" id="2_theme"]
+[ext_resource type="Texture2D" path="res://game/ui/cards/upgrade_card_universal.png" id="3_texture"]
 
 [node name="UpgradeOfferCard" type="Button"]
-custom_minimum_size = Vector2(300, 290)
-size_flags_horizontal = 3
+custom_minimum_size = Vector2(245, 340)
+size_flags_horizontal = 4
 size_flags_vertical = 3
 text = ""
 theme = ExtResource("2_theme")
 script = ExtResource("1_script")
 
-[node name="TierBackground" type="TextureRect" parent="."]
+[node name="CardPanel" type="Panel" parent="."]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -19,11 +20,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-expand_mode = 1
-stretch_mode = 6
 mouse_filter = 2
 
-[node name="CardFrame" type="NinePatchRect" parent="."]
+[node name="CardSprite" type="NinePatchRect" parent="."]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -31,11 +30,12 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-patch_margin_left = 250
-patch_margin_top = 230
-patch_margin_right = 250
-patch_margin_bottom = 230
-draw_center = false
+texture = ExtResource("3_texture")
+draw_center = true
+patch_margin_left = 128
+patch_margin_top = 168
+patch_margin_right = 128
+patch_margin_bottom = 168
 mouse_filter = 2
 
 [node name="CardContent" type="VBoxContainer" parent="."]
@@ -43,27 +43,29 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 48.0
-offset_top = 40.0
-offset_right = -48.0
-offset_bottom = -40.0
+offset_left = 19.0
+offset_top = 18.0
+offset_right = -19.0
+offset_bottom = -18.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 9
+theme_override_constants/separation = 6
 mouse_filter = 2
 
 [node name="RarityLabel" type="Label" parent="CardContent"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
-theme_override_colors/font_color = Color(0.666667, 0.756863, 0.776471, 1)
-text = "RAREZA"
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.509804, 0.772549, 0.588235, 1)
+text = "TIER I · COMÚN"
 horizontal_alignment = 1
+vertical_alignment = 1
 mouse_filter = 2
 
 [node name="TowerIcon" type="TextureRect" parent="CardContent"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(78, 78)
+custom_minimum_size = Vector2(74, 74)
 layout_mode = 2
 size_flags_horizontal = 4
 expand_mode = 1
@@ -73,7 +75,7 @@ mouse_filter = 2
 [node name="TitleLabel" type="RichTextLabel" parent="CardContent"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 19
 text = "Nombre de mejora"
 fit_content = true
 scroll_active = false

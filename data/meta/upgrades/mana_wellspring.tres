@@ -24,5 +24,6 @@ id = &"mana_wellspring"
 display_name = "Sourcery"
 description = "+1 Mana/s por nivel en cada nueva run (máximo +3 Mana/s)."
 max_level = 3
+prerequisites = Array[StringName]([&"mana_reservoir"])
 cost_by_level = Array[int]([15, 30, 45])
 operations_by_level = Array[ExtResource("2_operation")]([SubResource("PermanentUpgradeOperation_1"), SubResource("PermanentUpgradeOperation_2"), SubResource("PermanentUpgradeOperation_3")])

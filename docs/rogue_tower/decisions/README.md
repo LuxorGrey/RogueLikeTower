@@ -50,14 +50,28 @@ Los ADR documentan decisiones de terreno, combate, campaña, progresión y UX en
 | [ADR-0062](ADR-0062-catalogo-de-upgrade-cards-y-permanent-upgrades.md) | Catálogo compatible de cartas temporales y mejoras permanentes | Catálogos y operaciones integrados; aceptación manual pendiente. Confirma ofertas cada tres rondas. |
 | [ADR-0063](ADR-0063-seleccion-y-retirada-de-objetos-del-terreno.md) | Selección/retirada de obstáculos y portales, redistribución de spawns y elevación visual | Código integrado; aceptación visual/interactiva pendiente. |
 | [ADR-0064](ADR-0064-reembolso-al-demoler-torres.md) | Reembolso al demoler según la curva de precio por tipo | Código integrado; revisión manual de cálculo pendiente. Sustituye el no reembolso provisional de ADR-0023. |
-| [ADR-0065](ADR-0065-panel-y-iconos-de-upgrade-cards.md) | Panel reutilizable, fondos de tier e iconos de cada operación | Código y PNG integrados; revisión visual pendiente. |
+| [ADR-0065](ADR-0065-panel-y-iconos-de-upgrade-cards.md) | Panel reutilizable, fondos de tier e iconos de cada operación | La presentación por fondos/marcos fue sustituida por ADR-0075; se conservan los iconos. |
 | [ADR-0066](ADR-0066-cofres-al-colocar-y-sombras-de-elevacion.md) | Tirada de cofres al colocar y sombras rotatorias de altura | Tirada de cofres vigente; las sombras fueron retiradas por ADR-0070. |
 | [ADR-0067](ADR-0067-hacks-de-progresion-y-run-limpia.md) | Salto a cards, tienda desde hacks y reinicio limpio de mejoras | Código integrado; ADR-0069 actualiza el reinicio para volver al arsenal inicial. |
 | [ADR-0068](ADR-0068-sombras-recortadas-por-elevacion.md) | Sombras de losetas recortadas a receptores de menor altura | Sustituido; overlay y shader eliminados por ADR-0070. |
 | [ADR-0069](ADR-0069-desbloqueos-xp-y-feedback-de-altura.md) | Arsenal inicial, XP de perfil y lectura de altura | Código integrado; aceptación visual/interactiva pendiente. |
 | [ADR-0070](ADR-0070-sin-sombras-y-rutas-limpias-en-expansion.md) | Retirada de sombras generadas y preview PATH limpio | Código integrado; aceptación visual pendiente. |
-| [ADR-0071](ADR-0071-marco-de-cards-y-colocacion-automatica.md) | Marco perimetral de mejoras, miniaturas de terreno limpias y colocación automática | Código integrado; los controles de terreno se actualizaron en ADR-0072. |
+| [ADR-0071](ADR-0071-marco-de-cards-y-colocacion-automatica.md) | Marco perimetral de mejoras, miniaturas de terreno limpias y colocación automática | La parte del marco quedó sustituida por ADR-0075; miniaturas/auto-colocación vigentes. |
 | [ADR-0072](ADR-0072-controles-y-tooltip-de-celdas.md) | Rotación Q/E y con rueda, auto-colocación T y tooltip compacto de terreno | Código integrado; aceptación visual/interactiva pendiente. |
+| [ADR-0073](ADR-0073-elevaciones-y-bonus-de-torre.md) | Elevaciones 0–3 aleatorias y bonus de altura para torres | Código integrado; aceptación visual pendiente. Amplía ADR-0063/0069. |
+| [ADR-0074](ADR-0074-vida-de-base-y-derrota-por-jefe.md) | Main Tower 10 HP, Fortification I–X y derrota por boss | Datos/código integrados; aceptación manual pendiente. |
+| [ADR-0075](ADR-0075-panel-unico-y-aura-de-rareza.md) | Un solo panel de upgrade card y aura por rareza | Código integrado; aceptación visual pendiente. Sustituye parcialmente ADR-0065/0071. |
+| [ADR-0076](ADR-0076-economia-inicial-roster-de-run-y-flujo-de-escenas.md) | Gold inicial, reclutamiento de torres y flujo de run | Código integrado; aceptación interactiva pendiente. Actualiza ADR-0022/0069. |
+| [ADR-0077](ADR-0077-mapa-de-mejoras-permanentes-con-nodos.md) | Tienda permanente como mapa de nodos conectados | Código integrado; aceptación visual pendiente. |
+| [ADR-0078](ADR-0078-ventana-zoom-del-timeline-de-rondas.md) | Timeline móvil ampliado de 10/15 rondas | Sustituido en el tamaño de ventana por ADR-0083; conserva el historial de hover/fade. |
+| [ADR-0079](ADR-0079-limites-de-obstaculos-y-cierre-visual-del-terreno.md) | Límites de obstáculos y cierre visual del terreno elevado | Código integrado; aceptación visual pendiente. |
+| [ADR-0080](ADR-0080-sprite-vertical-y-tier-de-upgrade-cards.md) | Sprite vertical compartido y tier visible en upgrade cards | Código integrado; aceptación visual pendiente. Amplía ADR-0075. |
+| [ADR-0081](ADR-0081-mejoras-de-torre-en-ramas-paralelas.md) | Mejoras de torre H/A/S disponibles en paralelo | Catálogo y mapa integrados; aceptación interactiva pendiente. Amplía ADR-0077. |
+| [ADR-0082](ADR-0082-tinte-multiplicativo-por-elevacion.md) | Tinte multiplicativo tenue por altura de las tapas | Renderer integrado; aceptación visual pendiente. |
+| [ADR-0083](ADR-0083-timeline-fijo-de-quince-rondas-y-preview-fiel.md) | Timeline fijo de 15 rondas y preview fiel de terreno | Código integrado; aceptación visual pendiente. Amplía ADR-0079 y sustituye el tamaño configurable de ADR-0078. |
+| [ADR-0084](ADR-0084-render-axial-de-terreno-y-profundidad-por-celda.md) | Retícula de vértices compartidos y orden de fachadas por celda | Retícula y orden vigentes; cierres y cálculo visual de pared sustituidos parcialmente por ADR-0085. |
+| [ADR-0085](ADR-0085-solo-fachadas-delanteras-y-degradado-de-cliffs.md) | Solo las dos fachadas delanteras; sin grosor lateral y con degradado inferior | Aspecto aprobado por el usuario; verificación de matriz completa pendiente. Limita el render de fachadas y sustituye los cierres de vértice de ADR-0084. |
+| [ADR-0086](ADR-0086-oferta-de-cards-y-cierre-de-derrota.md) | Oferta de mejora independiente de ranuras UI y teardown seguro al perder | Corrección y regresión integradas; smokes de Godot pendientes. |
 
 ## Regla para nuevos ADR
 

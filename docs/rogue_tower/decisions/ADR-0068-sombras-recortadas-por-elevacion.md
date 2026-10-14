@@ -6,7 +6,7 @@
 
 ## Contexto
 
-La primera sombra de M27 estampaba la silueta de cada loseta encima de la propia casilla. Eso oscurecía terreno de la misma altura y creaba marcas sin relación con los desniveles. La cámara es 2D top-down con elevación isométrica simulada y niveles lógicos 0–2.
+La primera sombra de M27 estampaba la silueta de cada loseta encima de la propia casilla. Eso oscurecía terreno de la misma altura y creaba marcas sin relación con los desniveles. En este momento histórico el rango lógico era 0–2; ADR-0073 lo amplió a 0–3. La cámara sigue siendo 2D top-down con elevación isométrica simulada.
 
 ## Decisiones
 

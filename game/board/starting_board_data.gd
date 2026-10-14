@@ -34,12 +34,8 @@ func validate() -> PackedStringArray:
 		cells_by_coord[cell.local_coord] = cell
 		if cell.terrain_type < HexCell.TerrainType.PATH or cell.terrain_type > HexCell.TerrainType.MOUNTAIN:
 			errors.append("La celda %s tiene un terreno desconocido." % cell.local_coord)
-		if cell.elevation < 0 or cell.elevation > 2:
-			errors.append("La elevación de %s debe estar entre 0 y 2." % cell.local_coord)
-		if cell.terrain_type == HexCell.TerrainType.PATH and cell.elevation != 0:
-			errors.append("PATH debe tener elevación 0 (%s)." % cell.local_coord)
-		if cell.terrain_type == HexCell.TerrainType.MOUNTAIN and cell.elevation != 2:
-			errors.append("MOUNTAIN debe tener elevación 2 (%s)." % cell.local_coord)
+		if not HexCell.is_valid_terrain_elevation(cell.terrain_type, cell.elevation):
+			errors.append("La elevación de %s no corresponde a su terreno (PATH 0, GRASS 1–2, MOUNTAIN 2–3)." % cell.local_coord)
 		if cell.path_edges < 0 or cell.path_edges > 63:
 			errors.append("Las conexiones PATH de %s exceden los seis bits disponibles." % cell.local_coord)
 		if cell.terrain_type != HexCell.TerrainType.PATH and cell.path_edges != 0:
@@ -55,8 +51,6 @@ func validate() -> PackedStringArray:
 			var neighbor_cell: TerrainPieceCellData = cells_by_coord.get(neighbor_coord) as TerrainPieceCellData
 			if neighbor_cell == null:
 				errors.append("Falta el hexágono %s alrededor de la base." % neighbor_coord)
-			elif neighbor_cell.elevation != 0:
-				errors.append("El anillo inmediato de la base debe tener elevación 0 (%s)." % neighbor_coord)
 	if not cells_by_coord.is_empty() and not _is_connected(cells_by_coord):
 		errors.append("Las celdas del tablero inicial deben formar una sola región conectada.")
 	return errors

@@ -2,11 +2,33 @@ class_name HexMath
 extends RefCounted
 
 const SQRT_3: float = 1.7320508075688772
+const TERRAIN_ELEVATION_PIXEL_OFFSET: float = 28.0
+const POINTY_CORNER_LATTICE_OFFSETS: Array[Vector2i] = [
+	Vector2i(0, -2),
+	Vector2i(1, -1),
+	Vector2i(1, 1),
+	Vector2i(0, 2),
+	Vector2i(-1, 1),
+	Vector2i(-1, -1),
+]
 
 static func axial_to_world(coord: HexCoord, hex_radius: float) -> Vector2:
 	return Vector2(
 		SQRT_3 * hex_radius * (float(coord.q) + float(coord.r) * 0.5),
 		1.5 * hex_radius * float(coord.r)
+	)
+
+static func axial_hex_vertex_key(coord: HexCoord, corner_index: int) -> Vector2i:
+	var corner_offset: Vector2i = POINTY_CORNER_LATTICE_OFFSETS[
+		posmod(corner_index, POINTY_CORNER_LATTICE_OFFSETS.size())
+	]
+	return Vector2i(2 * coord.q + coord.r + corner_offset.x, 3 * coord.r + corner_offset.y)
+
+static func axial_hex_corner(coord: HexCoord, corner_index: int, hex_radius: float) -> Vector2:
+	var vertex_key: Vector2i = axial_hex_vertex_key(coord, corner_index)
+	return Vector2(
+		float(vertex_key.x) * SQRT_3 * hex_radius * 0.5,
+		float(vertex_key.y) * hex_radius * 0.5
 	)
 
 static func world_to_axial(position: Vector2, hex_radius: float) -> HexCoord:

@@ -8,14 +8,10 @@ const PATH_FLOW_OVERLAY_SCRIPT: Script = preload("res://game/board/path_flow_ove
 const TERRAIN_HOVER_OVERLAY_SCRIPT: Script = preload("res://game/board/terrain_hover_overlay.gd")
 const TOWER_BUILD_GHOST_SCRIPT: Script = preload("res://game/board/tower_build_ghost.gd")
 const SPAWN_PORTAL_SCENE: PackedScene = preload("res://game/board/spawn_portal.tscn")
-const MOUNTAIN_CLIFF_TEXTURE: Texture2D = preload("res://assets/terrain/tiles/mountain_cliff_face.png")
-const GRASS_CLIFF_TEXTURE: Texture2D = preload("res://assets/terrain/tiles/grass_cliff_face.png")
-
 signal hover_changed(local_coord: Vector2i, terrain_type: int, elevation: int)
 signal hover_cleared
 
 const HEX_RADIUS: float = 52.0
-const ELEVATION_PIXEL_OFFSET: float = 28.0
 const WORLD_ART_OFFSET_Y: float = 6.0
 const HEX_OUTLINE: Color = Color(0.82, 0.87, 0.84)
 const PATH_COLOR: Color = Color(0.35, 0.40, 0.43)
@@ -24,7 +20,6 @@ const MOUNTAIN_COLOR: Color = Color(0.63, 0.58, 0.48)
 const PATH_HOVER_COLOR: Color = Color(0.51, 0.75, 0.90)
 const GRASS_HOVER_COLOR: Color = Color(0.50, 0.88, 0.52)
 const MOUNTAIN_HOVER_COLOR: Color = Color(0.96, 0.76, 0.36)
-const CLIFF_MIN_SCREEN_DEPTH: float = 6.0
 const CLIFF_TEXTURE_PIXEL_DENSITY: float = 20.0
 const ROUTE_DEBUG_COLORS: Array[Color] = [
 	Color(0.25, 0.78, 1.0, 0.92),
@@ -60,7 +55,7 @@ var _combo_redraw_timer: float = 0.0
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	texture_repeat = CanvasItem.TEXTURE_REPEAT_DISABLED
+	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	_tower_build_ghost = TOWER_BUILD_GHOST_SCRIPT.new() as Node2D
 	_tower_build_ghost.name = "TowerBuildGhost"
 	add_child(_tower_build_ghost)
@@ -132,7 +127,8 @@ func set_tower_build_preview(
 	is_valid: bool = false,
 	range_pixels: float = 0.0,
 	icon_texture: Texture2D = null,
-	icon_size: float = 54.0
+	icon_size: float = 54.0,
+	elevation_damage_bonus_per_level: float = 1.0
 ) -> void:
 	if _tower_build_ghost != null:
 		_tower_build_ghost.call(
@@ -143,7 +139,8 @@ func set_tower_build_preview(
 			range_pixels,
 			icon_texture,
 			icon_size,
-			_board_cells
+			_board_cells,
+			elevation_damage_bonus_per_level
 		)
 
 func set_placement_preview(
@@ -188,12 +185,10 @@ func _draw() -> void:
 		return
 
 	var cells: Array[TerrainPieceCellData] = _active_display_cells()
-	var cells_by_coord: Dictionary[Vector2i, TerrainPieceCellData] = {}
+	cells.sort_custom(Callable(self, "_sort_cells_back_to_front"))
+	var cliff_geometry: Dictionary = _build_cliff_geometry(cells)
 	for cell in cells:
-		cells_by_coord[cell.local_coord] = cell
-
-	_draw_cliffs(cells, cells_by_coord)
-	for cell in cells:
+		_draw_cell_cliff_faces(cell.local_coord, cliff_geometry)
 		var is_ghost: bool = _ghost_coords.has(cell.local_coord)
 		_draw_cell_top(cell, is_ghost)
 		if is_ghost:
@@ -222,51 +217,37 @@ func _draw_path_debug_overlay() -> void:
 		draw_circle(base_center, 12.0, Color(0.04, 0.05, 0.06, 0.92))
 		draw_circle(base_center, 8.0, Color(1.0, 0.85, 0.28, 1.0))
 
-func _draw_cliffs(
-	cells: Array[TerrainPieceCellData],
-	cells_by_coord: Dictionary[Vector2i, TerrainPieceCellData]
-) -> void:
-	var corner_fills: Dictionary = {}
+func _build_cliff_geometry(
+	cells: Array[TerrainPieceCellData]
+) -> Dictionary:
+	var faces_by_coord: Dictionary[Vector2i, Array] = {}
 	for cell in cells:
-		for direction_index in range(HexCoord.DIRECTION_OFFSETS.size()):
-			# Las aristas traseras (noroeste/noreste) quedan debajo del terreno.
-			# Solo se dibujan las fachadas visibles desde el frente y los laterales.
-			if direction_index >= 4:
-				continue
-			var neighbor_coord: Vector2i = cell.local_coord + HexCoord.DIRECTION_OFFSETS[direction_index]
-			var neighbor_cell: TerrainPieceCellData = cells_by_coord.get(neighbor_coord) as TerrainPieceCellData
-			var neighbor_elevation: int = 0
-			if neighbor_cell != null:
-				neighbor_elevation = neighbor_cell.elevation
-			if cell.elevation <= neighbor_elevation:
-				continue
-
-			var high_center := _top_center(cell.local_coord, cell.elevation)
-			var high_corners := _hex_corners(high_center)
+		var cell_faces: Array[Dictionary] = []
+		if cell.elevation <= 0:
+			continue
+		# Con pointy-top, las direcciones axiales 1 y 2 son las dos caras
+		# delanteras. Las cuatro caras traseras/laterales no generan geometría.
+		for direction_index in [1, 2]:
 			var edge_start: int = posmod(direction_index + 1, 6)
 			var edge_end: int = posmod(direction_index + 2, 6)
-			var face_offset := Vector2(
+			var vertical_offset := Vector2(
 				0.0,
-				float(cell.elevation - neighbor_elevation) * ELEVATION_PIXEL_OFFSET
+				float(cell.elevation) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET
 			)
-			var upper_start: Vector2 = high_corners[edge_start]
-			var upper_end: Vector2 = high_corners[edge_end]
+			var high_center: Vector2 = _top_center(cell.local_coord, cell.elevation)
+			var upper_start: Vector2 = _cell_corner(cell.local_coord, edge_start, cell.elevation)
+			var upper_end: Vector2 = _cell_corner(cell.local_coord, edge_end, cell.elevation)
 			var cliff_edge: Vector2 = upper_end - upper_start
-			if absf(cliff_edge.cross(face_offset)) < 0.01:
-				var edge_midpoint: Vector2 = (upper_start + upper_end) * 0.5
-				face_offset += (edge_midpoint - high_center).normalized() * CLIFF_MIN_SCREEN_DEPTH
-			var lower_start: Vector2 = upper_start + face_offset
-			var lower_end: Vector2 = upper_end + face_offset
-			# Un quad por fachada mantiene su topología cerrada; el UV toma solo
-			# la región necesaria para conservar la escala del arte en este desnivel.
+			var lower_start: Vector2 = upper_start + vertical_offset
+			var lower_end: Vector2 = upper_end + vertical_offset
+			# Cada fachada es un quad vertical derivado de la arista original:
+			# no se expande hacia los lados ni crea cierres o vértices adicionales.
 			var cliff_quad := PackedVector2Array([upper_start, upper_end, lower_end, lower_start])
-			var cliff_texture: Texture2D = MOUNTAIN_CLIFF_TEXTURE
-			if cell.terrain_type == HexCell.TerrainType.GRASS:
-				cliff_texture = GRASS_CLIFF_TEXTURE
+			var cliff_texture: Texture2D = TERRAIN_VISUAL_CATALOG_SCRIPT.get_cliff_texture(cell.terrain_type)
 			var texture_size: Vector2i = cliff_texture.get_size()
 			var uv_span := Vector2(
 				cliff_edge.length() * CLIFF_TEXTURE_PIXEL_DENSITY / float(texture_size.x),
-				face_offset.length() * CLIFF_TEXTURE_PIXEL_DENSITY / float(texture_size.y)
+				vertical_offset.length() * CLIFF_TEXTURE_PIXEL_DENSITY / float(texture_size.y)
 			)
 			var max_u_start: float = maxf(1.0 - uv_span.x, 0.0)
 			var uv_seed: float = (
@@ -279,58 +260,31 @@ func _draw_cliffs(
 				Vector2(uv_left + uv_span.x, uv_span.y),
 				Vector2(uv_left, uv_span.y),
 			])
-			draw_colored_polygon(cliff_quad, Color.WHITE, cliff_uvs, cliff_texture)
-			_register_cliff_corner(corner_fills, upper_start, lower_start, cell.terrain_type)
-			_register_cliff_corner(corner_fills, upper_end, lower_end, cell.terrain_type)
-	_draw_cliff_corner_caps(corner_fills)
+			cell_faces.append({
+				"points": cliff_quad,
+				"uvs": cliff_uvs,
+				"colors": TERRAIN_VISUAL_CATALOG_SCRIPT.get_cliff_face_colors(cell.terrain_type),
+				"texture": cliff_texture,
+			})
+		if not cell_faces.is_empty():
+			faces_by_coord[cell.local_coord] = cell_faces
+	return {
+		"faces_by_coord": faces_by_coord,
+	}
 
-func _register_cliff_corner(
-	corner_fills: Dictionary,
-	upper_point: Vector2,
-	lower_point: Vector2,
-	terrain_type: int
-) -> void:
-	var key := Vector2i(roundi(upper_point.x * 10.0), roundi(upper_point.y * 10.0))
-	var entry: Dictionary = corner_fills.get(key, {})
-	var lower_points: Array = entry.get("lower_points", [])
-	for existing_variant in lower_points:
-		var existing_point: Vector2 = existing_variant
-		if existing_point.distance_to(lower_point) <= 0.25:
-			return
-	lower_points.append(lower_point)
-	entry["upper_point"] = upper_point
-	entry["lower_points"] = lower_points
-	entry["terrain_type"] = terrain_type
-	corner_fills[key] = entry
-
-func _draw_cliff_corner_caps(corner_fills: Dictionary) -> void:
-	for entry_variant in corner_fills.values():
-		var entry: Dictionary = entry_variant
-		var lower_points: Array = entry.get("lower_points", [])
-		if lower_points.size() < 2:
-			continue
-		var upper_point: Vector2 = entry["upper_point"]
-		var sorted_lower_points: Array[Vector2] = []
-		for lower_variant in lower_points:
-			sorted_lower_points.append(lower_variant)
-		sorted_lower_points.sort_custom(func(a: Vector2, b: Vector2) -> bool:
-			return (a - upper_point).angle() < (b - upper_point).angle()
+func _draw_cell_cliff_faces(coord: Vector2i, geometry: Dictionary) -> void:
+	var faces_by_coord: Dictionary = geometry.get("faces_by_coord", {})
+	for face_variant in faces_by_coord.get(coord, []):
+		var face: Dictionary = face_variant
+		draw_polygon(
+			face["points"],
+			face["colors"],
+			face["uvs"],
+			face["texture"]
 		)
-		var seam_color: Color = _cliff_seam_color(int(entry.get("terrain_type", HexCell.TerrainType.GRASS)))
-		var cap := PackedVector2Array([upper_point])
-		cap.append_array(sorted_lower_points)
-		# Draw the complete corner wedge in one polygon. The old per-triangle
-		# area cutoff discarded thin but visible wedges and left dark pinholes.
-		draw_colored_polygon(cap, seam_color)
-
-func _cliff_seam_color(terrain_type: int) -> Color:
-	if terrain_type == HexCell.TerrainType.MOUNTAIN:
-		return Color("#777383")
-	return Color("#a86f3e")
-
 func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 	var center := _top_center(cell.local_coord, cell.elevation)
-	var corners := _hex_corners(center)
+	var corners := _cell_corners(cell.local_coord, cell.elevation)
 	var closed_corners := corners.duplicate()
 	closed_corners.append(corners[0])
 	var is_hovered := _is_hovered(cell)
@@ -353,18 +307,17 @@ func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 		outline_color = placement_tint.lightened(0.10) if is_ghost else fill_color.lightened(0.18)
 		outline_width = 4.5 if is_ghost else 3.5
 	draw_colored_polygon(corners, fill_color)
-	var tile_size := Vector2(HEX_RADIUS * sqrt(3.0), HEX_RADIUS * 2.0)
-	var tile_rect := Rect2(center - tile_size * 0.5, tile_size)
-	var tile_tint: Color = Color(1.0, 1.0, 1.0, 0.86 if is_ghost else 1.0)
-	draw_texture_rect(
+	var tile_tint: Color = TERRAIN_VISUAL_CATALOG_SCRIPT.get_elevation_tint(cell.elevation)
+	tile_tint.a = 0.86 if is_ghost else 1.0
+	draw_colored_polygon(
+		corners,
+		tile_tint,
+		_hex_texture_uvs(),
 		TERRAIN_VISUAL_CATALOG_SCRIPT.get_terrain_texture(
 			cell.terrain_type,
 			cell.visual_variant,
 			cell.local_coord
-		),
-		tile_rect,
-		false,
-		tile_tint
+		)
 	)
 	if is_ghost or is_hovered:
 		var interaction_overlay: Color = placement_tint if is_ghost else _terrain_hover_color(cell.terrain_type)
@@ -446,22 +399,30 @@ func _sync_elevation_surface_occluders() -> void:
 	if _decoration_parent == null or not is_instance_valid(_decoration_parent):
 		return
 	var active_coords: Dictionary[Vector2i, bool] = {}
+	var elevated_coords: Array[Vector2i] = []
 	for coord in _board_cells:
 		var cell: HexCell = _board_cells[coord]
 		if cell == null or cell.elevation <= 0:
 			continue
 		active_coords[coord] = true
+		elevated_coords.append(coord)
+	elevated_coords.sort_custom(Callable(self, "_sort_surface_coords_back_to_front"))
+	for coord in elevated_coords:
+		var cell: HexCell = _board_cells[coord]
 		var surface: Node2D = _terrain_surface_occluders_by_coord.get(coord) as Node2D
 		if surface == null or not is_instance_valid(surface):
 			surface = TERRAIN_SURFACE_OCCLUDER_SCRIPT.new() as Node2D
 			surface.name = "TerrainSurface_%d_%d" % [coord.x, coord.y]
 			_decoration_parent.add_child(surface)
-			# Keep the cover before actors and props when Y positions tie, so an
-			# entity standing on this exact tile remains visible above its surface.
-			_decoration_parent.move_child(surface, 0)
 			_terrain_surface_occluders_by_coord[coord] = surface
 		surface.global_position = global_position + _top_center(coord, cell.elevation)
-		surface.call("configure_surface", cell.terrain_type, cell.visual_variant, coord)
+		surface.call("configure_surface", cell.terrain_type, cell.visual_variant, coord, cell.elevation)
+	# Mantiene las tapas elevadas antes de actores y props. El orden estable
+	# del grupo resuelve empates de Y-sort por profundidad y coordenada axial.
+	for surface_index in range(elevated_coords.size()):
+		var surface: Node2D = _terrain_surface_occluders_by_coord[elevated_coords[surface_index]]
+		if is_instance_valid(surface):
+			_decoration_parent.move_child(surface, surface_index)
 	for coord in _terrain_surface_occluders_by_coord.keys():
 		if active_coords.has(coord):
 			continue
@@ -469,6 +430,23 @@ func _sync_elevation_surface_occluders() -> void:
 		if is_instance_valid(removed_surface):
 			removed_surface.queue_free()
 		_terrain_surface_occluders_by_coord.erase(coord)
+
+func _sort_surface_coords_back_to_front(a: Vector2i, b: Vector2i) -> bool:
+	var a_cell: HexCell = _board_cells[a] as HexCell
+	var b_cell: HexCell = _board_cells[b] as HexCell
+	var a_top: Vector2 = _top_center(a, a_cell.elevation)
+	var b_top: Vector2 = _top_center(b, b_cell.elevation)
+	if not is_equal_approx(a_top.y, b_top.y):
+		return a_top.y < b_top.y
+	var a_ground: Vector2 = HexMath.axial_to_world(HexCoord.new(a.x, a.y), HEX_RADIUS)
+	var b_ground: Vector2 = HexMath.axial_to_world(HexCoord.new(b.x, b.y), HEX_RADIUS)
+	if not is_equal_approx(a_ground.y, b_ground.y):
+		return a_ground.y < b_ground.y
+	if not is_equal_approx(a_top.x, b_top.x):
+		return a_top.x < b_top.x
+	if a.x != b.x:
+		return a.x < b.x
+	return a.y < b.y
 
 func _sync_spawn_portals() -> void:
 	if _decoration_parent == null or not is_instance_valid(_decoration_parent):
@@ -552,6 +530,9 @@ func _sync_path_flow_overlay() -> void:
 	_path_flow_overlay.call("set_path_graphs", _path_graph, preview_graph)
 
 func _refresh_hovered_cell() -> void:
+	if not is_inside_tree() or get_viewport() == null:
+		_hovered_cell = null
+		return
 	var next_hovered_cell := _find_hovered_cell(get_local_mouse_position())
 	if next_hovered_cell == null:
 		if _hovered_cell != null:
@@ -600,7 +581,7 @@ func _find_hovered_cell(mouse_position: Vector2) -> TerrainPieceCellData:
 	var cells := _active_display_cells()
 	for cell_index in range(cells.size() - 1, -1, -1):
 		var cell: TerrainPieceCellData = cells[cell_index]
-		var top_face := _hex_corners(_top_center(cell.local_coord, cell.elevation))
+		var top_face := _cell_corners(cell.local_coord, cell.elevation)
 		if Geometry2D.is_point_in_polygon(mouse_position, top_face):
 			return cell
 	return null
@@ -720,8 +701,10 @@ func _is_hovered(cell: TerrainPieceCellData) -> bool:
 	)
 
 func _sort_cells_back_to_front(a: TerrainPieceCellData, b: TerrainPieceCellData) -> bool:
-	var a_base := _top_center(a.local_coord, a.elevation)
-	var b_base := _top_center(b.local_coord, b.elevation)
+	# La elevación desplaza la imagen, pero no cambia qué celda del grid queda
+	# delante. El orden de dibujo sigue los anclajes proyectados de suelo.
+	var a_base := HexMath.axial_to_world(HexCoord.new(a.local_coord.x, a.local_coord.y), HEX_RADIUS)
+	var b_base := HexMath.axial_to_world(HexCoord.new(b.local_coord.x, b.local_coord.y), HEX_RADIUS)
 	if not is_equal_approx(a_base.y, b_base.y):
 		return a_base.y < b_base.y
 	return a_base.x < b_base.x
@@ -729,7 +712,7 @@ func _sort_cells_back_to_front(a: TerrainPieceCellData, b: TerrainPieceCellData)
 func _top_center(coord: Vector2i, elevation: int) -> Vector2:
 	var hex_coord := HexCoord.new(coord.x, coord.y)
 	var ground_position := HexMath.axial_to_world(hex_coord, HEX_RADIUS)
-	return ground_position + Vector2(0.0, -float(elevation) * ELEVATION_PIXEL_OFFSET)
+	return ground_position + Vector2(0.0, -float(elevation) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET)
 
 func _terrain_color(terrain_type: int) -> Color:
 	match terrain_type:
@@ -762,9 +745,25 @@ func _combo_color(terrain_type: int) -> Color:
 		_:
 			return Color.WHITE
 
-func _hex_corners(center: Vector2) -> PackedVector2Array:
+func _cell_corner(coord: Vector2i, corner_index: int, elevation: int) -> Vector2:
+	var axial_coord := HexCoord.new(coord.x, coord.y)
+	return HexMath.axial_hex_corner(axial_coord, corner_index, HEX_RADIUS) - Vector2(
+		0.0,
+		float(elevation) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET
+	)
+
+func _cell_corners(coord: Vector2i, elevation: int) -> PackedVector2Array:
 	var corners := PackedVector2Array()
 	for corner_index in range(6):
-		var angle_radians: float = deg_to_rad(-90.0 + 60.0 * float(corner_index))
-		corners.append(center + Vector2(cos(angle_radians), sin(angle_radians)) * HEX_RADIUS)
+		corners.append(_cell_corner(coord, corner_index, elevation))
 	return corners
+
+func _hex_texture_uvs() -> PackedVector2Array:
+	return PackedVector2Array([
+		Vector2(0.5, 0.0),
+		Vector2(1.0, 0.25),
+		Vector2(1.0, 0.75),
+		Vector2(0.5, 1.0),
+		Vector2(0.0, 0.75),
+		Vector2(0.0, 0.25),
+	])

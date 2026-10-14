@@ -16,6 +16,10 @@ const MOUNTAIN_VARIANTS: Array[Texture2D] = [
 	preload("res://assets/terrain/tiles/mountain_02.png"),
 	preload("res://assets/terrain/tiles/mountain_03.png"),
 ]
+const GRASS_CLIFF_TEXTURE: Texture2D = preload("res://assets/terrain/tiles/grass_cliff_face.png")
+const MOUNTAIN_CLIFF_TEXTURE: Texture2D = preload("res://assets/terrain/tiles/mountain_cliff_face.png")
+const GRASS_CLIFF_BOTTOM_TINT: Color = Color("#263b2b")
+const MOUNTAIN_CLIFF_BOTTOM_TINT: Color = Color("#24242a")
 const OBSTACLE_TEXTURES: Array[Texture2D] = [
 	preload("res://assets/terrain/obstacles/rock.png"),
 	preload("res://assets/terrain/obstacles/crystal_shard.png"),
@@ -55,10 +59,28 @@ static func get_obstacle_texture(obstacle_type: int) -> Texture2D:
 		return null
 	return OBSTACLE_TEXTURES[obstacle_type]
 
+static func get_cliff_texture(terrain_type: int) -> Texture2D:
+	if terrain_type == HexCell.TerrainType.GRASS:
+		return GRASS_CLIFF_TEXTURE
+	return MOUNTAIN_CLIFF_TEXTURE
+
+static func get_cliff_bottom_tint(terrain_type: int) -> Color:
+	if terrain_type == HexCell.TerrainType.GRASS:
+		return GRASS_CLIFF_BOTTOM_TINT
+	return MOUNTAIN_CLIFF_BOTTOM_TINT
+
+static func get_cliff_face_colors(terrain_type: int) -> PackedColorArray:
+	var bottom_tint: Color = get_cliff_bottom_tint(terrain_type)
+	return PackedColorArray([Color.WHITE, Color.WHITE, bottom_tint, bottom_tint])
+
 static func get_obstacle_display_name(obstacle_type: int) -> String:
 	if obstacle_type < 0 or obstacle_type >= OBSTACLE_DISPLAY_NAMES.size():
 		return "Obstáculo"
 	return OBSTACLE_DISPLAY_NAMES[obstacle_type]
+
+static func get_elevation_tint(elevation: int) -> Color:
+	var height_level: int = clampi(elevation, 0, 3)
+	return Color(1.0 - 0.01 * float(height_level), 1.0 - 0.005 * float(height_level), 1.0)
 
 static func create_piece_offer(
 	piece: TerrainPieceData,
@@ -91,6 +113,9 @@ static func create_piece_offer(
 			]
 			var obstacle_rng := RandomNumberGenerator.new()
 			obstacle_rng.seed = hash(offer_key + ":obstacle")
+			var elevation_rng := RandomNumberGenerator.new()
+			elevation_rng.seed = hash(offer_key + ":elevation")
+			offer_cell.elevation = _roll_elevation(offer_cell.terrain_type, elevation_rng)
 			var obstacle_chance: float = (
 				GRASS_OBSTACLE_CHANCE
 				if offer_cell.terrain_type == HexCell.TerrainType.GRASS
@@ -99,7 +124,65 @@ static func create_piece_offer(
 			if obstacle_rng.randf() < obstacle_chance:
 				offer_cell.obstacle_type = obstacle_rng.randi_range(0, OBSTACLE_COUNT - 1)
 		offer.cells.append(offer_cell)
+	limit_piece_obstacles(offer.cells, 2)
 	return offer
+
+static func limit_piece_obstacles(cells: Array[TerrainPieceCellData], maximum: int = 2) -> void:
+	var obstacle_cells: Array[TerrainPieceCellData] = []
+	for cell in cells:
+		if cell != null and cell.obstacle_type != HexCell.ObstacleType.NONE:
+			obstacle_cells.append(cell)
+	obstacle_cells.sort_custom(func(a: TerrainPieceCellData, b: TerrainPieceCellData) -> bool:
+		if a.local_coord.x != b.local_coord.x:
+			return a.local_coord.x < b.local_coord.x
+		return a.local_coord.y < b.local_coord.y
+	)
+	for index in range(maximum, obstacle_cells.size()):
+		obstacle_cells[index].obstacle_type = HexCell.ObstacleType.NONE
+		obstacle_cells[index].chest_available = false
+
+static func enforce_starting_board_obstacles(
+	cells: Dictionary[Vector2i, HexCell],
+	base_coord: Vector2i
+) -> void:
+	var obstacles: Array[HexCell] = []
+	for coord in cells:
+		var cell: HexCell = cells[coord]
+		if cell == null or cell.obstacle_type == HexCell.ObstacleType.NONE:
+			continue
+		var protected: bool = coord == base_coord
+		for offset in HexCoord.DIRECTION_OFFSETS:
+			if coord == base_coord + offset:
+				protected = true
+				break
+		if protected:
+			cell.obstacle_type = HexCell.ObstacleType.NONE
+			cell.chest_available = false
+		else:
+			obstacles.append(cell)
+	obstacles.sort_custom(func(a: HexCell, b: HexCell) -> bool:
+		if a.coord.q != b.coord.q:
+			return a.coord.q < b.coord.q
+		return a.coord.r < b.coord.r
+	)
+	for index in range(1, obstacles.size()):
+		obstacles[index].obstacle_type = HexCell.ObstacleType.NONE
+		obstacles[index].chest_available = false
+
+static func limit_hex_cell_obstacles(cells: Dictionary[Vector2i, HexCell], maximum: int = 2) -> void:
+	var obstacle_cells: Array[HexCell] = []
+	for coord in cells:
+		var cell: HexCell = cells[coord]
+		if cell != null and cell.obstacle_type != HexCell.ObstacleType.NONE:
+			obstacle_cells.append(cell)
+	obstacle_cells.sort_custom(func(a: HexCell, b: HexCell) -> bool:
+		if a.coord.q != b.coord.q:
+			return a.coord.q < b.coord.q
+		return a.coord.r < b.coord.r
+	)
+	for index in range(maximum, obstacle_cells.size()):
+		obstacle_cells[index].obstacle_type = HexCell.ObstacleType.NONE
+		obstacle_cells[index].chest_available = false
 
 static func roll_chest_at_placement(cell: HexCell, run_seed: int, chest_chance: float) -> void:
 	if cell == null:
@@ -117,6 +200,7 @@ static func roll_chest_at_placement(cell: HexCell, run_seed: int, chest_chance: 
 static func set_random_cell_contents(cell: HexCell, run_seed: int, chest_chance: float) -> void:
 	if cell == null:
 		return
+	cell.elevation = get_random_elevation(cell.terrain_type, run_seed, cell.coord.to_key())
 	set_random_visual_variant(cell, run_seed)
 	cell.obstacle_type = HexCell.ObstacleType.NONE
 	cell.chest_available = false
@@ -144,6 +228,25 @@ static func set_random_visual_variant(cell: HexCell, run_seed: int) -> void:
 	var visual_rng := _rng_for(run_seed, coord, 17)
 	var terrain_prefix: String = _terrain_prefix(cell.terrain_type)
 	cell.visual_variant = StringName("%s_%d" % [terrain_prefix, visual_rng.randi_range(0, TERRAIN_VARIANT_COUNT - 1)])
+
+static func get_random_elevation(
+	terrain_type: int,
+	run_seed: int,
+	coord: Vector2i,
+	salt: int = 59
+) -> int:
+	if terrain_type == HexCell.TerrainType.PATH:
+		return 0
+	var elevation_rng := _rng_for(run_seed, coord, salt)
+	return _roll_elevation(terrain_type, elevation_rng)
+
+static func _roll_elevation(terrain_type: int, rng: RandomNumberGenerator) -> int:
+	match terrain_type:
+		HexCell.TerrainType.GRASS:
+			return rng.randi_range(1, 2)
+		HexCell.TerrainType.MOUNTAIN:
+			return rng.randi_range(2, 3)
+	return 0
 
 static func _variant_index(prefix: String, visual_variant: StringName, coord: Vector2i, terrain_type: int) -> int:
 	var name: String = String(visual_variant)

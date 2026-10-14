@@ -3,7 +3,6 @@ extends Node2D
 const HEX_RADIUS: float = 52.0
 const CAMPAIGN_ROUND_COUNT: int = 45
 const DEBUG_WAVE_START_INDEX: int = CAMPAIGN_ROUND_COUNT
-const ELEVATION_PIXEL_OFFSET: float = 28.0
 const SPAWN_PORTAL_TEXTURE: Texture2D = preload("res://assets/terrain/spawn_portal.png")
 const STARTING_BOARD: Resource = preload("res://data/terrain/starting_board.tres")
 const STRAIGHT_PIECE: TerrainPieceData = preload("res://data/terrain/pieces/straight.tres")
@@ -29,21 +28,18 @@ const TOWER_LAYER_TEST_WAVE: WaveData = preload("res://data/waves/tower_layer_tr
 const RUN_ECONOMY_DATA: Resource = preload("res://data/run/run_economy_m9.tres")
 const DEMO_CARD_POOL: Resource = preload("res://data/cards/demo_card_pool.tres")
 const META_SHOP_PANEL_SCENE: PackedScene = preload("res://game/progression/meta_shop_panel.tscn")
+const PAUSE_MENU_SCENE: PackedScene = preload("res://game/menu/pause_menu.tscn")
+const MAIN_MENU_PATH: String = "res://game/menu/main_menu.tscn"
 const DEBUG_HACKS_PANEL_SCENE: PackedScene = preload("res://game/ui/debug_hacks_panel.tscn")
 const ICON_CATALOG_RESOURCE: Resource = preload("res://game/ui/resources/icon_catalog.tres")
 const IMPACT_VFX_SCRIPT: Script = preload("res://game/vfx/animated_impact.gd")
 const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
-const BALLISTA: TowerData = preload("res://data/towers/ballista.tres")
-const MORTAR: TowerData = preload("res://data/towers/mortar.tres")
-const TESLA_COIL: TowerData = preload("res://data/towers/tesla_coil.tres")
-const FROST_KEEP: TowerData = preload("res://data/towers/frost_keep.tres")
-const FLAME_THROWER: TowerData = preload("res://data/towers/flame_thrower.tres")
-const POISON_SPRAYER: TowerData = preload("res://data/towers/poison_sprayer.tres")
-const SHREDDER: TowerData = preload("res://data/towers/shredder.tres")
+const TOWER_ROSTER: TowerRosterData = preload("res://data/towers/tower_roster.tres")
+const BALLISTA_TOWER: TowerData = preload("res://data/towers/ballista.tres")
 const ARMOR_PIERCING_BOLT: TowerData = preload("res://data/towers/armor_piercing_bolt.tres")
 const SAPPING_BOLT: TowerData = preload("res://data/towers/sapping_bolt.tres")
 const STATUS_PROBE: TowerData = preload("res://data/towers/status_probe_m8.tres")
-const TOWER_PROFILES: Array[TowerData] = [BALLISTA, MORTAR, TESLA_COIL, FROST_KEEP, FLAME_THROWER, POISON_SPRAYER, SHREDDER]
+var TOWER_PROFILES: Array[TowerData] = []
 const MIN_CAMERA_ZOOM: float = 0.45
 const MAX_CAMERA_ZOOM: float = 2.5
 const CAMERA_ZOOM_STEP: float = 1.12
@@ -76,7 +72,7 @@ var _campaign_is_valid: bool = true
 var _selected_wave_is_debug: bool = false
 var _debug_return_phase: int = RunManager.Phase.ROUND_PREP
 var _awaiting_campaign_expansion: bool = false
-var _selected_tower_data: TowerData = BALLISTA
+var _selected_tower_data: TowerData = BALLISTA_TOWER
 var _combat_debug_timer: float = 0.0
 var _hovered_coord: Vector2i = Vector2i.ZERO
 var _has_hovered_cell: bool = false
@@ -93,7 +89,6 @@ var _pending_expansion_reward: int = 0
 var _upgrade_card_buttons: Array[Button] = []
 var _upgrade_card_titles: Array[RichTextLabel] = []
 var _upgrade_card_descriptions: Array[RichTextLabel] = []
-var _upgrade_card_rarities: Array[Label] = []
 var _upgrade_card_heading: Label
 var _meta_shop_panel: CanvasLayer
 @export var ui_icon_catalog: Resource = ICON_CATALOG_RESOURCE
@@ -234,13 +229,17 @@ var _reward_transition_token: int = 0
 var _base_coord: Vector2i = Vector2i.ZERO
 var _applied_run_card_base_health_bonus: int = 0
 var _base_repair_rng := RandomNumberGenerator.new()
+var _pause_menu: Node
+var _run_end_in_progress: bool = false
 
 func _ready() -> void:
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
+	TOWER_PROFILES.assign(TOWER_ROSTER.profiles)
 	_base_coord = STARTING_BOARD.get("base_coord")
 	MetaProgression.call("configure_tower_catalog", TOWER_PROFILES)
 	MetaProgression.call("set_debug_unlock_all_enabled", false)
 	var current_run_seed: int = int(MetaProgression.call("begin_run"))
+	RunManager.begin_run()
 	_run_seed = current_run_seed
 	_base_repair_rng.seed = current_run_seed ^ 728219
 	_base.increase_maximum_health(int(MetaProgression.call("get_base_max_health_bonus")))
@@ -335,10 +334,16 @@ func _ready() -> void:
 		unlocked_content_ids,
 		current_run_seed,
 		true,
-		int(MetaProgression.call("get_card_offer_bonus"))
+		int(MetaProgression.call("get_card_offer_bonus")),
+		RunManager.get_run_tower_ids()
 	)):
 		push_error("No se pudo configurar el pool de cartas M11: %s" % _run_card_service.get("last_error"))
 	_run_card_service.connect(&"modifiers_changed", _on_run_card_modifiers_changed)
+	_pause_menu = PAUSE_MENU_SCENE.instantiate()
+	add_child(_pause_menu)
+	_pause_menu.call("set_paused", false)
+	_pause_menu.connect("resume_requested", _resume_from_pause)
+	_pause_menu.connect("menu_requested", _return_to_menu_from_pause)
 	_run_economy.call("set_run_card_service", _run_card_service)
 	_sync_run_card_side_effects()
 	var campaign_errors: PackedStringArray = DEMO_CAMPAIGN.call("validate")
@@ -362,6 +367,7 @@ func _ready() -> void:
 		return
 	for cell_variant in starting_cells.values():
 		TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_cell_contents(cell_variant as HexCell, _run_seed, _chest_spawn_chance)
+	TERRAIN_VISUAL_CATALOG_SCRIPT.enforce_starting_board_obstacles(starting_cells, _base_coord)
 	_path_graph.rebuild(_board_grid.cells, _base_coord, int(STARTING_BOARD.get("minimum_spawn_route_cells")))
 	_apply_removed_spawn_endpoints(_path_graph)
 	if not _path_graph.is_valid:
@@ -514,11 +520,11 @@ func _update_anchor_from_mouse() -> void:
 	_refresh_placement()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _meta_shop_panel != null and bool(_meta_shop_panel.call("is_open")):
-		get_viewport().set_input_as_handled()
-		return
 	if event.is_action_pressed("ui_cancel"):
-		_cancel_active_tool()
+		if _meta_shop_panel != null and bool(_meta_shop_panel.call("is_open")):
+			get_viewport().set_input_as_handled()
+			return
+		_toggle_pause()
 		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventKey:
@@ -667,7 +673,7 @@ func _debug_skip_to_next_card_offer() -> void:
 		return
 	var offer_wave: WaveData = _get_campaign_round(offer_round)
 	var upgrade_cards: Array[Resource] = _run_card_service.call("create_offer", offer_round)
-	if offer_wave == null or upgrade_cards.size() != _upgrade_card_buttons.size():
+	if offer_wave == null or upgrade_cards.size() > _upgrade_card_buttons.size():
 		_wave_status.text = "No se pudo crear la oferta de depuración: %s" % String(_run_card_service.get("last_error"))
 		return
 	if _build_controller.is_build_mode():
@@ -941,10 +947,10 @@ func _board_center_world() -> Vector2:
 	var maximum := Vector2(-1e20, -1e20)
 	for coord in _board_grid.cells:
 		var cell: HexCell = _board_grid.cells[coord]
-		var center := _piece_preview.to_global(
+		var center: Vector2 = _piece_preview.to_global(
 			HexMath.axial_to_world(HexCoord.new(coord.x, coord.y), HEX_RADIUS)
 		)
-		center.y -= float(cell.elevation) * ELEVATION_PIXEL_OFFSET
+		center.y -= float(cell.elevation) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET
 		minimum.x = minf(minimum.x, center.x - HEX_RADIUS)
 		minimum.y = minf(minimum.y, center.y - HEX_RADIUS)
 		maximum.x = maxf(maximum.x, center.x + HEX_RADIUS)
@@ -1204,7 +1210,11 @@ func _build_candidate_board(
 		# El tipo de relleno no cambia el grafo porque solo PATH tiene conexiones.
 		var preview_fill := HexCell.new(HexCoord.new(hole_coord.x, hole_coord.y))
 		preview_fill.terrain_type = HexCell.TerrainType.GRASS
-		preview_fill.elevation = 1
+		preview_fill.elevation = TERRAIN_VISUAL_CATALOG_SCRIPT.get_random_elevation(
+			preview_fill.terrain_type,
+			_run_seed,
+			hole_coord
+		)
 		preview_fill.buildable = true
 		preview_fill.visual_variant = &"auto_filled_void_preview"
 		candidate_board[hole_coord] = preview_fill
@@ -1397,6 +1407,7 @@ func _confirm_placement() -> void:
 			TERRAIN_VISUAL_CATALOG_SCRIPT.roll_chest_at_placement(placed_cell, _run_seed, _chest_spawn_chance)
 		else:
 			TERRAIN_VISUAL_CATALOG_SCRIPT.set_random_cell_contents(placed_cell, _run_seed, _chest_spawn_chance)
+	TERRAIN_VISUAL_CATALOG_SCRIPT.limit_hex_cell_obstacles(cells, 2)
 	var candidate_board: Dictionary[Vector2i, HexCell] = {}
 	for coord in _board_grid.cells:
 		candidate_board[coord] = _board_grid.cells[coord]
@@ -1447,16 +1458,30 @@ func _confirm_placement() -> void:
 	_cancel_placement()
 	if confirmed_campaign_expansion:
 		_placement_enabled = false
-		if bool(_run_card_service.call("should_offer_after", _pending_expansion_round)):
-			var upgrade_cards: Array[Resource] = _run_card_service.call("create_offer", _pending_expansion_round)
-			if upgrade_cards.size() == _upgrade_card_buttons.size():
-				_present_upgrade_card_offer(_pending_expansion_round, upgrade_cards)
-				_refresh_placement()
-				_refresh_tower_controls()
-				return
-			push_error("No se pudo crear oferta M11: %s" % _run_card_service.get("last_error"))
+		if _offer_campaign_upgrade_cards_if_scheduled(_pending_expansion_round):
+			return
 		_prepare_next_campaign_round()
 		return
+
+func _offer_campaign_upgrade_cards_if_scheduled(round_number: int) -> bool:
+	if not bool(_run_card_service.call("should_offer_after", round_number)):
+		return false
+	var upgrade_cards: Array[Resource] = _run_card_service.call("create_offer", round_number)
+	if upgrade_cards.is_empty() or upgrade_cards.size() > _upgrade_card_buttons.size():
+		var offer_error: String = String(_run_card_service.get("last_error"))
+		if offer_error.is_empty():
+			offer_error = "Se recibieron %d cartas; el panel admite entre 1 y %d." % [
+				upgrade_cards.size(),
+				_upgrade_card_buttons.size(),
+			]
+		push_error("No se pudo crear oferta M11: %s" % offer_error)
+		_wave_status.text = "No se pudo preparar la oferta de mejoras · %s" % offer_error
+		_start_wave_button.disabled = true
+		return true
+	_present_upgrade_card_offer(round_number, upgrade_cards)
+	_refresh_placement()
+	_refresh_tower_controls()
+	return true
 
 func _create_auto_fill_cell(coord: Vector2i) -> HexCell:
 	var fill_mountain: bool = _terrain_rng.randi_range(0, 1) == 1
@@ -1738,13 +1763,13 @@ func _select_tower_and_build(index: int) -> void:
 	_select_tower_profile_and_build(TOWER_PROFILES[index])
 
 func _select_debug_tower_and_build(tower_data: TowerData) -> void:
-	_select_tower_profile_and_build(tower_data)
+	_select_tower_profile_and_build(tower_data, true)
 
-func _select_tower_profile_and_build(chosen_tower: TowerData) -> void:
+func _select_tower_profile_and_build(chosen_tower: TowerData, allow_debug_profile: bool = false) -> void:
 	if chosen_tower == null or _is_terrain_selection_locked():
 		return
-	if not bool(MetaProgression.call("is_tower_unlocked", chosen_tower)):
-		_build_status.text = "Torre bloqueada · desbloquéala en la tienda al terminar la run."
+	if not allow_debug_profile and not RunManager.has_tower_in_run(chosen_tower.id):
+		_build_status.text = "Recluta esta torre con una card antes de construirla."
 		return
 	if _awaiting_campaign_expansion and _selected_expansion_piece == null:
 		_build_status.text = "Elige una carta de terreno antes de continuar."
@@ -1783,7 +1808,8 @@ func _refresh_build_preview() -> void:
 		error.is_empty(),
 		_build_controller.get_preview_range_pixels(_hovered_coord),
 		_icon_catalog.call("get_tower_icon", StringName(_selected_tower_data.id)) as Texture2D,
-		_selected_tower_data.visual_icon_size
+		_selected_tower_data.visual_icon_size,
+		_selected_tower_data.elevation_damage_bonus_per_level
 	)
 
 func _populate_targeting_modes() -> void:
@@ -1834,7 +1860,7 @@ func _targeting_mode_tooltip(mode: int) -> String:
 			return "Criterio de selección de objetivo."
 
 func _populate_wave_options() -> void:
-	_selected_tower_data = BALLISTA
+	_selected_tower_data = BALLISTA_TOWER
 	_wave_selector.clear()
 	var campaign_waves: Array[WaveData] = []
 	for round_index in range(CAMPAIGN_ROUND_COUNT):
@@ -1999,8 +2025,11 @@ func _on_tower_list_changed(_tower: Tower, _coord: Vector2i) -> void:
 func _on_tower_built_for_vfx(tower: Tower, _coord: Vector2i) -> void:
 	if tower == null or not is_instance_valid(tower):
 		return
+	var tower_data: TowerData = tower.get_tower_data()
+	if tower_data != null:
+		RunManager.record_tower_built(tower.get_instance_id(), tower_data.id)
 	tower.impact_effect_requested.connect(_spawn_impact_vfx)
-	_animate_tower_shortcut_icon(tower.get_tower_data().id)
+	_animate_tower_shortcut_icon(tower_data.id)
 
 func _animate_tower_shortcut_icon(tower_id: StringName) -> void:
 	for index in TOWER_PROFILES.size():
@@ -2106,8 +2135,7 @@ func _refresh_tower_controls() -> void:
 	for index in _tower_shortcut_buttons.size():
 		var shortcut_button: Button = _tower_shortcut_buttons[index]
 		var tower_data: TowerData = TOWER_PROFILES[index]
-		var tower_unlocked: bool = bool(MetaProgression.call("is_tower_unlocked", tower_data))
-		shortcut_button.visible = tower_unlocked
+		shortcut_button.visible = RunManager.has_tower_in_run(tower_data.id)
 		var effective_mana_cost: float = tower_data.mana_cost_per_attack
 		if effective_mana_cost > 0.0 and _run_card_service != null:
 			effective_mana_cost *= float(_run_card_service.call("get_tower_mana_cost_multiplier", tower_data.id))
@@ -2258,7 +2286,7 @@ func _build_tower_description(tower_data: TowerData) -> String:
 			bonus_parts.append("+%.1f Daño" % damage_bonus)
 		if range_bonus > 0.0:
 			bonus_parts.append("+%.2f hex de alcance" % range_bonus)
-		elevation_text = "[b]Mountain vs Grass:[/b] %s" % " · ".join(bonus_parts)
+		elevation_text = "[b]Bonus por elevación:[/b] %s" % " · ".join(bonus_parts)
 	var energy_text := ""
 	if tower_data.mana_cost_per_second > 0.0:
 		energy_text = "\nConsumo: %.1f Mana/s" % tower_data.mana_cost_per_second
@@ -2453,6 +2481,7 @@ func _on_wave_failed(reason: String) -> void:
 		_wave_status.text = "DERROTA · %s" % reason
 		RunManager.transition_to(RunManager.Phase.RUN_DEFEAT)
 		_show_run_end(&"DEFEAT", _campaign_round_number)
+		return
 	_refresh_placement()
 	_refresh_tower_controls()
 
@@ -2682,6 +2711,8 @@ func _on_damage_resolved(target: Enemy, _packet: RefCounted, result: RefCounted)
 	var damage_result := result as DamageResult
 	if damage_result == null or not damage_result.is_valid or damage_result.total_damage <= 0:
 		return
+	if _packet != null:
+		RunManager.record_tower_damage(int(_packet.get("source_id")), damage_result.total_damage)
 	var layer: int = damage_result.active_hit_point_layer
 	if damage_result.shield_damage > 0:
 		layer = Enemy.HitPointLayer.SHIELD
@@ -2848,13 +2879,41 @@ func _attempt_base_repair_for_round() -> void:
 		_base.heal(1)
 
 func _show_run_end(outcome: StringName, reached_round: int) -> void:
-	if _meta_shop_panel == null:
+	if _run_end_in_progress:
 		return
+	_run_end_in_progress = true
 	var summary: Dictionary = MetaProgression.call("finish_run", outcome, reached_round, GameState.run_seed)
-	_meta_shop_panel.call("present", summary)
+	var unlocked_tower_ids: Array[StringName] = []
+	unlocked_tower_ids.assign(MetaProgression.call("get_unlocked_tower_ids"))
+	summary["tower_summary"] = RunManager.get_tower_run_summary(unlocked_tower_ids)
+	GameState.pending_run_summary = summary
+	get_tree().paused = false
+	get_tree().change_scene_to_file(MAIN_MENU_PATH)
 
 func _on_new_run_requested() -> void:
-	get_tree().reload_current_scene()
+	GameState.pending_run_summary.clear()
+	get_tree().paused = false
+	get_tree().change_scene_to_file("res://game/main/main.tscn")
+
+func _toggle_pause() -> void:
+	if _pause_menu == null:
+		return
+	if get_tree().paused:
+		_resume_from_pause()
+	else:
+		get_tree().paused = true
+		_pause_menu.call("set_paused", true)
+
+func _resume_from_pause() -> void:
+	get_tree().paused = false
+	if _pause_menu != null:
+		_pause_menu.call("set_paused", false)
+
+func _return_to_menu_from_pause() -> void:
+	get_tree().paused = false
+	MetaProgression.call("abandon_run")
+	GameState.pending_run_summary.clear()
+	get_tree().change_scene_to_file(MAIN_MENU_PATH)
 
 func _on_base_damaged(amount: int, current_health: int, maximum_health: int) -> void:
 	_on_base_health_changed(current_health, maximum_health)
@@ -3014,22 +3073,21 @@ func _begin_campaign_terrain_expansion(round_number: int, round_reward: int) -> 
 	_present_terrain_card_offer()
 
 func _present_upgrade_card_offer(round_number: int, cards: Array[Resource]) -> void:
-	if cards.size() != _upgrade_card_buttons.size():
-		push_error("La oferta M11 debe coincidir con el número de cards visibles.")
+	if cards.is_empty() or cards.size() > _upgrade_card_buttons.size():
+		push_error("La oferta M11 excede las seis cards visibles o está vacía.")
 		return
+	_upgrade_card_panel.set_card_count(cards.size())
 	if _build_controller.is_build_mode():
 		_build_controller.cancel_build_mode()
 	_build_controller.clear_selection()
 	_upgrade_card_heading.text = "MEJORAS DE RUN · RONDA %02d" % round_number
-	for index in _upgrade_card_buttons.size():
+	for index in cards.size():
 		var card: Resource = cards[index]
 		_set_rich_text_with_currency_icons(_upgrade_card_titles[index], String(card.get("display_name")))
 		_set_rich_text_with_currency_icons(_upgrade_card_descriptions[index], String(card.get("description")))
-		_upgrade_card_rarities[index].text = _card_rarity_name(int(card.get("rarity")))
 		_upgrade_card_buttons[index].tooltip_text = ""
 		var card_icon: Texture2D = _icon_catalog.call("get_card_icon", card) as Texture2D
-		_upgrade_card_buttons[index].call("configure_visuals", card_icon, int(card.get("rarity")), _icon_catalog)
-		_style_upgrade_card_button(_upgrade_card_buttons[index], int(card.get("rarity")))
+		_upgrade_card_buttons[index].call("configure_visuals", card_icon, int(card.get("rarity")))
 	_upgrade_card_panel.show()
 	_terrain_card_panel.hide()
 	_placement_enabled = false
@@ -3051,9 +3109,17 @@ func _present_upgrade_card_offer(round_number: int, cards: Array[Resource]) -> v
 func _on_upgrade_card_selected(index: int) -> void:
 	if RunManager.phase != RunManager.Phase.CARD_OFFER:
 		return
+	var current_offer: Array[Resource] = []
+	current_offer.assign(_run_card_service.call("get_current_offer"))
+	if index < 0 or index >= current_offer.size():
+		return
+	var selected_card: Resource = current_offer[index]
 	if not bool(_run_card_service.call("select_card", index)):
 		push_error("No se pudo seleccionar la carta: %s" % _run_card_service.get("last_error"))
 		return
+	var granted_tower_id: StringName = StringName(selected_card.get("grant_tower_id"))
+	if granted_tower_id != &"":
+		RunManager.grant_tower(granted_tower_id)
 	_upgrade_card_panel.hide()
 	_prepare_next_campaign_round()
 	_refresh_tower_controls()
@@ -3078,53 +3144,16 @@ func _prepare_next_campaign_round() -> void:
 	_refresh_placement()
 	_refresh_tower_controls()
 
-func _card_rarity_name(rarity: int) -> String:
-	match rarity:
-		1:
-			return "POCO COMÚN"
-		2:
-			return "RARA"
-		_:
-			return "COMÚN"
-
-func _style_upgrade_card_button(button: Button, rarity: int) -> void:
-	var accent: Color = Color("8bb89f")
-	if rarity == 1:
-		accent = Color("84b8d5")
-	elif rarity == 2:
-		accent = Color("d1ab62")
-	var normal_style := StyleBoxFlat.new()
-	normal_style.bg_color = Color(0.07, 0.10, 0.13, 0.26)
-	normal_style.border_color = accent.darkened(0.18)
-	normal_style.set_border_width_all(2)
-	normal_style.set_corner_radius_all(10)
-	normal_style.content_margin_left = 14.0
-	normal_style.content_margin_right = 14.0
-	normal_style.content_margin_top = 12.0
-	normal_style.content_margin_bottom = 12.0
-	var hover_style: StyleBoxFlat = normal_style.duplicate() as StyleBoxFlat
-	hover_style.bg_color = Color(0.10, 0.15, 0.18, 0.38)
-	hover_style.border_color = accent.lightened(0.1)
-	var pressed_style: StyleBoxFlat = hover_style.duplicate() as StyleBoxFlat
-	pressed_style.bg_color = Color(0.12, 0.19, 0.22, 0.5)
-	button.add_theme_stylebox_override("normal", normal_style)
-	button.add_theme_stylebox_override("hover", hover_style)
-	button.add_theme_stylebox_override("pressed", pressed_style)
-	button.add_theme_stylebox_override("focus", hover_style)
-
 func _configure_upgrade_card_panel() -> void:
 	_upgrade_card_heading = _upgrade_card_panel.heading_label
-	var permanent_offer_bonus: int = int(MetaProgression.call("get_card_offer_bonus"))
-	_upgrade_card_panel.set_card_count(clampi(int(DEMO_CARD_POOL.get("offer_size")) + permanent_offer_bonus, 1, 6))
+	_upgrade_card_panel.set_card_count(6)
 	_upgrade_card_buttons.clear()
 	_upgrade_card_titles.clear()
 	_upgrade_card_descriptions.clear()
-	_upgrade_card_rarities.clear()
 	for card in _upgrade_card_panel.cards:
 		_upgrade_card_buttons.append(card)
 		_upgrade_card_titles.append(card.title_label)
 		_upgrade_card_descriptions.append(card.description_label)
-		_upgrade_card_rarities.append(card.rarity_label)
 	_upgrade_card_panel.hide()
 
 func _set_rich_text_with_currency_icons(label: RichTextLabel, source_text: String) -> void:

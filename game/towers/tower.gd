@@ -7,6 +7,7 @@ signal stats_changed(level: int)
 
 const ELEVATION_PIXEL_OFFSET: float = 28.0
 const VISUAL_ART_OFFSET_Y: float = 6.0
+const PROJECT_FONT: Font = preload("res://assets/fonts/PatrickHand-Regular.ttf")
 const SCAN_INTERVAL: float = 0.1
 const SHOT_FLASH_DURATION: float = 0.12
 const BALLISTA_MISSED_TARGET_COOLDOWN_REFUND: float = 0.33
@@ -74,7 +75,7 @@ func configure(
 	board_grid: HexGrid = null
 ) -> bool:
 	last_error = ""
-	if tower_data == null or damage_service == null or hex_radius <= 0.0 or cell_elevation < 0 or cell_elevation > 2:
+	if tower_data == null or damage_service == null or hex_radius <= 0.0 or cell_elevation < 0 or cell_elevation > 3:
 		last_error = "La torre recibió datos inválidos o no tiene DamageService."
 		return false
 	set_process(false)
@@ -1025,8 +1026,8 @@ func _draw() -> void:
 	var icon_scale: float = 1.0 + pulse * 0.055 if _is_selected else 1.0
 	var icon_size: float = _tower_data.visual_icon_size * icon_scale
 	var icon_center := Vector2(0.0, -icon_size * 0.5 + VISUAL_ART_OFFSET_Y)
+	var icon_rect := Rect2(icon_center - Vector2.ONE * icon_size * 0.5, Vector2.ONE * icon_size)
 	if _tower_icon != null:
-		var icon_rect := Rect2(icon_center - Vector2.ONE * icon_size * 0.5, Vector2.ONE * icon_size)
 		if _is_selected:
 			var glow_size: Vector2 = icon_rect.size * (1.075 + pulse * 0.035)
 			var glow_alpha: float = 0.075 + pulse * 0.055
@@ -1050,6 +1051,25 @@ func _draw() -> void:
 		if _is_hovered and not _is_selected:
 			draw_arc(icon_center, icon_size * 0.56, 0.0, TAU, 48, Color(0.82, 0.94, 1.0, 0.68), 1.6, true)
 		draw_texture_rect(_tower_icon, icon_rect, false)
+	if elevation > 0:
+		_draw_elevation_bonus_badge(icon_rect)
 	if _shot_flash_timer > 0.0:
 		for target_offset in _shot_target_positions:
 			draw_line(icon_center, target_offset, SHOT_COLOR, 2.0, true)
+
+func _draw_elevation_bonus_badge(icon_rect: Rect2) -> void:
+	if _tower_data == null:
+		return
+	var damage_bonus: float = float(elevation) * _tower_data.elevation_damage_bonus_per_level
+	var bonus_text: String = "%d" % roundi(damage_bonus) if is_equal_approx(damage_bonus, roundf(damage_bonus)) else "%.1f" % damage_bonus
+	var badge_center := Vector2(0.0, icon_rect.position.y - 14.0)
+	var badge_rect := Rect2(badge_center + Vector2(-24.0, -11.0), Vector2(48.0, 22.0))
+	draw_rect(badge_rect, Color(0.035, 0.07, 0.08, 0.94), true)
+	draw_rect(badge_rect, Color(0.67, 0.90, 0.72, 0.96), false, 1.5, true)
+	var arrow := PackedVector2Array([
+		badge_center + Vector2(-17.0, 4.0),
+		badge_center + Vector2(-11.0, -5.0),
+		badge_center + Vector2(-5.0, 4.0),
+	])
+	draw_colored_polygon(arrow, Color(0.67, 0.90, 0.72, 1.0))
+	draw_string(PROJECT_FONT, badge_center + Vector2(-1.0, 5.0), "+%s" % bonus_text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 13, Color.WHITE)

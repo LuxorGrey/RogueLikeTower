@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/cards/card_data.gd" id="1_card"]
+
+[resource]
+script = ExtResource("1_card")
+id = &"recruit_flame_thrower"
+display_name = "Reclutar · Flame Thrower"
+description = "Añade Flame Thrower al arsenal de esta run."
+rarity = 0
+unlock_requirement = &"tower:flame_thrower_demo"
+grant_tower_id = &"flame_thrower_demo"
+modifier_operations = Array[Resource]([])

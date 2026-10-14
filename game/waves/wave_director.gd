@@ -257,6 +257,9 @@ func _spawn_enemy(
 func _on_enemy_reached_base(base_damage: int, enemy_id: int) -> void:
 	if not _active_enemies.has(enemy_id):
 		return
+	var enemy: Enemy = _active_enemies[enemy_id] as Enemy
+	var enemy_data: EnemyData = enemy.get_enemy_data() if enemy != null and is_instance_valid(enemy) else null
+	var reached_by_boss: bool = enemy_data != null and enemy_data.boss_tier > 0
 	_active_enemies.erase(enemy_id)
 	_kill_rewards.erase(enemy_id)
 	var applied_damage: int = 0
@@ -265,9 +268,13 @@ func _on_enemy_reached_base(base_damage: int, enemy_id: int) -> void:
 		base_damaged.emit(applied_damage, _base.get_current_health(), _base.get_maximum_health())
 	enemy_count_changed.emit(_active_enemies.size())
 	_emit_population_changed()
-	if not _is_diagnostic and _base.get_current_health() <= 0:
-		_fail_wave("La base ha sido destruida.")
-		return
+	if not _is_diagnostic:
+		if reached_by_boss:
+			_fail_wave("Un jefe alcanzó la base.")
+			return
+		if _base.get_current_health() <= 0:
+			_fail_wave("La base ha sido destruida.")
+			return
 	_check_wave_completion()
 
 func set_enemy_base_damage_bonus(amount: int) -> void:

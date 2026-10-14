@@ -2,7 +2,6 @@ class_name TerrainHoverOverlay
 extends Node2D
 
 const HEX_RADIUS: float = 52.0
-const ELEVATION_PIXEL_OFFSET: float = 28.0
 const REDRAW_INTERVAL: float = 1.0 / 30.0
 
 var _cells: Array[TerrainPieceCellData] = []
@@ -36,8 +35,7 @@ func _draw() -> void:
 		if distance > 2:
 			continue
 		var opacity: float = _grid_opacity(distance)
-		var center := _top_center(cell.local_coord, cell.elevation)
-		var corners := _hex_corners(center)
+		var corners := _cell_corners(cell.local_coord, cell.elevation)
 		var closed_corners := corners.duplicate()
 		closed_corners.append(corners[0])
 		var color: Color = _terrain_hover_color(cell.terrain_type)
@@ -66,17 +64,13 @@ func _hex_distance(a: Vector2i, b: Vector2i) -> int:
 	var delta: Vector2i = a - b
 	return maxi(absi(delta.x), maxi(absi(delta.y), absi(delta.x + delta.y)))
 
-func _top_center(coord: Vector2i, elevation: int) -> Vector2:
-	return HexMath.axial_to_world(HexCoord.new(coord.x, coord.y), HEX_RADIUS) - Vector2(
-		0.0,
-		float(elevation) * ELEVATION_PIXEL_OFFSET
-	)
-
-func _hex_corners(center: Vector2) -> PackedVector2Array:
+func _cell_corners(coord: Vector2i, elevation: int) -> PackedVector2Array:
 	var corners := PackedVector2Array()
+	var axial_coord := HexCoord.new(coord.x, coord.y)
 	for corner_index in range(6):
-		var angle_radians: float = deg_to_rad(-90.0 + 60.0 * float(corner_index))
-		corners.append(center + Vector2(cos(angle_radians), sin(angle_radians)) * HEX_RADIUS)
+		var corner: Vector2 = HexMath.axial_hex_corner(axial_coord, corner_index, HEX_RADIUS)
+		corner.y -= float(elevation) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET
+		corners.append(corner)
 	return corners
 
 func _terrain_hover_color(terrain_type: int) -> Color:

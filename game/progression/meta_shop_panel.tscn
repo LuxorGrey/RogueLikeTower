@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://game/progression/meta_shop_panel.gd" id="1_script"]
 [ext_resource type="Theme" path="res://game/ui/themes/rogue_hud_theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" path="res://game/progression/meta_progression_map.tscn" id="3_map"]
 
 [node name="MetaShopPanel" type="CanvasLayer"]
 script = ExtResource("1_script")
@@ -25,150 +26,88 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 0
-color = Color(0.025, 0.035, 0.045, 0.9)
+color = Color(0.025, 0.035, 0.045, 0.94)
 
 [node name="MetaShop" type="PanelContainer" parent="MetaShopRoot"]
-unique_name_in_owner = true
 layout_mode = 1
-anchor_left = 0.035
-anchor_top = 0.035
-anchor_right = 0.965
-anchor_bottom = 0.965
-custom_minimum_size = Vector2(760, 560)
+anchor_left = 0.018
+anchor_top = 0.018
+anchor_right = 0.982
+anchor_bottom = 0.982
 
 [node name="Margin" type="MarginContainer" parent="MetaShopRoot/MetaShop"]
 layout_mode = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 18
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 12
 
 [node name="Content" type="VBoxContainer" parent="MetaShopRoot/MetaShop/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 
-[node name="Eyebrow" type="Label" parent="MetaShopRoot/MetaShop/Margin/Content"]
+[node name="Header" type="HBoxContainer" parent="MetaShopRoot/MetaShop/Margin/Content"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
-theme_override_colors/font_color = Color(0.619608, 0.686275, 0.690196, 1)
-text = "CIERRE DE RUN  ·  PROGRESO PERMANENTE"
-horizontal_alignment = 1
+theme_override_constants/separation = 12
 
-[node name="OutcomeLabel" type="Label" parent="MetaShopRoot/MetaShop/Margin/Content"]
+[node name="OutcomeLabel" type="Label" parent="MetaShopRoot/MetaShop/Margin/Content/Header"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 30
-text = "RUN FINALIZADA"
-horizontal_alignment = 1
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 27
+theme_override_colors/font_color = Color(0.91, 0.78, 0.47, 1)
+text = "MAPA DE MEJORAS"
+vertical_alignment = 1
 
-[node name="DebugCloseButton" type="Button" parent="MetaShopRoot/MetaShop/Margin/Content"]
+[node name="DebugCloseButton" type="Button" parent="MetaShopRoot/MetaShop/Margin/Content/Header"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(154, 38)
 layout_mode = 2
-custom_minimum_size = Vector2(0, 36)
 text = "Volver al tablero"
 
 [node name="SummaryLabel" type="Label" parent="MetaShopRoot/MetaShop/Margin/Content"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-theme_override_font_sizes/font_size = 15
-theme_override_colors/font_color = Color(0.8, 0.831373, 0.823529, 1)
-autowrap_mode = 3
-horizontal_alignment = 1
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.8, 0.83, 0.82, 1)
+autowrap_mode = 2
+text = "Desbloquea una card para abrir la siguiente parte del árbol."
 
 [node name="CurrencyLabel" type="Label" parent="MetaShopRoot/MetaShop/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
-theme_override_colors/font_color = Color(0.898039, 0.745098, 0.415686, 1)
+theme_override_font_sizes/font_size = 19
+theme_override_colors/font_color = Color(0.9, 0.75, 0.42, 1)
 horizontal_alignment = 1
+text = "XP DE PERFIL   0"
 
 [node name="Separator" type="HSeparator" parent="MetaShopRoot/MetaShop/Margin/Content"]
 layout_mode = 2
-
-[node name="Tabs" type="HBoxContainer" parent="MetaShopRoot/MetaShop/Margin/Content"]
-layout_mode = 2
-theme_override_constants/separation = 10
-alignment = 1
-
-[node name="TowerTabButton" type="Button" parent="MetaShopRoot/MetaShop/Margin/Content/Tabs"]
-unique_name_in_owner = true
-layout_mode = 2
-custom_minimum_size = Vector2(210, 42)
-toggle_mode = true
-text = "TORRES"
-
-[node name="UpgradeTabButton" type="Button" parent="MetaShopRoot/MetaShop/Margin/Content/Tabs"]
-unique_name_in_owner = true
-layout_mode = 2
-custom_minimum_size = Vector2(210, 42)
-toggle_mode = true
-text = "MEJORAS PERMANENTES"
 
 [node name="Scroll" type="ScrollContainer" parent="MetaShopRoot/MetaShop/Margin/Content"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-custom_minimum_size = Vector2(0, 260)
-horizontal_scroll_mode = 0
+horizontal_scroll_mode = 1
+vertical_scroll_mode = 1
 
-[node name="Lists" type="VBoxContainer" parent="MetaShopRoot/MetaShop/Margin/Content/Scroll"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 10
-
-[node name="TowerList" type="VBoxContainer" parent="MetaShopRoot/MetaShop/Margin/Content/Scroll/Lists"]
+[node name="ProgressionMap" parent="MetaShopRoot/MetaShop/Margin/Content/Scroll" instance=ExtResource("3_map")]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 8
-
-[node name="TowerHeading" type="VBoxContainer" parent="MetaShopRoot/MetaShop/Margin/Content/Scroll/Lists/TowerList"]
-layout_mode = 2
-theme_override_constants/separation = 2
-
-[node name="TowerHeadingTitle" type="Label" parent="MetaShopRoot/MetaShop/Margin/Content/Scroll/Lists/TowerList/TowerHeading"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "AMPLÍA TU ARSENAL"
-
-[node name="TowerHeadingSubtitle" type="Label" parent="MetaShopRoot/MetaShop/Margin/Content/Scroll/Lists/TowerList/TowerHeading"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 13
-theme_override_colors/font_color = Color(0.682353, 0.733333, 0.752941, 1)
-text = "Desbloquea torres para tus próximas runs."
-
-[node name="UpgradeList" type="VBoxContainer" parent="MetaShopRoot/MetaShop/Margin/Content/Scroll/Lists"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 8
-
-[node name="UpgradeHeading" type="VBoxContainer" parent="MetaShopRoot/MetaShop/Margin/Content/Scroll/Lists/UpgradeList"]
-layout_mode = 2
-theme_override_constants/separation = 2
-
-[node name="UpgradeHeadingTitle" type="Label" parent="MetaShopRoot/MetaShop/Margin/Content/Scroll/Lists/UpgradeList/UpgradeHeading"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "MEJORA LA SIGUIENTE RUN"
-
-[node name="UpgradeHeadingSubtitle" type="Label" parent="MetaShopRoot/MetaShop/Margin/Content/Scroll/Lists/UpgradeList/UpgradeHeading"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 13
-theme_override_colors/font_color = Color(0.682353, 0.733333, 0.752941, 1)
-text = "Los niveles permanentes se aplican al empezar una run nueva."
 
 [node name="StatusLabel" type="Label" parent="MetaShopRoot/MetaShop/Margin/Content"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
-custom_minimum_size = Vector2(0, 22)
-autowrap_mode = 3
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.68, 0.74, 0.75, 1)
+autowrap_mode = 2
 horizontal_alignment = 1
 
 [node name="NewRunButton" type="Button" parent="MetaShopRoot/MetaShop/Margin/Content"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
-custom_minimum_size = Vector2(0, 48)
-tooltip_text = "Vuelve al tablero con los desbloqueos y mejoras permanentes comprados."
+theme_override_font_sizes/font_size = 17
 text = "Empezar nueva run"

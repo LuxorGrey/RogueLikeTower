@@ -1,11 +1,13 @@
 extends Control
 
 const ROUND_COUNT: int = 45
-const TRACK_INSET: float = 7.0
+const VISIBLE_ROUND_COUNT: int = 15
 const CLEARED_COLOR: Color = Color("#7cae81")
 const ACTIVE_COLOR: Color = Color("#f1cf78")
 const FUTURE_COLOR: Color = Color("#74817f")
 const SPECIAL_COLOR: Color = Color("#d98963")
+const TRACK_LEFT_INSET: float = 16.0
+const TRACK_RIGHT_INSET: float = 16.0
 const WAVE_HOVER_TOOLTIP_SCENE: PackedScene = preload("res://game/ui/components/wave_hover_tooltip.tscn")
 
 var _current_round: int = 1
@@ -30,17 +32,29 @@ func set_progress(current_round: int, completed_rounds: int) -> void:
 
 func _draw() -> void:
 	var track_y: float = size.y * 0.5
-	var track_width: float = maxf(size.x - TRACK_INSET * 2.0, 1.0)
-	var spacing: float = track_width / float(ROUND_COUNT - 1)
-	var track_start := Vector2(TRACK_INSET, track_y)
-	var track_end := Vector2(size.x - TRACK_INSET, track_y)
-	draw_line(track_start, track_end, Color("#344246"), 3.0, true)
-	var completed_end_x: float = TRACK_INSET + spacing * float(maxi(_completed_rounds - 1, 0))
-	if _completed_rounds > 1:
-		draw_line(track_start, Vector2(completed_end_x, track_y), Color("#54775e"), 3.0, true)
-	for wave_index in range(ROUND_COUNT):
-		var round_number: int = wave_index + 1
-		var point := Vector2(TRACK_INSET + spacing * float(wave_index), track_y)
+	var track_width: float = maxf(size.x - TRACK_LEFT_INSET - TRACK_RIGHT_INSET, 1.0)
+	var spacing: float = track_width / float(VISIBLE_ROUND_COUNT - 1)
+	var first_visible_round: int = _first_visible_round()
+	for segment in range(VISIBLE_ROUND_COUNT - 1):
+		var from_point := Vector2(TRACK_LEFT_INSET + spacing * float(segment), track_y)
+		var to_point := Vector2(TRACK_LEFT_INSET + spacing * float(segment + 1), track_y)
+		var line_fade_offset: int = first_visible_round + segment - _current_round
+		var fade: float = 1.0
+		if line_fade_offset >= 0:
+			fade = 1.0 - clampf(
+				(float(line_fade_offset) - float(VISIBLE_ROUND_COUNT - 5)) / 4.0,
+				0.0,
+				1.0
+			) * 0.78
+		draw_line(from_point, to_point, Color(0.20, 0.26, 0.28, fade), 4.0, true)
+		var from_round: int = first_visible_round + segment
+		if from_round <= _completed_rounds:
+			draw_line(from_point, to_point, Color(0.34, 0.53, 0.40, fade), 4.0, true)
+	for window_index in range(VISIBLE_ROUND_COUNT):
+		var round_number: int = first_visible_round + window_index
+		if round_number > ROUND_COUNT:
+			continue
+		var point := Vector2(TRACK_LEFT_INSET + spacing * float(window_index), track_y)
 		var wave: WaveData = _wave_for_round(round_number)
 		var special: bool = _is_special_wave(wave)
 		var color: Color = SPECIAL_COLOR if special else FUTURE_COLOR
@@ -48,9 +62,18 @@ func _draw() -> void:
 			color = CLEARED_COLOR
 		elif round_number == _current_round:
 			color = ACTIVE_COLOR
+		var round_fade_offset: int = round_number - _current_round
+		var fade_alpha: float = 1.0
+		if round_fade_offset >= 0:
+			fade_alpha = 1.0 - clampf(
+				(float(round_fade_offset) - float(VISIBLE_ROUND_COUNT - 4)) / 3.0,
+				0.0,
+				1.0
+			) * 0.68
+		color.a *= fade_alpha
 		var radius: float = _difficulty_radius(wave, special)
 		if special:
-			draw_circle(point, radius + 2.0, Color("#65433b"))
+			draw_circle(point, radius + 2.0, Color(0.40, 0.26, 0.22, fade_alpha))
 		draw_circle(point, radius, color)
 		if round_number == _current_round:
 			draw_arc(point, radius + 2.4, 0.0, TAU, 32, Color("#fff3c9"), 1.4, true)
@@ -59,11 +82,12 @@ func _gui_input(event: InputEvent) -> void:
 	if not event is InputEventMouseMotion:
 		return
 	var mouse_event := event as InputEventMouseMotion
-	var track_width: float = maxf(size.x - TRACK_INSET * 2.0, 1.0)
-	var spacing: float = track_width / float(ROUND_COUNT - 1)
-	var wave_index: int = clampi(roundi((mouse_event.position.x - TRACK_INSET) / spacing), 0, ROUND_COUNT - 1)
-	var point_x: float = TRACK_INSET + spacing * float(wave_index)
-	if absf(mouse_event.position.x - point_x) > maxf(3.0, spacing * 0.48):
+	var track_width: float = maxf(size.x - TRACK_LEFT_INSET - TRACK_RIGHT_INSET, 1.0)
+	var spacing: float = track_width / float(VISIBLE_ROUND_COUNT - 1)
+	var window_index: int = clampi(roundi((mouse_event.position.x - TRACK_LEFT_INSET) / spacing), 0, VISIBLE_ROUND_COUNT - 1)
+	var point_x: float = TRACK_LEFT_INSET + spacing * float(window_index)
+	var wave_index: int = _first_visible_round() - 1 + window_index
+	if wave_index >= ROUND_COUNT or absf(mouse_event.position.x - point_x) > maxf(10.0, spacing * 0.45):
 		_hide_wave_tooltip()
 		return
 	if _hovered_round != wave_index:
@@ -101,7 +125,7 @@ func _difficulty_radius(wave: WaveData, special: bool) -> float:
 				count += group.count
 		largest_wave_count = maxi(largest_wave_count, count)
 	var difficulty: float = sqrt(float(enemy_count) / float(largest_wave_count))
-	return 2.3 + difficulty * 3.0 + (1.4 if special else 0.0)
+	return 5.0 + difficulty * 3.8 + (1.8 if special else 0.0)
 
 func _show_wave_tooltip(wave_index: int) -> void:
 	_hide_wave_tooltip()
@@ -141,8 +165,9 @@ func _show_wave_tooltip(wave_index: int) -> void:
 		panel.show_empty_note()
 	var tooltip_minimum_size: Vector2 = panel.get_combined_minimum_size()
 	panel.size = Vector2(maxf(226.0, tooltip_minimum_size.x), tooltip_minimum_size.y)
-	var track_width: float = maxf(size.x - TRACK_INSET * 2.0, 1.0)
-	var point_x: float = TRACK_INSET + track_width * float(wave_index) / float(ROUND_COUNT - 1)
+	var track_width: float = maxf(size.x - TRACK_LEFT_INSET - TRACK_RIGHT_INSET, 1.0)
+	var window_index: int = wave_index - (_first_visible_round() - 1)
+	var point_x: float = TRACK_LEFT_INSET + track_width * float(window_index) / float(VISIBLE_ROUND_COUNT - 1)
 	panel.position = Vector2(
 		clampf(point_x - panel.size.x * 0.5, 0.0, maxf(0.0, size.x - panel.size.x)),
 		size.y + 5.0
@@ -158,3 +183,7 @@ func _on_track_mouse_exited() -> void:
 	if is_instance_valid(_tooltip_panel) and _tooltip_panel.get_global_rect().has_point(get_global_mouse_position()):
 		return
 	_hide_wave_tooltip()
+
+func _first_visible_round() -> int:
+	# Keep all 15 markers visible after the campaign reaches its final rounds.
+	return clampi(_current_round, 1, ROUND_COUNT - VISIBLE_ROUND_COUNT + 1)

@@ -47,13 +47,15 @@ var _rng := RandomNumberGenerator.new()
 var _is_configured: bool = false
 var _debug_unlock_all: bool = false
 var _offer_size_bonus: int = 0
+var _run_tower_ids: Dictionary[StringName, bool] = {}
 
 func configure(
 	card_pool: Resource,
 	unlocked_content_ids: Array[StringName],
 	run_seed: int = 0,
 	use_run_seed: bool = false,
-	offer_size_bonus: int = 0
+	offer_size_bonus: int = 0,
+	run_tower_ids: Array[StringName] = []
 ) -> bool:
 	last_error = ""
 	if card_pool == null or not card_pool.has_method("validate"):
@@ -65,6 +67,9 @@ func configure(
 		return false
 	_pool = card_pool
 	_offer_size_bonus = clampi(offer_size_bonus, 0, 3)
+	_run_tower_ids.clear()
+	for tower_id in run_tower_ids:
+		_run_tower_ids[tower_id] = true
 	_unlocked_content_ids.clear()
 	for content_id in unlocked_content_ids:
 		_unlocked_content_ids[content_id] = true
@@ -91,18 +96,28 @@ func create_offer(round_number: int) -> Array[Resource]:
 		return empty_offer
 	if not _current_offer.is_empty():
 		return _current_offer.duplicate()
-	var candidates: Array[Resource] = []
+	var recruit_cards: Array[Resource] = []
+	var upgrade_cards: Array[Resource] = []
 	var pool_cards: Array = _pool.call("get_all_cards")
 	for card_variant in pool_cards:
 		var card := card_variant as Resource
 		if card == null or not _is_card_available(card):
 			continue
-		candidates.append(card)
-	var offer_size: int = get_offer_size()
-	while _current_offer.size() < offer_size and not candidates.is_empty():
-		var selected_index: int = _pick_weighted_index(candidates)
-		_current_offer.append(candidates[selected_index])
-		candidates.remove_at(selected_index)
+		if StringName(card.get("grant_tower_id")) != &"":
+			recruit_cards.append(card)
+		else:
+			upgrade_cards.append(card)
+	# Toda torre ya desbloqueada en meta y aún no reclutada en esta run aparece
+	# como opción. Las cartas de reclutamiento ocupan primero el espacio visible.
+	var offer_size: int = mini(maxi(get_offer_size(), recruit_cards.size()), 6)
+	for recruit_card in recruit_cards:
+		if _current_offer.size() >= offer_size:
+			break
+		_current_offer.append(recruit_card)
+	while _current_offer.size() < offer_size and not upgrade_cards.is_empty():
+		var selected_index: int = _pick_weighted_index(upgrade_cards)
+		_current_offer.append(upgrade_cards[selected_index])
+		upgrade_cards.remove_at(selected_index)
 	if _current_offer.size() != offer_size:
 		last_error = "No hay suficientes cartas desbloqueadas para completar la oferta."
 		_current_offer.clear()
@@ -116,6 +131,9 @@ func select_card(offer_index: int) -> bool:
 		return false
 	var selected: Resource = _current_offer[offer_index]
 	var card_id: StringName = StringName(selected.get("id"))
+	var granted_tower_id: StringName = StringName(selected.get("grant_tower_id"))
+	if granted_tower_id != &"":
+		_run_tower_ids[granted_tower_id] = true
 	_selected_cards.append(selected)
 	for operation_variant in selected.get("modifier_operations"):
 		var operation := operation_variant as Resource
@@ -260,6 +278,16 @@ func _is_card_available(card: Resource) -> bool:
 	var requirement: StringName = StringName(card.get("unlock_requirement"))
 	if not (_debug_unlock_all or requirement == &"" or _unlocked_content_ids.has(requirement)):
 		return false
+	var grant_tower_id: StringName = StringName(card.get("grant_tower_id"))
+	if grant_tower_id != &"" and _run_tower_ids.has(grant_tower_id):
+		return false
+	for operation_variant in card.get("modifier_operations"):
+		var operation: Resource = operation_variant as Resource
+		if operation == null:
+			continue
+		var affected_tower_id: StringName = StringName(operation.get("affected_tower_id"))
+		if affected_tower_id != &"" and not _run_tower_ids.has(affected_tower_id):
+			return false
 	for required_card_id in card.get("required_card_ids"):
 		if int(_selected_counts.get(required_card_id, 0)) <= 0:
 			return false

@@ -34,5 +34,6 @@ id = &"mana_reservoir"
 display_name = "Mana Capacity"
 description = "+20 de capacidad máxima de Mana por nivel en cada nueva run (máximo +100)."
 max_level = 5
+prerequisites = Array[StringName]([])
 cost_by_level = Array[int]([15, 25, 35, 45, 55])
 operations_by_level = Array[ExtResource("2_operation")]([SubResource("PermanentUpgradeOperation_1"), SubResource("PermanentUpgradeOperation_2"), SubResource("PermanentUpgradeOperation_3"), SubResource("PermanentUpgradeOperation_4"), SubResource("PermanentUpgradeOperation_5")])

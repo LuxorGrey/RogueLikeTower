@@ -8,6 +8,7 @@ enum Rarity { COMMON, UNCOMMON, RARE }
 @export_multiline var description: String = ""
 @export_enum("Común", "Poco común", "Rara") var rarity: int = Rarity.COMMON
 @export var unlock_requirement: StringName = &""
+@export var grant_tower_id: StringName = &""
 @export var required_card_ids: Array[StringName] = []
 @export var any_required_card_ids: Array[StringName] = []
 @export var tags: Array[StringName] = []
@@ -39,7 +40,7 @@ func validate() -> PackedStringArray:
 		if required_id == &"" or required_id == id:
 			errors.append("Los prerrequisitos alternativos deben ser IDs válidos.")
 			break
-	if modifier_operations.is_empty():
+	if modifier_operations.is_empty() and grant_tower_id == &"":
 		errors.append("CardData requiere al menos una operación de modificador.")
 	for operation in modifier_operations:
 		if operation == null or not operation.has_method("validate"):

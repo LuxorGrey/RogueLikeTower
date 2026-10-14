@@ -1,7 +1,7 @@
 # ADR-0071: Marco perimetral de cards y colocación automática de terreno
 
 - Fecha: 2026-10-13
-- Estado: Aceptado por petición explícita; código integrado, aceptación visual/interactiva pendiente.
+- Estado: Parcialmente sustituido por ADR-0075 en la presentación de cards; miniaturas y auto-colocación vigentes, aceptación visual/interactiva pendiente.
 - Actualiza la presentación de Upgrade Cards de [ADR-0065](ADR-0065-panel-y-iconos-de-upgrade-cards.md) y detalla la interacción de terreno de [ADR-0060](ADR-0060-ofertas-de-terreno-y-contenido-determinista.md).
 
 ## Contexto

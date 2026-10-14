@@ -25,7 +25,7 @@ Codex debe ejecutar estos milestones en orden. **No saltar al contenido final.**
 ## M2 — Terrain rendering 2D
 - Implementar capas visuales.
 - Placeholder para Path/Grass/Mountain.
-- Elevation 0/1/2.
+- Elevation 0/1/2 was the original M2 prototype range; current terrain accepts 0–3 under M34/ADR-0073.
 - Offset visual por elevación.
 - Cliff/fachada visual separada de la celda lógica.
 - Y-sort correcto para torres/enemigos/decoración.
@@ -142,9 +142,10 @@ Contrato vigente: WaveCampaignData valida 45 entradas, continuidad de round_numb
 - Pool con filtro `unlock_requirement`, peso de oferta, `max_per_run` y selección sin reemplazo dentro de cada oferta.
 - Aplicar operaciones runtime sin mutar `.tres`: daño plano/multiplicador, alcance, multiplicador H/A/S, crítico, radio de área, coste de Mana, duración de estados, capacidad y regeneración de Mana. RPM permanece fijo, salvo el Frost Keep por cobertura PATH.
 - El servicio se inyecta en torres y economía de la escena; los efectos modifican también torres ya colocadas y el preview correspondiente.
-- Pool inicial M11 de 18 cards placeholder, descrito como historial de implementación. Su catálogo vigente combina 172 Resources nuevos y la Advanced Circuits existente para representar 173 entradas compatibles (190 IDs únicos con las 18 propias). Ver ADR-0062.
+- Pool inicial M11 de 18 cards placeholder, descrito como historial de implementación. Su catálogo de mejora vigente combina 172 Resources nuevos y la Advanced Circuits existente para representar 173 entradas compatibles (190 IDs de mejora). M35 agrega 6 cards de reclutamiento, para 196 IDs runtime. Ver ADR-0062/0076.
 - Calendario vigente centralizado en `data/cards/demo_card_pool.tres`: tras colocar expansión, ofrecer carta cada tres rondas entre 3 y 42. La cadencia está confirmada por ADR-0062; tamaños, rarezas y balance siguen provisionales.
-- Resultado: elecciones que producen builds diferentes dentro de la run. La persistencia y desbloqueos entre runs siguen siendo M12.
+  - La cantidad configurada es la cantidad de cartas que se muestran, no la capacidad máxima de seis ranuras de la UI. Una oferta programada válida abre `CARD_OFFER` antes de preparar la ronda siguiente; un error de creación no avanza la campaña.
+  - Resultado: elecciones que producen builds diferentes dentro de la run. La persistencia y desbloqueos entre runs siguen siendo M12. Regresión del panel de tres cartas cubierta por `ui_migration_smoke`; ver ADR-0086.
 
 ## M12 — Meta-progression
 - Moneda permanente.
@@ -156,7 +157,7 @@ Contrato vigente: WaveCampaignData valida 45 entradas, continuidad de round_numb
 - SaveGame.
 - Resultado: morir -> mejorar -> nueva run.
 
-Contrato M12 implementado: `MetaProgression` conserva su estado fuera de las escenas de run; cada run concede moneda al terminar por victoria o derrota, con recompensa calculada a partir de rondas completas y un bonus de victoria configurable. La tienda terminal permite desbloquear perfiles `TowerData`, comprar los 31 `PermanentUpgradeData` y empezar otra run. Las torres bloqueadas no aparecen en la barra de construcción ni habilitan cartas específicas; el Archivo de cartas suma contenido al pool M11. Los upgrades afectan Gold, Mana, daño H/A/S de torres, opciones de cards y vida/reparación de la base en runs posteriores. `SaveData` serializa solo primitivas en JSON versionado dentro de `user://`, con escritura temporal y copia `.bak`; un save corrupto o de otra versión se conserva sin sobrescribirse y bloquea las compras. Ballista como única torre inicial, economía/recompensa, costes e incrementos son configurables/provisionales, no balance confirmado. La prueba manual M12 sigue pendiente; ver `10_ACCEPTANCE_TESTS.md` y [ADR-0022](../decisions/ADR-0022-meta-progression-y-guardado.md)/[ADR-0062](../decisions/ADR-0062-catalogo-de-upgrade-cards-y-permanent-upgrades.md).
+Contrato M12 implementado: `MetaProgression` conserva su estado fuera de las escenas de run; cada run concede moneda al terminar por victoria o derrota, con recompensa calculada a partir de rondas completas y un bonus de victoria configurable. La tienda permite desbloquear perfiles `TowerData` y comprar los 31 `PermanentUpgradeData`; la presentación terminal por pestañas es histórica y se sustituyó en M35 por un mapa de nodos, menú separado y acceso desde el menú principal. `SaveData` serializa solo primitivas en JSON versionado dentro de `user://`, con escritura temporal y copia `.bak`; un save corrupto o de otra versión se conserva sin sobrescribirse y bloquea las compras. La regla vigente de roster y Gold de inicio está en ADR-0076; ver M35, `10_ACCEPTANCE_TESTS.md` y [ADR-0022](../decisions/ADR-0022-meta-progression-y-guardado.md)/[ADR-0062](../decisions/ADR-0062-catalogo-de-upgrade-cards-y-permanent-upgrades.md).
 
 ## M12A — Reglas de torres, mejoras y capas H/A/S
 - `EnemyData` y Enemy modelan los pools de Health, Armor y Shield con regeneración independiente. Cada perfil configura sus tres máximos; un máximo cero desactiva esa capa para ese enemigo. Resolver Shield→Armor→Health y dibujar una fila por capa con máximo positivo, con Health segmentada.
@@ -170,7 +171,7 @@ Contrato M12 implementado: `MetaProgression` conserva su estado fuera de las esc
 M12A está implementado en código; la aceptación manual sigue pendiente. Las reglas de capas y estados coinciden con las páginas de referencia indicadas en ADR-0023 y con la confirmación del usuario. Las cifras del roster y el pool siguen siendo configurables/provisionales. El exceso de daño al vaciar una capa se descarta según la implementación; la página de referencia no describe expresamente el overkill, por lo que esa decisión permanece provisional. Los criterios están en `10_ACCEPTANCE_TESTS.md` y [ADR-0023](../decisions/ADR-0023-reglas-de-torres-y-capas-de-vida.md).
 
 ## M13 — UX/UI
-- HUD final según M22: salud y atajos arriba a la izquierda; Gold/Mana arriba a la derecha; oleada centrada con una línea de 45 puntos y botón responsivo. Salud, recursos y ronda no tienen un panel compartido; la información de torre comienza bajo los recursos. Ver [ADR-0048](../decisions/ADR-0048-hud-oleadas-cards-y-paredes-texturizadas.md).
+- HUD según M22: salud y atajos arriba a la izquierda; Gold/Mana arriba a la derecha; oleada centrada. El timeline fijo de 45 puntos fue sustituido en M35 por una ventana fija de 15 rondas con fade futuro (ADR-0083). Salud, recursos y ronda no tienen un panel compartido; la información de torre comienza bajo los recursos.
 - Barra de Health de base con valor superpuesto y segmentos de 10; sprite de base intercambiable desde `BaseData`. Gold y Mana usan iconos reutilizables, con mayor énfasis para Gold; al cambiar, su icono y cifra escalan y rebotan.
 - El Mana se repone al máximo efectivo cuando empieza cada ronda de campaña, y se presenta como entero sin alterar la precisión de los cálculos internos.
 - Al seleccionar una torre, mostrar en líneas legibles nivel, daño, multiplicadores H/A/S con iconos de Health/Armor/Shield, alcance, RPM, crítico, patrón, Mana y XP; conservar prioridades, mejoras y demolición en el panel derecho, que desaparece al deseleccionar.
@@ -254,7 +255,7 @@ Estas cantidades NO son compromiso de diseño final.
 - Sustituir el control de targeting por tres selectores ordenados, con criterios únicos e intercambio visible al reordenarlos.
 - Dibujar el preview de construcción delante de todos los sprites; rojo indica colocación inválida y verde una ubicación válida. Pulsar la card inferior activa de torre.
 - Estandarizar obstáculos en caja 86×86 px, centrada con un pequeño offset visual, en tablero y cards.
-- Validar que las seis celdas junto a la base tienen elevación 0.
+- Criterio histórico: el anillo de la base se mantenía plano; esta restricción queda sustituida por las elevaciones aleatorias de M34.
 - Resultado: progresión por capa legible, máximo de 45 subidas y selección/colocación sin feedback contradictorio.
 
 ## M21 — Depuración y claridad de selección
@@ -293,11 +294,11 @@ Estas cantidades NO son compromiso de diseño final.
 - Seleccionar obstáculos y portales desde el tablero y mostrar su información en el panel HUD, con los nombres del catálogo y lista de enemigos con sprites por portal.
 - Permitir pagar para quitar obstáculos con coste `25 × n²` por obstáculo retirado; retirar portales cuesta el doble del siguiente precio de obstáculo y mantiene al menos tres activos.
 - Repartir el total de enemigos de cada oleada entre los portales que sigan activos.
-- Cerrar las cuñas estrechas de fachadas en vértices sin descartar triángulos pequeños y aumentar el offset visual de elevación de 18 a 28 px por nivel sin cambiar el rango lógico 0–2.
+- Cerrar las cuñas estrechas de fachadas en vértices sin descartar triángulos pequeños y aumentar el offset visual de elevación de 18 a 28 px por nivel. El rango lógico 0–2 descrito en este hito histórico se amplió a 0–3 en M34/ADR-0073.
 - Resultado: limpieza de mapa y selección informada integradas; aceptación interactiva y revisión visual de fachadas/alturas pendientes. Ver [ADR-0063](../decisions/ADR-0063-seleccion-y-retirada-de-objetos-del-terreno.md).
 
-## M27 — Cards, economía de demolición y lectura de altura
-- Reutilizar un panel de Upgrade Card con fondos por rareza, marco compartido e icono grande para toda operación que aparezca en una oferta.
+## M27 — Cards, economía de demolición y lectura de altura (presentación sustituida en M34)
+- Diseño original: reutilizar un panel de Upgrade Card con fondos por rareza, marco compartido e icono grande para toda operación que aparezca en una oferta. M34/ADR-0075 sustituyó los fondos por rareza por una superficie común; M36/ADR-0080 añadió un sprite vertical y etiqueta de tier compartidos, con aura coloreada por rareza.
 - Devolver al demoler el precio marginal del slot ocupado según tipo y cantidad; los niveles de la torre no afectan al reembolso.
 - Sortear cofres al confirmar una expansión, no en la miniatura/ghost, y animar su aparición con un salto.
 - Proyectar sombras alfa de losetas y obstáculos con distancia vinculada a elevación y orientación rotatoria lenta.
@@ -320,13 +321,13 @@ Estas cantidades NO son compromiso de diseño final.
 - Resultado: tablero sin sombras generadas y preview de terreno claro; aceptación visual pendiente. Ver [ADR-0070](../decisions/ADR-0070-sin-sombras-y-rutas-limpias-en-expansion.md).
 
 ## M31 — Arsenal inicial, XP y lectura de altura
-- Dejar Ballista, Mortar y Tesla Coil como torres gratuitas iniciales; fijar costes de XP de perfil de 50 para Frost Keep/Flame Thrower/Poison Sprayer y 100 para Shredder.
+- Dejar Ballista, Mortar y Tesla Coil como unlocks permanentes gratuitos iniciales; M35 fija únicamente a Ballista en el roster de construcción al inicio de la run y recluta Mortar/Tesla mediante cards. Fijar costes de XP de perfil de 50 para Frost Keep/Flame Thrower/Poison Sprayer y 100 para Shredder.
 - Hacer que el hack de reinicio restablezca mejoras permanentes y el arsenal inicial; las runs normales conservan compras.
 - Mostrar en Tower Info la altura y el bonus real de daño/rango de la torre seleccionada.
-- Resultado: el jugador ve una progresión de desbloqueo y entiende el efecto de construir en altura. Ver [ADR-0069](../decisions/ADR-0069-desbloqueos-xp-y-feedback-de-altura.md).
+- Resultado: el jugador ve una progresión de unlock/reclutamiento y entiende el efecto de construir en altura. Ver [ADR-0069](../decisions/ADR-0069-desbloqueos-xp-y-feedback-de-altura.md) y [ADR-0076](../decisions/ADR-0076-economia-inicial-roster-de-run-y-flujo-de-escenas.md).
 
-## M32 — Marco de Upgrade Cards y colocación automática
-- Dibujar la textura de tier como fondo y el marco común como borde 9-slice alrededor del panel, sin parche central escalado.
+## M32 — Marco de Upgrade Cards y colocación automática (presentación sustituida en M34/M36)
+- Diseño original: dibujar la textura de tier como fondo y el marco común como borde 9-slice alrededor del panel. M34/ADR-0075 retiró los fondos por rareza; M36/ADR-0080 añadió un único sprite-panel vertical compartido y el texto de tier, conservando el aura por rareza.
 - Quitar de las miniaturas de expansión las ramificaciones y flechas de conexión PATH.
 - Mostrar durante la colocación el atajo `T` y buscar/confirmar una posición válida al pulsarlo; respetar validador, grafo y continuación futura. Si no existe, informar al jugador sin modificar el tablero.
 - Resultado: cards legibles y alternativa rápida que conserva las reglas de expansión. Ver [ADR-0071](../decisions/ADR-0071-marco-de-cards-y-colocacion-automatica.md).
@@ -336,3 +337,35 @@ Estas cantidades NO son compromiso de diseño final.
 - Asignar `T` a la colocación automática existente y mantener visible su aviso durante la expansión.
 - Mostrar al hover sin selección un tooltip pequeño con tipo/estado de terreno, elevación y bonus de daño/alcance de las torres compatibles; ocultarlo ante selecciones o paneles contextuales.
 - Resultado: interacción de colocación consistente y lectura rápida de los hexes; revisión visual/interactiva pendiente. Ver [ADR-0072](../decisions/ADR-0072-controles-y-tooltip-de-celdas.md).
+
+## M34 — Elevaciones 0–3, vida de base y presentación de cards
+- Permitir PATH 0, Grass 1–2 y Mountain 2–3, sorteados de forma reproducible por mapa/oferta; aplicar +1 daño base y +0.5 de alcance por nivel y mostrar el bonus de daño sobre cada torre elevada.
+- Fijar la base en 10 HP iniciales; Fortification permanente añade +1 HP por nivel hasta 20, con costes 20–200 XP y compra secuencial. Fortification I–III de run suman +3 HP cada una. Un boss que toca la base termina la run inmediatamente.
+- Sustituir las variantes PNG por rareza por un panel común a tamaño completo; M36 añade a este panel compartido un sprite vertical y etiqueta de tier. La rareza controla el aura de color, no la superficie.
+- Resultado: código y datos integrados; aceptación visual/interactiva pendiente. Ver [ADR-0073](../decisions/ADR-0073-elevaciones-y-bonus-de-torre.md), [ADR-0074](../decisions/ADR-0074-vida-de-base-y-derrota-por-jefe.md) y [ADR-0075](../decisions/ADR-0075-panel-unico-y-aura-de-rareza.md).
+
+## M35 — Menú, reclutamiento, tienda de nodos y correcciones de lectura
+- Iniciar cada run con 1.000 Gold (+100 por nivel Starting Coffers, hasta 2.000) y únicamente Ballista en la barra; reclutar Mortar/Tesla y torres permanentemente desbloqueadas con cards en las ofertas cada tres rondas. Una torre no reclutada no se puede construir.
+- Separar menú, partida y pausa en escenas; Escape pausa; tras derrota se vuelve al menú con tienda abierta. Mostrar un resumen compacto de número de torres construidas y daño por tipo desbloqueado.
+- Mostrar la tienda permanente como mapa conectado de tarjetas/nodos compartidos, icono grande, tooltip de prerequisitos y partículas al desbloquear.
+- Mostrar 15 rondas en el timeline, sin selector, conservando hover y fade al futuro; limitar obstáculos a dos por pieza y a uno en tablero inicial excluyendo base/anillo vecino.
+- Cerrar las tapas hexagonales, mantener UV de terreno sin estirar, ordenar celdas delanteras/detrás en la cámara isométrica fija y mostrar bonus de elevación en el ghost de Ballista.
+- Resultado: código/datos integrados; aceptación visual/interactiva pendiente. Ver M35 en `10_ACCEPTANCE_TESTS.md` y ADR-0076–0079.
+
+## M36 — Cards de tier, ramas paralelas y lectura cromática de altura
+- Usar un sprite vertical compartido para todas las upgrade cards, escribir el tier en cada card, separar ligeramente las opciones y comunicar rareza mediante el color del aura.
+- Al desbloquear permanentemente una torre, exponer como opciones hermanas sus mejoras Health, Armor y Shield, comprables en cualquier orden.
+- Añadir a las tapas un tinte multiplicativo extremadamente tenue según elevación, usando el mismo cálculo en superficies normales y Y-sorted.
+- Resultado: código y catálogo integrados; aceptación visual/interactiva pendiente. Ver [ADR-0080](../decisions/ADR-0080-sprite-vertical-y-tier-de-upgrade-cards.md), [ADR-0081](../decisions/ADR-0081-mejoras-de-torre-en-ramas-paralelas.md) y [ADR-0082](../decisions/ADR-0082-tinte-multiplicativo-por-elevacion.md).
+
+## M37 — Retícula geométrica axial y profundidad de terreno
+- Calcular las seis esquinas pointy-top desde claves enteras axiales, de modo que celdas vecinas compartan exactamente el mismo punto en tapa, fachada, hover, miniatura y copia Y-sorted.
+- Pintar cada celda como una unidad de profundidad y mantener la cámara fija; el detalle vigente de las paredes se concreta en M38.
+- Conservar UV de terreno/cliff, cámara fija, elevación lógica 0–3 y oclusión de entidades por sus superficies Y-sorted.
+- Resultado: geometría axial y orden por celda integrados; aceptación visual pendiente con elevaciones 0–3. Ver [ADR-0084](../decisions/ADR-0084-render-axial-de-terreno-y-profundidad-por-celda.md).
+
+## M38 — Fachadas delanteras simples y degradado de cliff
+- Renderizar solo las dos aristas delanteras del hex pointy-top como quads verticales; no dibujar paredes en las caras laterales/traseras, extrusión radial ni cierres de vértice.
+- Mantener el footprint superior exacto y usar oclusión back-to-front de tapas delanteras para ocultar la pared que queda debajo de su nivel.
+- Aplicar a las paredes Grass/Mountain un degradado multiplicativo por vértice desde el color actual arriba hasta un tono muy oscuro abajo; las tapas superiores no cambian.
+  - Resultado: renderer y fuente activa de documentación integrados; el usuario aprobó el aspecto actual como referencia visual. La revisión de todas las combinaciones de altura/oclusión sigue pendiente. Ver [ADR-0085](../decisions/ADR-0085-solo-fachadas-delanteras-y-degradado-de-cliffs.md).

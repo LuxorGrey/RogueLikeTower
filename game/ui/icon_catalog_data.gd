@@ -14,12 +14,6 @@ extends Resource
 @export var enemy: Texture2D
 @export var elevation: Texture2D
 
-@export_group("Cards de mejora")
-@export var upgrade_card_frame: Texture2D
-@export var tier_common: Texture2D
-@export var tier_uncommon: Texture2D
-@export var tier_rare: Texture2D
-
 @export_group("Capas")
 @export var health: Texture2D
 @export var armor: Texture2D
@@ -33,6 +27,9 @@ extends Resource
 @export var flame_thrower: Texture2D
 @export var poison_sprayer: Texture2D
 @export var shredder: Texture2D
+
+@export_group("Progresión")
+@export var card_archive: Texture2D
 
 @export_group("Estados")
 @export var burn: Texture2D
@@ -68,6 +65,7 @@ func get_icon(icon_name: StringName) -> Texture2D:
 		&"flame_thrower": icon = flame_thrower
 		&"poison_sprayer": icon = poison_sprayer
 		&"shredder": icon = shredder
+		&"card_archive": icon = card_archive
 		&"burn": icon = burn
 		&"slow": icon = slow
 		&"poison": icon = poison
@@ -89,18 +87,31 @@ func normalize_tower_icon_id(tower_id: StringName) -> StringName:
 func get_tower_icon(tower_id: StringName) -> Texture2D:
 	return get_icon(normalize_tower_icon_id(tower_id))
 
-func get_card_tier_background(rarity: int) -> Texture2D:
-	match rarity:
-		1:
-			return tier_uncommon
-		2:
-			return tier_rare
-		_:
-			return tier_common
+func get_permanent_upgrade_icon(upgrade: Resource) -> Texture2D:
+	if upgrade == null:
+		return get_icon(&"damage")
+	var upgrade_id: String = String(upgrade.get("id"))
+	for tower_id in ["ballista", "mortar", "tesla_coil", "frost_keep", "flame_thrower", "poison_sprayer", "shredder"]:
+		if upgrade_id.begins_with("permanent_%s_" % tower_id):
+			return get_tower_icon(StringName(tower_id))
+	if upgrade_id in ["card_archive", "card_draw"]:
+		return get_icon(&"card_archive")
+	if upgrade_id in ["mana_reservoir", "mana_wellspring"]:
+		return get_icon(&"mana")
+	if upgrade_id in ["starting_coffers", "gold_drop", "chest_finder", "meta:chest_finder"]:
+		return get_icon(&"gold")
+	if upgrade_id == "tower_calibration":
+		return get_icon(&"damage")
+	if upgrade_id.begins_with("main_tower_"):
+		return get_icon(&"health")
+	return get_icon(&"damage")
 
 func get_card_icon(card: Resource) -> Texture2D:
 	if card == null:
 		return damage
+	var grant_tower_id: StringName = normalize_tower_icon_id(StringName(card.get("grant_tower_id")))
+	if grant_tower_id != &"":
+		return get_tower_icon(grant_tower_id)
 	var operations: Array = card.get("modifier_operations")
 	for operation_variant in operations:
 		var operation: Resource = operation_variant as Resource

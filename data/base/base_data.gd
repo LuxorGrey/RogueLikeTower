@@ -3,7 +3,7 @@ extends Resource
 
 @export var id: StringName = &""
 @export var display_name: String = ""
-@export_range(1, 100000, 1) var max_health: int = 50
+@export_range(1, 100000, 1) var max_health: int = 10
 @export var sprite_texture: Texture2D
 @export var sprite_size: Vector2 = Vector2(112.0, 112.0)
 
