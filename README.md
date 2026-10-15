@@ -1,17 +1,20 @@
 # Rogue Tower
 
-Tower Defense Roguelike con progresión roguelike y un mapa que el jugador expande para construir la ruta que tendrá que defender. El proyecto usa Godot 4.7, GDScript y una cuadrícula hexagonal lógica con terreno 2D de elevación visual.
+Tower Defense roguelike de tablero hexagonal: el jugador amplía el terreno, construye la ruta y la defiende con torres reclutadas y mejoradas. El proyecto usa Godot 4.7, GDScript y terreno 2D con elevación visual.
 
-## Fuente de verdad
+## Documentación
 
-Toda la documentación vigente, las decisiones, las referencias y los candidatos están reunidos en [`docs/rogue_tower/`](docs/rogue_tower/). Su [índice de autoridad](docs/rogue_tower/README.md) explica qué documento manda en caso de discrepancia. El diseño activo está en [design](docs/rogue_tower/design/README.md); el origen del paquete y las referencias constan en [ORIGEN.md](docs/rogue_tower/references/ORIGEN.md).
+Empieza en el [índice de documentación](docs/rogue_tower/README.md). La especificación activa, los contenidos y assets, el estado de implementación, el historial de decisiones y las propuestas están separados por autoridad, no duplicados en numerosos archivos.
 
 ## Ejecutar
 
-Abre el proyecto con Godot 4.7 y ejecuta `game/main/main.tscn`. La campaña contiene 45 rondas y 1.093 enemigos directos conforme a la tabla única de `docs/rogue_tower/design/14_CAMPANA_45_RONDAS.md`: al terminar una oleada, elige una de las tres piezas visuales de terreno, colócala en una ubicación legal y continúa; en las rondas programadas también aparecerá una oferta de mejoras. El modelo de cada enemigo incluye Health, Armor y Shield, resueltos en ese orden defensivo: Shield, Armor y Health. Cada perfil configura sus máximos; un máximo cero desactiva esa capa para ese enemigo. Las barras de las capas activas aparecen sobre el enemigo.
+Abre el proyecto con Godot 4.7 y ejecuta `game/main/main.tscn`. La demo aprobada tiene 45 rondas. Consulta el [diseño de campaña](docs/rogue_tower/CONTENT_AND_ASSETS.md#campaign) y el [estado de implementación](docs/rogue_tower/IMPLEMENTATION_AND_QA.md#progress).
 
-Controles principales: `1–7` seleccionan las torres disponibles durante preparación/combate, `P` pausa o reanuda, `F3` muestra herramientas de diagnóstico, `H` oculta o muestra el HUD, `Q/E` rota la pieza seleccionada, el botón central y arrastre desplazan el mapa, la rueda ajusta el zoom y `R` centra el tablero. Durante una elección de terreno solo se puede elegir, rotar, colocar o cancelar la pieza; iniciar ronda reanuda la partida desde `ROUND_PREP`.
+## Controles de partida
 
-## Estado
-
-La campaña, las siete torres, las ofertas de terreno, la pausa, la meta-progresión y los hitos M0–M25 están integrados en código. La actualización M25 sincroniza obstáculos/cofres entre miniatura, ghost y tablero, restringe acciones durante la expansión y ofrece formas variables para prolongar rutas. La aceptación visual/interactiva en ventana Godot sigue pendiente; el [registro de progreso](docs/rogue_tower/design/09_PROGRESS.md) distingue lo integrado de lo que requiere revisión manual.
+- `P` o `Esc`: pausar/reanudar; el botón junto a Pausa cambia entre velocidad ×1, ×2 y ×3.
+- `1–7`: seleccionar torres reclutadas, según el orden visible; `8`, `9` y `0` seleccionan perfiles de diagnóstico.
+- `Q/E`: rotar la pieza de terreno; `T`: colocarla automáticamente en una posición válida.
+- Rueda: zoom; `Ctrl` + rueda: rotar la pieza durante la colocación.
+- Botón central + arrastre: desplazar el tablero; `R`: centrar la cámara; `H`: ocultar/mostrar el HUD.
+- `Ctrl+D`: mostrar/ocultar el overlay de rutas. El antiguo panel de diagnóstico `F3` fue retirado.
