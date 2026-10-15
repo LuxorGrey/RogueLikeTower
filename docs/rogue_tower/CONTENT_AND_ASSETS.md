@@ -688,8 +688,8 @@ La [wiki de Rogue Tower](https://rogue-tower.fandom.com/wiki/Towers) documenta l
 
 > **Inventario, no especificación:** este snapshot documenta qué PNG y referencias se encontraron en la revisión indicada. Las rutas runtime se consultan en el código/Resources; los criterios visuales y decisiones aprobadas pertenecen a las páginas asignadas en el [índice maestro](README.md#index). No eliminar assets solo porque esta búsqueda no encuentre una referencia.
 
-- Fecha de revisión: 2026-10-15.
-- Alcance: 130 archivos PNG bajo assets/sprites/, incluidos los 26 spritesheets de correr activos. La carpeta `assets/sprites/enemies/new/` citada en registros previos no existe en este checkout; no hay copias locales de los PNG fuente originales.
+- Fecha de revisión: 2026-10-16.
+- Alcance: 131 archivos PNG bajo assets/sprites/, incluidos los 26 spritesheets de correr activos y el cofre de cartas de isla añadido en M71. La carpeta `assets/sprites/enemies/new/` citada en registros previos no existe en este checkout; no hay copias locales de los PNG fuente originales.
 - Método: búsqueda por nombre de archivo en scripts, escenas, Resources y configuración del proyecto (*.gd, *.tscn, *.tres, *.gdshader, *.godot, *.cfg, *.cs). Las coincidencias de TerrainVisualCatalog y los catálogos de iconos son referencias de runtime directas, aunque el contenido se seleccione por ID.
 - Resultado: los 26 PNG canónicos de enemigos son spritesheets de cuatro cuadros y mantienen las rutas usadas por los Resources. En el checkout se encontraron 26 archivos de enemigo, todos bajo la carpeta canónica `assets/sprites/enemies/`; no se encontraron las 26 fuentes previas que documentos anteriores daban por conservadas. Los PNG alternativos autorizados y el marco histórico de Tower Info se retiraron en M64.
 
@@ -762,6 +762,7 @@ La [wiki de Rogue Tower](https://rogue-tower.fandom.com/wiki/Towers) documenta l
 | assets/sprites/terrain/tiles/path_02.png | Usado | game/board/terrain_visual_catalog.gd |
 | assets/sprites/terrain/tiles/path_03.png | Usado | game/board/terrain_visual_catalog.gd |
 | assets/sprites/terrain/treasure_chest.png | Usado | game/board/terrain_visual_catalog.gd |
+| assets/sprites/terrain/island_card_chest.png | Usado | game/board/island_card_chest.gd; cofre especial para los tesoros de isla (M71). |
 | assets/sprites/ui/demolish_tower_icon.png | Usado | `game/main/main.tscn`: acciones de demoler torre y retirar obstáculo. |
 | assets/sprites/ui/icons/area.png | Usado | game/ui/resources/icon_catalog.tres |
 | assets/sprites/ui/icons/armor.png | Usado | game/ui/resources/icon_catalog.tres, game/main/main.tscn |
@@ -895,9 +896,10 @@ Dimensiones fuente y tamaño de representación en runtime:
 | `spawn_portal_SpriteSheet.png` | 1774 × 887 (fuente); 768 × 384 (importado) | 7 frames activos de 192 × 192 calculados de la textura importada; el último se omite; cada portal se dibuja a 96 × 96 |
 | `spawn_portal.png` | 293 × 292 | Icono estático del panel de selección |
 | `treasure_chest.png` | 168 × 168 | 84 × 84 |
+| `island_card_chest.png` | 101 × 115 | 47,4 × 54; borde inferior anclado al centro del hex |
 | `assets/sprites/ui/tower_card_button.png` | 288 × 296 | 144 × 148 |
 
-El sprite de Main Tower conserva su resolución PNG y se escala al rectángulo visual actual de 93,6 × 145,6 px desde la huella de 52 px; el borde inferior permanece anclado y la huella lógica sigue ocupando un hexágono. El cofre se ajusta al rectángulo cuadrado que ya se dibuja en el juego, para mantener 2× píxeles en ambos ejes.
+El sprite de Main Tower conserva su resolución PNG y se escala al rectángulo visual actual de 93,6 × 145,6 px desde la huella de 52 px; el borde inferior permanece anclado y la huella lógica sigue ocupando un hexágono. El cofre normal se ajusta al rectángulo cuadrado que ya se dibuja en el juego, para mantener 2× píxeles en ambos ejes. `island_card_chest.png` se generó el 2026-10-16 con fondo transparente tomando `treasure_chest.png` como referencia de estilo; conserva madera y herrajes dorados, y añade una gema turquesa para identificar la recompensa de cartas. Es arte nuevo para Rogue Tower, no un asset de terceros; se muestra a 54 px de alto y su base se alinea con el centro de la celda.
 
 ### Fuente y regeneración
 

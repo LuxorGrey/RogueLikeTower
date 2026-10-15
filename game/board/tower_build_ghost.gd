@@ -2,8 +2,6 @@ class_name TowerBuildGhost
 extends Node2D
 
 const HEX_RADIUS: float = 52.0
-const ART_OFFSET_Y: float = 8.0
-const TOWER_CELL_VISUAL_OFFSET: Vector2 = Vector2(0.0, 8.0)
 const TOWER_GHOST_SHADER: Shader = preload("res://game/board/tower_placement_ghost.gdshader")
 const TOWER_ART_CATALOG_SCRIPT: Script = preload("res://game/towers/tower_art_catalog.gd")
 
@@ -75,9 +73,13 @@ func _sync_ghost_sprite() -> void:
 		var display_height: float = _icon_size * TOWER_ART_CATALOG_SCRIPT.DISPLAY_HEIGHT_MULTIPLIER
 		var sprite_scale: float = display_height / maxf(preview_texture.get_size().y, 1.0)
 		_icon_sprite.scale = Vector2.ONE * sprite_scale
-		_icon_sprite.position = center + TOWER_ART_CATALOG_SCRIPT.get_tower_anchor_offset(_tower_id) * sprite_scale + TOWER_CELL_VISUAL_OFFSET
+		var art_anchor: Vector2 = TOWER_ART_CATALOG_SCRIPT.get_tower_anchor_offset(_tower_id)
+		_icon_sprite.position = center + Vector2(
+			art_anchor.x * sprite_scale,
+			-display_height * 0.5 + art_anchor.y * sprite_scale
+		)
 	else:
-		_icon_sprite.position = center + Vector2(0.0, -_icon_size * 0.5 + ART_OFFSET_Y)
+		_icon_sprite.position = center + Vector2(0.0, -_icon_size * 0.5)
 		_icon_sprite.scale = Vector2.ONE * _icon_size / Vector2(preview_texture.get_size())
 	var ghost_color: Color = Color("#55f28a") if _is_valid else Color("#ff5056")
 	_ghost_material.set_shader_parameter("ghost_color", ghost_color)
@@ -112,4 +114,4 @@ func _draw() -> void:
 		draw_rect(badge_rect, Color("#b5ff42"), false, 1.8, true)
 		draw_string(ThemeDB.fallback_font, badge_center + Vector2(-38.0, 4.0), "h%d · +%s daño" % [cell.elevation, bonus_text], HORIZONTAL_ALIGNMENT_LEFT, 76.0, 11, Color.WHITE)
 	if _icon == null:
-		draw_circle(center + Vector2(0.0, -7.0 + ART_OFFSET_Y), 9.0, tint)
+		draw_circle(center + Vector2(0.0, -7.0), 9.0, tint)

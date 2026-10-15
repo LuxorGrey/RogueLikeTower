@@ -2,6 +2,7 @@ class_name PauseToggleButton
 extends Button
 
 const PAUSE_ACTION: StringName = &"toggle_pause"
+var _pause_locked: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -14,11 +15,18 @@ func _process(_delta: float) -> void:
 	sync_pause_state()
 
 func _unhandled_key_input(event: InputEvent) -> void:
+	if _pause_locked:
+		return
 	var key_event := event as InputEventKey
 	if key_event == null or key_event.echo or not key_event.is_action_pressed(PAUSE_ACTION):
 		return
 	get_viewport().set_input_as_handled()
 	get_tree().paused = not get_tree().paused
+	sync_pause_state()
+
+func set_pause_locked(locked: bool) -> void:
+	_pause_locked = locked
+	disabled = locked
 	sync_pause_state()
 
 func sync_pause_state() -> void:
@@ -57,6 +65,9 @@ func _draw() -> void:
 	)
 
 func _on_toggled(toggled_on: bool) -> void:
+	if _pause_locked:
+		set_pressed_no_signal(true)
+		return
 	get_tree().paused = toggled_on
 	sync_pause_state()
 

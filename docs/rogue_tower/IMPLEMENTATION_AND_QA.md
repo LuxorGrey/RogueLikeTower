@@ -15,9 +15,13 @@ Usa primero el estado actual. El roadmap describe el orden histórico; la lista 
 ## Estado actual, milestones y siguiente paso
 
 ### Estado
-Última actualización: 2026-10-15
+Última actualización: 2026-10-16
 
-**Resumen vigente:** M69 es el último milestone integrado. M65–M69 cubren animación de correr, ofertas de reclutamiento, HUD de vida de base, velocidad ×1/×2/×3 y colores/gradiente de fachadas. La aceptación visual o interactiva sigue pendiente; la tabla de milestones es la fuente única del estado y la sección «Próximo paso» fija el orden de revisión. La última verificación de motor registrada es M64: no se afirma que M65–M69 hayan pasado pruebas o inspección visual.
+**Resumen vigente:** M71 es el último milestone integrado. M65–M71 cubren animación de correr, ofertas de reclutamiento, HUD de vida de base, velocidad ×1/×2/×3, colores/gradiente de fachadas, límites de cámara, niebla, seis islas con tesoros de cartas y contorno de espuma estático. Godot 4.7 inició `main.tscn` sin errores de análisis ni ejecución; persiste un aviso de división entera en `data/enemies/enemy_data.gd:47`, ajeno a M71. La aceptación visual o interactiva sigue pendiente; la tabla de milestones es la fuente única del estado y la sección «Próximo paso» fija el orden de revisión.
+
+Actualización M71 (2026-10-16; [ADR-0123](DECISION_HISTORY.md#adr-0123)): se sustituyen las islas decorativas por seis islas explorables reproducibles: una cercana desde R1 y cinco en anillos progresivos entre R10 y R45. Ver un borde descubre la isla completa y su cofre; la brújula guía a objetivos no cobrados, y cada cofre pausa hasta elegir una carta de la oferta habitual de tres. Si el tablero alcanza una isla, se traslada con su cofre a agua segura. La espuma animada se reemplaza por un contorno blanco costero con distorsión Voronoi estática; se anclan las bases de los sprites completos de torre al centro del hex sin recortarlos. El arranque de `main.tscn` en Godot 4.7 no mostró errores; la aceptación visual e interactiva y las pruebas de flujo siguen pendientes.
+
+Actualización M70 (2026-10-15; [ADR-0122](DECISION_HISTORY.md#adr-0122)): el mar acompaña el paneo con parallax al 62 % y añade espuma costera; la cámara restringe paneo al tablero más 1,5–2,5 hexes y amplía zoom de 0,82×–1,35× en R1 al rango 0,45×–2,5× en R45. Un máximo de seis islas decorativas aparece progresivamente, separadas del `HexGrid` y de rutas. Una niebla procedural desde Main Tower se extiende con el tamaño del tablero y un margen de ronda 1,5–3 hexes. M71 sustituye la espuma animada y la política de islas no interactivas; cámara, parallax y niebla continúan vigentes. Ver ADR-0123.
 
 Actualización M69 (2026-10-15; [ADR-0121](DECISION_HISTORY.md#adr-0121)): las paredes de elevación muestran Grass `#407850` y Mountain `#3b3c41`; se conserva encima un gradiente negro opaco abajo que llega a alfa cero arriba. Tablero, preview y miniaturas comparten el efecto; las tapas y los contornos regionales no cambian. Código/documentación integrados; aceptación visual pendiente; no se ejecutó Godot.
 
@@ -161,6 +165,8 @@ Actualización solicitada (2026-10-14, M35): `RoundProgressStrip` ahora muestra 
 | M67 Feedback de vida de base | Código/documentación integrados; aceptación visual pendiente | Barra 42 px, un segmento por HP, pérdida animada, color progresivo y viñeta de baja vida desde 3 HP. ADR-0119. |
 | M68 Velocidad de simulación | Código/documentación integrados; aceptación visual/interactiva pendiente | Botón junto a Pausa para ×1/×2/×3; pausa conserva el multiplicador y cada run comienza en ×1. ADR-0120. |
 | M69 Tonos y gradiente de fachadas | Código/documentación integrados; aceptación visual pendiente | Grass `#407850`, Mountain `#3b3c41`; overlay negro opaco abajo a transparente arriba, compartido por tablero y previews. ADR-0121. |
+| M70 Exploración del mapa y límites de cámara | Integrado; espuma/islas actualizadas por M71 | Mar con parallax, paneo limitado, zoom progresivo hasta rango completo en R45 y niebla radial desde Main Tower. La espuma animada y las islas sin interacción son históricas; ver ADR-0123. |
+| M71 Islas explorables y tesoros de cartas | Código/documentación integrados; aceptación visual/interactiva pendiente | Seis islas por run, brújula, descubrimiento por costa visible, cofres con oferta bonus de tres cartas y reubicación ante expansiones. Borde costero estático Voronoi y sprites de torre anclados por su base. ADR-0123. |
 
 Actualización transversal (2026-10-13, ADR-0055): se añadió tinte rojo y sacudida de cámara al daño de la base, inclinación/vibración del grupo de Gold al recibir recompensas y abrir cofres, velo translúcido detrás de las ofertas de terreno/mejoras con reaparición al cancelar la colocación, y portal reducido a 64×96 px. M41 sustituye parcialmente ese tamaño por el portal animado de 96×96 px. Implementación integrada; revisión visual/interactiva pendiente según `IMPLEMENTATION_AND_QA.md#acceptance`. No se ejecutaron pruebas en esta actualización.
 
@@ -243,12 +249,12 @@ Implementada sin crear un milestone de gameplay nuevo: `MetaShopPanel`, hacks `C
 - Las pruebas no sustituyen la inspección visual con ratón: quedan por revisar el hover/cliffs, rotación/colocación y overlay `Ctrl+D` en ventana Godot.
 
 ### Próximo paso
-Completar las revisiones manuales pendientes de `IMPLEMENTATION_AND_QA.md#acceptance` en este orden: M65–M69; M63–M64; M62 y M55; M50, M49, M48, M47 y M45; M41, M40, M39, M38, M36, M35 y M34; luego M33, M32, M30, M31, M28, M27, M26 y M25. Después, completar las inspecciones M8–M14 y M17–M24; el contrato histórico M7 se verifica con M12A. La última ejecución de Godot sigue siendo M64; no se ejecutaron pruebas ni inspección visual/interactiva para M65–M69.
+Completar las revisiones manuales pendientes de `IMPLEMENTATION_AND_QA.md#acceptance` en este orden: M71 y M70; M65–M69; M63–M64; M62 y M55; M50, M49, M48, M47 y M45; M41, M40, M39, M38, M36, M35 y M34; luego M33, M32, M30, M31, M28, M27, M26 y M25. Después, completar las inspecciones M8–M14 y M17–M24; el contrato histórico M7 se verifica con M12A. El último smoke de motor es M71: `main.tscn` inició en Godot 4.7 sin errores, pero la aceptación visual/interactiva de M65–M71 sigue pendiente.
 
 <a id='roadmap'></a>
 ## Roadmap e historial de milestones
 
-Este documento conserva la secuencia y el alcance histórico de los milestones; no es el estado actual. El último milestone integrado es M69. La lista de trabajo pendiente y aceptación vive solo en [09 — Progreso](#progress); los contratos de diseño y sistema están asignados en el [índice maestro](README.md#index). Al trabajar, no uses una fila histórica para revivir una regla sustituida.
+Este documento conserva la secuencia y el alcance histórico de los milestones; no es el estado actual. El último milestone integrado es M71. La lista de trabajo pendiente y aceptación vive solo en [09 — Progreso](#progress); los contratos de diseño y sistema están asignados en el [índice maestro](README.md#index). Al trabajar, no uses una fila histórica para revivir una regla sustituida.
 
 Los milestones se implementan en orden cuando la petición del usuario es «avanza». **No saltar al contenido final.**
 
@@ -803,6 +809,22 @@ Estas cantidades NO son compromiso de diseño final.
 - Mantener sobre cada pared un gradiente negro opaco en la base que se desvanece hasta transparente arriba, sin afectar las tapas.
 - Compartir color y gradiente entre el tablero, el preview de expansión y las miniaturas.
 - Resultado: código/documentación integrados; aceptación visual pendiente. Ver [ADR-0121](DECISION_HISTORY.md#adr-0121).
+
+### M70 — Exploración del mapa y límites de cámara
+- Añadir espuma rota a las costas exteriores del tablero y de islas visibles; desplazar el agua a menor velocidad que la cámara y dejar la espuma anclada al terreno.
+- Limitar el paneo al tablero confirmado más un margen que crece entre R1 y R45; progresar los límites de zoom desde 0,82×–1,35× hasta el rango actual 0,45×–2,5× en R45.
+- Revelar hasta seis grupos de islas visuales reproducibles, de 3–7 hexes conectados y alturas 0–2, entre R8 y R45. Mantenerlos fuera del grid jugable y ocultarlos cuando la expansión se acerque.
+- Añadir niebla procedural oscura desde Main Tower que crece con el tablero y la ronda. La capa no intercepta acciones ni oscurece el HUD.
+- Resultado: código/documentación integrados; aceptación visual e interactiva pendiente. Ver [ADR-0122](DECISION_HISTORY.md#adr-0122).
+
+### M71 — Islas explorables y tesoros de cartas
+- Reemplazar la espuma animada por un borde blanco estático, roto y distorsionado por celdas Voronoi, limitado al litoral expuesto; las juntas internas no reciben trazo.
+- Mantener seis islas por run: una desde R1 a un máximo de 8 hexes de la base y cinco posteriores en anillos axiales progresivos, generadas en R10, 19, 28, 37 y 45. Su distribución es reproducible por seed; cada isla contiene 3–7 celdas visuales de altura 0–2 fuera de `HexGrid`.
+- Mostrar una brújula con dirección y distancia por cada isla/cofre sin cobrar a un máximo de 12 hexes de la cámara. Si cualquier arista costera entra en la vista, revelar la isla entera y colocar su cofre de cartas.
+- Al abrir un cofre, pausar la run y ofrecer tres cartas del mismo pool/selector usado por la mejora cada tres rondas; al elegir, reanudar la fase de preparación o combate que estaba activa. No consumir ni sustituir la oferta programada.
+- Si el tablero alcanza una isla pendiente, mover el conjunto y el cofre a agua segura. Confirmar que el terreno decorativo no ocupa celdas lógicas, no altera PATH y nunca desaparece detrás del tablero.
+- Alinear la base del sprite completo de cada torre con el centro de su hex, dejando el volumen hacia arriba sin recorte en el tablero ni en el ghost.
+- Resultado: código/documentación integrados; aceptación visual e interactiva pendiente. Ver [ADR-0123](DECISION_HISTORY.md#adr-0123).
 
 <a id='acceptance'></a>
 ## Criterios de aceptación y revisión manual
@@ -1738,11 +1760,30 @@ M68 queda integrado en código/documentación; la inspección visual e interacti
 
 M69 queda integrado en código/documentación; la revisión visual en Godot queda pendiente. No se ejecutó el motor. Ver [ADR-0121](DECISION_HISTORY.md#adr-0121).
 
+### M70 — Exploración del mapa y límites de cámara
+
+1. En R1, comprueba que la rueda no permite zoom por debajo de 0,82× ni por encima de 1,35×; tras avanzar rondas, los límites deben ampliarse gradualmente y en R45 alcanzar 0,45×–2,5×. `R` debe centrar el terreno actual a 1×.
+2. Panea con botón central y WASD en las cuatro direcciones: la cámara debe permanecer dentro de los límites del tablero más su margen. Al confirmar una expansión, el límite debe incluirla; los cambios de tamaño de ventana no deben dejar la cámara fuera del área permitida.
+3. Desde Main Tower, verifica que el mundo se oscurece gradualmente al alejar la cámara, que el borde de niebla tiene irregularidad/trazo estilizado y que su radio aumenta al crecer el tablero y al avanzar de ronda. En distancias extremas debe quedar casi todo oscuro; HUD, interacción y reglas de juego siguen activos.
+
+M70 queda integrado en código/documentación; aceptación visual e interactiva pendiente. No se ejecutó Godot. Ver [ADR-0122](DECISION_HISTORY.md#adr-0122) y la revisión vigente de islas/espuma en M71.
+
+### M71 — Islas explorables y tesoros de cartas
+
+1. Revisa el agua mientras paneas: el patrón conserva su parallax lento. El borde costero debe ser blanco, estático y fragmentado con distorsión Voronoi; aparece solo en costas expuestas y no forma costuras en las juntas internas.
+2. En R1, confirma que hay una isla alcanzable situada a no más de 8 hexes de Main Tower. A medida que avanzan las rondas aparecen las otras cinco en anillos progresivamente más alejados; las mismas seeds reproducen la misma disposición. Todas tienen 3–7 celdas y alturas 0–2 sin ocupar ni alterar el `HexGrid`.
+3. Panea hasta que una arista exterior de una isla entre en pantalla: deben descubrirse todas sus celdas y el cofre. La brújula debe dar número, dirección y distancia para cada objetivo sin cobrar a 12 hexes o menos de la cámara; al descubrirla, su marcador debe pasar de isla a cofre.
+4. Clica un cofre durante preparación y durante combate: la oferta muestra exactamente tres cartas, pausa el combate si estaba activo y reanuda la misma fase tras elegir. La oferta regular de cada tres rondas debe seguir ocurriendo en su ronda sin consumirse por el tesoro.
+5. Acerca una expansión a una isla pendiente: todo el grupo y su cofre deben trasladarse a agua libre y seguir siendo localizables/reclamables. Ninguna expansión, ruta PATH, construcción o torre debe colisionar con las celdas decorativas.
+6. Compara las torres construidas y el ghost: el centro de la base inferior del sprite debe coincidir con el centro del hex y la imagen debe sobresalir hacia arriba sin quedar recortada.
+
+M71 queda integrado en código/documentación; `main.tscn` inició en Godot 4.7 sin errores de análisis ni ejecución. Aceptación visual e interactiva y pruebas específicas de flujo pendientes. Ver [ADR-0123](DECISION_HISTORY.md#adr-0123).
+
 <a id='doc-audit'></a>
 ## Auditoría de coherencia documental actual
 
-- Fecha: 2026-10-15.
-- Alcance: índices, diseño activo, roadmap, progreso, aceptación, ADR, catálogos de sprites y reglas runtime de elevación.
+- Fecha: 2026-10-16.
+- Alcance: índices, diseño activo, roadmap, progreso, aceptación, ADR, catálogos de sprites, elevación, islas explorables, ofertas bonus y presentación de costa.
 - Autoridad documental: [índice maestro](README.md#index). Esta página registra los resultados de la conciliación; no introduce reglas adicionales.
 
 ### Resultado
@@ -1755,7 +1796,7 @@ Los ADR conservan las razones e historia de los cambios. No prevalecen sobre el 
 
 ### Cambios conciliados
 
-- **Estado:** M65–M69 aparecen en roadmap, progreso, aceptación e índice. El último escaneo/smoke de Godot registrado sigue siendo M64; no se atribuye validación de motor a cambios posteriores.
+- **Estado:** M65–M70 aparecen en roadmap, progreso y aceptación. El último escaneo/smoke de Godot registrado sigue siendo M64; no se atribuye validación de motor a cambios posteriores.
 - **Elevación:** por la decisión explícita del usuario, `AGENTS.md`, ADR-0073, código y documentos propietarios coinciden en elevación lógica 0–3: PATH 0, Grass 1–2 y Mountain 2–3. La generación reproducible, validadores y bonus por nivel permanecen alineados.
 - **Enemigos:** M65 mantiene los 26 spritesheets runtime y el orden/nombres confirmados en ADR-0116. La carpeta `assets/sprites/enemies/new/` no existe en el checkout, aunque varios documentos anteriores la daban por conservada; el inventario ya indica que las fuentes originales no están disponibles localmente.
 - **Fachadas y terreno:** los valores de M69 (#407850 Grass y #3b3c41 Mountain con negro opaco abajo a transparente arriba) se alinean entre diseño, implementación documentada, criterios y catálogo de sprites. Los colores del contorno regional permanecen separados.
@@ -1765,7 +1806,7 @@ Los ADR conservan las razones e historia de los cambios. No prevalecen sobre el 
 
 - El escaneo del checkout encontró 130 PNG bajo `assets/sprites/` y 26 PNG canónicos de enemigo bajo `assets/sprites/enemies/`; no encontró `assets/sprites/enemies/new/`.
 - Se revisaron los enlaces Markdown locales y `git diff --check`: no hay destinos locales rotos ni errores de whitespace.
-- No se ejecutó Godot ni pruebas automatizadas en la conciliación funcional anterior. La aceptación visual/interactiva de M65–M69 sigue pendiente según `IMPLEMENTATION_AND_QA.md#progress` y `IMPLEMENTATION_AND_QA.md#acceptance`.
+- M70 añade criterios manuales para cámara, espuma, parallax, islas y niebla. No se ejecutó Godot ni pruebas automatizadas en este cambio; la aceptación visual/interactiva de M65–M70 sigue pendiente según [Progreso](#progress) y [Aceptación](#acceptance).
 
 <a id='m64-audit'></a>
 ## Snapshot de verificación M64

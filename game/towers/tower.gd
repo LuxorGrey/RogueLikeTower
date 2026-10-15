@@ -1176,7 +1176,11 @@ func _configure_tower_art(tower_id: StringName) -> void:
 		* TOWER_ART_CATALOG_SCRIPT.DISPLAY_HEIGHT_MULTIPLIER
 	)
 	var sprite_scale: float = display_height / maxf(texture_size.y, 1.0)
-	_tower_sprite.position = TOWER_ART_CATALOG_SCRIPT.get_tower_anchor_offset(tower_id) * sprite_scale
+	var art_anchor: Vector2 = TOWER_ART_CATALOG_SCRIPT.get_tower_anchor_offset(tower_id)
+	_tower_sprite.position = Vector2(
+		art_anchor.x * sprite_scale,
+		-display_height * 0.5 + art_anchor.y * sprite_scale
+	)
 	_tower_sprite.scale = Vector2.ONE * sprite_scale
 	_sync_tower_art_tint()
 	_sync_tower_art_scale()
@@ -1201,7 +1205,8 @@ func _sync_tower_facing(target_position: Vector2) -> void:
 	var anchor_offset: Vector2 = TOWER_ART_CATALOG_SCRIPT.get_tower_anchor_offset(StringName(_tower_data.id))
 	_tower_sprite.position = Vector2(
 		anchor_offset.x * _tower_sprite.scale.x * (-1.0 if flip_h else 1.0),
-		anchor_offset.y * _tower_sprite.scale.y
+		-_tower_sprite.texture.get_height() * _tower_sprite.scale.y * 0.5
+			+ anchor_offset.y * _tower_sprite.scale.y
 	)
 
 func _sync_tower_art_tint() -> void:
@@ -1223,14 +1228,14 @@ func _get_tower_art_rect(visual_scale: float) -> Rect2:
 		var center: Vector2 = _tower_art_root.position + _tower_sprite.position * visual_scale
 		return Rect2(center - size * 0.5, size)
 	var fallback_size: float = _tower_data.visual_icon_size * TOWER_VISUAL_SCALE * visual_scale
-	var fallback_center := Vector2(0.0, -fallback_size * 0.5 + 8.0)
+	var fallback_center := Vector2(0.0, -fallback_size * 0.5)
 	return Rect2(fallback_center - Vector2.ONE * fallback_size * 0.5, Vector2.ONE * fallback_size)
 
 func _sync_tower_art_scale() -> void:
 	if _tower_art_root == null:
 		return
 	var pulse: float = 0.5 + 0.5 * sin(_selection_pulse_time * TAU / 1.15) if _is_selected else 0.0
-	_tower_art_root.position = TOWER_CELL_VISUAL_OFFSET
+	_tower_art_root.position = Vector2.ZERO
 	var art_scale: float = _get_level_visual_scale() * (1.0 + pulse * 0.055)
 	_tower_art_root.scale = Vector2.ONE * art_scale
 

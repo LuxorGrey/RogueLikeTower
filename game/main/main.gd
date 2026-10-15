@@ -43,6 +43,7 @@ const CAMERA_ZOOM_STEP: float = 1.12
 const CAMERA_KEYBOARD_PAN_SPEED: float = 620.0
 const CAMERA_PAN_KEYS: Array[int] = [KEY_W, KEY_A, KEY_S, KEY_D]
 enum CursorKind { DEFAULT, INTERACT, INVALID, TOWER_PLACEMENT }
+enum UpgradeOfferKind { NONE, CAMPAIGN, ISLAND_TREASURE }
 
 var _board_grid := HexGrid.new()
 var _pieces: Array[TerrainPieceData] = []
@@ -85,6 +86,11 @@ var _upgrade_card_buttons: Array[Button] = []
 var _upgrade_card_titles: Array[RichTextLabel] = []
 var _upgrade_card_descriptions: Array[RichTextLabel] = []
 var _upgrade_card_heading: Label
+var _upgrade_offer_kind: UpgradeOfferKind = UpgradeOfferKind.NONE
+var _island_offer_return_phase: int = RunManager.Phase.ROUND_PREP
+var _island_offer_was_paused: bool = false
+var _pending_island_treasure_id: StringName = &""
+var _island_exploration_timer: float = 0.0
 var _meta_shop_panel: CanvasLayer
 @export var ui_icon_catalog: Resource = ICON_CATALOG_RESOURCE
 
@@ -125,6 +131,18 @@ var _meta_shop_panel: CanvasLayer
 @export var terrain_offer_preview_size: Vector2 = Vector2(264.0, 340.0)
 @export_range(8, 32, 1) var terrain_offer_title_font_size: int = 18
 @export_range(8, 28, 1) var terrain_offer_count_font_size: int = 13
+
+@export_group("Campaign camera progression")
+@export_range(0.45, 1.5, 0.01) var camera_round_one_min_zoom: float = 0.82
+@export_range(1.0, 2.5, 0.01) var camera_round_one_max_zoom: float = 1.35
+@export_range(0.5, 4.0, 0.1) var camera_pan_margin_round_one_hexes: float = 1.5
+@export_range(0.5, 4.0, 0.1) var camera_pan_margin_round_45_hexes: float = 2.5
+
+@export_group("Map fog")
+@export_range(0.0, 8.0, 0.1) var fog_margin_round_one_hexes: float = 1.5
+@export_range(0.0, 8.0, 0.1) var fog_margin_round_45_hexes: float = 3.0
+@export_range(24.0, 600.0, 1.0) var fog_fade_distance: float = 170.0
+@export_range(0.0, 120.0, 1.0) var fog_edge_roughness: float = 34.0
 
 @export_group("HUD visual states")
 @export var positive_effect_text_color: Color = Color("#75df8b")
@@ -257,6 +275,10 @@ var _priority_visibility_tower_instance_id: int = 0
 var _cursor_feedback_vfx: Node2D
 @onready var _cloud_shadow_material: ShaderMaterial = %CloudShadowOverlay.material as ShaderMaterial
 @onready var _water_background_material: ShaderMaterial = $WaterBackgroundLayer/WaterBackground.material as ShaderMaterial
+@onready var _map_fog_material: ShaderMaterial = %MapFog.material as ShaderMaterial
+@onready var _island_field: DecorativeIslandField = %DecorativeIslandField
+@onready var _shoreline_overlay: Node2D = %ShorelineFoamOverlay
+@onready var _island_compass: IslandCompassIndicator = %IslandCompass
 @onready var _base_health_vignette: ColorRect = %BaseHealthVignette
 @onready var _entities: Node2D = %Entities
 @onready var _base: GameBase = %GameBase
@@ -335,6 +357,8 @@ func _ready() -> void:
 	_camera.position = get_viewport_rect().size * 0.5
 	_camera.make_current()
 	_camera_shake_origin = _camera.offset
+	if _water_background_material != null:
+		_water_background_material.set_shader_parameter("parallax_origin", _camera.position)
 	_update_cloud_shadow_transform()
 	_pieces = [
 		STRAIGHT_PIECE, GENTLE_TURN_PIECE, HARD_TURN_PIECE, FORK_PIECE, CONVERGENCE_PIECE,
@@ -369,6 +393,8 @@ func _ready() -> void:
 		_tower_shortcut_buttons[index].pressed.connect(_select_tower_and_build.bind(index))
 	_piece_preview.hover_changed.connect(_on_preview_hover_changed)
 	_piece_preview.hover_cleared.connect(_on_preview_hover_cleared)
+	_island_field.island_discovered.connect(_on_island_discovered)
+	_island_field.treasure_open_requested.connect(_open_island_treasure)
 	_base.health_changed.connect(_on_base_health_changed)
 	_run_economy.connect(&"gold_changed", _on_gold_changed)
 	_run_economy.connect(&"mana_changed", _on_mana_changed)
@@ -464,6 +490,15 @@ func _ready() -> void:
 		HexCoord.new(_base_coord.x, _base_coord.y),
 		HEX_RADIUS
 	)
+	_island_field.call(
+		"configure",
+		_pieces,
+		_run_seed,
+		_campaign_round_number,
+		_board_grid.cells,
+		_base_coord
+	)
+	_refresh_map_environment()
 	_base.footprint_radius = HEX_RADIUS
 	_base.queue_redraw()
 	_on_base_health_changed(_base.get_current_health(), _base.get_maximum_health())
@@ -512,9 +547,12 @@ func _process(_delta: float) -> void:
 	_water_background_time += _delta
 	if _water_background_material != null:
 		_water_background_material.set_shader_parameter("water_time", _water_background_time)
+	if _map_fog_material != null:
+		_map_fog_material.set_shader_parameter("water_time", _water_background_time)
 	_update_base_health_vignette(_delta)
 	_update_camera_keyboard_pan(_delta)
 	_update_camera_shake_motion(_delta)
+	_update_island_exploration(_delta)
 	_update_cloud_shadow_transform()
 	_position_portal_wave_tooltip()
 	_update_cell_hover_tooltip()
@@ -522,6 +560,22 @@ func _process(_delta: float) -> void:
 	if _is_panning or not _placement_enabled or _build_controller.is_build_mode():
 		return
 	_update_anchor_from_mouse()
+
+func _update_island_exploration(delta: float) -> void:
+	if _island_field == null or _camera == null or _island_compass == null:
+		return
+	_island_exploration_timer += delta
+	if _island_exploration_timer < 0.15:
+		return
+	_island_exploration_timer = fposmod(_island_exploration_timer, 0.15)
+	var camera_position: Vector2 = _camera.get_screen_center_position()
+	var viewport_size: Vector2 = get_viewport_rect().size
+	var safe_zoom: float = maxf(_camera.zoom.x, 0.001)
+	var world_size: Vector2 = viewport_size / safe_zoom
+	var world_rect := Rect2(camera_position - world_size * 0.5, world_size)
+	if _island_field.update_exploration(camera_position, world_rect):
+		_refresh_map_environment()
+	_island_compass.set_targets(_island_field.get_compass_targets(camera_position))
 
 func _update_cloud_shadow_transform() -> void:
 	if _camera == null:
@@ -537,6 +591,76 @@ func _update_cloud_shadow_transform() -> void:
 		_water_background_material.set_shader_parameter("camera_world_position", camera_position)
 		_water_background_material.set_shader_parameter("viewport_size", current_viewport_size)
 		_water_background_material.set_shader_parameter("camera_zoom", current_camera_zoom)
+	if _map_fog_material != null:
+		_map_fog_material.set_shader_parameter("camera_world_position", camera_position)
+		_map_fog_material.set_shader_parameter("fog_center_world_position", _base.global_position)
+		_map_fog_material.set_shader_parameter("viewport_size", current_viewport_size)
+		_map_fog_material.set_shader_parameter("camera_zoom", current_camera_zoom)
+		_map_fog_material.set_shader_parameter("fog_fade_distance", fog_fade_distance)
+		_map_fog_material.set_shader_parameter("fog_edge_roughness", fog_edge_roughness)
+
+func _refresh_map_environment() -> void:
+	if _island_field != null:
+		_island_field.set_campaign_state(_campaign_round_number, _board_grid.cells)
+	if _shoreline_overlay != null:
+		var decorative_cells: Array[TerrainPieceCellData] = []
+		if _island_field != null:
+			decorative_cells.assign(_island_field.get_visible_cells())
+		_shoreline_overlay.call("set_surface_cells", _board_grid.cells, decorative_cells)
+	_update_map_fog_radius()
+	_clamp_camera_to_board_bounds()
+
+func _update_map_fog_radius() -> void:
+	if _map_fog_material == null or _board_grid.cells.is_empty():
+		return
+	var farthest_visible_land_distance: float = 0.0
+	for coord_variant in _board_grid.cells:
+		var coord: Vector2i = coord_variant
+		var cell: HexCell = _board_grid.cells[coord] as HexCell
+		if cell == null:
+			continue
+		var elevation_offset := Vector2(
+			0.0,
+			float(cell.elevation) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET
+		)
+		var axial_coord := HexCoord.new(coord.x, coord.y)
+		for corner_index in range(6):
+			var world_corner: Vector2 = _piece_preview.to_global(
+				HexMath.axial_hex_corner(axial_coord, corner_index, HEX_RADIUS) - elevation_offset
+			)
+			farthest_visible_land_distance = maxf(
+				farthest_visible_land_distance,
+				_base.global_position.distance_to(world_corner)
+			)
+	if _island_field != null:
+		var decorative_cells: Array[TerrainPieceCellData] = []
+		decorative_cells.assign(_island_field.call("get_visible_cells"))
+		for decorative_cell in decorative_cells:
+			var elevation_offset := Vector2(
+				0.0,
+				float(decorative_cell.elevation) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET
+			)
+			var axial_coord := HexCoord.new(
+				decorative_cell.local_coord.x,
+				decorative_cell.local_coord.y
+			)
+			for corner_index in range(6):
+				var world_corner: Vector2 = _island_field.to_global(
+					HexMath.axial_hex_corner(axial_coord, corner_index, HEX_RADIUS) - elevation_offset
+				)
+				farthest_visible_land_distance = maxf(
+					farthest_visible_land_distance,
+					_base.global_position.distance_to(world_corner)
+				)
+	var fog_margin_hexes: float = lerpf(
+		fog_margin_round_one_hexes,
+		fog_margin_round_45_hexes,
+		_campaign_progress_fraction()
+	)
+	_map_fog_material.set_shader_parameter(
+		"fog_reveal_radius",
+		farthest_visible_land_distance + fog_margin_hexes * HEX_RADIUS
+	)
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
@@ -609,6 +733,7 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion and _is_panning:
 		var motion_event := event as InputEventMouseMotion
 		_camera.position -= motion_event.relative / _camera.zoom.x
+		_clamp_camera_to_board_bounds()
 		get_viewport().set_input_as_handled()
 
 func _update_anchor_from_mouse() -> void:
@@ -708,6 +833,7 @@ func _update_camera_keyboard_pan(delta: float) -> void:
 	if direction.is_zero_approx():
 		return
 	_camera.position += direction.normalized() * CAMERA_KEYBOARD_PAN_SPEED * delta / _camera.zoom.x
+	_clamp_camera_to_board_bounds()
 
 func _toggle_hud() -> void:
 	_hud.visible = not _hud.visible
@@ -964,6 +1090,8 @@ func _update_tower_card_pulse(index: int) -> void:
 
 func _on_viewport_size_changed() -> void:
 	call_deferred("_fit_tower_info_panel")
+	_clamp_camera_to_board_bounds()
+	_update_cloud_shadow_transform()
 
 func _configure_hud_tooltips() -> void:
 	_base_health_bar.tooltip_text = "Health restante de Main Tower. Si llega a cero, termina la run."
@@ -990,42 +1118,90 @@ func _is_mouse_over_hud(mouse_position: Vector2) -> bool:
 		or (_round_panel.visible and _round_panel.get_global_rect().has_point(mouse_position))
 		or (_tower_info_panel.visible and _tower_info_panel.get_global_rect().has_point(mouse_position))
 		or (_tower_toolbar.visible and _tower_toolbar.get_global_rect().has_point(mouse_position))
+		or (_island_compass.visible and _island_compass.get_global_rect().has_point(mouse_position))
 		or (_terrain_card_panel.visible and _terrain_card_panel.get_global_rect().has_point(mouse_position))
 		or (_upgrade_card_panel != null and _upgrade_card_panel.visible and _upgrade_card_panel.get_global_rect().has_point(mouse_position))
 	)
 
 func _zoom_at_cursor(factor: float) -> void:
 	var old_zoom: float = _camera.zoom.x
-	var new_zoom: float = clampf(old_zoom * factor, MIN_CAMERA_ZOOM, MAX_CAMERA_ZOOM)
+	var zoom_limits: Vector2 = _camera_zoom_limits_for_round()
+	var new_zoom: float = clampf(old_zoom * factor, zoom_limits.x, zoom_limits.y)
 	if is_equal_approx(old_zoom, new_zoom):
 		return
 	var viewport_center: Vector2 = get_viewport_rect().size * 0.5
 	var cursor_offset: Vector2 = get_viewport().get_mouse_position() - viewport_center
 	_camera.position += cursor_offset * (1.0 / old_zoom - 1.0 / new_zoom)
 	_camera.zoom = Vector2.ONE * new_zoom
+	_clamp_camera_to_board_bounds()
 	_update_anchor_from_mouse()
 
 func _reset_camera() -> void:
 	_camera.position = _board_center_world()
 	_camera.zoom = Vector2.ONE
+	_clamp_camera_to_board_bounds()
 	_update_anchor_from_mouse()
 
 func _board_center_world() -> Vector2:
 	if _board_grid.cells.is_empty():
 		return get_viewport_rect().size * 0.5
-	var minimum := Vector2(1e20, 1e20)
-	var maximum := Vector2(-1e20, -1e20)
+	return _board_world_bounds().get_center()
+
+func _board_world_bounds() -> Rect2:
+	var has_bounds: bool = false
+	var bounds := Rect2()
 	for coord in _board_grid.cells:
 		var cell: HexCell = _board_grid.cells[coord]
-		var center: Vector2 = _piece_preview.to_global(
-			HexMath.axial_to_world(HexCoord.new(coord.x, coord.y), HEX_RADIUS)
+		if cell == null:
+			continue
+		var elevation_offset := Vector2(
+			0.0,
+			float(cell.elevation) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET
 		)
-		center.y -= float(cell.elevation) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET
-		minimum.x = minf(minimum.x, center.x - HEX_RADIUS)
-		minimum.y = minf(minimum.y, center.y - HEX_RADIUS)
-		maximum.x = maxf(maximum.x, center.x + HEX_RADIUS)
-		maximum.y = maxf(maximum.y, center.y + HEX_RADIUS)
-	return (minimum + maximum) * 0.5
+		var axial_coord := HexCoord.new(coord.x, coord.y)
+		for corner_index in range(6):
+			var world_corner: Vector2 = _piece_preview.to_global(
+				HexMath.axial_hex_corner(axial_coord, corner_index, HEX_RADIUS) - elevation_offset
+			)
+			if not has_bounds:
+				bounds = Rect2(world_corner, Vector2.ZERO)
+				has_bounds = true
+			else:
+				bounds = bounds.expand(world_corner)
+	return bounds
+
+func _campaign_progress_fraction() -> float:
+	return clampf(
+		float(_campaign_round_number - 1) / float(CAMPAIGN_ROUND_COUNT - 1),
+		0.0,
+		1.0
+	)
+
+func _camera_zoom_limits_for_round() -> Vector2:
+	var progress: float = _campaign_progress_fraction()
+	var starting_minimum: float = minf(camera_round_one_min_zoom, camera_round_one_max_zoom)
+	var starting_maximum: float = maxf(camera_round_one_min_zoom, camera_round_one_max_zoom)
+	return Vector2(
+		lerpf(starting_minimum, MIN_CAMERA_ZOOM, progress),
+		lerpf(starting_maximum, MAX_CAMERA_ZOOM, progress)
+	)
+
+func _clamp_camera_to_board_bounds() -> void:
+	if _camera == null or _board_grid.cells.is_empty():
+		return
+	var bounds: Rect2 = _board_world_bounds()
+	var pan_margin_hexes: float = lerpf(
+		camera_pan_margin_round_one_hexes,
+		camera_pan_margin_round_45_hexes,
+		_campaign_progress_fraction()
+	)
+	var margin: Vector2 = Vector2.ONE * HEX_RADIUS * pan_margin_hexes
+	var minimum: Vector2 = bounds.position - margin
+	var maximum: Vector2 = bounds.end + margin
+	_camera.global_position = Vector2(
+		clampf(_camera.global_position.x, minimum.x, maximum.x),
+		clampf(_camera.global_position.y, minimum.y, maximum.y)
+	)
 
 func _rotate_by(step_delta: int) -> void:
 	if not _placement_enabled or _build_controller.is_build_mode() or _selected_piece == null:
@@ -1493,6 +1669,7 @@ func _confirm_placement() -> void:
 	_next_piece_instance_id += 1
 	_piece_preview.set_board_cells(_board_grid.cells)
 	_piece_preview.set_path_graph(_path_graph)
+	_refresh_map_environment()
 	if confirmed_campaign_expansion:
 		_awaiting_campaign_expansion = false
 		_selected_expansion_piece = null
@@ -1657,6 +1834,34 @@ func _open_treasure_chest(cell: HexCell) -> void:
 	_piece_preview.refresh_cell_decorations()
 	_piece_preview.queue_redraw()
 	_refresh_tower_controls()
+
+func _on_island_discovered(island_id: StringName) -> void:
+	var island_number: String = String(island_id).trim_prefix("island_")
+	_wave_status.text = "¡Isla %s descubierta! Su cofre ofrece elegir una carta." % island_number
+
+func _open_island_treasure(island_id: StringName, world_position: Vector2) -> void:
+	if (
+		island_id == &""
+		or _upgrade_offer_kind != UpgradeOfferKind.NONE
+		or RunManager.phase not in [RunManager.Phase.ROUND_PREP, RunManager.Phase.COMBAT]
+	):
+		return
+	var cards: Array[Resource] = []
+	cards.assign(_run_card_service.call("create_bonus_offer"))
+	if cards.size() != CardPoolData.FIXED_OFFER_SIZE:
+		_wave_status.text = "No se pudo preparar la oferta del cofre · %s" % String(_run_card_service.get("last_error"))
+		return
+	_island_offer_return_phase = RunManager.phase
+	_island_offer_was_paused = get_tree().paused
+	_pending_island_treasure_id = island_id
+	_upgrade_offer_kind = UpgradeOfferKind.ISLAND_TREASURE
+	_upgrade_card_panel.process_mode = Node.PROCESS_MODE_ALWAYS
+	_pause_button.call("set_pause_locked", true)
+	_play_ui_click_vfx()
+	_spawn_impact_vfx(&"chest_pickup", world_position)
+	_present_upgrade_card_offer(_campaign_round_number, cards, true)
+	get_tree().paused = true
+	_pause_button.call("sync_pause_state")
 
 func _select_obstacle(coord: Vector2i) -> void:
 	var cell: HexCell = _board_grid.cells.get(coord) as HexCell
@@ -3281,18 +3486,28 @@ func _begin_campaign_terrain_expansion(round_number: int, round_reward: int) -> 
 	])
 	_present_terrain_card_offer()
 
-func _present_upgrade_card_offer(round_number: int, cards: Array[Resource]) -> void:
+func _present_upgrade_card_offer(
+	round_number: int,
+	cards: Array[Resource],
+	is_island_treasure: bool = false
+) -> void:
 	if (
 		cards.size() != CardPoolData.FIXED_OFFER_SIZE
 		or _upgrade_card_buttons.size() < CardPoolData.FIXED_OFFER_SIZE
 	):
 		push_error("La oferta M11 debe contener exactamente tres cards.")
 		return
+	if not is_island_treasure:
+		_upgrade_offer_kind = UpgradeOfferKind.CAMPAIGN
 	_upgrade_card_panel.set_card_count(CardPoolData.FIXED_OFFER_SIZE)
 	if _build_controller.is_build_mode():
 		_build_controller.cancel_build_mode()
 	_build_controller.clear_selection()
-	_upgrade_card_heading.text = "MEJORAS DE RUN · RONDA %02d" % round_number
+	_upgrade_card_heading.text = (
+		"TESORO DE ISLA · RONDA %02d" % round_number
+		if is_island_treasure
+		else "MEJORAS DE RUN · RONDA %02d" % round_number
+	)
 	for index in cards.size():
 		var card: Resource = cards[index]
 		_set_rich_text_with_currency_icons(_upgrade_card_titles[index], String(card.get("display_name")))
@@ -3315,10 +3530,13 @@ func _present_upgrade_card_offer(round_number: int, cards: Array[Resource]) -> v
 	_latest_placement = null
 	_refresh_placement()
 	RunManager.transition_to(RunManager.Phase.CARD_OFFER)
-	_set_rich_text_with_currency_icons(_wave_status, "Ronda %d/45 completada · +%d Gold · elige una mejora para la run" % [
-		round_number,
-		_pending_expansion_reward,
-	])
+	if is_island_treasure:
+		_wave_status.text = "Cofre de isla · elige una carta; la ronda se reanudará después."
+	else:
+		_set_rich_text_with_currency_icons(_wave_status, "Ronda %d/45 completada · +%d Gold · elige una mejora para la run" % [
+			round_number,
+			_pending_expansion_reward,
+		])
 	_start_wave_button.disabled = true
 	_set_start_wave_button_text("Elige mejora")
 	_refresh_tower_controls()
@@ -3339,8 +3557,38 @@ func _on_upgrade_card_selected(index: int) -> void:
 	if granted_tower_id != &"":
 		RunManager.grant_tower(granted_tower_id)
 	_upgrade_card_panel.hide()
+	if _upgrade_offer_kind == UpgradeOfferKind.ISLAND_TREASURE:
+		_island_field.mark_treasure_claimed(_pending_island_treasure_id)
+		_resume_after_island_treasure_offer()
+		_refresh_map_environment()
+		_refresh_tower_controls()
+		return
+	_upgrade_offer_kind = UpgradeOfferKind.NONE
 	_prepare_next_campaign_round()
 	_refresh_tower_controls()
+
+func _resume_after_island_treasure_offer() -> void:
+	var phase_to_resume: int = _island_offer_return_phase
+	_pending_island_treasure_id = &""
+	_upgrade_offer_kind = UpgradeOfferKind.NONE
+	_upgrade_card_panel.process_mode = Node.PROCESS_MODE_INHERIT
+	RunManager.transition_to(phase_to_resume)
+	match phase_to_resume:
+		RunManager.Phase.ROUND_PREP:
+			_wave_status.text = "Preparación · ronda %d/45 · %d enemigos" % [
+				_campaign_round_number,
+				_get_wave_enemy_count(_selected_wave),
+			]
+			_set_start_wave_button_text("▶ Iniciar ronda %d/45" % _campaign_round_number)
+			_start_wave_button.disabled = not _can_start_selected_wave()
+		RunManager.Phase.COMBAT:
+			_wave_status.text = "Combate reanudado · ronda %d/45" % _campaign_round_number
+			_set_start_wave_button_text("Combate activo")
+			_start_wave_button.disabled = true
+	_pause_button.call("set_pause_locked", false)
+	get_tree().paused = _island_offer_was_paused
+	_refresh_placement()
+	_sync_selection_backdrop()
 
 func _prepare_next_campaign_round() -> void:
 	_campaign_round_number += 1
@@ -3351,6 +3599,7 @@ func _prepare_next_campaign_round() -> void:
 		push_error(_wave_status.text)
 		return
 	_set_campaign_wave_name()
+	_refresh_map_environment()
 	RunManager.transition_to(RunManager.Phase.ROUND_PREP)
 	_wave_status.text = "Preparación · ronda %d/45 · %d enemigos" % [
 		_campaign_round_number,

@@ -11,8 +11,10 @@ uniform float distortion_speed = 0.65;
 uniform vec2 tile = vec2(1.35, 1.35);
 uniform vec2 offset = vec2(0, 0);
 uniform vec2 camera_world_position = vec2(0.0);
+uniform vec2 parallax_origin = vec2(720.0, 450.0);
 uniform vec2 viewport_size = vec2(1152.0, 648.0);
 uniform float camera_zoom = 1.0;
+uniform float camera_parallax_factor : hint_range(0.0, 1.0) = 0.62;
 uniform float water_time = 0.0;
 
 const float TWOPI = 6.283185307;
@@ -140,7 +142,12 @@ vec3 water(vec2 uv, vec3 cdir, float iTime)
 }
 
 void fragment() {
-	vec2 world_position = camera_world_position + (UV - vec2(0.5)) * viewport_size / max(camera_zoom, 0.001);
+	vec2 parallax_camera_position = parallax_origin
+		+ (camera_world_position - parallax_origin) * camera_parallax_factor;
+	vec2 world_position = parallax_camera_position
+		+ (UV - vec2(0.5)) * viewport_size / max(camera_zoom, 0.001);
 	vec2 uv = world_position / 32.0;
+	float swell = sin(uv.x * 0.018 + uv.y * 0.011 + water_time * 0.12);
+	uv += vec2(swell, cos(uv.y * 0.016 - water_time * 0.09)) * 0.006;
 	COLOR = vec4(water(uv * tile + offset, vec3(0,1,0), water_time * distortion_speed), 1.0);
 }

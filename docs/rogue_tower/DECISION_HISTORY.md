@@ -125,6 +125,8 @@ Este archivo contiene el registro histórico completo. La regla aprobada vigente
 - [ADR-0119 — Feedback de vida de la base](#adr-0119)
 - [ADR-0120 — Control de velocidad de la partida](#adr-0120)
 - [ADR-0121 — Color y gradiente de fachadas de elevación](#adr-0121)
+- [ADR-0122 — Exploración del mapa, mar e islas decorativas](#adr-0122)
+- [ADR-0123 — Islas explorables, tesoros de cartas y borde costero](#adr-0123)
 
 ## Cómo mantener el historial
 
@@ -3926,5 +3928,91 @@ Las fachadas verticales de los hexágonos se veían casi negras en gran parte de
 - `docs/rogue_tower/PROJECT_SPEC.md`
 - `docs/rogue_tower/PROJECT_SPEC.md`
 - `docs/rogue_tower/PROJECT_SPEC.md#terrain`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#progress`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#acceptance`
+
+<a id='adr-0122'></a>
+## ADR-0122 — Exploración del mapa, mar e islas decorativas
+
+- Fecha: 2026-10-15.
+- Estado: código/documentación integrados; la espuma animada y las islas decorativas no interactivas fueron sustituidas parcialmente por ADR-0123. Cámara, parallax y niebla siguen vigentes; aceptación visual e interactiva pendiente.
+- Decisiones relacionadas: ADR-0005 define los controles iniciales de cámara; ADR-0109 mantiene el mar a pantalla completa y sincroniza sus coordenadas con la cámara; ADR-0084 conserva la retícula axial y el renderer 2D.
+
+### Contexto
+
+El mapa de la campaña puede crecer de forma indefinida en pantalla y el jugador puede alejarse del loop de expansión. El usuario pidió limitar gradualmente cámara y exploración, reforzar la lectura de mar/isla y añadir decoración insular sin afectar rutas ni expansión. Antes de implementar se confirmaron el rango de zoom completo en R45, el margen de paneo, las islas solo visuales, la densidad máxima y la niebla radial desde Main Tower.
+
+### Decisiones
+
+1. Conservar el `Camera2D`, zoom alrededor del cursor y `R` para volver a 1× y centrar el tablero. En R1, limitar el zoom a 0,82×–1,35× y el margen de paneo a 1,5 hexes. Ambos límites progresan por ronda hasta llegar en R45 al rango completo actual de 0,45×–2,5× y a 2,5 hexes de margen. Al confirmar terreno, los límites de paneo y los cálculos de exploración incluyen el tablero nuevo.
+2. Mantener el agua en su `CanvasLayer -10`; desplazar sus coordenadas de cámara con un factor de parallax 0,62 para que el patrón avance más despacio que el mundo. Añadir variación lenta de onda. Dibujar espuma procedural rota solo en aristas exteriores sin celda vecina del tablero/islas visibles y anclarla a sus superficies; no se perfilan uniones internas.
+3. Crear como máximo seis islas visuales por run, reproducibles por seed, en grupos conectados de 3–7 celdas. Se revelan de forma gradual en las rondas 8, 15, 23, 30, 38 y 45. Sus alturas visuales van de 0 a 2, usan la paleta/recursos de terreno ya existentes y viven fuera de `HexGrid`. No generan PATH, obstáculos, ocupación, construcción ni restricciones de expansión; se ocultan si el tablero confirmado se aproxima.
+4. Añadir `MapFog` como overlay CanvasItem procedural, calculado en coordenadas de mundo desde `Main Tower`. Su radio cubre el punto más distante del tablero confirmado o de las islas decorativas visibles y un margen que progresa de 1,5 a 3 hexes entre R1 y R45; el borde es irregular y lleva trazos estilizados. La niebla aumenta la opacidad con la distancia, admite oscuridad casi total fuera de su radio y deja HUD/entrada/reglas intactos.
+5. Mantener configurables en `Main` los límites iniciales de zoom, los márgenes de paneo/niebla, la distancia de transición y la rugosidad del borde. La elevación decorativa no modifica el contrato lógico: PATH 0, Grass 1–2, Mountain 2–3.
+
+### Consecuencias
+
+- El campo de cámara y de visión avanza con la campaña y se adapta a cada expansión, mientras el mar da una sensación de deriva y las costas quedan reconocibles.
+- Las islas aportan silueta de archipiélago sin convertirse en terreno jugable ni cambiar la validación, el camino o la economía.
+- La niebla limita visualmente la exploración lejana sin impedir paneo permitido, entradas o lectura del HUD.
+- La revisión en Godot debe confirmar costuras/espuma, escala del parallax, límites del mouse/WASD, persistencia/reproducibilidad de islas, transición de niebla y legibilidad extrema. No se ejecutó el motor ni pruebas automatizadas en este cambio.
+
+### Implementación
+
+- `game/main/main.gd`
+- `game/main/main.tscn`
+- `game/main/wind_waker_water_background.gdshader`
+- `game/main/map_fog.gdshader`
+- `game/board/decorative_island_field.gd`
+- `game/board/shoreline_foam_overlay.gd`
+- `game/board/shoreline_foam.gdshader`
+- `docs/rogue_tower/PROJECT_SPEC.md`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#progress`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#acceptance`
+
+<a id='adr-0123'></a>
+## ADR-0123 — Islas explorables, tesoros de cartas y borde costero
+
+- Fecha: 2026-10-16.
+- Estado: código y documentación integrados; aceptación visual e interactiva pendiente.
+- Decisiones relacionadas: ADR-0122 conserva progresión de cámara, parallax y niebla; ADR-0084 define el renderer 2D sobre retícula axial; ADR-0118 fija la política de ofertas de run.
+
+### Contexto
+
+El usuario pidió que las islas incentivaran la exploración y pudieran localizarse antes de verlas, con un tesoro de cartas al descubrirlas. Aprobó usar el paneo como exploración, revelar la isla completa al ver una arista, mostrar una isla cercana desde el inicio y las otras cinco progresivamente, trasladar islas alcanzadas por expansiones, y pausar hasta elegir una oferta de tres cartas. También pidió retirar la espuma animada y anclar las torres por su base inferior.
+
+### Decisiones
+
+1. Mantener el agua con parallax lento de 0,62× de ADR-0122 y reemplazar la espuma animada por un borde blanco estático con distorsión Voronoi. Se dibuja solo en aristas sin celda vecina del tablero o de islas descubiertas; no se marcan costuras internas.
+2. Crear seis islas conectadas por run, reproducibles por seed, fuera de `HexGrid`, con 3–7 hexes decorativos y alturas visuales 0–2. La primera se genera en R1 y al menos una de sus celdas queda a 8 hexes o menos de Main Tower. Las cinco restantes aparecen en R10, R19, R28, R37 y R45, en anillos axiales progresivos alrededor de la base.
+3. Usar el centro de cámara como posición explorada. Cuando el punto medio de cualquier arista exterior de una isla entra en el rectángulo visible, marcar toda la isla como descubierta y crear su cofre. La brújula muestra dirección, distancia e identidad de cada isla/cofre pendiente cuando queda a 12 hexes o menos de la cámara.
+4. Cada isla contiene un cofre reclamable con tres cartas del mismo pool, filtros, sorteo y panel de selección que las ofertas habituales. Abrirlo pausa el `SceneTree`; al escoger, entrega el efecto de la carta, marca el tesoro cobrado y reanuda la fase previa (`ROUND_PREP` o `COMBAT`). No consume, reemplaza ni cambia la programación de las ofertas de campaña cada tres rondas.
+5. Si una expansión deja alguna celda insular a distancia axial 1 o menor del tablero, mover el grupo y su cofre a una posición segura en agua. La isla sigue descubierta y el tesoro no se pierde. Las celdas continúan fuera del grid lógico y no crean caminos, ocupación ni bloqueos.
+6. Añadir `island_card_chest.png`, nuevo sprite generado para el proyecto con `treasure_chest.png` como referencia de estilo, madera y herrajes dorados más una gema turquesa. Anclar la base de ese sprite al centro del hex insular.
+7. Anclar los sprites completos de torre y los ghosts por el punto medio de su borde inferior al centro del hex; todo el cuerpo crece hacia arriba y queda fuera de cualquier recorte de celda.
+
+### Consecuencias
+
+- El paneo comunica exploración: la brújula orienta al jugador, ver el litoral revela el grupo y cada tesoro da una elección bonus sin interferir con la progresión regular.
+- El archipiélago sigue siendo presentación fuera de las reglas lógicas del terreno; las expansiones no pueden tragarse un tesoro pendiente.
+- La espuma deja una silueta blanca texturada en costa sin animación y sin costuras entre hexes.
+- El arranque de `main.tscn` en Godot 4.7 no presentó errores de análisis ni ejecución; queda un aviso de división entera en `data/enemies/enemy_data.gd:47`, fuera de este cambio. La inspección manual debe revisar generación por seed, brújula, revelado, recogida en preparación/combate, reanudación de fase, reubicación, oferta programada, contorno Voronoi y el anclaje de torres; no se ejecutaron pruebas automatizadas.
+
+### Implementación
+
+- `game/board/decorative_island_field.gd`
+- `game/board/exploration_island_data.gd`
+- `game/board/island_card_chest.gd`
+- `game/ui/island_compass_indicator.gd`
+- `game/cards/run_card_service.gd`
+- `game/board/shoreline_foam_overlay.gd`
+- `game/board/shoreline_foam.gdshader`
+- `game/towers/tower.gd`
+- `game/board/tower_build_ghost.gd`
+- `assets/sprites/terrain/island_card_chest.png`
+- `game/main/main.gd`
+- `game/main/main.tscn`
+- `docs/rogue_tower/PROJECT_SPEC.md`
+- `docs/rogue_tower/CONTENT_AND_ASSETS.md`
 - `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#progress`
 - `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#acceptance`

@@ -90,9 +90,18 @@ func should_offer_after(round_number: int) -> bool:
 	return _is_configured and bool(_pool.call("should_offer_after", round_number))
 
 func create_offer(round_number: int) -> Array[Resource]:
-	var empty_offer: Array[Resource] = []
 	if not should_offer_after(round_number):
-		return empty_offer
+		return []
+	return _create_offer()
+
+func create_bonus_offer() -> Array[Resource]:
+	if not _is_configured:
+		last_error = "RunCardService no está configurado para generar la oferta del tesoro."
+		return []
+	return _create_offer()
+
+func _create_offer() -> Array[Resource]:
+	var empty_offer: Array[Resource] = []
 	if not _current_offer.is_empty():
 		return _current_offer.duplicate()
 	var available_cards: Array[Resource] = []
