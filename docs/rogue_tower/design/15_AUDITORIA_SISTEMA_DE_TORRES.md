@@ -67,7 +67,7 @@ Es `daño_base × RPM / 60 × multiplicador_capa` antes del `floor` por impacto.
 
 ### Mejora manual
 
-`BuildController` comprueba fase, Gold y nivel de la capa, cobra `round(base_cost[layer] × factor_coste^nivel_de_capa)` y llama a `Tower.upgrade(capa)`. Esa función sube solo la capa elegida y el total agregado, y da **+1 daño base y +1 a esa capa**. Si la llamada falla después del cobro, el controlador devuelve el Gold. No hay reembolso al demoler, aunque demoler reduce el conteo usado para calcular el próximo coste de construcción. Los valores base por torre están en [Catálogo y escalado](13_CONTENT_ROSTER.md); el factor actual 1,15 es provisional.
+`BuildController` comprueba fase, Gold y nivel de la capa, cobra `round(base_cost[layer] × factor_coste^nivel_de_capa)` y llama a `Tower.upgrade(capa)`. Esa función sube solo la capa elegida y el total agregado, y da **+1 daño base y +1 a esa capa**. Si la llamada falla después del cobro, el controlador devuelve el Gold. Al demoler, se reembolsa el precio marginal del último slot ocupado según tipo/conteo; los niveles no se reembolsan. El conteo también reduce el siguiente coste de construcción. Ver [ADR-0064](../decisions/ADR-0064-reembolso-al-demoler-torres.md) y [ADR-0111](../decisions/ADR-0111-barra-de-xp-y-precios-de-demolicion.md). Los valores base por torre están en [Catálogo y escalado](13_CONTENT_ROSTER.md); el factor actual 1,15 es provisional.
 
 El bonus de daño y el de multiplicador se combinan; la ganancia puede ser mayor que el +1 nominal. Ejemplos sin elevación, crítico, carta, estado, Fortification ni tag:
 

@@ -180,7 +180,7 @@ M12A está implementado en código; la aceptación manual sigue pendiente. Las r
 - Hover/selección de torre muestra alcance y contorno; el panel lateral ajusta su altura al contenido y nunca usa scroll. Tres selectores numerados ordenan hasta tres criterios de targeting sin duplicados.
 - Enemigos muestran barras apiladas por Shield/Armor/Health con Health fragmentada, iconos de estados y contador de acumulaciones; el daño tiene destello, salto y texto flotante coloreado por capa.
 - Las cards de mejora incluyen el icono de torre afectada. Los textos de economía/campaña y descripciones convierten Gold/Mana en iconos PNG reutilizables.
-- La inspección técnica de enemigos y la selección de fixtures DEBUG se pliegan bajo `F3`; las estadísticas de objetivo siguen accesibles como tooltip de la torre seleccionada.
+- En la etapa M7/M10, la inspección técnica y las fixtures DEBUG se plegaban bajo `F3`. El panel F3 fue retirado del runtime por M61; estas notas solo describen el flujo histórico de diagnóstico.
 - Preview/selección de pieza y controles de rotación/confirmación/cancelación conservan indicaciones de uso y tooltips.
 - Pantalla terminal clara para victoria/derrota: resultado, ronda alcanzada, rondas completas, recompensa XP y saldo de XP de perfil.
 - Tienda de fin de run separa desbloqueos de torres y mejoras permanentes en categorías; muestra coste, estado de compra, efecto y acción de nueva run sin mezclar el XP de perfil con el Gold de partida.

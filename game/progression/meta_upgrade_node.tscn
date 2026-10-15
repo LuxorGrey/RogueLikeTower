@@ -43,14 +43,16 @@ horizontal_alignment = 1
 vertical_alignment = 1
 mouse_filter = 2
 
-[node name="Description" type="Label" parent="Surface/Content"]
+[node name="Description" type="RichTextLabel" parent="Surface/Content"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/normal_font_size = 12
 theme_override_colors/font_color = Color(0.68, 0.75, 0.72, 1)
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
 autowrap_mode = 2
-max_lines_visible = 3
 horizontal_alignment = 1
 vertical_alignment = 1
 mouse_filter = 2

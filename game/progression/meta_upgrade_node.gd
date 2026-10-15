@@ -4,7 +4,7 @@ extends Button
 @onready var _surface: PanelContainer = %Surface
 @onready var _icon: TextureRect = %Icon
 @onready var _title: Label = %Title
-@onready var _description: Label = %Description
+@onready var _description: RichTextLabel = %Description
 @onready var _status: Label = %Status
 @onready var _currency_icon: TextureRect = %CurrencyIcon
 
@@ -36,7 +36,8 @@ func configure_node(
 	if _title == null:
 		return
 	_title.text = title
-	_description.text = description
+	_description.clear()
+	_description.append_text(StatValueColorizer.colorize(description))
 	_status.text = status_text
 	_currency_icon.texture = status_currency_icon
 	_currency_icon.visible = status_currency_icon != null

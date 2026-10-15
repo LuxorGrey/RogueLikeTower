@@ -6,7 +6,7 @@ extends Button
 	set(value):
 		layer_icon_texture = value
 		if is_inside_tree():
-			var icon_view := get_node_or_null("Content/LayerIcon") as TextureRect
+			var icon_view := get_node_or_null("Content/IconCenter/LayerIcon") as TextureRect
 			if icon_view != null:
 				icon_view.texture = value
 

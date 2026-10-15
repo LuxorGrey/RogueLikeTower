@@ -1,5 +1,7 @@
 # Acceptance Tests
 
+> **Vigencia M61:** cualquier criterio histórico de M7–M13 que pida abrir o conservar el panel F3 quedó sustituido. El juego ya no contiene ese panel ni un selector runtime de oleadas DEBUG; usa el apartado M61 para la aceptación vigente de HUD y controles de terreno.
+
 ## Grid
 - Rotar un HexCoord 6 veces devuelve la posición original.
 - Cada celda tiene exactamente 6 vecinos potenciales.
@@ -306,16 +308,16 @@ M12A queda aceptado cuando barra/daño por capas, stats de los siete perfiles, p
 ### Prueba manual M13 en el juego
 
 1. Arranca en la escena de menú y pulsa iniciar. En una ventana de 1440×900, comprueba la base y la barra de salud segmentada; el HUD no presenta título «RogueTower». La disposición de salud/recursos sigue vigente; el timeline de 45 puntos fue reemplazado por una ventana fija de 15 rondas en M35. El panel derecho empieza oculto. El icono/cifra de Gold destacan sobre Mana y los saldos no muestran decimales.
-2. Confirma que el HUD normal no presenta el selector de fixtures ni la línea técnica del enemigo. Abre `F3`: deben aparecer selector de rondas/pruebas, coordenada axial/terreno, preview y rotación, además del inspector de objetivo. Si la torre consume Mana, su coste en el inspector debe usar el icono PNG junto a la cantidad. Cierra F3 y confirma que desaparecen los datos técnicos. Pulsa `H`, mueve/zoomea el tablero, vuelve a pulsar `H` y comprueba que la interfaz vuelve sin haber cambiado la cámara ni la ronda.
+2. Confirma que el HUD normal no presenta selector de fixtures ni la línea técnica del enemigo. El panel técnico F3 de esta etapa histórica fue retirado en M61. Pulsa `H`, mueve/zoomea el tablero, vuelve a pulsar `H` y comprueba que la interfaz vuelve sin haber cambiado la cámara ni la ronda.
 3. Activa build mode para Ballista y para otra torre: el panel derecho debe mostrar un icono grande, coste, stats H/A/S con color y bonus por elevación, sin la frase «selecciona Grass o Mountain». Comprueba que su alto se ajusta a esta información. Construye Ballista en Grass/Mountain con elevaciones diferentes. El botón individual tiene fondo estilo carta y el conjunto no queda dentro de un panel compartido. El botón, el preview del cursor y la torre colocada deben mostrar la misma Ballista ampliada. Pasa el cursor sobre ella: aparece su radio y contorno; selecciónala y comprueba que mantiene su brillo y pulso de sprite/card sin mostrar círculos. Haz clic en una casilla vacía y confirma que el panel desaparece.
 4. Selecciona Ballista y una torre reclutada en la barra. Comprueba icono, nombre, precio, disponibilidad por Gold y feedback de construcción. Gasta/recibe Gold y confirma que icono/cifra animan juntos. Gasta Mana antes de una ronda y comprueba que se repone al máximo efectivo al iniciar la siguiente. Verifica hover de rango, selección, prioridades e iconos/capas H/A/S como en la versión anterior de M13.
-5. Para la comprobación rápida usa F3 y la oleada DEBUG Health/Armor/Shield; para comprobar la campaña normal, llega a la ronda 24 y observa Ooogie von Ooogovich con su kit propio. Sobre el enemigo con pools activos debe verse Shield arriba, Armor debajo y Health fragmentada; las barras e iconos deben leerse a simple vista. Observa impactos en cada fase: el enemigo parpadea/salta y los números son cian para Shield, ámbar para Armor y rojo para Health. El valor debe corresponder al daño que realmente aplicó el juego.
+5. Durante la campaña normal, llega a la ronda 24 y observa Ooogie von Ooogovich con su kit propio. Sobre el enemigo con pools activos debe verse Shield arriba, Armor debajo y Health fragmentada; las barras e iconos deben leerse a simple vista. Observa impactos en cada fase: el enemigo parpadea/salta y los números son cian para Shield, ámbar para Armor y rojo para Health. El valor debe corresponder al daño que realmente aplicó el juego. Las fixtures de daño antiguas ya no se seleccionan en una partida normal.
 6. Repite con la oleada de estados M8 y Frost Keep, Flame Thrower, Poison Sprayer o Shredder. El símbolo PNG de Bleed, Burn, Poison o Slow aparece encima de la barra sin una placa o fondo opaco, ampliado y con transparencia; no debe verse un rectángulo detrás. Para un estado acumulable, aplica al menos dos acumulaciones y comprueba que aparece su cifra; al expirar, icono y cifra desaparecen. Verifica que estado y barra acompañan al enemigo durante su movimiento.
 7. Obtén una card específica de una torre durante la run: la card incluye el sprite de esa torre. Elige cartas con descripciones que aumenten o consuman Gold/Mana y confirma que aparecen los iconos en línea; no debe quedar el nombre textual de esas monedas en los elementos enriquecidos.
 8. Repite una run hasta derrota dejando llegar enemigos a la base. La tienda debe presentar derrota, ronda, rondas completas, recompensa y saldo meta. Cambia entre TORRES y MEJORAS: solo se ve la lista activa con descripción/coste/estado. Compra una opción asequible y confirma el saldo nuevo; con saldo insuficiente no debe cobrarse. «Empezar nueva run» debe conservar las compras. Completa la campaña hasta 45/45 para revisar la variante de victoria.
-9. A 1280×720 y 1440×900, repite HUD, F3, panel lateral, barra inferior y cards. Los controles deben permanecer legibles; el panel lateral muestra todos sus datos, nunca presenta scroll y se reduce verticalmente si el alto del viewport es insuficiente. La tienda sí debe desplazarse sin bloquear el mapa ni recortar nombres, precios o cifras. Confirma que las ilustraciones de Path/Grass/Mountain coinciden con las caras hexagonales sin corrimiento visible y que torres, enemigos y base conservan sus puntos de anclaje al aumentar de tamaño y desplazarse 6 px hacia abajo.
+9. A 1280×720 y 1440×900, revisa HUD, panel lateral, barra inferior y cards. Los controles deben permanecer legibles; el panel lateral muestra todos sus datos, nunca presenta scroll y se reduce verticalmente si el alto del viewport es insuficiente. La tienda sí debe desplazarse sin bloquear el mapa ni recortar nombres, precios o cifras. Confirma que las ilustraciones de Path/Grass/Mountain coinciden con las caras hexagonales sin corrimiento visible y que torres, enemigos y base conservan sus puntos de anclaje al aumentar de tamaño y desplazarse 6 px hacia abajo.
 
-M13 queda aceptado cuando los nueve puntos anteriores pasan en una ventana Godot y se comprueba que la interfaz guía acciones normales sin requerir DEBUG, mantiene sprites consistentes, segmenta la base cada 10 Health, repone Mana al inicio de cada ronda, anima las variaciones de Gold, comunica estado/capas/daño con iconos y animación, conserva F3 y permite operar prioridades, upgrades y tienda sin ambigüedad. En esta revisión se implementó el código y se actualizaron los documentos; la inspección visual y esta prueba manual siguen pendientes.
+M13 queda aceptado cuando los nueve puntos anteriores pasan en una ventana Godot y se comprueba que la interfaz guía acciones normales sin requerir DEBUG, mantiene sprites consistentes, segmenta la base cada 10 Health, repone Mana al inicio de cada ronda, anima las variaciones de Gold, comunica estado/capas/daño con iconos y animación, y permite operar prioridades, upgrades y tienda sin ambigüedad. La presentación vigente del HUD y la ausencia del panel F3 se comprueban en M61.
 
 ## M14 Terreno, cofres y feedback
 
@@ -401,7 +403,7 @@ M21 queda aceptado cuando los cheats sirven para preparar una sesión, no altera
 
 ### Prueba manual en el juego
 
-1. Inicia `game/main/main.tscn`. Comprueba que no aparecen errores al resolver `%GoldGroup` y que tanto ganar como gastar Gold animan icono y cifra. La vida de Main Tower queda arriba a la izquierda con los atajos debajo; Gold y Mana quedan arriba a la derecha, con valores enteros. Gold usa el panel 9-slice de Iniciar ronda y Mana permanece sin panel.
+1. Inicia `game/main/main.tscn`. Comprueba que no aparecen errores al resolver `%GoldGroup` y que tanto ganar como gastar Gold animan icono y cifra. La vida de Main Tower queda arriba a la izquierda con los atajos debajo; Gold y Mana quedan arriba a la derecha, con valores enteros. Gold usa el panel 9-slice de Iniciar ronda; el criterio histórico de Mana sin panel queda sustituido por M61, que usa el mismo panel 9-slice.
 2. Selecciona una torre. El panel lateral debe comenzar debajo de Gold/Mana y no cubrir los recursos. Cambia la resolución entre 1280×720 y 1440×900; el panel de ronda y el botón no deben quedar cortados.
 3. Comprueba que el bloque de ronda no tiene panel de fondo y que el botón usa su sprite completo sin deformación, mantiene el texto legible y adapta su anchura con «Iniciar ronda», «Iniciar ronda NN/45» y los estados deshabilitados.
 4. Criterio histórico reemplazado por M35: el timeline muestra 15 rondas, sin selector, conserva los círculos/tooltip y desvanece el extremo futuro.
@@ -458,7 +460,7 @@ La revisión queda aceptada tras completar estos puntos en ventana. La tipograf�
 
 ### Revisión manual en ventana
 
-1. Pulsa `P` y el botón situado bajo la vida durante `ROUND_PREP` y `COMBAT`. Confirma que pausa/reanuda el árbol y que el texto del botón alterna entre «Pausar» y «Reanudar».
+1. Pulsa `P` y el botón junto a la vida durante `ROUND_PREP` y `COMBAT`. Confirma que pausa/reanuda el árbol y que el botón alterna entre el glyph de pausa y el de play, conservando solo la letra `P` visible.
 2. Pausa durante `ROUND_PREP` y pulsa «Iniciar ronda». La partida debe despausarse e iniciar la oleada. Durante una selección de terreno o `CARD_OFFER`, iniciar ronda debe permanecer bloqueado y no debe quitar una pausa activa.
 3. Durante la oferta y la colocación de terreno, comprueba que la barra de torres/panel de torre se oculta, `1–7` no seleccionan torres, `F3`/`Ctrl+D`/`Ctrl+K` no abren herramientas de diagnóstico, y hacer clic en una torre o cofre del tablero no selecciona/abre nada. Elegir, rotar, cancelar y confirmar la pieza siguen funcionando; al volver a `ROUND_PREP` regresan los controles normales.
 4. Elige una card con un obstáculo visible. Verifica que miniatura, ghost al rotar/mover y tablero confirmado enseñan el mismo obstáculo en el mismo hex; miniaturas y ghost no muestran cofres. Cancela y vuelve a la misma oferta: los rolls se conservan.
@@ -825,8 +827,8 @@ M13 requiere además revisar los estados de selección/build mode del HUD y legi
 
 1. Aplica estados con acumulaciones a enemigos de campaña: cada sprite de estado debe verse al menos al doble del tamaño anterior (44×44 px), mantener su animación, acumular iconos en una fila legible y conservar el contador de stacks.
 2. Revisa enemigos que cruzan junto a fachadas en elevaciones 1–3 y desde ambos lados visibles. La fachada debe cubrirlos cuando están detrás y quedar cubierta cuando pasan delante; el sesgo de empate no debe mover la textura ni abrir juntas.
-3. Comprueba la fila H/A/S en una ventana estrecha y una ancha: siempre es una columna, los tres controles ocupan el máximo ancho disponible del padre y los iconos se leen con claridad.
-4. Demuele una torre y un obstáculo: ambos botones son cuadrados compactos, muestran `demolish_tower_icon.png` como elemento principal y ejecutan la acción. El coste de obstáculo aparece con el icono Gold, no como texto dentro del botón.
+3. **Criterio histórico, sustituido por M59:** H/A/S se mostraban en una columna; la disposición vigente en una fila se comprueba en M59.
+4. **Criterio histórico, sustituido por M60:** las acciones de demolición eran botones cuadrados solo con icono; el texto y los importes actuales se comprueban en M60.
 5. Abre cada rama del mapa permanente: todos los nodos tienen un icono que coincide con la torre/efecto; el saldo, coste y recompensa se acompañan de `exp.png` y no aparece texto «XP», «EXP» ni «experiencia» en esa interfaz.
 6. Durante varios ataques, compara tiempo hasta subida de nivel automática con la fórmula documentada ×5. Confirma que una subida automática reproduce el mismo `star_burst_gold` y `tower_level_up` que una mejora manual.
 7. Pasa el cursor por una mejora de run, una card de terreno y una card de torre. Las tres deben inclinarse y escalar ligeramente, con un brillo radial que sigue el cursor; los clics y la selección deben seguir funcionando.
@@ -853,3 +855,44 @@ M57 está implementado en código/documentación; no se ejecutó Godot ni revisi
 4. Confirma que agua y sombra siguen debajo del HUD, y que la animación procedural continúa en el tiempo.
 
 M58 está implementado en código/documentación; no se ejecutó Godot ni revisión visual. La aceptación queda pendiente. Ver [ADR-0109](../decisions/ADR-0109-sombra-de-nubes-reforzada-y-agua-anclada-a-camara.md).
+
+## M59 — mejoras de torre en fila y shake de ronda
+
+1. Selecciona una torre: Health, Armor y Shield deben aparecer en una sola fila, centrados y en botones cuadrados de 128 × 128; ninguno debe caer a una segunda fila en el panel de 500 px.
+2. Compara los importes H/A/S con los de `TowerShortcutCard`: deben compartir el panel de fondo, el icono de 24 px, el estilo tipográfico y la alineación.
+3. Inicia una ronda: la cámara debe mostrar una sacudida muy ligera y continua; al completarla o fallarla, vuelve al offset base. El shake por daño a la base debe seguir viéndose encima de la oscilación y no cancelarla.
+4. Durante una pausa, comprueba que no se acumula movimiento ni se reanuda el shake si la ronda ya terminó.
+
+M59 está implementado en código/documentación; no se ejecutó Godot ni revisión visual. La aceptación queda pendiente. Ver [ADR-0110](../decisions/ADR-0110-mejoras-de-capa-en-fila-y-shake-de-ronda.md).
+
+## M60 — barra de XP y precios de demolición
+
+1. Selecciona una torre con XP parcial en Health, Armor y Shield: las tres barras deben medir 88 × 8 px, verse más gruesas y ser más cortas que el ancho anterior; cada una queda centrada bajo el nivel.
+2. Selecciona una torre y comprueba que su botón muestra el icono, `DEMOLER` y el importe `+N` con el icono de Gold. Demuele una torre: debe acreditarse el mismo importe que se mostró y el texto no debe incluir niveles ni upgrades.
+3. Selecciona un obstáculo: la acción muestra `DEMOLER` y el coste actual como `−N` con el icono de Gold. Tras demolerlo, el siguiente coste debe aumentar según la curva existente.
+4. Selecciona un portal: la acción muestra `RETIRAR` y el coste como `−N`, el doble del obstáculo; el botón sigue respetando el mínimo de tres portales y la fase de preparación.
+
+M60 está implementado en código/documentación; no se ejecutó Godot ni revisión visual/interactiva. La aceptación queda pendiente. Ver [ADR-0111](../decisions/ADR-0111-barra-de-xp-y-precios-de-demolicion.md).
+
+## M61 — legibilidad de mejoras, HUD y colocación de terreno
+
+1. Abre una oferta de mejoras de run y revisa descripciones con efectos positivos y negativos. Cada cifra positiva debe verse verde y cada perjuicio explícito, como una reducción de daño, rojo. Revisa también mejoras permanentes en el mapa: las cifras de efecto deben conservar esos colores.
+2. Selecciona una torre sin mejoras y una torre elevada o mejorada. En Tower Info, Daño, Rango, RPM y Crítico deben compararse con el perfil base: mejoras verdes, reducciones rojas y valores sin cambio con el color normal. Los bonuses de altura y el efecto positivo H/A/S deben verse verdes. Si una mejora reduce el coste de Mana, el coste aparece verde; si lo aumenta, rojo.
+3. En `ROUND_PREP` y durante una ronda, pulsa `P` y el botón junto a la vida. El botón debe mostrar solo `P` más el glyph de pausa al jugar y el de play al pausar; ambas acciones deben alternar el estado de pausa.
+4. Elige una card de terreno. Debe aparecer sobre las cards de torre el panel prominente `PULSA Q / E PARA ROTAR · T: COLOCACIÓN AUTOMÁTICA`. Comprueba que Q/E rotan, T busca/confirma una posición legal, y el panel desaparece al confirmar o salir de la colocación.
+5. Clica un portal: debe aparecer el mismo `ui_click` que al clicar otros interactuables, cerrarse el tooltip y mostrarse en Tower Info la ronda y la lista con retrato, nombre y cantidad asignada a ese portal. Cambia de selección y verifica que la lista anterior no persiste.
+6. Compara Gold y Mana en la esquina superior derecha: ambos paneles deben medir 176 × 52 px y usar el mismo fondo 9-slice, separación, iconos de 32 px y cifras de 23 px.
+7. Busca `F3` en los controles visibles y pulsa F3 durante la partida: no debe existir ni abrirse ningún panel de terreno/debug. Confirma que la ronda normal sigue el orden secuencial de la campaña de 45 rondas y que la ayuda de colocación de terreno sigue disponible.
+
+M61 está implementado en código/documentación; no se ejecutó Godot ni revisión visual/interactiva. La aceptación queda pendiente. Ver [ADR-0112](../decisions/ADR-0112-legibilidad-de-mejoras-hud-y-colocacion.md).
+
+## M62 — correcciones de paneles y pausa del agua
+
+1. Inicia una run desde el menú. La escena debe resolver `%RemovalCostLabel` sin `Node not found` ni advertencias de ruta de padre desaparecida. Inspecciona `main.tscn`: la fila de coste, icono y label debe estar bajo `RemovalCostBadge/RemovalCostRow`, sin nodos huérfanos en la raíz.
+2. Selecciona una torre con reembolso y un obstáculo/portal con coste. En cada caso, el botón conserva su icono y texto; el panel Gold aparece como hermano a su derecha, fuera de su superficie.
+3. Selecciona una torre. Los iconos Health, Armor y Shield deben quedar centrados en sus botones y medir 64 × 64 px. Cambia el tamaño desde `tower_layer_upgrade_button.tscn` y comprueba que el script no lo sobrescribe.
+4. En el Inspector de `Main`, ajusta los parámetros `Tower Info layout`. Comprueba que cambian el ancho y la posición responsivos del panel. Cambia los márgenes del `MarginContainer` y verifica que no se reinician al iniciar ni al cambiar la selección.
+5. Durante `ROUND_PREP`, clica cada portal. Tower Info debe mostrar el título, ronda, cantidad de enemigos y lista de retratos/nombres/conteos de esa salida; no depende de mantener el cursor encima.
+6. Inicia la ronda, pausa con `P` y confirma que el patrón del agua deja de animarse; al reanudar, continúa sin salto de fase.
+
+M62 está implementado en código/documentación; no se ejecutó Godot ni revisión visual/interactiva. La aceptación de escena queda pendiente. Ver [ADR-0113](../decisions/ADR-0113-ajustes-de-paneles-y-pausa-de-agua.md).

@@ -13,7 +13,7 @@
 [ext_resource type="Script" uid="uid://c6l8v1ofbxvj0" path="res://game/ui/segmented_health_bar.gd" id="11_segmented_health"]
 [ext_resource type="Script" uid="uid://bnbiho7gi0db8" path="res://game/ui/build_cursor_overlay.gd" id="12_build_cursor"]
 [ext_resource type="PackedScene" uid="uid://deb8o4st6rba" path="res://game/ui/components/tower_shortcut_card.tscn" id="13_tower_shortcut_card"]
-[ext_resource type="PackedScene" path="res://game/ui/components/tower_layer_upgrade_button.tscn" id="14_tower_layer_upgrade_button"]
+[ext_resource type="PackedScene" uid="uid://d1bqlt8bxhsso" path="res://game/ui/components/tower_layer_upgrade_button.tscn" id="14_tower_layer_upgrade_button"]
 [ext_resource type="PackedScene" path="res://game/ui/components/upgrade_offer_panel.tscn" id="15_upgrade_offer_panel"]
 [ext_resource type="Theme" uid="uid://b8nogcxauq43u" path="res://game/ui/themes/rogue_hud_theme.tres" id="16_ui_theme"]
 [ext_resource type="Texture2D" uid="uid://d4li2faa8wpjj" path="res://assets/sprites/ui/icons/gold.png" id="18_gold_icon"]
@@ -25,10 +25,10 @@
 [ext_resource type="Script" uid="uid://bmrx1x8aa5kef" path="res://game/ui/pause_toggle_button.gd" id="31_pause_toggle_button"]
 [ext_resource type="Material" path="res://game/board/cloud_shadow_overlay_material.tres" id="32_cloud_shadow_material"]
 [ext_resource type="StyleBox" uid="uid://ixki47ks6fdx" path="res://game/ui/themes/gold_panel_style.tres" id="33_gold_panel_style"]
-[ext_resource type="Texture2D" path="res://assets/sprites/ui/demolish_tower_icon.png" id="34_demolish_icon"]
-[ext_resource type="Script" path="res://game/ui/components/balatro_card_hover.gd" id="35_balatro_hover"]
+[ext_resource type="Texture2D" uid="uid://doufp31rntpeo" path="res://assets/sprites/ui/demolish_tower_icon.png" id="34_demolish_icon"]
+[ext_resource type="Script" uid="uid://dn3x22g17jvyb" path="res://game/ui/components/balatro_card_hover.gd" id="35_balatro_hover"]
 [ext_resource type="Material" path="res://game/main/wind_waker_water_background_material.tres" id="36_water_background"]
-[ext_resource type="Script" path="res://game/vfx/enemy_death_particle_pool.gd" id="37_enemy_death_particles"]
+[ext_resource type="Script" uid="uid://bdoogfs13c1m2" path="res://game/vfx/enemy_death_particle_pool.gd" id="37_enemy_death_particles"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_transparent_panel"]
 
@@ -208,7 +208,6 @@ layer = -10
 
 [node name="WaterBackground" type="ColorRect" parent="WaterBackgroundLayer" unique_id=10012672]
 material = ExtResource("36_water_background")
-mouse_filter = 2
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -302,14 +301,19 @@ theme_override_constants/margin_bottom = 10
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="BaseHealthBar" type="Control" parent="HUD/Panel/Margin/Content" unique_id=542036788]
+[node name="BaseHealthRow" type="HBoxContainer" parent="HUD/Panel/Margin/Content" unique_id=1826345011]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BaseHealthBar" type="Control" parent="HUD/Panel/Margin/Content/BaseHealthRow" unique_id=542036788]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
+size_flags_horizontal = 3
 mouse_filter = 1
 script = ExtResource("11_segmented_health")
 
-[node name="BaseStatus" type="Label" parent="HUD/Panel/Margin/Content/BaseHealthBar" unique_id=1585581998]
+[node name="BaseStatus" type="Label" parent="HUD/Panel/Margin/Content/BaseHealthRow/BaseHealthBar" unique_id=1585581998]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -323,13 +327,11 @@ text = "BASE  — / —"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="PauseButton" type="Button" parent="HUD/Panel/Margin/Content" unique_id=743751208]
+[node name="PauseButton" type="Button" parent="HUD/Panel/Margin/Content/BaseHealthRow" unique_id=743751208]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 26)
+custom_minimum_size = Vector2(54, 32)
 layout_mode = 2
-tooltip_text = "Pausa o reanuda la partida con el botón o con P."
 toggle_mode = true
-text = "Pausar · P"
 script = ExtResource("31_pause_toggle_button")
 
 [node name="ShortcutHint" type="Label" parent="HUD/Panel/Margin/Content" unique_id=468928720]
@@ -338,14 +340,14 @@ custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.68, 0.75, 0.8, 1)
 theme_override_font_sizes/font_size = 10
-text = "F3 · Terreno    H · Interfaz"
+text = "H · Interfaz"
 
 [node name="ResourcesRow" type="HBoxContainer" parent="HUD" unique_id=176071040]
 unique_name_in_owner = true
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -320.0
+offset_left = -384.0
 offset_top = 18.0
 offset_right = -24.0
 offset_bottom = 72.0
@@ -383,27 +385,33 @@ theme_override_font_sizes/font_size = 23
 text = "—"
 vertical_alignment = 1
 
-[node name="ManaGroup" type="HBoxContainer" parent="HUD/ResourcesRow" unique_id=2081487792]
+[node name="ManaPanel" type="PanelContainer" parent="HUD/ResourcesRow" unique_id=2081487792]
+custom_minimum_size = Vector2(176, 52)
+layout_mode = 2
+theme = ExtResource("16_ui_theme")
+theme_override_styles/panel = ExtResource("33_gold_panel_style")
+
+[node name="ManaGroup" type="HBoxContainer" parent="HUD/ResourcesRow/ManaPanel" unique_id=2081487793]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 3
 
-[node name="ManaIcon" type="TextureRect" parent="HUD/ResourcesRow/ManaGroup" unique_id=800519056]
+[node name="ManaIcon" type="TextureRect" parent="HUD/ResourcesRow/ManaPanel/ManaGroup" unique_id=800519056]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(22, 22)
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 mouse_filter = 2
 texture = ExtResource("19_mana_icon")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="ManaStatus" type="Label" parent="HUD/ResourcesRow/ManaGroup" unique_id=1373347626]
+[node name="ManaStatus" type="Label" parent="HUD/ResourcesRow/ManaPanel/ManaGroup" unique_id=1373347626]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(62, 0)
+custom_minimum_size = Vector2(78, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.55, 0.83, 0.96, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.12978989, 0.42061406, 0.53477776, 1)
+theme_override_font_sizes/font_size = 23
 text = "— / —"
 vertical_alignment = 1
 
@@ -509,7 +517,7 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.913725, 0.898039, 0.847059, 1)
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 33
 text = "Ballista"
 
 [node name="TowerLevel" type="RichTextLabel" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerHeader" unique_id=244503966]
@@ -517,7 +525,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 theme_override_colors/default_color = Color(0.78, 0.82, 0.76, 1)
-theme_override_font_sizes/normal_font_size = 12
+theme_override_font_sizes/normal_font_size = 14
 bbcode_enabled = true
 text = "[b]NIVEL 0 DE 45[/b]"
 fit_content = true
@@ -536,7 +544,7 @@ autowrap_mode = 2
 [node name="TowerActions" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent" unique_id=365621891]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 25
 
 [node name="PriorityRow" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions" unique_id=1390596250]
 layout_mode = 2
@@ -602,10 +610,11 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="UpgradeRow" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions" unique_id=1157917149]
+[node name="UpgradeRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions" unique_id=1157917149]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 6
+theme_override_constants/separation = 20
+alignment = 1
 
 [node name="UpgradeHealth" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/UpgradeRow" unique_id=59924110 instance=ExtResource("14_tower_layer_upgrade_button")]
 unique_name_in_owner = true
@@ -622,36 +631,77 @@ unique_name_in_owner = true
 layout_mode = 2
 layer_icon_texture = ExtResource("29_shield_icon")
 
-[node name="DemolishTowerRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions"]
+[node name="DemolishTowerRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions" unique_id=691854996]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 4
 alignment = 1
 
 [node name="DemolishTower" type="Button" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow" unique_id=170256383]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(58, 58)
+custom_minimum_size = Vector2(202, 44)
 layout_mode = 2
 theme_override_styles/normal = SubResource("DemolishNormal")
 theme_override_styles/pressed = SubResource("DemolishPressed")
 theme_override_styles/hover = SubResource("DemolishHover")
 theme_override_styles/focus = SubResource("DemolishHover")
-text = ""
 
-[node name="DemolishIcon" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow/DemolishTower"]
+[node name="DemolishButtonContent" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow/DemolishTower" unique_id=116819525]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 6.0
-offset_top = 4.0
-offset_right = -6.0
-offset_bottom = -5.0
+offset_left = 7.0
+offset_top = 3.0
+offset_right = -10.0
+offset_bottom = -3.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="DemolishIcon" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow/DemolishTower/DemolishButtonContent" unique_id=1140035480]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
 mouse_filter = 2
 texture = ExtResource("34_demolish_icon")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="DemolishTowerLabel" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow/DemolishTower/DemolishButtonContent" unique_id=715941489]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "DEMOLER"
+
+[node name="TowerDemolitionRefundPanel" type="PanelContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow" unique_id=1868318808]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = ExtResource("33_gold_panel_style")
+
+[node name="TowerDemolitionRefundRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow/TowerDemolitionRefundPanel" unique_id=38712341]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 1
+alignment = 1
+
+[node name="TowerDemolitionGoldIcon" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow/TowerDemolitionRefundPanel/TowerDemolitionRefundRow" unique_id=191758288]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("18_gold_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DemolishTowerAmountLabel" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow/TowerDemolitionRefundPanel/TowerDemolitionRefundRow" unique_id=1282282027]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.12900406, 0.0955844, 0.011209826, 1)
+theme_override_font_sizes/font_size = 13
+text = "+0"
 
 [node name="WorldObjectActions" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent" unique_id=1821140285]
 unique_name_in_owner = true
@@ -679,57 +729,62 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 3
 
-[node name="RemoveWorldObjectRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions"]
+[node name="RemoveWorldObjectRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions" unique_id=1512176865]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 8
 alignment = 1
 
 [node name="RemoveWorldObject" type="Button" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/RemoveWorldObjectRow" unique_id=831394974]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(58, 58)
+custom_minimum_size = Vector2(202, 44)
 layout_mode = 2
 theme_override_styles/normal = SubResource("DemolishNormal")
 theme_override_styles/pressed = SubResource("DemolishPressed")
 theme_override_styles/hover = SubResource("DemolishHover")
 theme_override_styles/focus = SubResource("DemolishHover")
-text = ""
 
-[node name="DemolishIcon" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/RemoveWorldObjectRow/RemoveWorldObject"]
+[node name="RemoveWorldObjectContent" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/RemoveWorldObjectRow/RemoveWorldObject" unique_id=1899713957]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 6.0
+offset_left = 7.0
 offset_top = 3.0
-offset_right = -6.0
-offset_bottom = -16.0
+offset_right = -7.0
+offset_bottom = -3.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="DemolishIcon" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/RemoveWorldObjectRow/RemoveWorldObject/RemoveWorldObjectContent" unique_id=757380060]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
 mouse_filter = 2
 texture = ExtResource("34_demolish_icon")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="RemovalCostBadge" type="PanelContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/RemoveWorldObjectRow/RemoveWorldObject"]
-layout_mode = 1
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -25.0
-offset_top = -20.0
-offset_right = 25.0
-offset_bottom = -2.0
+[node name="RemoveWorldObjectLabel" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/RemoveWorldObjectRow/RemoveWorldObject/RemoveWorldObjectContent" unique_id=1635945638]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "DEMOLER"
+
+[node name="RemovalCostBadge" type="PanelContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/RemoveWorldObjectRow" unique_id=2134012266]
+layout_mode = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("33_gold_panel_style")
 
-[node name="RemovalCostRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/RemoveWorldObjectRow/RemoveWorldObject/RemovalCostBadge"]
+[node name="RemovalCostRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/RemoveWorldObjectRow/RemovalCostBadge" unique_id=724147994]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 1
 alignment = 1
-mouse_filter = 2
 
-[node name="RemovalGoldIcon" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/RemoveWorldObjectRow/RemoveWorldObject/RemovalCostBadge/RemovalCostRow"]
+[node name="RemovalGoldIcon" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/RemoveWorldObjectRow/RemovalCostBadge/RemovalCostRow" unique_id=206779735]
 custom_minimum_size = Vector2(12, 12)
 layout_mode = 2
 mouse_filter = 2
@@ -737,13 +792,12 @@ texture = ExtResource("18_gold_icon")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="RemovalCostLabel" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/RemoveWorldObjectRow/RemoveWorldObject/RemovalCostBadge/RemovalCostRow"]
+[node name="RemovalCostLabel" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/RemoveWorldObjectRow/RemovalCostBadge/RemovalCostRow" unique_id=431699643]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.12900406, 0.0955844, 0.011209826, 1)
 theme_override_font_sizes/font_size = 11
 text = "25"
-mouse_filter = 2
 
 [node name="BuildStatus" type="RichTextLabel" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent" unique_id=833087746]
 unique_name_in_owner = true
@@ -753,136 +807,48 @@ fit_content = true
 scroll_active = false
 autowrap_mode = 2
 
-[node name="TerrainPanel" type="PanelContainer" parent="HUD" unique_id=1430139207]
+[node name="TerrainPlacementPrompt" type="PanelContainer" parent="HUD" unique_id=1430139207]
 unique_name_in_owner = true
 visible = false
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -376.0
-offset_top = 24.0
-offset_right = -24.0
-offset_bottom = 590.0
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -380.0
+offset_top = -344.0
+offset_right = 380.0
+offset_bottom = -244.0
+mouse_filter = 2
 theme = ExtResource("16_ui_theme")
 
-[node name="Margin" type="MarginContainer" parent="HUD/TerrainPanel" unique_id=2142096038]
+[node name="Margin" type="MarginContainer" parent="HUD/TerrainPlacementPrompt" unique_id=2142096038]
 layout_mode = 2
-theme_override_constants/margin_left = 14
+mouse_filter = 2
+theme_override_constants/margin_left = 18
 theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 14
+theme_override_constants/margin_right = 18
 theme_override_constants/margin_bottom = 12
 
-[node name="Content" type="VBoxContainer" parent="HUD/TerrainPanel/Margin" unique_id=1769056171]
+[node name="Content" type="VBoxContainer" parent="HUD/TerrainPlacementPrompt/Margin" unique_id=1769056171]
 layout_mode = 2
-theme_override_constants/separation = 6
+mouse_filter = 2
+theme_override_constants/separation = 4
 
-[node name="TerrainTitle" type="Label" parent="HUD/TerrainPanel/Margin/Content" unique_id=2045923010]
+[node name="PlacementInstructions" type="Label" parent="HUD/TerrainPlacementPrompt/Margin/Content" unique_id=2045923010]
 layout_mode = 2
-theme_override_font_sizes/font_size = 15
-text = "TERRENO · F3 para ocultar"
+theme_override_colors/font_color = Color(0.92, 0.89, 0.78, 1)
+theme_override_font_sizes/font_size = 22
+text = "PULSA Q / E PARA ROTAR   ·   T: COLOCACIÓN AUTOMÁTICA"
+horizontal_alignment = 1
 
-[node name="PieceStatus" type="Label" parent="HUD/TerrainPanel/Margin/Content" unique_id=312835155]
+[node name="PlacementStatus" type="Label" parent="HUD/TerrainPlacementPrompt/Margin/Content" unique_id=1697853303]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Preparando pieza de siete hexágonos..."
-
-[node name="PieceSelector" type="OptionButton" parent="HUD/TerrainPanel/Margin/Content" unique_id=1305651762]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="PlacementStatus" type="Label" parent="HUD/TerrainPanel/Margin/Content" unique_id=1697853303]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Elige una pieza para iniciar la colocación."
+theme_override_font_sizes/font_size = 13
+text = "La pieza debe mantener una ruta válida."
+horizontal_alignment = 1
 autowrap_mode = 2
-
-[node name="RotationStatus" type="Label" parent="HUD/TerrainPanel/Margin/Content" unique_id=1168227101]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Orientación: 0° · posición 1/6"
-
-[node name="HoverStatus" type="Label" parent="HUD/TerrainPanel/Margin/Content" unique_id=706295511]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Casilla global (q,r): — · hover sobre cara superior"
-
-[node name="PathStatus" type="Label" parent="HUD/TerrainPanel/Margin/Content" unique_id=851366192]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "PATH: preparando grafo..."
-
-[node name="WaveSelector" type="OptionButton" parent="HUD/TerrainPanel/Margin/Content" unique_id=566595915]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-tooltip_text = "Perfiles de campaña y oleadas DEBUG para probar sistemas."
-
-[node name="CombatDebug" type="RichTextLabel" parent="HUD/TerrainPanel/Margin/Content" unique_id=945554606]
-unique_name_in_owner = true
-layout_mode = 2
-tooltip_text = "Lectura técnica del objetivo seleccionado: capas Health/Armor/Shield, regeneración, daño previsto y estados."
-text = "Objetivo de prueba: —"
-fit_content = true
-scroll_active = false
-autowrap_mode = 2
-
-[node name="Legend" type="HBoxContainer" parent="HUD/TerrainPanel/Margin/Content" unique_id=2125207834]
-layout_mode = 2
-theme_override_constants/separation = 18
-
-[node name="PathLegend" type="Label" parent="HUD/TerrainPanel/Margin/Content/Legend" unique_id=1664615961]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.35, 0.4, 0.43, 1)
-text = "● PATH"
-
-[node name="GrassLegend" type="Label" parent="HUD/TerrainPanel/Margin/Content/Legend" unique_id=1894326734]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.28, 0.57, 0.34, 1)
-text = "● GRASS"
-
-[node name="MountainLegend" type="Label" parent="HUD/TerrainPanel/Margin/Content/Legend" unique_id=1139603594]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.63, 0.58, 0.48, 1)
-text = "● MOUNTAIN"
-
-[node name="RotationButtons" type="HBoxContainer" parent="HUD/TerrainPanel/Margin/Content" unique_id=986036783]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="RotateLeft" type="Button" parent="HUD/TerrainPanel/Margin/Content/RotationButtons" unique_id=670655937]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Rotar −60°"
-
-[node name="RotateRight" type="Button" parent="HUD/TerrainPanel/Margin/Content/RotationButtons" unique_id=904870936]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Rotar +60°"
-
-[node name="PlacementButtons" type="HBoxContainer" parent="HUD/TerrainPanel/Margin/Content" unique_id=1239349120]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="ConfirmPlacement" type="Button" parent="HUD/TerrainPanel/Margin/Content/PlacementButtons" unique_id=2019842071]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Confirmar pieza"
-
-[node name="CancelPlacement" type="Button" parent="HUD/TerrainPanel/Margin/Content/PlacementButtons" unique_id=1245401682]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Cancelar"
-
-[node name="Hint" type="Label" parent="HUD/TerrainPanel/Margin/Content" unique_id=2027436933]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Terreno: Q/E o Ctrl+rueda gira · rueda zoom · T auto-coloca · clic confirma · Esc/clic derecho cancela."
-
-[node name="CameraHint" type="Label" parent="HUD/TerrainPanel/Margin/Content" unique_id=1858734444]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "Mapa: WASD mover · rueda = zoom · Ctrl+rueda gira al colocar · botón central + arrastrar · R recentra · H oculta interfaz."
 
 [node name="TowerToolbar" type="MarginContainer" parent="HUD" unique_id=1068070992]
 unique_name_in_owner = true
@@ -1018,7 +984,7 @@ theme_override_colors/font_color = Color(0.87, 0.89, 0.79, 1)
 theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
 
-[node name="BalatroHoverEffect" type="Node" parent="HUD/TerrainCardPanel/Margin/Content/Cards/TerrainCard1"]
+[node name="BalatroHoverEffect" type="Node" parent="HUD/TerrainCardPanel/Margin/Content/Cards/TerrainCard1" unique_id=1306478798]
 script = ExtResource("35_balatro_hover")
 
 [node name="TerrainCard2" type="Button" parent="HUD/TerrainCardPanel/Margin/Content/Cards" unique_id=865916602]
@@ -1074,7 +1040,7 @@ theme_override_colors/font_color = Color(0.87, 0.89, 0.79, 1)
 theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
 
-[node name="BalatroHoverEffect" type="Node" parent="HUD/TerrainCardPanel/Margin/Content/Cards/TerrainCard2"]
+[node name="BalatroHoverEffect" type="Node" parent="HUD/TerrainCardPanel/Margin/Content/Cards/TerrainCard2" unique_id=518651924]
 script = ExtResource("35_balatro_hover")
 
 [node name="TerrainCard3" type="Button" parent="HUD/TerrainCardPanel/Margin/Content/Cards" unique_id=314154449]
@@ -1130,7 +1096,7 @@ theme_override_colors/font_color = Color(0.87, 0.89, 0.79, 1)
 theme_override_font_sizes/font_size = 13
 horizontal_alignment = 1
 
-[node name="BalatroHoverEffect" type="Node" parent="HUD/TerrainCardPanel/Margin/Content/Cards/TerrainCard3"]
+[node name="BalatroHoverEffect" type="Node" parent="HUD/TerrainCardPanel/Margin/Content/Cards/TerrainCard3" unique_id=778271313]
 script = ExtResource("35_balatro_hover")
 
 [node name="UpgradeCardPanel" parent="HUD" unique_id=895092366 instance=ExtResource("15_upgrade_offer_panel")]
@@ -1208,7 +1174,7 @@ follow_viewport_enabled = true
 unique_name_in_owner = true
 process_mode = 3
 
-[node name="EnemyDeathParticles" type="Node2D" parent="FeedbackVfxLayer/FeedbackVfx"]
+[node name="EnemyDeathParticles" type="Node2D" parent="FeedbackVfxLayer/FeedbackVfx" unique_id=1639073060]
 unique_name_in_owner = true
 process_mode = 3
 script = ExtResource("37_enemy_death_particles")

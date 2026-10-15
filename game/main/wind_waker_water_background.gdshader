@@ -13,6 +13,7 @@ uniform vec2 offset = vec2(0, 0);
 uniform vec2 camera_world_position = vec2(0.0);
 uniform vec2 viewport_size = vec2(1152.0, 648.0);
 uniform float camera_zoom = 1.0;
+uniform float water_time = 0.0;
 
 const float TWOPI = 6.283185307;
 const float SIXPI = 18.84955592;
@@ -141,5 +142,5 @@ vec3 water(vec2 uv, vec3 cdir, float iTime)
 void fragment() {
 	vec2 world_position = camera_world_position + (UV - vec2(0.5)) * viewport_size / max(camera_zoom, 0.001);
 	vec2 uv = world_position / 32.0;
-	COLOR = vec4(water(uv * tile + offset, vec3(0,1,0), TIME * distortion_speed), 1.0);
+	COLOR = vec4(water(uv * tile + offset, vec3(0,1,0), water_time * distortion_speed), 1.0);
 }
