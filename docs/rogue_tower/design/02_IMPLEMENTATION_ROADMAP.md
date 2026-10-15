@@ -173,7 +173,7 @@ M12A está implementado en código; la aceptación manual sigue pendiente. Las r
 
 ## M13 — UX/UI
 - HUD según M22: salud y atajos arriba a la izquierda; Gold/Mana arriba a la derecha; oleada centrada. El timeline fijo de 45 puntos fue sustituido en M35 por una ventana fija de 15 rondas con fade futuro (ADR-0083). M55 añade el panel 9-slice compartido por Gold y los precios de torre; Mana, salud y ronda no tienen ese panel. La información de torre comienza bajo los recursos.
-- Barra de Health de base con valor superpuesto y segmentos de 10; sprite de base intercambiable desde `BaseData`. Gold y Mana usan iconos reutilizables, con mayor énfasis para Gold; al cambiar, su icono y cifra escalan y rebotan.
+- Barra de Health de base con valor superpuesto y segmentos (inicialmente de 10; M67 la actualiza a un segmento por HP); sprite de base intercambiable desde `BaseData`. Gold y Mana usan iconos reutilizables, con mayor énfasis para Gold; al cambiar, su icono y cifra escalan y rebotan.
 - El Mana se repone al máximo efectivo cuando empieza cada ronda de campaña, y se presenta como entero sin alterar la precisión de los cálculos internos.
 - Al seleccionar una torre, mostrar en líneas legibles nivel, daño, multiplicadores H/A/S con iconos de Health/Armor/Shield, alcance, RPM, crítico, patrón, Mana y XP; conservar prioridades, mejoras y demolición en el panel derecho, que desaparece al deseleccionar.
 - PNG RGBA transparentes e independientes, uno por objeto, para moneda, energía, Health/Armor/Shield, siete torres y cuatro estados; no se usa atlas. Los atajos inferiores usan un fondo individual estilo carta y los mismos iconos de la selección, preview y torre colocada; el contenedor no dibuja un panel común.
@@ -408,7 +408,7 @@ Estas cantidades NO son compromiso de diseño final.
 ## M44 — Preview exacto, oferta fija y torres articuladas
 - Reutilizar el mismo snapshot de celdas candidatas para dibujar la expansión y confirmarla, incluyendo elevación, contenido determinista y celdas auto-rellenadas.
 - Dibujar contornos sin inset y compartir uniones redondeadas en superficies, preview y miniaturas. La paleta y el trazo plano vigentes quedan fijados por M46/ADR-0095.
-- Mantener todas las ofertas de mejora exactamente en tres cartas; mezclar los reclutamientos desbloqueados con las mejoras, y preservar para después los reclutamientos no seleccionados.
+- Mantener todas las ofertas de mejora exactamente en tres cartas; garantizar un reclutamiento elegible, limitar a dos el total de reclutamientos y sortear por peso los demás espacios. Preservar para después los reclutamientos no seleccionados.
 - Reemplazar los siete iconos canónicos por las imágenes entregadas. El montaje articulado original quedó sustituido en M50: una textura compuesta cacheada por torre alimenta un solo sprite en mundo y ghost, que mira lateralmente con espejo horizontal.
 - Añadir trazo blanco con shader alfa a sprites de torre y obstáculos, conservando el orden Y-sort individual.
 - Resultado: código/assets/documentación integrados; aceptación visual e interactiva pendiente. Ver [ADR-0093](../decisions/ADR-0093-preview-de-terreno-oferta-fija-y-torres-articuladas.md).
@@ -526,3 +526,29 @@ Estas cantidades NO son compromiso de diseño final.
 - Retirar recursos sin consumidores: 26 PNG alternativos autorizados, el marco antiguo de Tower Info, la capa de preview de portal no instanciada y Resources de enemigo/oleada M7/M8 que ya no puede seleccionar el juego.
 - Conservar los perfiles de torre DEBUG `8`, `9` y `0`, todavía funcionales en partidas normales.
 - Resultado: código/documentación integrados; aceptación de escena y revisión visual pendientes. Ver [ADR-0115](../decisions/ADR-0115-ui-inspector-y-limpieza-de-recursos.md).
+
+## M65 — Ciclos de correr para el roster enemigo
+- Sustituir los 26 sprites canónicos por hojas de cuatro cuadros de correr y conectarlas a los Resources actuales, sin cambiar datos de combate.
+- Mantener orientación a la derecha, animar desde que entran en `MOVING` y usar el espejo horizontal para rutas hacia la izquierda.
+- Resultado: assets/código/documentación integrados; revisión visual en Godot pendiente. Ver [ADR-0116](../decisions/ADR-0116-spritesheets-de-correr-de-enemigos.md).
+
+## M66 — Reclutamientos garantizados dentro de una oferta aleatoria
+- Garantizar una carta de reclutamiento si hay una torre elegible que aún no esté en el roster; evitar que reclutamientos ocupen los tres espacios.
+- Sortear por peso las demás opciones entre cartas elegibles, con máximo de dos reclutamientos y sin reemplazo.
+- Resultado: código/documentación integrados; aceptación interactiva pendiente. Ver [ADR-0118](../decisions/ADR-0118-ofertas-de-reclutamiento-aleatorio.md).
+
+## M67 — Feedback ampliado de vida de la base
+- Aumentar aproximadamente 50 % el indicador de salud del HUD y mostrar un cuadro por HP, con animación al perder cada cuadro y color que transita de verde a rojo.
+- Añadir una viñeta progresiva a 3/2/1 HP y pulso lento y suave al permanecer en 1 HP.
+- Resultado: código/documentación integrados; aceptación visual pendiente. Ver [ADR-0119](../decisions/ADR-0119-feedback-de-vida-de-base.md).
+
+## M68 — Velocidad de simulación de la partida
+- Añadir junto a la pausa un botón que alterne ×1, ×2 y ×3, con el multiplicador actual visible.
+- Conservar la velocidad al pausar/reanudar y restablecer ×1 al iniciar otra run.
+- Resultado: código/documentación integrados; aceptación visual e interactiva pendiente. Ver [ADR-0120](../decisions/ADR-0120-control-de-velocidad-de-partida.md).
+
+## M69 — Color y gradiente de las fachadas elevadas
+- Aclarar las fachadas de Grass a `#407850` y las de Mountain a `#3b3c41`.
+- Mantener sobre cada pared un gradiente negro opaco en la base que se desvanece hasta transparente arriba, sin afectar las tapas.
+- Compartir color y gradiente entre el tablero, el preview de expansión y las miniaturas.
+- Resultado: código/documentación integrados; aceptación visual pendiente. Ver [ADR-0121](../decisions/ADR-0121-color-y-gradiente-de-fachadas.md).

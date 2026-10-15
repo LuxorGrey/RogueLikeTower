@@ -103,6 +103,10 @@ Los ADR documentan decisiones de terreno, combate, campaña, progresión y UX en
 | [ADR-0115](ADR-0115-ui-inspector-y-limpieza-de-recursos.md) | UI editable desde Inspector, tamaños importados de sprites y retirada de recursos sin consumidores | Escaneo headless y smoke de escena principal pasados; aceptación de Inspector y revisión visual pendiente. Extiende ADR-0049/0050; reduce los iconos de estado de ADR-0107. |
 | [ADR-0116](ADR-0116-spritesheets-de-correr-de-enemigos.md) | Sustitución de los 26 sprites de enemigos por ciclos de correr de cuatro cuadros | Assets conectados por las rutas canónicas; revisión visual en Godot pendiente. No altera los datos de gameplay. |
 | [ADR-0117](ADR-0117-recorte-de-portal-y-outline-de-torres.md) | Recorte del spritesheet de portal importado y grosor del outline de torres | Código/documentación integrados; aceptación visual pendiente. Refina ADR-0098 y ADR-0115. |
+| [ADR-0118](ADR-0118-ofertas-de-reclutamiento-aleatorio.md) | Un reclutamiento garantizado y máximo dos por oferta aleatoria | Código/documentación integrados; aceptación interactiva pendiente. Refina ADR-0062/0076/0093. |
+| [ADR-0119](ADR-0119-feedback-de-vida-de-base.md) | Barra de base segmentada, color progresivo y viñeta de baja vida | Código/documentación integrados; aceptación visual pendiente. Refina ADR-0074 y ADR-0115. |
+| [ADR-0120](ADR-0120-control-de-velocidad-de-partida.md) | Botón junto a Pausa para alternar la velocidad de simulación ×1/×2/×3 | Código/documentación integrados; aceptación visual e interactiva pendiente. |
+| [ADR-0121](ADR-0121-color-y-gradiente-de-fachadas.md) | Tonos Grass/Mountain y gradiente negro a transparente en las fachadas de elevación | Código/documentación integrados; aceptación visual pendiente. Refina ADR-0092/0094. |
 
 ## Regla para nuevos ADR
 

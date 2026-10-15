@@ -29,6 +29,15 @@
 [ext_resource type="Script" uid="uid://dn3x22g17jvyb" path="res://game/ui/components/balatro_card_hover.gd" id="35_balatro_hover"]
 [ext_resource type="Material" path="res://game/main/wind_waker_water_background_material.tres" id="36_water_background"]
 [ext_resource type="Script" uid="uid://bdoogfs13c1m2" path="res://game/vfx/enemy_death_particle_pool.gd" id="37_enemy_death_particles"]
+[ext_resource type="Shader" uid="uid://c17we7oasarb5" path="res://game/ui/base_health_vignette.gdshader" id="38_base_health_vignette"]
+[ext_resource type="Script" uid="uid://b4hk0186eob6r" path="res://game/ui/game_speed_button.gd" id="39_game_speed_button"]
+
+[sub_resource type="ShaderMaterial" id="BaseHealthVignetteMaterial"]
+shader = ExtResource("38_base_health_vignette")
+shader_parameter/vignette_color = Color(0.48, 0.055, 0.09, 1)
+shader_parameter/intensity = 0.0
+shader_parameter/thickness = 0.36
+shader_parameter/softness = 0.28
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_transparent_panel"]
 
@@ -265,6 +274,18 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
+[node name="BaseHealthVignetteLayer" type="CanvasLayer" parent="." unique_id=12220379]
+
+[node name="BaseHealthVignette" type="ColorRect" parent="BaseHealthVignetteLayer" unique_id=1154216879]
+unique_name_in_owner = true
+material = SubResource("BaseHealthVignetteMaterial")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
 [node name="HUD" type="CanvasLayer" parent="." unique_id=1794812498]
 unique_name_in_owner = true
 layer = 2
@@ -284,8 +305,8 @@ color = Color(0, 0, 0, 0.42)
 unique_name_in_owner = true
 offset_left = 8.0
 offset_top = 8.0
-offset_right = 264.0
-offset_bottom = 118.0
+offset_right = 414.0
+offset_bottom = 130.0
 theme = ExtResource("16_ui_theme")
 theme_override_styles/panel = SubResource("StyleBoxEmpty_transparent_panel")
 metadata/transparent_panel = true
@@ -307,11 +328,13 @@ theme_override_constants/separation = 8
 
 [node name="BaseHealthBar" type="Control" parent="HUD/Panel/Margin/Content/BaseHealthRow" unique_id=542036788]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 28)
+custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 1
 script = ExtResource("11_segmented_health")
+health_per_segment = 1
+segment_gap = 3.0
 
 [node name="BaseStatus" type="Label" parent="HUD/Panel/Margin/Content/BaseHealthRow/BaseHealthBar" unique_id=1585581998]
 unique_name_in_owner = true
@@ -322,7 +345,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(0.94, 0.96, 0.92, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 16
 text = "BASE  — / —"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -333,6 +356,12 @@ custom_minimum_size = Vector2(54, 32)
 layout_mode = 2
 toggle_mode = true
 script = ExtResource("31_pause_toggle_button")
+
+[node name="GameSpeedButton" type="Button" parent="HUD/Panel/Margin/Content/BaseHealthRow" unique_id=1402884018]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(54, 32)
+layout_mode = 2
+script = ExtResource("39_game_speed_button")
 
 [node name="ShortcutHint" type="Label" parent="HUD/Panel/Margin/Content" unique_id=468928720]
 unique_name_in_owner = true
@@ -421,9 +450,10 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -210.0
-offset_top = 24.0
+offset_top = 1.0
 offset_right = 210.0
-offset_bottom = 248.0
+offset_bottom = 194.0
+grow_horizontal = 2
 theme = ExtResource("16_ui_theme")
 theme_override_styles/panel = SubResource("StyleBoxEmpty_transparent_panel")
 metadata/transparent_panel = true

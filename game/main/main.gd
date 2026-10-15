@@ -137,6 +137,13 @@ var _meta_shop_panel: CanvasLayer
 @export var base_health_warning_color: Color = Color("#e5be6a")
 @export var gold_reward_flash_color: Color = Color("#fff0a6")
 @export var gold_spend_flash_color: Color = Color("#f5e2a8")
+@export_group("Base health feedback")
+@export_range(0.0, 0.5, 0.01) var base_health_vignette_three_hp_intensity: float = 0.12
+@export_range(0.0, 0.6, 0.01) var base_health_vignette_two_hp_intensity: float = 0.23
+@export_range(0.0, 0.7, 0.01) var base_health_vignette_one_hp_intensity: float = 0.31
+@export_range(0.0, 0.1, 0.005) var base_health_vignette_one_hp_pulse: float = 0.025
+@export_range(1.0, 6.0, 0.1) var base_health_vignette_pulse_period: float = 2.8
+@export_range(0.2, 3.0, 0.1) var base_health_vignette_transition_speed: float = 1.1
 
 @export_group("Start wave button layout")
 @export_range(120.0, 320.0, 1.0) var start_wave_min_width: float = 188.0
@@ -169,6 +176,10 @@ var _camera_damage_shake_offset: Vector2 = Vector2.ZERO
 var _wave_camera_shake_active: bool = false
 var _wave_camera_shake_elapsed: float = 0.0
 var _water_background_time: float = 0.0
+var _base_health_vignette_intensity: float = 0.0
+var _base_health_vignette_display_intensity: float = 0.0
+var _base_health_vignette_level: int = 0
+var _base_health_vignette_time: float = 0.0
 var _cursor_textures: Dictionary[int, Texture2D] = {}
 var _native_cursor_kind: int = -1
 var _hovered_interactable_control: Control
@@ -246,6 +257,7 @@ var _priority_visibility_tower_instance_id: int = 0
 var _cursor_feedback_vfx: Node2D
 @onready var _cloud_shadow_material: ShaderMaterial = %CloudShadowOverlay.material as ShaderMaterial
 @onready var _water_background_material: ShaderMaterial = $WaterBackgroundLayer/WaterBackground.material as ShaderMaterial
+@onready var _base_health_vignette: ColorRect = %BaseHealthVignette
 @onready var _entities: Node2D = %Entities
 @onready var _base: GameBase = %GameBase
 @onready var _wave_director: WaveDirector = %WaveDirector
@@ -302,6 +314,7 @@ var _pause_menu: Node
 var _run_end_in_progress: bool = false
 
 func _ready() -> void:
+	Engine.time_scale = 1.0
 	_ensure_cursor_feedback_layer()
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	TOWER_PROFILES.assign(TOWER_ROSTER.profiles)
@@ -468,6 +481,9 @@ func _ready() -> void:
 	_upgrade_card_panel.hide()
 	_sync_selection_backdrop()
 
+func _exit_tree() -> void:
+	Engine.time_scale = 1.0
+
 func _sync_selection_backdrop() -> void:
 	if _selection_backdrop == null:
 		return
@@ -496,6 +512,7 @@ func _process(_delta: float) -> void:
 	_water_background_time += _delta
 	if _water_background_material != null:
 		_water_background_material.set_shader_parameter("water_time", _water_background_time)
+	_update_base_health_vignette(_delta)
 	_update_camera_keyboard_pan(_delta)
 	_update_camera_shake_motion(_delta)
 	_update_cloud_shadow_transform()
@@ -2985,15 +3002,49 @@ func _format_mana_regeneration(rate_per_second: float) -> String:
 
 func _on_base_health_changed(current_health: int, maximum_health: int) -> void:
 	var health_ratio: float = float(current_health) / float(maximum_health) if maximum_health > 0 else 0.0
-	var health_color: Color = base_health_normal_color
-	if health_ratio <= 0.25:
-		health_color = base_health_low_color
-	elif health_ratio <= 0.5:
-		health_color = base_health_warning_color
+	var health_color: Color
+	if health_ratio >= 0.5:
+		health_color = base_health_warning_color.lerp(
+			base_health_normal_color,
+			clampf((health_ratio - 0.5) / 0.5, 0.0, 1.0)
+		)
+	else:
+		health_color = base_health_low_color.lerp(
+			base_health_warning_color,
+			clampf(health_ratio / 0.5, 0.0, 1.0)
+		)
 	_base_health_bar.call("set_health", current_health, maximum_health, health_color)
 	_base_status.text = "%d / %d" % [current_health, maximum_health]
 	if current_health <= 0:
 		_base_status.text = "DESTRUIDA  ·  0 / %d" % maximum_health
+	_base_health_vignette_level = current_health if current_health <= 3 else 0
+	match _base_health_vignette_level:
+		3:
+			_base_health_vignette_intensity = base_health_vignette_three_hp_intensity
+		2:
+			_base_health_vignette_intensity = base_health_vignette_two_hp_intensity
+		1:
+			_base_health_vignette_intensity = base_health_vignette_one_hp_intensity
+		_:
+			_base_health_vignette_intensity = 0.0
+
+func _update_base_health_vignette(delta: float) -> void:
+	if _base_health_vignette == null:
+		return
+	var vignette_material := _base_health_vignette.material as ShaderMaterial
+	if vignette_material == null:
+		return
+	_base_health_vignette_display_intensity = move_toward(
+		_base_health_vignette_display_intensity,
+		_base_health_vignette_intensity,
+		base_health_vignette_transition_speed * delta
+	)
+	var intensity: float = _base_health_vignette_display_intensity
+	if _base_health_vignette_level == 1:
+		_base_health_vignette_time += delta
+		var pulse_phase: float = _base_health_vignette_time * TAU / maxf(base_health_vignette_pulse_period, 0.1)
+		intensity += sin(pulse_phase) * base_health_vignette_one_hp_pulse
+	vignette_material.set_shader_parameter("intensity", clampf(intensity, 0.0, 1.0))
 
 func _on_run_card_modifiers_changed() -> void:
 	_sync_run_card_side_effects()

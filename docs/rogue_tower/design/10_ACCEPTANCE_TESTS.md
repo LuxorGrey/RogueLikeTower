@@ -191,7 +191,7 @@ La implementación de campaña, recursos, perfiles, habilidades y sprites está 
 
 ## M11 Cartas de mejora
 - Después de colocar una expansión de las rondas 1 y 2, la fase pasa directamente a `ROUND_PREP`; no aparece una carta de mejora fuera del calendario.
-- Después de colocar la expansión de cada ronda múltiplo de tres entre 3 y 42, `RunManager` entra a `CARD_OFFER` antes de `ROUND_PREP`. La oferta muestra exactamente tres cartas distintas, con título, rareza y efecto descrito; el panel solo deja seleccionar esos tres botones. Las cartas de reclutamiento elegibles se mezclan con mejoras y las no elegidas siguen disponibles en ofertas futuras. Tras la 45 no hay carta porque la run termina.
+- Después de colocar la expansión de cada ronda múltiplo de tres entre 3 y 42, `RunManager` entra a `CARD_OFFER` antes de `ROUND_PREP`. La oferta muestra exactamente tres cartas distintas, con título, rareza y efecto descrito; el panel solo deja seleccionar esos tres botones. Si hay torres elegibles sin reclutar, siempre hay al menos una carta de reclutamiento y nunca más de dos; los otros espacios se sortean por peso entre cartas elegibles. Las cartas no elegidas siguen disponibles en ofertas futuras. Tras la 45 no hay carta porque la run termina.
 - Hasta elegir una carta se mantienen bloqueados inicio de ronda, construcción, mejora y colocación. `Esc`/clic derecho no descartan ni saltan la elección. Tras seleccionar una, se aplican sus efectos y se habilita una sola vez la siguiente ronda.
 - Las definiciones viven en Resources. Seleccionar una carta no cambia ningún `TowerData`, `StatusEffectData`, economía de arranque ni archivo `.tres` compartido. Las cartas específicas de torre requieren unlock permanente y reclutamiento durante la run; las cartas de reclutamiento aparecen para torres desbloqueadas que aún no están en el roster. Las cartas globales no requieren unlock.
 - Las 173 entradas compatibles de referencia y las 18 cartas propias se representan con 190 IDs únicos: 172 Resources nuevos y la Advanced Circuits propia, que ya ejecuta el mismo efecto. Sus familias incluyen daño plano/multiplicador, alcance por elevación, área, Mana, estados/caps/sinergias, críticos, H/A/S, economía y base. Las cartas de torre se filtran por unlock permanente, roster reclutado y prerequisitos; los efectos elegidos afectan también a torres construidas previamente, no mutan Resources compartidos y no alteran RPM fijo; Frost Keep solo gana RPM por cobertura PATH.
@@ -200,12 +200,12 @@ La implementación de campaña, recursos, perfiles, habilidades y sprites está 
 
 ### Prueba manual M11 en el juego
 1. Ejecutar `game/main/main.tscn` y jugar la campaña normal. Limpiar y expandir las rondas 1 y 2: tras cada colocación debe comenzar la preparación siguiente sin aparecer panel de mejoras.
-2. Antes de completar la ronda 3, construir Ballista en Grass y anotar el daño mostrado en su resumen. Completar la ronda y colocar una pieza de terreno válida. Ahora, antes de que se habilite ronda 4, debe aparecer `CARD_OFFER` con tres cartas. Verificar títulos, descripciones/efectos, rarezas y botones; no se puede iniciar ni construir mientras está abierta. El panel dispone de seis ranuras, pero muestra tres por defecto: la oferta no debe descartarse por no llenar todas las ranuras. `Esc` no debe saltarse la elección.
+2. Antes de completar la ronda 3, construir Ballista en Grass y anotar el daño mostrado en su resumen. Completar la ronda y colocar una pieza de terreno válida. Ahora, antes de que se habilite ronda 4, debe aparecer `CARD_OFFER` con tres cartas. Verificar títulos, descripciones/efectos, rarezas y botones; no se puede iniciar ni construir mientras está abierta. El panel dispone de seis ranuras, pero muestra tres por defecto: la oferta no debe descartarse por no llenar todas las ranuras. Si Mortar y Tesla Coil siguen desbloqueadas y sin reclutar, debe mostrarse al menos una de ellas, no ambas son obligatorias y no pueden ocupar las tres opciones. `Esc` no debe saltarse la elección.
 3. Si aparece **Disparo calibrado**, seleccionarlo: la expansión ya está colocada, el panel desaparece y se habilita la ronda 4; al seleccionar la Ballista ya construida, su resumen debe mostrar 2 de daño adicional. Si no aparece esa carta, repetir la run; no hace falta editar recursos.
 4. En runs sucesivas, elegir **Depósito de Mana** y comprobar que la capacidad HUD sube 20 sin llenar instantáneamente el saldo; **Flujo constante** aumenta la regeneración 0,5/s; **Circuitos eficientes** reduce el coste por ataque en un 15 %. Para una mejora de estado, seleccionar la carta del estado/torre correspondiente y usar el fixture M8 para comprobar su mayor duración. Alcance y área deben reflejar el stat correspondiente en preview/resumen y comportamiento de ataque. Comprobar en otras ofertas las tres cartas de multiplicador H/A/S descritas abajo.
 5. Alcanzar la siguiente oferta (ronda 6). La carta elegida antes no puede aparecer de nuevo con el máximo actual de una copia; las opciones no elegidas sí pueden volver a aparecer. Comprobar el mismo flujo al menos en rondas 9 y 42, y confirmar que tras completar la 45 se abre la tienda sin una oferta temporal adicional. Una run nueva quita efectos y reinicia el límite por run.
 
-M11 queda aceptado cuando se verifican la frecuencia confirmada y el orden expansión→carta→siguiente ronda, bloqueo hasta selección, exactamente tres botones visibles y seleccionables, filtro de unlocks/prerrequisitos/límites y al menos un efecto de cada familia afectada (incluidos estados, Gold, Mana, base y H/A/S), sin mutar recursos compartidos. El ID legado Card Draw no aparece en la tienda ni cambia la oferta. La aceptación interactiva completa de cartas y efectos sigue pendiente.
+M11 queda aceptado cuando se verifican la frecuencia confirmada y el orden expansión→carta→siguiente ronda, bloqueo hasta selección, exactamente tres botones visibles y seleccionables, filtro de unlocks/prerrequisitos/límites y al menos un efecto de cada familia afectada (incluidos estados, Gold, Mana, base y H/A/S), sin mutar recursos compartidos. El ID legado Card Draw no aparece en la tienda ni cambia la oferta. La distribución M66 tiene criterios propios al final de esta página.
 
 ## M12 Meta-progresión
 > Los criterios de barra con las tres torres simultáneas y la tienda terminal por pestañas son históricos. M35 define el roster por run, el menú separado y el mapa permanente de nodos; conserva de esta sección la persistencia, XP y economía meta.
@@ -631,7 +631,7 @@ La implementación M43 y la documentación están integradas. No se ejecutó God
 
 1. Mueve y rota varias piezas con celdas Grass/Mountain en desniveles, con una o más celdas que auto-rellenen huecos. Compara cada tapa y fachada del ghost con el tablero después de confirmar: altura, textura, obstáculos, props y cofres deben permanecer idénticos.
 2. Revisa el contorno de región de terreno Grass/Mountain/Path en tablero, superficies elevadas, hover y miniaturas. Las aristas internas desaparecen; las juntas no tienen huecos ni picos, los extremos son redondeados y el trazo usa un único color plano por terreno: `#406e4d`, `#646567` y amarillo Path.
-3. Desbloquea varias torres, inicia run y abre ofertas de ronda 3/6/9. Cada panel debe contener exactamente tres cartas, con reclutamientos y mejoras en orden aleatorio. Las torres no elegidas permanecen disponibles en ofertas futuras; no aparece una cuarta opción aunque haya más torres pendientes.
+3. Desbloquea varias torres, inicia run y abre ofertas de ronda 3/6/9. Cada panel debe contener exactamente tres cartas; si hay reclutamientos disponibles muestra al menos uno y nunca más de dos, con los otros espacios elegidos aleatoriamente. Las torres no elegidas permanecen disponibles en ofertas futuras; no aparece una cuarta opción aunque haya más torres pendientes.
 4. Construye Ballista, Mortar, Tesla Coil, Poison Sprayer, Flame Thrower, Frost Keep y Shredder. Cada torre debe usar un único sprite completo sin montaje de partes ni rotación visual, mantener el outline blanco y reflejarse horizontalmente al apuntar a enemigos del lado opuesto. El ghost, la card de construcción y Tower Info deben reutilizar la misma imagen; la fachada conserva Y-sort y alfa completos.
 5. Verifica los iconos de los siete tipos en barra, cards y tienda; todos corresponden al sprite nuevo. El séptimo asset se asocia a Shredder, el nombre canónico actual.
 
@@ -645,7 +645,7 @@ La implementación M44 queda integrada en código/documentación. No se ejecutó
 2. Desplaza con rueda en ambos ejes, arrastra con el botón izquierdo una distancia mayor a 8 px y vuelve a probar con el botón central. Verifica que un clic corto todavía selecciona nodos y que el arrastre no compra una mejora al soltar.
 3. Recorre todos los nodos generales y de las siete torres: cada uno debe mostrar un icono relacionado, título legible y descripción breve; los tooltips deben conservar descripción completa, coste y requisitos. En cada torre, Health, Armor y Shield se ven en una sola fila debajo del unlock, conectados como alternativas hermanas, sin superponerse con los clusters vecinos.
 4. Compara una torre de nivel 1, nivel intermedio y nivel 46. El arte aumenta de forma gradual hasta un máximo discreto de 12 %; la base y cabeza mantienen alineación/pivote. El aumento no cambia daño, alcance, colisión ni celda ocupada.
-5. Comprueba una región Grass y una Mountain en elevaciones distintas: las aristas internas de la misma región no se dibujan, los bordes regionales son redondeados y sin huecos, Grass usa únicamente `#406e4d` y Mountain únicamente `#646567`; no debe aparecer keyline ni interior más claro. Hover conserva el mismo color RGB y solo cambia su opacidad. Las fachadas son las dos caras delanteras, una visiblemente más oscura que la otra y ambas más oscuras que la tapa; no aparecen costados, cierres de esquina ni cambios de cámara.
+5. Comprueba una región Grass y una Mountain en elevaciones distintas: las aristas internas de la misma región no se dibujan, los bordes regionales son redondeados y sin huecos, Grass usa únicamente `#406e4d` y Mountain únicamente `#646567`; no debe aparecer keyline ni interior más claro. Hover conserva el mismo color RGB y solo cambia su opacidad. Las fachadas son las dos caras delanteras y respetan la geometría de la tapa; no aparecen costados, cierres de esquina ni cambios de cámara. El color y el gradiente vigentes se comprueban en M69.
 
 M45 está implementado en código y documentado. No se ejecutó Godot ni revisión visual/interactiva; los cinco criterios anteriores siguen pendientes de aceptación manual. Ver [ADR-0094](../decisions/ADR-0094-mapa-de-mejoras-y-legibilidad-del-terreno.md).
 
@@ -892,3 +892,38 @@ El escaneo headless del editor y el smoke de tres frames de `game/main/main.tscn
 4. Compara enemigos pequeños, medianos y jefes: el personaje debe quedar centrado, alineado a su base y conservar el tamaño visual configurado en su `EnemyData`.
 
 Las hojas están en sus rutas canónicas y el runtime existente selecciona cuatro cuadros a 8 FPS durante `MOVING`. La revisión en ventana Godot queda pendiente. Ver [ADR-0116](../decisions/ADR-0116-spritesheets-de-correr-de-enemigos.md).
+
+## M66 — Oferta aleatoria de reclutamientos y mejoras
+
+1. En la primera oferta de una run con Mortar/Tesla Coil desbloqueadas, comprueba que aparece al menos uno de sus reclutamientos y que los otros dos espacios pueden ser cartas globales o pasivas de Ballista. Debe haber exactamente tres cartas distintas y nunca más de dos reclutamientos.
+2. Con varias torres pendientes, repite ofertas/runs: el reclutamiento obligatorio debe poder variar según los pesos/seed; reclutamientos adicionales pueden aparecer en cualquiera de los otros espacios, pero nunca llenan la oferta.
+3. Antes de reclutar una torre, sus pasivas específicas siguen ausentes. Tras reclutarla, comprueba que pasan a ser elegibles en ofertas futuras. Las pasivas de torres no reclutadas siguen ausentes; las globales y las pasivas de torres ya reclutadas pueden ocupar los espacios aleatorios.
+4. No elijas uno de los reclutamientos disponibles y abre otra oferta en una ronda posterior: debe seguir elegible. Comprueba también una oferta sin torres pendientes, que debe sortear tres cartas normales.
+
+M66 queda aceptado cuando se verifican garantía condicional, límite de dos reclutamientos, mezcla ponderada sin reemplazo, filtros de run y persistencia de no elegidas. Código/documentación integrados; aceptación interactiva pendiente. Ver [ADR-0118](../decisions/ADR-0118-ofertas-de-reclutamiento-aleatorio.md).
+
+## M67 — Feedback de vida de Main Tower
+
+1. En la escena principal, compara la barra de base con la versión previa: pasa de 28 a 42 px de alto y dispone de una fila superior más ancha. La pausa sigue legible junto a ella.
+2. Con una base de 10 HP y también con un máximo ampliado por Fortification/cards, confirma que cada HP ocupa un cuadro propio. Al perder un punto, el cuadro perdido hace flash y se encoge/desvanece; al recibir varios puntos de daño, cada cuadro perdido se anima. Curar o reparar repone los segmentos.
+3. Observa el relleno con la base completa, a media vida y casi vacía: el color debe cambiar gradualmente de verde a ámbar y rojo, sin saltos entre solo tres colores planos.
+4. Al llegar a 3 HP, aparece una viñeta roja tenue en los bordes; a 2 HP se intensifica y a 1 HP se vuelve más clara, con respiración lenta y sutil (aprox. 2,8 s). El centro de juego, los textos y los controles siguen legibles. Comprueba que desaparece al sanar por encima de 3 HP y que la run sigue cómoda durante varios minutos a 1 HP.
+
+M67 queda integrado en código/documentación. La inspección visual e interactiva en Godot sigue pendiente; no se ejecutó Godot en este cambio. Ver [ADR-0119](../decisions/ADR-0119-feedback-de-vida-de-base.md).
+
+## M68 — Velocidad de simulación de la partida
+
+1. En la escena de juego, confirma que el nuevo botón queda junto al de pausa y muestra ×1 al iniciar.
+2. Pulsa sucesivamente el botón: debe pasar a ×2, luego ×3 y volver a ×1. El mundo, enemigos, torretas y temporizadores de ronda deben avanzar con el multiplicador visible.
+3. Pausa en ×2 y ×3. El juego debe detenerse y, al reanudar, continuar con el multiplicador elegido antes de pausar.
+4. Vuelve al menú e inicia otra run. Debe comenzar en ×1 sin heredar el multiplicador de la run anterior.
+
+M68 queda integrado en código/documentación; la inspección visual e interactiva queda pendiente. No se ejecutó Godot. Ver [ADR-0120](../decisions/ADR-0120-control-de-velocidad-de-partida.md).
+
+## M69 — Color y gradiente de las fachadas elevadas
+
+1. En la partida, revisa las fachadas Grass y Mountain: su borde superior debe mostrar los colores `#407850` y `#3b3c41`, respectivamente; no deben verse casi negras en toda su altura.
+2. Revisa la transición vertical de cada pared: el negro se ve en la base y su alfa desaparece progresivamente hasta transparente en la parte superior. La tapa no recibe este sombreado.
+3. Compara tablero, ghost/preview de expansión y miniaturas de cartas. Los colores y el gradiente deben coincidir en las tres presentaciones, sin cambiar el contorno, altura ni oclusión Y-sort de las paredes.
+
+M69 queda integrado en código/documentación; la revisión visual en Godot queda pendiente. No se ejecutó el motor. Ver [ADR-0121](../decisions/ADR-0121-color-y-gradiente-de-fachadas.md).

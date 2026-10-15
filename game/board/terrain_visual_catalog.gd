@@ -18,8 +18,10 @@ const MOUNTAIN_VARIANTS: Array[Texture2D] = [
 ]
 const GRASS_CLIFF_TEXTURE: Texture2D = preload("res://assets/sprites/terrain/tiles/grass_cliff_face.png")
 const MOUNTAIN_CLIFF_TEXTURE: Texture2D = preload("res://assets/sprites/terrain/tiles/mountain_cliff_face.png")
-const GRASS_CLIFF_BOTTOM_TINT: Color = Color("#263b2b")
-const MOUNTAIN_CLIFF_BOTTOM_TINT: Color = Color("#24242a")
+const GRASS_CLIFF_SOURCE_COLOR: Color = Color("#406e4d")
+const MOUNTAIN_CLIFF_SOURCE_COLOR: Color = Color("#646567")
+const GRASS_CLIFF_FACE_COLOR: Color = Color("#407850")
+const MOUNTAIN_CLIFF_FACE_COLOR: Color = Color("#3b3c41")
 const PATH_REGION_OUTLINE_COLOR: Color = Color("#FFD052")
 const GRASS_REGION_OUTLINE_COLOR: Color = Color("#406e4d")
 const MOUNTAIN_REGION_OUTLINE_COLOR: Color = Color("#646567")
@@ -121,28 +123,37 @@ static func get_cliff_texture(terrain_type: int) -> Texture2D:
 		return GRASS_CLIFF_TEXTURE
 	return MOUNTAIN_CLIFF_TEXTURE
 
-static func get_cliff_bottom_tint(terrain_type: int) -> Color:
+static func get_cliff_face_color(terrain_type: int) -> Color:
 	if terrain_type == HexCell.TerrainType.GRASS:
-		return GRASS_CLIFF_BOTTOM_TINT
-	return MOUNTAIN_CLIFF_BOTTOM_TINT
+		return GRASS_CLIFF_FACE_COLOR
+	return MOUNTAIN_CLIFF_FACE_COLOR
 
 static func get_cliff_face_colors(
-	terrain_type: int,
-	direction_index: int = 1
+	terrain_type: int
 ) -> PackedColorArray:
-	var bottom_tint: Color = get_cliff_bottom_tint(terrain_type)
-	# Las dos fachadas frontales mantienen el PNG, con sombreado lateral distinto.
-	# Se conserva el gradiente inferior oscuro sin aclarar la textura completa.
-	var side_tint: Color = Color("#666a70")
-	if posmod(direction_index, 6) == 2:
-		side_tint = Color("#7a7e84")
-	var lower_tint: Color = Color(
-		bottom_tint.r * side_tint.r,
-		bottom_tint.g * side_tint.g,
-		bottom_tint.b * side_tint.b,
+	var source_color: Color = GRASS_CLIFF_SOURCE_COLOR
+	if terrain_type == HexCell.TerrainType.MOUNTAIN:
+		source_color = MOUNTAIN_CLIFF_SOURCE_COLOR
+	var target_color: Color = get_cliff_face_color(terrain_type)
+	# The cliff PNGs are flat fills. This ratio makes their displayed upper color
+	# equal the requested palette color while keeping the existing textured path.
+	var face_tint := Color(
+		target_color.r / maxf(source_color.r, 0.001),
+		target_color.g / maxf(source_color.g, 0.001),
+		target_color.b / maxf(source_color.b, 0.001),
 		1.0
 	)
-	return PackedColorArray([side_tint, side_tint, lower_tint, lower_tint])
+	return PackedColorArray([face_tint, face_tint, face_tint, face_tint])
+
+static func get_cliff_gradient_colors() -> PackedColorArray:
+	var transparent_black := Color(0.0, 0.0, 0.0, 0.0)
+	var opaque_black := Color(0.0, 0.0, 0.0, 1.0)
+	return PackedColorArray([
+		transparent_black,
+		transparent_black,
+		opaque_black,
+		opaque_black,
+	])
 
 static func get_obstacle_display_name(obstacle_type: int) -> String:
 	if obstacle_type < 0 or obstacle_type >= OBSTACLE_DISPLAY_NAMES.size():

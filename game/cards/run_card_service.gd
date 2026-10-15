@@ -95,26 +95,38 @@ func create_offer(round_number: int) -> Array[Resource]:
 		return empty_offer
 	if not _current_offer.is_empty():
 		return _current_offer.duplicate()
+	var available_cards: Array[Resource] = []
 	var recruit_cards: Array[Resource] = []
-	var upgrade_cards: Array[Resource] = []
 	var pool_cards: Array = _pool.call("get_all_cards")
 	for card_variant in pool_cards:
 		var card := card_variant as Resource
 		if card == null or not _is_card_available(card):
 			continue
-		if StringName(card.get("grant_tower_id")) != &"":
+		available_cards.append(card)
+		if _is_recruit_card(card):
 			recruit_cards.append(card)
-		else:
-			upgrade_cards.append(card)
-	# Las torres pendientes se reparten aleatoriamente entre ofertas y comparten
-	# los mismos tres espacios con mejoras. Si no salen, siguen disponibles.
-	_shuffle_resources(recruit_cards)
-	for recruit_index in range(mini(recruit_cards.size(), FIXED_UPGRADE_OFFER_SIZE)):
-		_current_offer.append(recruit_cards[recruit_index])
-	while _current_offer.size() < FIXED_UPGRADE_OFFER_SIZE and not upgrade_cards.is_empty():
-		var selected_index: int = _pick_weighted_index(upgrade_cards)
-		_current_offer.append(upgrade_cards[selected_index])
-		upgrade_cards.remove_at(selected_index)
+	# Si queda una torre elegible, la oferta garantiza un reclutamiento.
+	# Los otros espacios siguen siendo aleatorios y nunca se permiten tres reclutas.
+	if not recruit_cards.is_empty():
+		var mandatory_recruit: Resource = recruit_cards[_pick_weighted_index(recruit_cards)]
+		_current_offer.append(mandatory_recruit)
+		available_cards.erase(mandatory_recruit)
+	while _current_offer.size() < FIXED_UPGRADE_OFFER_SIZE:
+		var recruit_count: int = 0
+		for offered_card in _current_offer:
+			if _is_recruit_card(offered_card):
+				recruit_count += 1
+		var candidates: Array[Resource] = []
+		for card in available_cards:
+			if recruit_count >= 2 and _is_recruit_card(card):
+				continue
+			candidates.append(card)
+		if candidates.is_empty():
+			break
+		var selected_index: int = _pick_weighted_index(candidates)
+		var selected_card: Resource = candidates[selected_index]
+		_current_offer.append(selected_card)
+		available_cards.erase(selected_card)
 	if _current_offer.size() != FIXED_UPGRADE_OFFER_SIZE:
 		last_error = "No hay suficientes cartas desbloqueadas para completar la oferta."
 		_current_offer.clear()
@@ -208,6 +220,9 @@ func _shuffle_resources(cards: Array[Resource]) -> void:
 		var card: Resource = cards[index]
 		cards[index] = cards[swap_index]
 		cards[swap_index] = card
+
+func _is_recruit_card(card: Resource) -> bool:
+	return StringName(card.get("grant_tower_id")) != &""
 
 func get_tower_status_ids(tower_id: StringName) -> Array[StringName]:
 	var result: Array[StringName] = []

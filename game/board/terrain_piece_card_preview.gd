@@ -129,11 +129,14 @@ func _draw_cliffs(
 		draw_polygon(
 			cliff_quad,
 			TERRAIN_VISUAL_CATALOG_SCRIPT.get_cliff_face_colors(
-				cell.terrain_type,
-				direction_index
+				cell.terrain_type
 			),
 			cliff_uvs,
 			cliff_texture
+		)
+		draw_polygon(
+			cliff_quad,
+			TERRAIN_VISUAL_CATALOG_SCRIPT.get_cliff_gradient_colors()
 		)
 
 func _draw_cell_top(cell: TerrainPieceCellData, center: Vector2, render_scale: float) -> void:

@@ -299,9 +299,9 @@ func _build_cliff_geometry(
 				"points": cliff_quad,
 				"uvs": cliff_uvs,
 				"colors": TERRAIN_VISUAL_CATALOG_SCRIPT.get_cliff_face_colors(
-					cell.terrain_type,
-					direction_index
+					cell.terrain_type
 				),
+				"gradient_colors": TERRAIN_VISUAL_CATALOG_SCRIPT.get_cliff_gradient_colors(),
 				"texture": cliff_texture,
 			})
 		if not cell_faces.is_empty():
@@ -320,6 +320,7 @@ func _draw_cell_cliff_faces(coord: Vector2i, geometry: Dictionary) -> void:
 			face["uvs"],
 			face["texture"]
 		)
+		draw_polygon(face["points"], face["gradient_colors"])
 func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 	var center := _top_center(cell.local_coord, cell.elevation)
 	var corners := _cell_corners(cell.local_coord, cell.elevation)
