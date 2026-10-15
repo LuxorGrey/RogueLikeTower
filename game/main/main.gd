@@ -553,6 +553,11 @@ func _process(_delta: float) -> void:
 	_update_camera_keyboard_pan(_delta)
 	_update_camera_shake_motion(_delta)
 	_update_island_exploration(_delta)
+	if _island_field != null:
+		_island_field.update_chest_pointer_hover(
+			get_global_mouse_position(),
+			not _is_mouse_over_hud(get_viewport().get_mouse_position())
+		)
 	_update_cloud_shadow_transform()
 	_position_portal_wave_tooltip()
 	_update_cell_hover_tooltip()
@@ -958,6 +963,13 @@ func _refresh_pointer_cursor() -> void:
 	if is_instance_valid(_hovered_interactable_control):
 		var hovered_button := _hovered_interactable_control as BaseButton
 		_set_cursor(CursorKind.INVALID if hovered_button.disabled else CursorKind.INTERACT)
+		return
+	if (
+		_island_field != null
+		and not _is_mouse_over_hud(get_viewport().get_mouse_position())
+		and _island_field.has_hovered_chest()
+	):
+		_set_cursor(CursorKind.INTERACT)
 		return
 	if _build_controller != null and _build_controller.is_build_mode():
 		var invalid_placement: bool = false
@@ -1755,6 +1767,10 @@ func _cancel_active_tool() -> void:
 func _handle_board_click() -> void:
 	if RunManager.phase == RunManager.Phase.CARD_OFFER:
 		return
+	if _island_field != null and _island_field.try_activate_chest_at_world_position(
+		get_global_mouse_position()
+	):
+		return
 	if _is_terrain_selection_locked():
 		if _placement_enabled and _selected_expansion_piece != null:
 			_confirm_placement()
@@ -1858,6 +1874,7 @@ func _open_island_treasure(island_id: StringName, world_position: Vector2) -> vo
 	_upgrade_card_panel.process_mode = Node.PROCESS_MODE_ALWAYS
 	_pause_button.call("set_pause_locked", true)
 	_play_ui_click_vfx()
+	_spawn_impact_vfx(&"coin_burst_gold", world_position)
 	_spawn_impact_vfx(&"chest_pickup", world_position)
 	_present_upgrade_card_offer(_campaign_round_number, cards, true)
 	get_tree().paused = true

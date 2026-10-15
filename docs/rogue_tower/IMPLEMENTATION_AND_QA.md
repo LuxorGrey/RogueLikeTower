@@ -17,7 +17,9 @@ Usa primero el estado actual. El roadmap describe el orden histórico; la lista 
 ### Estado
 Última actualización: 2026-10-16
 
-**Resumen vigente:** M71 es el último milestone integrado. M65–M71 cubren animación de correr, ofertas de reclutamiento, HUD de vida de base, velocidad ×1/×2/×3, colores/gradiente de fachadas, límites de cámara, niebla, seis islas con tesoros de cartas y contorno de espuma estático. Godot 4.7 inició `main.tscn` sin errores de análisis ni ejecución; persiste un aviso de división entera en `data/enemies/enemy_data.gd:47`, ajeno a M71. La aceptación visual o interactiva sigue pendiente; la tabla de milestones es la fuente única del estado y la sección «Próximo paso» fija el orden de revisión.
+**Resumen vigente:** M72 es el último milestone integrado. M65–M72 cubren animación de correr, ofertas de reclutamiento, HUD de vida de base, velocidad ×1/×2/×3, colores/gradiente de fachadas, límites de cámara, niebla, seis islas con cofres explorables, espuma Voronoi móvil y anclaje de torre. El smoke anterior en Godot 4.7 inició `main.tscn` sin errores; persiste un aviso de división entera en `data/enemies/enemy_data.gd:47`, ajeno a M72. La aceptación visual o interactiva sigue pendiente; la tabla de milestones es la fuente única del estado y la sección «Próximo paso» fija el orden de revisión.
+
+Actualización M72 (2026-10-16; [ADR-0124](DECISION_HISTORY.md#adr-0124)): el clic izquierdo del tablero comprueba primero cofres insulares para evitar que la gestión de entrada de `Main` los consuma antes del picking de física. El cofre conserva el sprite especial, recibe rebote al aparecer, brillo animado, outline y rebote al hover; al abrirse emite `coin_burst_gold` y `chest_pickup`. Se retira el rótulo sobre el cofre. La banda Voronoi pasa a unos 39 px totales (tres veces el ancho anterior), anima su dominio y, en caras delanteras elevadas contra agua, se coloca a la altura inferior de la fachada. Inspección visual e interactiva pendiente.
 
 Actualización M71 (2026-10-16; [ADR-0123](DECISION_HISTORY.md#adr-0123)): se sustituyen las islas decorativas por seis islas explorables reproducibles: una cercana desde R1 y cinco en anillos progresivos entre R10 y R45. Ver un borde descubre la isla completa y su cofre; la brújula guía a objetivos no cobrados, y cada cofre pausa hasta elegir una carta de la oferta habitual de tres. Si el tablero alcanza una isla, se traslada con su cofre a agua segura. La espuma animada se reemplaza por un contorno blanco costero con distorsión Voronoi estática; se anclan las bases de los sprites completos de torre al centro del hex sin recortarlos. El arranque de `main.tscn` en Godot 4.7 no mostró errores; la aceptación visual e interactiva y las pruebas de flujo siguen pendientes.
 
@@ -166,7 +168,8 @@ Actualización solicitada (2026-10-14, M35): `RoundProgressStrip` ahora muestra 
 | M68 Velocidad de simulación | Código/documentación integrados; aceptación visual/interactiva pendiente | Botón junto a Pausa para ×1/×2/×3; pausa conserva el multiplicador y cada run comienza en ×1. ADR-0120. |
 | M69 Tonos y gradiente de fachadas | Código/documentación integrados; aceptación visual pendiente | Grass `#407850`, Mountain `#3b3c41`; overlay negro opaco abajo a transparente arriba, compartido por tablero y previews. ADR-0121. |
 | M70 Exploración del mapa y límites de cámara | Integrado; espuma/islas actualizadas por M71 | Mar con parallax, paneo limitado, zoom progresivo hasta rango completo en R45 y niebla radial desde Main Tower. La espuma animada y las islas sin interacción son históricas; ver ADR-0123. |
-| M71 Islas explorables y tesoros de cartas | Código/documentación integrados; aceptación visual/interactiva pendiente | Seis islas por run, brújula, descubrimiento por costa visible, cofres con oferta bonus de tres cartas y reubicación ante expansiones. Borde costero estático Voronoi y sprites de torre anclados por su base. ADR-0123. |
+| M71 Islas explorables y tesoros de cartas | Integrado; refinado por M72 | Seis islas por run, brújula, descubrimiento por costa visible, cofres con oferta bonus de tres cartas y reubicación ante expansiones. Borde inicial estático Voronoi y sprites de torre anclados por su base. ADR-0123. |
+| M72 Interacción de cofre insular y espuma de costa | Código/documentación integrados; aceptación visual/interactiva pendiente | Clic de cofre priorizado en la entrada del tablero, feedback de aparición/hover/partículas como el cofre normal, sin rótulo. Espuma blanca Voronoi animada de ~39 px y anclada al nivel del agua en fachadas delanteras costeras elevadas. ADR-0124. |
 
 Actualización transversal (2026-10-13, ADR-0055): se añadió tinte rojo y sacudida de cámara al daño de la base, inclinación/vibración del grupo de Gold al recibir recompensas y abrir cofres, velo translúcido detrás de las ofertas de terreno/mejoras con reaparición al cancelar la colocación, y portal reducido a 64×96 px. M41 sustituye parcialmente ese tamaño por el portal animado de 96×96 px. Implementación integrada; revisión visual/interactiva pendiente según `IMPLEMENTATION_AND_QA.md#acceptance`. No se ejecutaron pruebas en esta actualización.
 
@@ -249,12 +252,12 @@ Implementada sin crear un milestone de gameplay nuevo: `MetaShopPanel`, hacks `C
 - Las pruebas no sustituyen la inspección visual con ratón: quedan por revisar el hover/cliffs, rotación/colocación y overlay `Ctrl+D` en ventana Godot.
 
 ### Próximo paso
-Completar las revisiones manuales pendientes de `IMPLEMENTATION_AND_QA.md#acceptance` en este orden: M71 y M70; M65–M69; M63–M64; M62 y M55; M50, M49, M48, M47 y M45; M41, M40, M39, M38, M36, M35 y M34; luego M33, M32, M30, M31, M28, M27, M26 y M25. Después, completar las inspecciones M8–M14 y M17–M24; el contrato histórico M7 se verifica con M12A. El último smoke de motor es M71: `main.tscn` inició en Godot 4.7 sin errores, pero la aceptación visual/interactiva de M65–M71 sigue pendiente.
+Completar las revisiones manuales pendientes de `IMPLEMENTATION_AND_QA.md#acceptance` en este orden: M72, M71 y M70; M65–M69; M63–M64; M62 y M55; M50, M49, M48, M47 y M45; M41, M40, M39, M38, M36, M35 y M34; luego M33, M32, M30, M31, M28, M27, M26 y M25. Después, completar las inspecciones M8–M14 y M17–M24; el contrato histórico M7 se verifica con M12A. El último smoke de motor es M71: `main.tscn` inició en Godot 4.7 sin errores; M72 queda pendiente de validación visual/interactiva y de flujo.
 
 <a id='roadmap'></a>
 ## Roadmap e historial de milestones
 
-Este documento conserva la secuencia y el alcance histórico de los milestones; no es el estado actual. El último milestone integrado es M71. La lista de trabajo pendiente y aceptación vive solo en [09 — Progreso](#progress); los contratos de diseño y sistema están asignados en el [índice maestro](README.md#index). Al trabajar, no uses una fila histórica para revivir una regla sustituida.
+Este documento conserva la secuencia y el alcance histórico de los milestones; no es el estado actual. El último milestone integrado es M72. La lista de trabajo pendiente y aceptación vive solo en [09 — Progreso](#progress); los contratos de diseño y sistema están asignados en el [índice maestro](README.md#index). Al trabajar, no uses una fila histórica para revivir una regla sustituida.
 
 Los milestones se implementan en orden cuando la petición del usuario es «avanza». **No saltar al contenido final.**
 
@@ -1778,6 +1781,15 @@ M70 queda integrado en código/documentación; aceptación visual e interactiva 
 6. Compara las torres construidas y el ghost: el centro de la base inferior del sprite debe coincidir con el centro del hex y la imagen debe sobresalir hacia arriba sin quedar recortada.
 
 M71 queda integrado en código/documentación; `main.tscn` inició en Godot 4.7 sin errores de análisis ni ejecución. Aceptación visual e interactiva y pruebas específicas de flujo pendientes. Ver [ADR-0123](DECISION_HISTORY.md#adr-0123).
+
+### M72 — Cofre insular clicable y espuma costera animada
+
+1. Descubre una isla y haz clic sobre el cofre: debe abrir la oferta bonus de tres cartas en preparación o combate y reanudar la fase al elegir. Comprueba que el clic llega aunque `Main` consuma los clics del tablero.
+2. Al descubrir, el cofre debe aparecer con rebote y brillo animado; al pasar el cursor, debe rebotar/crecer y mostrar outline dorado. Al abrirse deben aparecer los efectos `coin_burst_gold` y `chest_pickup`. El sprite no lleva texto instructivo encima.
+3. Panea junto a una costa: la banda blanca de Voronoi debe moverse suavemente y medir aproximadamente tres veces el ancho anterior, sin dibujar juntas internas.
+4. En hexágonos de altura 1–3 con costa en las fachadas delanteras, verifica la espuma en la base de la cara expuesta, junto al agua, en vez de solo sobre el perímetro de la tapa elevada. Cubre costas del tablero e islas reveladas.
+
+M72 queda integrado en código/documentación; aceptación visual/interactiva y validación del flujo del cofre pendientes. No se ejecutó Godot en esta actualización. Ver [ADR-0124](DECISION_HISTORY.md#adr-0124).
 
 <a id='doc-audit'></a>
 ## Auditoría de coherencia documental actual

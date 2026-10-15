@@ -126,6 +126,35 @@ func mark_treasure_claimed(island_id: StringName) -> bool:
 	queue_redraw()
 	return true
 
+func try_activate_chest_at_world_position(world_position: Vector2) -> bool:
+	for chest_variant in _island_chests.values():
+		var chest: IslandCardChest = chest_variant as IslandCardChest
+		if chest != null and is_instance_valid(chest):
+			if chest.try_activate_at_world_position(world_position):
+				return true
+	return false
+
+func update_chest_pointer_hover(world_position: Vector2, pointer_available: bool) -> void:
+	var hovered_chest: IslandCardChest
+	if pointer_available:
+		for chest_variant in _island_chests.values():
+			var chest: IslandCardChest = chest_variant as IslandCardChest
+			if chest != null and is_instance_valid(chest):
+				if chest.contains_world_position(world_position):
+					hovered_chest = chest
+					break
+	for chest_variant in _island_chests.values():
+		var chest: IslandCardChest = chest_variant as IslandCardChest
+		if chest != null and is_instance_valid(chest):
+			chest.set_pointer_hovered(chest == hovered_chest)
+
+func has_hovered_chest() -> bool:
+	for chest_variant in _island_chests.values():
+		var chest: IslandCardChest = chest_variant as IslandCardChest
+		if chest != null and is_instance_valid(chest) and chest.is_pointer_hovered():
+			return true
+	return false
+
 func _reveal_due_islands() -> void:
 	while _next_island_index < MAX_ISLANDS:
 		var spawn_round: int = _island_spawn_round(_next_island_index)

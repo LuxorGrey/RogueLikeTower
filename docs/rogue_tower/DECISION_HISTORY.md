@@ -127,6 +127,7 @@ Este archivo contiene el registro histórico completo. La regla aprobada vigente
 - [ADR-0121 — Color y gradiente de fachadas de elevación](#adr-0121)
 - [ADR-0122 — Exploración del mapa, mar e islas decorativas](#adr-0122)
 - [ADR-0123 — Islas explorables, tesoros de cartas y borde costero](#adr-0123)
+- [ADR-0124 — Clic y presentación de cofres insulares; espuma costera ancha y móvil](#adr-0124)
 
 ## Cómo mantener el historial
 
@@ -3974,7 +3975,7 @@ El mapa de la campaña puede crecer de forma indefinida en pantalla y el jugador
 ## ADR-0123 — Islas explorables, tesoros de cartas y borde costero
 
 - Fecha: 2026-10-16.
-- Estado: código y documentación integrados; aceptación visual e interactiva pendiente.
+- Estado: islas, cofres y anclaje de torres integrados; la espuma costera estática fue sustituida por ADR-0124. Aceptación visual e interactiva pendiente.
 - Decisiones relacionadas: ADR-0122 conserva progresión de cámara, parallax y niebla; ADR-0084 define el renderer 2D sobre retícula axial; ADR-0118 fija la política de ofertas de run.
 
 ### Contexto
@@ -4014,5 +4015,42 @@ El usuario pidió que las islas incentivaran la exploración y pudieran localiza
 - `game/main/main.tscn`
 - `docs/rogue_tower/PROJECT_SPEC.md`
 - `docs/rogue_tower/CONTENT_AND_ASSETS.md`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#progress`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#acceptance`
+
+<a id='adr-0124'></a>
+## ADR-0124 — Clic y presentación de cofres insulares; espuma costera ancha y móvil
+
+- Fecha: 2026-10-16.
+- Estado: código y documentación integrados; aceptación visual e interactiva pendiente.
+- Decisiones relacionadas: ADR-0123 define seis islas y la recompensa de cartas; ADR-0101 define los efectos visuales de evento; ADR-0085 limita la geometría de fachadas elevadas a las dos caras delanteras.
+
+### Contexto
+
+El usuario informó que podía ver los cofres de isla, pero no activarlos; pidió la misma lectura animada y partículas que el cofre habitual, retirar el rótulo sobre el sprite y devolver una espuma más visible y animada. La imagen adjunta marcó en rojo costas junto a las bases de las fachadas elevadas.
+
+### Decisiones
+
+1. Priorizar el hit-test del cofre insular dentro de `_handle_board_click()`: `Main` ya consume los clics izquierdos en `_unhandled_input`, por lo que el `Area2D.input_event` no recibía la activación. `DecorativeIslandField` consulta sus cofres visibles por posición mundial y emite la misma señal de recompensa, sin permitir que el clic pase al terreno subyacente.
+2. Retirar el texto `ELIGE 1 CARTA`. Mantener el sprite especial y copiar la entrada con rebote, el brillo de partículas persistente, la animación de elevación/escala al hover y el outline dorado del cofre común. La apertura emite `coin_burst_gold` y `chest_pickup`; la oferta de tres cartas y su pausa/reanudación no cambian.
+3. Triplicar el ancho total de la banda geométrica de espuma de 13 a 39 px: 9 px hacia tierra y 30 px hacia el mar. Mover lentamente el dominio de Voronoi y sumar una oscilación sutil al borde, conservando el blanco y la ausencia de juntas internas.
+4. En una arista costera expuesta de una celda elevada y en las dos direcciones de fachada visible (1 y 2), anclar la banda al borde de base de la fachada —altura del vecino ausente, nivel 0—. En el resto de aristas mantener la elevación de la tapa. Solo se genera espuma cuando falta la celda vecina, por lo que no aparecen líneas en límites tierra-tierra.
+
+### Consecuencias
+
+- El clic especial queda resuelto en el mismo camino de entrada del tablero y puede probarse contra la selección/colocación de celdas.
+- El cofre resulta identificable por brillo, animación y outline contextual sin una instrucción textual flotante.
+- La costa animada ocupa tres veces más superficie que la versión M71 y acompaña visualmente la base de los cliffs delanteros.
+- La revisión visual debe confirmar el punto exacto de la espuma a distintas alturas, la lectura de la textura animada y que las partículas no queden tapadas por la pausa de la oferta. No se ejecutó Godot ni pruebas automatizadas para M72.
+
+### Implementación
+
+- `game/board/island_card_chest.gd`
+- `game/board/decorative_island_field.gd`
+- `game/board/shoreline_foam_overlay.gd`
+- `game/board/shoreline_foam.gdshader`
+- `game/main/main.gd`
+- `game/main/main.tscn`
+- `docs/rogue_tower/PROJECT_SPEC.md`
 - `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#progress`
 - `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#acceptance`

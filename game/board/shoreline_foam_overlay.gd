@@ -4,13 +4,15 @@ extends Node2D
 const FOAM_SHADER: Shader = preload("res://game/board/shoreline_foam.gdshader")
 const HEX_RADIUS: float = 52.0
 
-@export_range(0.0, 16.0, 0.5) var foam_inset: float = 3.0
-@export_range(2.0, 28.0, 0.5) var foam_outset: float = 10.0
+@export_range(0.0, 48.0, 0.5) var foam_inset: float = 9.0
+@export_range(2.0, 84.0, 0.5) var foam_outset: float = 30.0
 @export var foam_color: Color = Color("#fffffff2")
 @export_range(0.1, 4.0, 0.1) var breakup_scale: float = 1.0
+@export_range(0.0, 2.0, 0.05) var foam_flow_speed: float = 0.3
 
 var _surface_elevations: Dictionary[Vector2i, int] = {}
 var _foam_material: ShaderMaterial
+var _foam_time: float = 0.0
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -18,7 +20,13 @@ func _ready() -> void:
 	_foam_material.shader = FOAM_SHADER
 	_foam_material.set_shader_parameter("foam_color", foam_color)
 	_foam_material.set_shader_parameter("breakup_scale", breakup_scale)
+	_foam_material.set_shader_parameter("foam_flow_speed", foam_flow_speed)
 	material = _foam_material
+
+func _process(delta: float) -> void:
+	_foam_time += delta
+	if _foam_material != null:
+		_foam_material.set_shader_parameter("foam_time", _foam_time)
 
 func set_surface_cells(
 	board_cells: Dictionary[Vector2i, HexCell],
@@ -44,12 +52,15 @@ func _draw() -> void:
 	coords.sort_custom(Callable(self, "_sort_axial_coords"))
 	for coord in coords:
 		var elevation: int = int(_surface_elevations[coord])
-		var center: Vector2 = _top_center(coord, elevation)
 		for direction_index in range(HexCoord.DIRECTION_OFFSETS.size()):
 			var neighbor_coord: Vector2i = coord + HexCoord.DIRECTION_OFFSETS[direction_index]
 			if _surface_elevations.has(neighbor_coord):
 				continue
-			_draw_foam_edge(coord, direction_index, elevation, center)
+			var foam_elevation: int = elevation
+			if elevation > 0 and direction_index in [1, 2]:
+				foam_elevation = 0
+			var center: Vector2 = _top_center(coord, foam_elevation)
+			_draw_foam_edge(coord, direction_index, foam_elevation, center)
 
 func _draw_foam_edge(
 	coord: Vector2i,

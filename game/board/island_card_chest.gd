@@ -4,11 +4,25 @@ extends Area2D
 signal activated(island_id: StringName, world_position: Vector2)
 
 const CHEST_TEXTURE: Texture2D = preload("res://assets/sprites/terrain/island_card_chest.png")
-const DISPLAY_HEIGHT: float = 54.0
+const ANIMATED_IMPACT_SCRIPT: Script = preload("res://game/vfx/animated_impact.gd")
+const ITEM_GLOW_SHEET: Texture2D = preload("res://assets/sprites/ui/Cozy_Chunky/PNG_1x/pickup_ui/item_glow.png")
+const CHEST_HOVER_SHADER: Shader = preload("res://game/board/obstacle_hover_glow.gdshader")
+const DISPLAY_HEIGHT: float = 62.0
+const ITEM_GLOW_DISPLAY_SIZE: float = 68.0
+const ITEM_GLOW_FPS: float = 12.0
+const HIT_RADIUS: float = 34.0
+const HIT_CENTER: Vector2 = Vector2(0.0, -DISPLAY_HEIGHT * 0.45)
 
 var island_id: StringName = &""
 var _chest_sprite: Sprite2D
+var _hover_sprite: Sprite2D
+var _item_glow: Sprite2D
 var _collision_shape: CollisionShape2D
+var _appearance_tween: Tween
+var _hover_tween: Tween
+var _base_position: Vector2 = Vector2.ZERO
+var _base_scale: Vector2 = Vector2.ONE
+var _available: bool = false
 var _hovered: bool = false
 
 func _ready() -> void:
@@ -23,15 +37,36 @@ func _ready() -> void:
 	_chest_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	var sprite_scale: float = DISPLAY_HEIGHT / maxf(CHEST_TEXTURE.get_height(), 1.0)
 	_chest_sprite.scale = Vector2.ONE * sprite_scale
-	_chest_sprite.position = Vector2(0.0, -DISPLAY_HEIGHT * 0.5)
+	_chest_sprite.position = Vector2(0.0, -DISPLAY_HEIGHT * 0.5 + 6.0)
+	_base_position = _chest_sprite.position
+	_base_scale = _chest_sprite.scale
 	add_child(_chest_sprite)
+	_item_glow = ANIMATED_IMPACT_SCRIPT.new() as Sprite2D
+	_item_glow.name = "IslandTreasureGlow"
+	_item_glow.show_behind_parent = true
+	_chest_sprite.add_child(_item_glow)
+	_configure_item_glow()
+	_item_glow.position = Vector2.ZERO
+	_item_glow.visible = false
+	_hover_sprite = Sprite2D.new()
+	_hover_sprite.name = "IslandTreasureHoverGlow"
+	_hover_sprite.centered = true
+	_hover_sprite.texture = CHEST_TEXTURE
+	_hover_sprite.scale = Vector2.ONE * 1.16
+	_hover_sprite.z_index = 1
+	_hover_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	var hover_material := ShaderMaterial.new()
+	hover_material.shader = CHEST_HOVER_SHADER
+	hover_material.set_shader_parameter("outline_color", Color("#ffe079"))
+	_hover_sprite.material = hover_material
+	_chest_sprite.add_child(_hover_sprite)
 
 	_collision_shape = CollisionShape2D.new()
 	_collision_shape.name = "IslandCardChestHitbox"
 	var circle := CircleShape2D.new()
-	circle.radius = 28.0
+	circle.radius = HIT_RADIUS
 	_collision_shape.shape = circle
-	_collision_shape.position = Vector2(0.0, -DISPLAY_HEIGHT * 0.45)
+	_collision_shape.position = HIT_CENTER
 	add_child(_collision_shape)
 
 	input_event.connect(_on_input_event)
@@ -40,32 +75,36 @@ func _ready() -> void:
 	_sync_hover_visual()
 
 func configure(next_island_id: StringName, local_position: Vector2, available: bool) -> void:
+	var chest_appeared: bool = available and not _available
 	island_id = next_island_id
 	position = local_position
-	visible = available
-	input_pickable = available
-	queue_redraw()
+	_set_available(available)
+	if chest_appeared:
+		_play_appearance()
 
 func set_available(available: bool) -> void:
-	visible = available
-	input_pickable = available
-	_hovered = false
-	_sync_hover_visual()
-	queue_redraw()
+	_set_available(available)
 
-func _draw() -> void:
-	if not visible:
+func try_activate_at_world_position(world_position: Vector2) -> bool:
+	if not contains_world_position(world_position):
+		return false
+	return _activate()
+
+func contains_world_position(world_position: Vector2) -> bool:
+	if not _available or not visible or _collision_shape == null:
+		return false
+	var local_position: Vector2 = to_local(world_position)
+	return local_position.distance_squared_to(_collision_shape.position) <= HIT_RADIUS * HIT_RADIUS
+
+func set_pointer_hovered(is_over_chest: bool) -> void:
+	var next_hovered: bool = is_over_chest and _available
+	if _hovered == next_hovered:
 		return
-	var label_position := Vector2(-68.0, -DISPLAY_HEIGHT - 11.0)
-	draw_string(
-		ThemeDB.fallback_font,
-		label_position,
-		"ELIGE 1 CARTA",
-		HORIZONTAL_ALIGNMENT_CENTER,
-		136.0,
-		11,
-		Color("#f4ffff")
-	)
+	_hovered = next_hovered
+	_sync_hover_visual()
+
+func is_pointer_hovered() -> bool:
+	return _hovered and _available
 
 func _on_input_event(viewport: Node, event: InputEvent, _shape_index: int) -> void:
 	if not visible or not event is InputEventMouseButton:
@@ -74,22 +113,135 @@ func _on_input_event(viewport: Node, event: InputEvent, _shape_index: int) -> vo
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed:
 		return
 	viewport.set_input_as_handled()
-	activated.emit(island_id, global_position)
+	_activate()
 
 func _on_mouse_entered() -> void:
-	_hovered = true
-	_sync_hover_visual()
+	set_pointer_hovered(true)
 
 func _on_mouse_exited() -> void:
-	_hovered = false
-	_sync_hover_visual()
+	set_pointer_hovered(false)
 
 func _sync_hover_visual() -> void:
 	if _chest_sprite == null:
 		return
-	_chest_sprite.scale = Vector2.ONE * (DISPLAY_HEIGHT / maxf(CHEST_TEXTURE.get_height(), 1.0))
+	if _hover_tween != null and _hover_tween.is_running():
+		_hover_tween.kill()
+	_chest_sprite.position = _base_position
+	_chest_sprite.scale = _base_scale
 	if _hovered:
-		_chest_sprite.scale *= 1.08
-		_chest_sprite.modulate = Color("#dfffff")
+		_chest_sprite.modulate = Color("#fff0bd")
+		_hover_tween = create_tween().set_loops()
+		_hover_tween.tween_property(
+			_chest_sprite,
+			"position:y",
+			_base_position.y - 6.0,
+			0.18
+		).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		_hover_tween.parallel().tween_property(
+			_chest_sprite,
+			"scale",
+			_base_scale * 1.06,
+			0.18
+		).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		_hover_tween.tween_property(
+			_chest_sprite,
+			"position:y",
+			_base_position.y,
+			0.2
+		).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		_hover_tween.parallel().tween_property(
+			_chest_sprite,
+			"scale",
+			_base_scale,
+			0.2
+		).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	else:
 		_chest_sprite.modulate = Color.WHITE
+	if _hover_sprite != null:
+		_hover_sprite.visible = _available and _hovered
+
+func _set_available(available: bool) -> void:
+	_available = available
+	visible = available
+	input_pickable = available
+	_hovered = false
+	if not available:
+		if _appearance_tween != null and _appearance_tween.is_running():
+			_appearance_tween.kill()
+		_chest_sprite.position = _base_position
+		_chest_sprite.scale = _base_scale
+	_sync_hover_visual()
+	_sync_item_glow()
+
+func _configure_item_glow() -> void:
+	if _item_glow == null:
+		return
+	var frame_count: int = int(float(ITEM_GLOW_SHEET.get_width()) / 128.0)
+	_item_glow.call(
+		"configure",
+		ITEM_GLOW_SHEET,
+		frame_count,
+		ITEM_GLOW_FPS,
+		ITEM_GLOW_DISPLAY_SIZE,
+		_chest_sprite.global_position,
+		true,
+		frame_count,
+		Vector2i(128, 128),
+		0
+	)
+	_item_glow.position = Vector2.ZERO
+
+func _sync_item_glow() -> void:
+	if _item_glow != null and is_instance_valid(_item_glow):
+		if _available and not _item_glow.is_inside_tree():
+			_configure_item_glow()
+		_item_glow.visible = _available
+
+func _play_appearance() -> void:
+	if _appearance_tween != null and _appearance_tween.is_running():
+		_appearance_tween.kill()
+	_chest_sprite.position = _base_position + Vector2(0.0, 14.0)
+	_chest_sprite.scale = _base_scale * 0.55
+	_appearance_tween = create_tween()
+	_appearance_tween.tween_property(
+		_chest_sprite,
+		"position",
+		_base_position + Vector2(0.0, -20.0),
+		0.34
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_appearance_tween.parallel().tween_property(
+		_chest_sprite,
+		"scale",
+		_base_scale * 1.16,
+		0.34
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_appearance_tween.tween_property(
+		_chest_sprite,
+		"position",
+		_base_position + Vector2(0.0, 2.0),
+		0.12
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	_appearance_tween.parallel().tween_property(
+		_chest_sprite,
+		"scale",
+		_base_scale * 0.94,
+		0.12
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	_appearance_tween.tween_property(
+		_chest_sprite,
+		"position",
+		_base_position,
+		0.18
+	).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	_appearance_tween.parallel().tween_property(
+		_chest_sprite,
+		"scale",
+		_base_scale,
+		0.18
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func _activate() -> bool:
+	if not _available:
+		return false
+	activated.emit(island_id, global_position)
+	return true
