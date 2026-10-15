@@ -76,7 +76,7 @@ El framework debe soportar:
 
 Reglas runtime: `REFRESH` conserva una acumulación; `ADD_STACKS` incrementa hasta `max_stacks`. En ambos casos la aplicación renueva la duración completa y conserva la fase del próximo tick. Una reaplicación del mismo ID usa los datos y el origen de la aplicación más reciente. Cada enemigo tiene sus propios contadores aunque varios compartan el mismo Resource. Los multiplicadores de velocidad se combinan por mínimo; `1.0` significa velocidad normal. Un estado desaparece al llegar su duración a cero y todos se limpian cuando el enemigo muere o llega a la base. Los ticks aplicados antes de que expire el tiempo restante se resuelven; no hay daño periódico después de la expiración.
 
-La muestra DEBUG de M8 conserva Slow, Burn y Bleed; la Status Probe sigue siendo fixture de depuración. Frost Keep hace 6 de daño base a 180 RPM, deja caer copos sobre PATH dentro de un cuadrado y cada impacto inflige daño a un solo enemigo. Añade Slow equivalente al 50% del daño aplicado, con fuerza máxima 60 y decaimiento de 6 puntos/s. Consume 2 Mana/s durante combate. Tesla Coil hace 9 de daño base.
+Histórico: la muestra DEBUG M8 reunía Slow, Burn y Bleed; su oleada/dummy se retiró en M64. Status Probe sigue disponible como torre de diagnóstico con el atajo `0`, sin un objetivo/oleada especial. Frost Keep hace 6 de daño base a 180 RPM, deja caer copos sobre PATH dentro de un cuadrado y cada impacto inflige daño a un solo enemigo. Añade Slow equivalente al 50% del daño aplicado, con fuerza máxima 60 y decaimiento de 6 puntos/s. Consume 2 Mana/s durante combate. Tesla Coil hace 9 de daño base.
 
 ## M9.5 — Roster de siete torres
 

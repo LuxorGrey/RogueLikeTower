@@ -3,6 +3,24 @@
 [ext_resource type="Script" path="res://game/progression/meta_progression_map.gd" id="1_script"]
 
 [node name="ProgressionMap" type="Control"]
-custom_minimum_size = Vector2(1740, 1180)
+custom_minimum_size = Vector2(7000, 2020)
 mouse_filter = 2
 script = ExtResource("1_script")
+
+[node name="CenterLabel" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 10
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -130.0
+offset_top = 26.0
+offset_right = 130.0
+offset_bottom = 74.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 21
+theme_override_colors/font_color = Color(0.945098, 0.811765, 0.486275, 1)
+text = "CENTRO DE MANDO"
+horizontal_alignment = 1
+vertical_alignment = 1
+mouse_filter = 2

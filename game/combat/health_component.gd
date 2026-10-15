@@ -47,8 +47,3 @@ func increase_maximum_health(amount: int, fill_added_health: bool = true) -> int
 	_depleted = current_health <= 0
 	health_changed.emit(current_health, maximum_health)
 	return amount
-
-func get_health_ratio() -> float:
-	if maximum_health <= 0:
-		return 0.0
-	return float(current_health) / float(maximum_health)

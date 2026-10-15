@@ -1,10 +1,11 @@
 class_name StatValueColorizer
 extends RefCounted
 
-const POSITIVE_COLOR: String = "#75df8b"
-const NEGATIVE_COLOR: String = "#f07872"
-
-static func colorize(source_text: String) -> String:
+static func colorize(
+	source_text: String,
+	positive_color: Color = Color("#75df8b"),
+	negative_color: Color = Color("#f07872")
+) -> String:
 	var value_pattern := RegEx.new()
 	value_pattern.compile("(?i)[+＋−-]?\\s*\\d+(?:[.,]\\d+)?\\s*(?:%|daño|alcance|health|armor|shield|mana|gold|hex|s|ataques?|objetivos?)?")
 	var matches: Array[RegExMatch] = value_pattern.search_all(source_text)
@@ -64,8 +65,8 @@ static func colorize(source_text: String) -> String:
 		var is_negative_effect: bool = (
 			is_explicit_negative or has_reduction_word or is_cost_increase
 		) and not is_resource_saving and not is_damage_reduction_for_player
-		var color: String = NEGATIVE_COLOR if is_negative_effect else POSITIVE_COLOR
-		result += "[color=%s]%s[/color]" % [color, matched_value]
+		var color: Color = negative_color if is_negative_effect else positive_color
+		result += "[color=%s]%s[/color]" % [color.to_html(false), matched_value]
 		cursor = match_end
 	result += source_text.substr(cursor)
 	return result

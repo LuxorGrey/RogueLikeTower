@@ -96,6 +96,70 @@ var _meta_shop_panel: CanvasLayer
 @export_range(0.0, 128.0, 1.0) var tower_info_bottom_padding: float = 24.0
 @export_range(96.0, 360.0, 1.0) var tower_info_min_height: float = 150.0
 
+@export_group("Spawn enemy list")
+@export_range(0.0, 24.0, 1.0) var world_enemy_row_spacing: float = 6.0
+@export_range(20.0, 72.0, 1.0) var world_enemy_row_height: float = 34.0
+@export_range(16.0, 64.0, 1.0) var world_enemy_icon_size: float = 30.0
+@export_range(8, 32, 1) var world_enemy_font_size: int = 13
+@export_range(8, 24, 1) var world_enemy_empty_font_size: int = 12
+
+@export_group("Portal wave tooltip rows")
+@export_range(0.0, 24.0, 1.0) var portal_tooltip_row_spacing: float = 6.0
+@export_range(20.0, 72.0, 1.0) var portal_tooltip_row_height: float = 30.0
+@export_range(16.0, 64.0, 1.0) var portal_tooltip_icon_size: float = 26.0
+@export_range(8, 32, 1) var portal_tooltip_font_size: int = 13
+@export_range(8, 24, 1) var portal_tooltip_empty_font_size: int = 12
+
+@export_group("Terrain card layouts")
+@export var terrain_inventory_panel_size: Vector2 = Vector2(620.0, 154.0)
+@export var terrain_inventory_vertical_offsets: Vector2 = Vector2(-258.0, -104.0)
+@export var terrain_inventory_margins: Vector4 = Vector4(10.0, 8.0, 10.0, 8.0)
+@export var terrain_inventory_card_size: Vector2 = Vector2(184.0, 126.0)
+@export var terrain_inventory_preview_size: Vector2 = Vector2(132.0, 54.0)
+@export_range(8, 32, 1) var terrain_inventory_title_font_size: int = 14
+@export_range(8, 28, 1) var terrain_inventory_count_font_size: int = 11
+@export var terrain_offer_panel_size: Vector2 = Vector2(1080.0, 460.0)
+@export var terrain_offer_vertical_offsets: Vector2 = Vector2(-230.0, 230.0)
+@export var terrain_offer_margins: Vector4 = Vector4(18.0, 14.0, 18.0, 14.0)
+@export var terrain_offer_card_size: Vector2 = Vector2(320.0, 420.0)
+@export var terrain_offer_preview_size: Vector2 = Vector2(264.0, 340.0)
+@export_range(8, 32, 1) var terrain_offer_title_font_size: int = 18
+@export_range(8, 28, 1) var terrain_offer_count_font_size: int = 13
+
+@export_group("HUD visual states")
+@export var positive_effect_text_color: Color = Color("#75df8b")
+@export var negative_effect_text_color: Color = Color("#f07872")
+@export var placement_error_text_color: Color = Color("#ff8178")
+@export var terrain_extension_text_color: Color = Color("#8de7aa")
+@export var disabled_tower_shortcut_color: Color = Color("#778187")
+@export var base_health_normal_color: Color = Color("#76bd82")
+@export var base_health_low_color: Color = Color("#e27661")
+@export var base_health_warning_color: Color = Color("#e5be6a")
+@export var gold_reward_flash_color: Color = Color("#fff0a6")
+@export var gold_spend_flash_color: Color = Color("#f5e2a8")
+
+@export_group("Start wave button layout")
+@export_range(120.0, 320.0, 1.0) var start_wave_min_width: float = 188.0
+@export_range(0.0, 120.0, 1.0) var start_wave_horizontal_padding: float = 48.0
+@export_range(1.5, 5.0, 0.1) var start_wave_width_to_height_ratio: float = 3.0
+
+@export_group("Combat feedback sprite sizes")
+@export var impact_vfx_display_sizes: Dictionary = {
+	&"shot_ballista": 78.0, &"impact_ballista": 68.0,
+	&"shot_mortar": 90.0, &"impact_mortar": 128.0,
+	&"shot_tesla": 88.0, &"impact_tesla": 90.0,
+	&"shot_frost": 86.0, &"impact_frost": 86.0,
+	&"shot_flame": 92.0, &"impact_flame": 92.0,
+	&"shot_poison": 88.0, &"impact_poison": 88.0,
+	&"shot_shredder": 84.0, &"impact_shredder": 84.0,
+	&"mortar_target_ripple": 108.0, &"star_burst_gold": 156.0,
+	&"coin_burst_gold": 152.0, &"terrain_piece_placed": 126.0,
+	&"enemy_killed": 86.0, &"tower_level_up": 78.0,
+	&"chest_pickup": 96.0, &"tower_built": 96.0,
+	&"obstacle_removed": 96.0, &"ui_click": 52.0, &"base_hit": 148.0,
+	&"game_over_confetti": 420.0,
+}
+
 var _icon_catalog: Resource
 var _gold_feedback_tween: Tween
 var _gold_feedback_direction: float = 1.0
@@ -825,19 +889,10 @@ func _configure_tower_upgrade_visuals() -> void:
 	var layer_names: Array[String] = ["Health", "Armor", "Shield"]
 	for layer in _tower_upgrade_buttons.size():
 		var button := _tower_upgrade_buttons[layer] as TowerLayerUpgradeButton
-		button.text = ""
+		button.configure_layer_visuals(layer)
 		var layer_icon: TextureRect = button.layer_icon
 		var level_label: RichTextLabel = button.level_label
-		level_label.add_theme_color_override("default_color", _hp_layer_color(layer))
 		var xp_bar: ProgressBar = button.xp_bar
-		var xp_background := StyleBoxFlat.new()
-		xp_background.bg_color = Color("#1c252b")
-		xp_background.set_corner_radius_all(4)
-		var xp_fill := StyleBoxFlat.new()
-		xp_fill.bg_color = _hp_layer_color(layer)
-		xp_fill.set_corner_radius_all(4)
-		xp_bar.add_theme_stylebox_override("background", xp_background)
-		xp_bar.add_theme_stylebox_override("fill", xp_fill)
 		var xp_label: Label = button.xp_label
 		var effect_label: Label = button.effect_label
 		effect_label.text = "+1 %s" % layer_names[layer]
@@ -850,17 +905,6 @@ func _configure_tower_upgrade_visuals() -> void:
 		_tower_upgrade_level_labels.append(level_label)
 		_tower_upgrade_xp_labels.append(xp_label)
 		_tower_upgrade_xp_bars.append(xp_bar)
-
-func _hp_layer_color(layer: int) -> Color:
-	match layer:
-		Enemy.HitPointLayer.HEALTH:
-			return Color("#82df8b")
-		Enemy.HitPointLayer.ARMOR:
-			return Color("#f2bd68")
-		Enemy.HitPointLayer.SHIELD:
-			return Color("#72d5f2")
-		_:
-			return Color.WHITE
 
 func _fit_tower_info_panel() -> void:
 	if not is_instance_valid(_tower_info_panel) or not _tower_info_panel.visible:
@@ -1057,7 +1101,7 @@ func _refresh_placement() -> void:
 		and _get_closed_spawn_count(_placement_path_graph) > 0
 	)
 	if closes_spawn or _placement_blocks_future_path:
-		_placement_status.add_theme_color_override("font_color", Color("#ff8178"))
+		_placement_status.add_theme_color_override("font_color", placement_error_text_color)
 	else:
 		_placement_status.remove_theme_color_override("font_color")
 	_placement_status.text = "%s · conexiones: %d" % [
@@ -1077,7 +1121,7 @@ func _place_selected_piece_automatically() -> void:
 	if candidate.is_empty():
 		var no_position_message: String = "T no encontró una posición válida. Coloca la pieza manualmente."
 		_placement_status.text = no_position_message
-		_placement_status.add_theme_color_override("font_color", Color("#ff8178"))
+		_placement_status.add_theme_color_override("font_color", placement_error_text_color)
 		_wave_status.text = no_position_message
 		return
 	_anchor_coord = candidate.get("anchor_coord", _anchor_coord)
@@ -1421,7 +1465,7 @@ func _confirm_placement() -> void:
 		)
 		if next_path_option.is_empty():
 			_placement_blocks_future_path = true
-			_placement_status.add_theme_color_override("font_color", Color("#ff8178"))
+			_placement_status.add_theme_color_override("font_color", placement_error_text_color)
 			_placement_status.text = "No se confirma: esta posición te dejaría sin ninguna pieza para alargar el camino. Cambia la posición."
 			return
 	if not _board_grid.add_cells(cells_to_add):
@@ -1712,10 +1756,10 @@ func _populate_spawn_enemy_list(entries: Array[Dictionary]) -> void:
 		child.queue_free()
 	for entry in entries:
 		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 6)
-		row.custom_minimum_size = Vector2(0.0, 34.0)
+		row.add_theme_constant_override("separation", roundi(world_enemy_row_spacing))
+		row.custom_minimum_size = Vector2(0.0, world_enemy_row_height)
 		var portrait := TextureRect.new()
-		portrait.custom_minimum_size = Vector2(30.0, 30.0)
+		portrait.custom_minimum_size = Vector2.ONE * world_enemy_icon_size
 		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1724,7 +1768,7 @@ func _populate_spawn_enemy_list(entries: Array[Dictionary]) -> void:
 		var enemy_label := Label.new()
 		enemy_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		enemy_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		enemy_label.add_theme_font_size_override("font_size", 13)
+		enemy_label.add_theme_font_size_override("font_size", world_enemy_font_size)
 		enemy_label.text = "%s  ×%d" % [
 			String(entry.get("display_name", "Enemigo")),
 			int(entry.get("count", 0)),
@@ -1734,7 +1778,7 @@ func _populate_spawn_enemy_list(entries: Array[Dictionary]) -> void:
 	if entries.is_empty():
 		var empty_label := Label.new()
 		empty_label.text = "Sin enemigos asignados."
-		empty_label.add_theme_font_size_override("font_size", 12)
+		empty_label.add_theme_font_size_override("font_size", world_enemy_empty_font_size)
 		_world_object_enemy_list.add_child(empty_label)
 
 func _populate_portal_wave_tooltip_entries(entries: Array[Dictionary]) -> void:
@@ -1743,11 +1787,11 @@ func _populate_portal_wave_tooltip_entries(entries: Array[Dictionary]) -> void:
 		child.queue_free()
 	for entry in entries:
 		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 6)
-		row.custom_minimum_size = Vector2(0.0, 30.0)
+		row.add_theme_constant_override("separation", roundi(portal_tooltip_row_spacing))
+		row.custom_minimum_size = Vector2(0.0, portal_tooltip_row_height)
 		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var portrait := TextureRect.new()
-		portrait.custom_minimum_size = Vector2(26.0, 26.0)
+		portrait.custom_minimum_size = Vector2.ONE * portal_tooltip_icon_size
 		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1756,7 +1800,7 @@ func _populate_portal_wave_tooltip_entries(entries: Array[Dictionary]) -> void:
 		var enemy_label := Label.new()
 		enemy_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		enemy_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		enemy_label.add_theme_font_size_override("font_size", 13)
+		enemy_label.add_theme_font_size_override("font_size", portal_tooltip_font_size)
 		enemy_label.text = "%s  ×%d" % [
 			String(entry.get("display_name", "Enemigo")),
 			int(entry.get("count", 0)),
@@ -1767,7 +1811,7 @@ func _populate_portal_wave_tooltip_entries(entries: Array[Dictionary]) -> void:
 	if entries.is_empty():
 		var empty_label := Label.new()
 		empty_label.text = "Sin enemigos asignados."
-		empty_label.add_theme_font_size_override("font_size", 12)
+		empty_label.add_theme_font_size_override("font_size", portal_tooltip_empty_font_size)
 		_portal_wave_tooltip_entries.add_child(empty_label)
 
 func _on_remove_world_object_pressed() -> void:
@@ -1847,6 +1891,24 @@ func _refresh_build_preview() -> void:
 		_piece_preview.set_tower_build_preview(false)
 		return
 	var error: String = _build_controller.get_placement_error(_hovered_coord)
+	var hovered_cell: HexCell = _board_grid.cells.get(_hovered_coord) as HexCell
+	var elevation_damage_bonus: float = 0.0
+	if hovered_cell != null:
+		var damage_at_height: int = Tower.get_damage_for(
+			_selected_tower_data,
+			1,
+			hovered_cell.elevation,
+			_run_card_service,
+			MetaProgression
+		)
+		var damage_at_ground: int = Tower.get_damage_for(
+			_selected_tower_data,
+			1,
+			0,
+			_run_card_service,
+			MetaProgression
+		)
+		elevation_damage_bonus = float(maxi(damage_at_height - damage_at_ground, 0))
 	_piece_preview.set_tower_build_preview(
 		true,
 		_hovered_coord,
@@ -1854,7 +1916,7 @@ func _refresh_build_preview() -> void:
 		_build_controller.get_preview_range_pixels(_hovered_coord),
 		_get_tower_display_texture(StringName(_selected_tower_data.id)),
 		_selected_tower_data.visual_icon_size * Tower.TOWER_VISUAL_SCALE,
-		_selected_tower_data.elevation_damage_bonus_per_level,
+		elevation_damage_bonus,
 		StringName(_selected_tower_data.id)
 	)
 
@@ -2128,6 +2190,7 @@ func _spawn_impact_vfx(effect_id: StringName, world_position: Vector2) -> void:
 			display_size = 420.0
 		_:
 			return
+	display_size = maxf(float(impact_vfx_display_sizes.get(effect_id, display_size)), 1.0)
 	if not ResourceLoader.exists(sheet_path):
 		return
 	var sprite_sheet := load(sheet_path) as Texture2D
@@ -2311,7 +2374,7 @@ func _refresh_tower_controls() -> void:
 		var can_afford: bool = bool(_run_economy.call("can_afford_gold", build_cost))
 		shortcut_button.disabled = not can_build or not can_afford
 		# Los controles personalizados dentro del Button no heredan su estilo disabled.
-		shortcut_button.modulate = Color("#778187") if shortcut_button.disabled else Color.WHITE
+		shortcut_button.modulate = disabled_tower_shortcut_color if shortcut_button.disabled else Color.WHITE
 		if can_build and not can_afford:
 			shortcut_button.tooltip_text += "\nNo hay Gold suficiente para comprar esta torre."
 		var matches_build_selection: bool = build_mode and TOWER_PROFILES[index] == _selected_tower_data
@@ -2427,16 +2490,24 @@ func _refresh_tower_controls() -> void:
 
 func _build_tower_description(tower_data: TowerData) -> String:
 	var build_cost: int = _build_controller.get_current_build_cost(tower_data)
-	var range_bonus: float = tower_data.height_range_bonus_per_level
-	var damage_bonus: float = tower_data.elevation_damage_bonus_per_level
-	var elevation_text := "Sin bonificación por altura"
-	if damage_bonus > 0.0 or range_bonus > 0.0:
-		var bonus_parts := PackedStringArray()
-		if damage_bonus > 0.0:
-			bonus_parts.append("%s Daño" % _colorize_stat_value("+%.1f" % damage_bonus, true))
-		if range_bonus > 0.0:
-			bonus_parts.append("%s hex de alcance" % _colorize_stat_value("+%.2f" % range_bonus, true))
-		elevation_text = "[b]Bonus por elevación:[/b] %s" % " · ".join(bonus_parts)
+	var elevation: int = 0
+	if _has_hovered_cell:
+		var hovered_cell: HexCell = _board_grid.cells.get(_hovered_coord) as HexCell
+		if hovered_cell != null:
+			elevation = hovered_cell.elevation
+	var damage: int = Tower.get_damage_for(tower_data, 1, elevation, _run_card_service, MetaProgression)
+	var range_hexes: float = Tower.get_range_hexes_for(tower_data, elevation, _run_card_service)
+	var elevation_text: String = "Pasa el cursor por una casilla para previsualizar su elevación."
+	if _has_hovered_cell:
+		var ground_damage: int = Tower.get_damage_for(tower_data, 1, 0, _run_card_service, MetaProgression)
+		var ground_range: float = Tower.get_range_hexes_for(tower_data, 0, _run_card_service)
+		var damage_bonus: int = maxi(damage - ground_damage, 0)
+		var range_bonus: float = maxf(range_hexes - ground_range, 0.0)
+		elevation_text = "[b]Casilla h%d:[/b] %s daño · %s hex de alcance" % [
+			elevation,
+			_colorize_stat_value("%d" % damage_bonus, damage_bonus > 0),
+			_colorize_stat_value("%.1f" % range_bonus, range_bonus > 0.0),
+		]
 	var energy_text := ""
 	if tower_data.mana_cost_per_second > 0.0:
 		energy_text = "\nConsumo: %.1f Mana/s" % tower_data.mana_cost_per_second
@@ -2445,8 +2516,8 @@ func _build_tower_description(tower_data: TowerData) -> String:
 	return "%s\n[b]Precio:[/b] %d Gold · [b]Daño:[/b] %d · [b]Rango:[/b] %.1f hex · [b]RPM:[/b] %.0f\n%s%s" % [
 		tower_data.role_summary,
 		build_cost,
-		tower_data.base_damage,
-		tower_data.range_hexes,
+		damage,
+		range_hexes,
 		tower_data.get_rounds_per_minute(),
 		elevation_text,
 		energy_text,
@@ -2475,8 +2546,10 @@ func _format_selected_tower_summary(tower: Tower) -> String:
 			current_mana_cost > tower_data.mana_cost_per_attack
 		)
 	if tower.elevation > 0:
-		var bonus_damage: float = float(tower.elevation) * tower_data.elevation_damage_bonus_per_level
-		var bonus_range: float = float(tower.elevation) * tower_data.height_range_bonus_per_level
+		var ground_damage: int = Tower.get_damage_for(tower_data, tower.level, 0, _run_card_service, MetaProgression)
+		var ground_range: float = Tower.get_range_hexes_for(tower_data, 0, _run_card_service)
+		var bonus_damage: float = float(tower.get_current_damage() - ground_damage)
+		var bonus_range: float = tower.get_current_range_hexes() - ground_range
 		var damage_text: String = "+%d" % roundi(bonus_damage) if is_equal_approx(bonus_damage, roundf(bonus_damage)) else "+%.1f" % bonus_damage
 		elevation_summary = "\n[b]ALTURA h%d[/b] · %s daño base · %s hex alcance" % [
 			tower.elevation,
@@ -2711,7 +2784,7 @@ func _refresh_spawn_portal_previews() -> void:
 					endpoint_entries.append({
 						"enemy_id": group.enemy_data.id,
 						"display_name": group.enemy_data.display_name,
-						"texture": group.enemy_data.sprite_texture,
+						"texture": group.enemy_data.get_sprite_frame_texture(),
 						"count": 1,
 					})
 				else:
@@ -2866,7 +2939,7 @@ func _play_gold_feedback(is_reward: bool = true) -> void:
 	_gold_group.pivot_offset = _gold_group.size * 0.5
 	var peak_scale: Vector2 = Vector2(1.34, 1.34) if is_reward else Vector2(1.14, 1.14)
 	var shake_angle: float = 0.065 if is_reward else 0.03
-	var flash_color := Color("#fff0a6") if is_reward else Color("#f5e2a8")
+	var flash_color: Color = gold_reward_flash_color if is_reward else gold_spend_flash_color
 	_gold_group.scale = peak_scale
 	_gold_group.rotation = shake_angle * _gold_feedback_direction
 	_gold_group.self_modulate = flash_color
@@ -2912,11 +2985,11 @@ func _format_mana_regeneration(rate_per_second: float) -> String:
 
 func _on_base_health_changed(current_health: int, maximum_health: int) -> void:
 	var health_ratio: float = float(current_health) / float(maximum_health) if maximum_health > 0 else 0.0
-	var health_color: Color = Color("#76bd82")
+	var health_color: Color = base_health_normal_color
 	if health_ratio <= 0.25:
-		health_color = Color("#e27661")
+		health_color = base_health_low_color
 	elif health_ratio <= 0.5:
-		health_color = Color("#e5be6a")
+		health_color = base_health_warning_color
 	_base_health_bar.call("set_health", current_health, maximum_health, health_color)
 	_base_status.text = "%d / %d" % [current_health, maximum_health]
 	if current_health <= 0:
@@ -2953,9 +3026,7 @@ func _show_run_end(outcome: StringName, reached_round: int) -> void:
 		return
 	_run_end_in_progress = true
 	var summary: Dictionary = MetaProgression.call("finish_run", outcome, reached_round, GameState.run_seed)
-	var unlocked_tower_ids: Array[StringName] = []
-	unlocked_tower_ids.assign(MetaProgression.call("get_unlocked_tower_ids"))
-	summary["tower_summary"] = RunManager.get_tower_run_summary(unlocked_tower_ids)
+	summary["tower_summary"] = RunManager.get_tower_run_summary()
 	GameState.pending_run_summary = summary
 	get_tree().paused = false
 	get_tree().change_scene_to_file(MAIN_MENU_PATH)
@@ -3073,7 +3144,7 @@ func _present_terrain_card_offer() -> void:
 			true
 		)
 		if _offered_path_extension.is_empty():
-			_placement_status.add_theme_color_override("font_color", Color("#ff8178"))
+			_placement_status.add_theme_color_override("font_color", placement_error_text_color)
 			_placement_status.text = "Error: no se encontró una pieza colocable que permita alargar el camino."
 			push_error(_placement_status.text)
 			return
@@ -3130,7 +3201,7 @@ func _present_terrain_card_offer() -> void:
 			else _piece_terrain_counts(piece)
 		)
 		if is_path_extension:
-			_terrain_card_counts[index].add_theme_color_override("font_color", Color("#8de7aa"))
+			_terrain_card_counts[index].add_theme_color_override("font_color", terrain_extension_text_color)
 			_terrain_card_buttons[index].tooltip_text = "Pieza de continuidad verificada. Su colocación sugerida puede extender una ruta; la geometría varía entre rectas, curvas y bifurcaciones."
 		else:
 			_terrain_card_counts[index].remove_theme_color_override("font_color")
@@ -3176,7 +3247,11 @@ func _present_upgrade_card_offer(round_number: int, cards: Array[Resource]) -> v
 		_set_rich_text_with_currency_icons(_upgrade_card_titles[index], String(card.get("display_name")))
 		_set_rich_text_with_currency_icons(
 			_upgrade_card_descriptions[index],
-			StatValueColorizer.colorize(String(card.get("description")))
+			StatValueColorizer.colorize(
+				String(card.get("description")),
+				positive_effect_text_color,
+				negative_effect_text_color
+			)
 		)
 		_upgrade_card_buttons[index].tooltip_text = ""
 		var card_icon: Texture2D = _icon_catalog.call("get_card_icon", card) as Texture2D
@@ -3316,34 +3391,48 @@ func _return_to_terrain_card_offer() -> void:
 func _set_terrain_card_layout(is_inventory: bool) -> void:
 	_terrain_card_panel.anchor_left = 0.5
 	_terrain_card_panel.anchor_right = 0.5
+	var panel_size: Vector2
+	var vertical_offsets: Vector2
+	var margins: Vector4
+	var card_size: Vector2
+	var preview_size: Vector2
+	var title_font_size: int
+	var count_font_size: int
 	if is_inventory:
 		_terrain_card_panel.anchor_top = 1.0
 		_terrain_card_panel.anchor_bottom = 1.0
-		_terrain_card_panel.offset_left = -310.0
-		_terrain_card_panel.offset_top = -258.0
-		_terrain_card_panel.offset_right = 310.0
-		_terrain_card_panel.offset_bottom = -104.0
-		_terrain_card_panel.custom_minimum_size = Vector2(620.0, 154.0)
+		panel_size = terrain_inventory_panel_size
+		vertical_offsets = terrain_inventory_vertical_offsets
+		margins = terrain_inventory_margins
+		card_size = terrain_inventory_card_size
+		preview_size = terrain_inventory_preview_size
+		title_font_size = terrain_inventory_title_font_size
+		count_font_size = terrain_inventory_count_font_size
 	else:
 		_terrain_card_panel.anchor_top = 0.5
 		_terrain_card_panel.anchor_bottom = 0.5
-		_terrain_card_panel.offset_left = -540.0
-		_terrain_card_panel.offset_top = -230.0
-		_terrain_card_panel.offset_right = 540.0
-		_terrain_card_panel.offset_bottom = 230.0
-		_terrain_card_panel.custom_minimum_size = Vector2(1080.0, 460.0)
+		panel_size = terrain_offer_panel_size
+		vertical_offsets = terrain_offer_vertical_offsets
+		margins = terrain_offer_margins
+		card_size = terrain_offer_card_size
+		preview_size = terrain_offer_preview_size
+		title_font_size = terrain_offer_title_font_size
+		count_font_size = terrain_offer_count_font_size
+	_terrain_card_panel.offset_left = -panel_size.x * 0.5
+	_terrain_card_panel.offset_top = vertical_offsets.x
+	_terrain_card_panel.offset_right = panel_size.x * 0.5
+	_terrain_card_panel.offset_bottom = vertical_offsets.y
+	_terrain_card_panel.custom_minimum_size = panel_size
 	var margin: MarginContainer = _terrain_card_panel.get_node("Margin") as MarginContainer
-	margin.add_theme_constant_override("margin_left", 10 if is_inventory else 18)
-	margin.add_theme_constant_override("margin_right", 10 if is_inventory else 18)
-	margin.add_theme_constant_override("margin_top", 8 if is_inventory else 14)
-	margin.add_theme_constant_override("margin_bottom", 8 if is_inventory else 14)
-	var card_size: Vector2 = Vector2(184.0, 126.0) if is_inventory else Vector2(320.0, 420.0)
-	var preview_size: Vector2 = Vector2(132.0, 54.0) if is_inventory else Vector2(264.0, 340.0)
+	margin.add_theme_constant_override("margin_left", roundi(margins.x))
+	margin.add_theme_constant_override("margin_top", roundi(margins.y))
+	margin.add_theme_constant_override("margin_right", roundi(margins.z))
+	margin.add_theme_constant_override("margin_bottom", roundi(margins.w))
 	for index in _terrain_card_buttons.size():
 		_terrain_card_buttons[index].custom_minimum_size = card_size
 		_terrain_card_previews[index].custom_minimum_size = preview_size
-		_terrain_card_titles[index].add_theme_font_size_override("font_size", 14 if is_inventory else 18)
-		_terrain_card_counts[index].add_theme_font_size_override("font_size", 11 if is_inventory else 13)
+		_terrain_card_titles[index].add_theme_font_size_override("font_size", title_font_size)
+		_terrain_card_counts[index].add_theme_font_size_override("font_size", count_font_size)
 
 func _set_start_wave_button_text(button_text: String) -> void:
 	_start_wave_button.text = button_text
@@ -3358,8 +3447,8 @@ func _update_start_wave_button_size() -> void:
 		-1.0,
 		font_size
 	).x
-	var target_width: float = maxf(188.0, text_width + 48.0)
-	_start_wave_button.custom_minimum_size = Vector2(target_width, target_width / 3.0)
+	var target_width: float = maxf(start_wave_min_width, text_width + start_wave_horizontal_padding)
+	_start_wave_button.custom_minimum_size = Vector2(target_width, target_width / start_wave_width_to_height_ratio)
 
 func _on_preview_hover_changed(local_coord: Vector2i, _terrain_type: int, _elevation: int) -> void:
 	_hovered_coord = local_coord
@@ -3367,6 +3456,8 @@ func _on_preview_hover_changed(local_coord: Vector2i, _terrain_type: int, _eleva
 	_update_hovered_tower(local_coord)
 	_base.set_hovered(local_coord == _base_coord)
 	_refresh_build_preview()
+	if _build_controller.is_build_mode():
+		_refresh_tower_controls()
 	_update_cell_hover_tooltip()
 
 func _on_preview_hover_cleared() -> void:
@@ -3375,6 +3466,8 @@ func _on_preview_hover_cleared() -> void:
 	_base.set_hovered(false)
 	_piece_preview.set_tower_build_preview(false)
 	_cell_hover_tooltip.hide()
+	if _build_controller.is_build_mode():
+		_refresh_tower_controls()
 
 func _update_cell_hover_tooltip() -> void:
 	if not _has_hovered_cell or not _can_show_cell_hover_tooltip():

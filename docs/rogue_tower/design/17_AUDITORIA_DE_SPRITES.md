@@ -1,9 +1,9 @@
 # Auditoría de sprites
 
 - Fecha de revisión: 2026-10-15.
-- Alcance: los 131 archivos PNG bajo assets/sprites/, incluidos Tiny Swords y Cozy Chunky.
+- Alcance: 156 archivos PNG bajo assets/sprites/, incluidos los 26 spritesheets de correr activos y sus 26 imágenes fuente conservadas.
 - Método: búsqueda por nombre de archivo en scripts, escenas, Resources y configuración del proyecto (*.gd, *.tscn, *.tres, *.gdshader, *.godot, *.cfg, *.cs). Las coincidencias de TerrainVisualCatalog y los catálogos de iconos son referencias de runtime directas, aunque el contenido se seleccione por ID.
-- Resultado: 130 PNG tienen referencia de runtime localizada. Uno no aparece en el flujo actual: un sprite histórico de UI. Se conserva como candidato a legado.
+- Resultado: los 26 PNG canónicos de enemigos se sustituyeron por spritesheets de cuatro cuadros y mantienen las rutas usadas por los Resources. Las 26 imágenes fuente originales se conservaron en `assets/sprites/enemies/new/`, sin uso runtime. Los 26 PNG alternativos autorizados y el marco histórico de Tower Info se retiraron en M64.
 
 | PNG | Estado de runtime | Referencias / observación |
 |---|---|---|
@@ -13,7 +13,7 @@
 | assets/sprites/enemies/bat.png | Usado | data/enemies/campaign_bat.tres |
 | assets/sprites/enemies/battering_ram.png | Usado | data/enemies/campaign_battering_ram.tres |
 | assets/sprites/enemies/blink_dog.png | Usado | data/enemies/campaign_blink_dog.tres |
-| assets/sprites/enemies/cyclops.png | Usado | data/enemies/campaign_cyclops.tres, data/enemies/cyclops_demo.tres |
+| assets/sprites/enemies/cyclops.png | Usado | data/enemies/campaign_cyclops.tres |
 | assets/sprites/enemies/demon.png | Usado | data/enemies/campaign_demon.tres |
 | assets/sprites/enemies/dodecahedron.png | Usado | data/enemies/campaign_dodecahedron.tres |
 | assets/sprites/enemies/fallen_oogie.png | Usado | data/enemies/campaign_fallen_oogie.tres |
@@ -32,7 +32,7 @@
 | assets/sprites/enemies/tetrahedron.png | Usado | data/enemies/campaign_tetrahedron.tres |
 | assets/sprites/enemies/troll.png | Usado | data/enemies/campaign_regenerator.tres |
 | assets/sprites/enemies/vampire.png | Usado | data/enemies/campaign_vampire.tres |
-| assets/sprites/enemies/werewolf.png | Usado | data/enemies/werewolf_demo.tres, data/enemies/campaign_werewolf.tres |
+| assets/sprites/enemies/werewolf.png | Usado | data/enemies/campaign_werewolf.tres |
 | assets/sprites/enemies/witch.png | Usado | data/enemies/campaign_witch.tres |
 | assets/sprites/terrain/obstacles/obstacle_bramble_bush.png | Usado | game/board/terrain_visual_catalog.gd |
 | assets/sprites/terrain/obstacles/obstacle_branch_pile.png | Usado | game/board/terrain_visual_catalog.gd |
@@ -102,7 +102,6 @@
 | assets/sprites/ui/icons/tesla_coil.png | Usado | `game/towers/tower_art_catalog.gd` carga el PNG completo; icon catalog y retratos/cards lo comparten. |
 | assets/sprites/ui/start_round_button.png | Usado | game/main/main.tscn |
 | assets/sprites/ui/tower_card_button.png | Usado | game/ui/components/tower_shortcut_card.tscn |
-| assets/sprites/ui/tower_info_panel_frame.png | Sin uso localizado | Solo figura en ADR-0051 histórico; sin uso runtime localizado. Candidato a legado. |
 
 ## Cozy Chunky y dependencia de cursores
 
@@ -146,8 +145,15 @@ M51 añadió 41 PNG locales de Cozy Chunky. El código usa directamente estos re
 | assets/sprites/third_party/tiny_swords/cursors/Cursor_03.png | Usado | `game/ui/resources/icon_catalog.tres`: cursor de acción inválida. |
 | assets/sprites/third_party/tiny_swords/cursors/Cursor_04.png | Usado | `game/ui/resources/icon_catalog.tres`: cursor de construcción. |
 
+## Spritesheets de correr integrados (2026-10-15)
+
+| PNG | Estado de runtime | Referencias / observación |
+|---|---|---|
+| assets/sprites/enemies/*.png (26 de enemigos) | Usados | Cada archivo mide 512×128 px y tiene 4 cuadros horizontales de 128×128 px. `EnemyData` reconoce las cuatro poses; `Enemy` las alterna a 8 FPS mientras está en estado `MOVING`, desde que aparece. El tamaño visual por enemigo sigue configurado en su Resource. |
+| assets/sprites/enemies/new/*.png (26) | Fuente conservada; sin uso runtime | PNG fuente de 1254×1254 px con cuatro poses en cuadrícula 2×2. El mapeo de nombre fuente a ID está documentado en [README.md](../../../assets/sprites/enemies/new/README.md). |
+
 ## Conclusión
 
-Los demás PNG tienen referencias explícitas en el proyecto, normalmente en Resources (.tres), escenas (.tscn) o catálogos de arte. No se han detectado sprites usados por runtime que estén fuera de esta raíz. `tower_info_panel_frame.png` es el único PNG histórico sin referencia runtime localizada. Los efectos Tiny Swords y las diez hojas Cozy Chunky sin uso se eliminaron del checkout el 2026-10-15.
+Los spritesheets activos conservan las rutas de los 26 recursos canónicos de enemigo y reemplazan el arte anterior. El juego los reconoce como ciclos de cuatro cuadros; las imágenes fuente se conservan aparte en `new/`. No se han detectado sprites usados por runtime que estén fuera de esta raíz. En M64 se retiraron los 26 PNG alternativos de enemigos que no tenían uso ni previsión aprobada, además del antiguo `tower_info_panel_frame.png`. Los efectos Tiny Swords y las diez hojas Cozy Chunky sin uso se habían eliminado del checkout el 2026-10-15.
 
 Esta es una auditoría estática del código y Resources actuales; no infiere usos externos a Godot ni recursos cargados desde rutas construidas dinámicamente. El inventario debe actualizarse al agregar, mover o retirar sprites.

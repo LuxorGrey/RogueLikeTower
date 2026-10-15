@@ -5,6 +5,7 @@ const DAMAGE_TAG_PHYSICAL: int = 1
 const DAMAGE_TAG_FIRE: int = 2
 const DAMAGE_TAG_ARCANE: int = 4
 const DAMAGE_TAG_POISON: int = 8
+const RUN_SPRITE_FRAME_COUNT: int = 4
 
 @export var id: StringName = &""
 @export var display_name: String = ""
@@ -30,6 +31,25 @@ const DAMAGE_TAG_POISON: int = 8
 @export_range(16.0, 256.0, 0.1) var sprite_extent: float = 55.2
 @export var scene: PackedScene
 @export var abilities: Array[EnemyAbilityData] = []
+
+func has_run_sprite_sheet() -> bool:
+	return (
+		sprite_texture != null
+		and sprite_texture.get_width() >= sprite_texture.get_height() * RUN_SPRITE_FRAME_COUNT
+		and sprite_texture.get_width() % RUN_SPRITE_FRAME_COUNT == 0
+	)
+
+func get_sprite_frame_texture(frame_index: int = 0) -> Texture2D:
+	if not has_run_sprite_sheet():
+		return sprite_texture
+	var texture_width: int = sprite_texture.get_width()
+	var texture_height: int = sprite_texture.get_height()
+	var frame_width: int = texture_width / RUN_SPRITE_FRAME_COUNT
+	var frame: int = posmod(frame_index, RUN_SPRITE_FRAME_COUNT)
+	var frame_texture := AtlasTexture.new()
+	frame_texture.atlas = sprite_texture
+	frame_texture.region = Rect2(float(frame * frame_width), 0.0, float(frame_width), float(texture_height))
+	return frame_texture
 
 func validate() -> PackedStringArray:
 	var errors := PackedStringArray()

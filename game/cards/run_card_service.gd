@@ -147,9 +147,6 @@ func select_card(offer_index: int) -> bool:
 func get_current_offer() -> Array[Resource]:
 	return _current_offer.duplicate()
 
-func get_selected_cards() -> Array[Resource]:
-	return _selected_cards.duplicate()
-
 func get_tower_damage_add(tower_id: StringName, damage_tags: int) -> float:
 	return _sum_matching_operations(OperationType.TOWER_DAMAGE_ADD, tower_id, damage_tags)
 
@@ -204,9 +201,6 @@ func get_mana_regen_max_percent_bonus() -> float:
 
 func get_mana_on_kill_max_percent_bonus() -> float:
 	return _sum_matching_operations(OperationType.MANA_ON_KILL_MAX_PERCENT_ADD, &"")
-
-func get_offer_size() -> int:
-	return FIXED_UPGRADE_OFFER_SIZE
 
 func _shuffle_resources(cards: Array[Resource]) -> void:
 	for index in range(cards.size() - 1, 0, -1):

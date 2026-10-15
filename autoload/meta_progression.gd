@@ -148,14 +148,8 @@ func get_save_error() -> String:
 func can_persist_progress() -> bool:
 	return not _save_blocked
 
-func get_last_run_summary() -> Dictionary:
-	return _save_data.last_run_summary.duplicate(true)
-
 func get_total_runs_started() -> int:
 	return _save_data.total_runs_started
-
-func get_best_round_reached() -> int:
-	return _save_data.best_round_reached
 
 func is_tower_unlocked(tower_data: TowerData) -> bool:
 	if tower_data == null or tower_data.unlock_id == &"":
@@ -196,9 +190,6 @@ func get_permanent_upgrades() -> Array[PermanentUpgradeData]:
 
 func _all_permanent_upgrades() -> Array[PermanentUpgradeData]:
 	return PROGRESSION_DATA.get_all_permanent_upgrades()
-
-func get_unlocked_tower_ids() -> Array[StringName]:
-	return _save_data.unlocked_towers.duplicate()
 
 func get_upgrade_level(upgrade_id: StringName) -> int:
 	var upgrade := _upgrade_catalog.get(upgrade_id) as PermanentUpgradeData

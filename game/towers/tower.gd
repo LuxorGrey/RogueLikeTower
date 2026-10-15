@@ -36,6 +36,60 @@ const DAMAGE_TAG_FIRE: int = 2
 const DAMAGE_TAG_ARCANE: int = 4
 const DAMAGE_TAG_POISON: int = 8
 
+static func get_cell_world_position(
+	map_origin: Vector2,
+	coord: Vector2i,
+	cell_elevation: int,
+	hex_radius: float
+) -> Vector2:
+	return map_origin + HexMath.axial_to_world(
+		HexCoord.new(coord.x, coord.y),
+		hex_radius
+	) - Vector2(0.0, float(cell_elevation) * ELEVATION_PIXEL_OFFSET)
+
+static func get_damage_for(
+	tower_data: TowerData,
+	tower_level: int,
+	cell_elevation: int,
+	run_card_service: Node = null,
+	meta_progression: Node = null
+) -> int:
+	if tower_data == null:
+		return 0
+	var damage: float = float(
+		tower_data.base_damage
+		+ maxi(tower_level - 1, 0)
+		+ cell_elevation * tower_data.elevation_damage_bonus_per_level
+	)
+	if run_card_service != null and is_instance_valid(run_card_service):
+		damage += float(run_card_service.call("get_tower_damage_add", tower_data.id, tower_data.damage_tags))
+		damage *= float(run_card_service.call("get_tower_damage_multiplier", tower_data.id, tower_data.damage_tags))
+	if meta_progression != null and is_instance_valid(meta_progression):
+		damage *= float(meta_progression.call("get_tower_damage_multiplier", tower_data.id))
+	return maxi(roundi(damage), 0)
+
+static func get_range_hexes_for(
+	tower_data: TowerData,
+	cell_elevation: int,
+	run_card_service: Node = null
+) -> float:
+	if tower_data == null:
+		return 0.0
+	var elevation_multiplier: float = 1.0
+	var added_range: float = 0.0
+	if run_card_service != null and is_instance_valid(run_card_service):
+		elevation_multiplier += float(run_card_service.call(
+			"get_tower_elevation_range_bonus_multiplier_add",
+			tower_data.id
+		))
+		added_range = float(run_card_service.call("get_tower_range_add", tower_data.id))
+	var range_hexes: float = (
+		tower_data.range_hexes
+		+ cell_elevation * tower_data.height_range_bonus_per_level * elevation_multiplier
+		+ added_range
+	)
+	return maxf(range_hexes, 0.0)
+
 var cell_coord: Vector2i = Vector2i.ZERO
 var elevation: int = 0
 var level: int = 1
@@ -54,6 +108,8 @@ var _icon_catalog: RefCounted
 var _tower_icon: Texture2D
 var _tower_art_root: Node2D
 var _tower_sprite: Sprite2D
+var _range_indicator_backdrop: Line2D
+var _range_indicator: Line2D
 var _current_target: Enemy
 var _targeting_mode: int = TowerData.TargetingMode.FIRST_PROGRESS
 var _targeting_priorities: Array[int] = [TowerData.TargetingMode.FIRST_PROGRESS, -1, -1]
@@ -128,15 +184,14 @@ func configure(
 		Enemy.HitPointLayer.SHIELD: 0,
 	}
 	set_process(_is_selected)
-	global_position = map_origin + HexMath.axial_to_world(
-		HexCoord.new(coord.x, coord.y),
-		hex_radius
-	) - Vector2(0.0, float(cell_elevation) * ELEVATION_PIXEL_OFFSET)
+	global_position = get_cell_world_position(map_origin, coord, cell_elevation, hex_radius)
+	_setup_range_indicator()
 	queue_redraw()
 	return true
 
 func _on_run_card_modifiers_changed() -> void:
 	_scan_timer = 0.0
+	_sync_range_indicator()
 	queue_redraw()
 	stats_changed.emit(level)
 
@@ -148,6 +203,7 @@ func set_selected(is_selected: bool) -> void:
 	set_process(is_selected or _shoot_vfx_cooldown_remaining > 0.0)
 	_sync_tower_art_scale()
 	_sync_tower_art_tint()
+	_sync_range_indicator()
 	z_as_relative = not is_selected
 	z_index = 100 if is_selected else 0
 	queue_redraw()
@@ -157,6 +213,7 @@ func set_hovered(is_hovered: bool) -> void:
 		return
 	_is_hovered = is_hovered
 	_sync_tower_art_tint()
+	_sync_range_indicator()
 	queue_redraw()
 
 func set_targeting_mode(mode: int) -> bool:
@@ -248,26 +305,11 @@ func get_max_total_upgrades() -> int:
 func get_mana_cost_per_attack() -> float:
 	return get_current_mana_cost()
 
-func is_mana_blocked() -> bool:
-	return _is_mana_blocked
-
 func get_current_target() -> Enemy:
 	return _current_target
 
 func get_current_damage() -> int:
-	if _tower_data == null:
-		return 0
-	var damage: float = float(
-		_tower_data.base_damage
-		+ (level - 1)
-		+ elevation * _tower_data.elevation_damage_bonus_per_level
-	)
-	if _run_card_service != null and is_instance_valid(_run_card_service):
-		damage += float(_run_card_service.call("get_tower_damage_add", _tower_data.id, _tower_data.damage_tags))
-		damage *= float(_run_card_service.call("get_tower_damage_multiplier", _tower_data.id, _tower_data.damage_tags))
-	if _meta_progression != null and is_instance_valid(_meta_progression):
-		damage *= float(_meta_progression.call("get_tower_damage_multiplier", _tower_data.id))
-	return maxi(roundi(damage), 0)
+	return get_damage_for(_tower_data, level, elevation, _run_card_service, _meta_progression)
 
 func get_hit_point_damage_multiplier(layer: int) -> float:
 	if _tower_data == null:
@@ -440,15 +482,7 @@ func get_current_rounds_per_minute() -> float:
 	return maxf(rounds_per_minute, 0.0)
 
 func get_current_range_hexes() -> float:
-	if _tower_data == null:
-		return 0.0
-	var range_hexes: float = (
-		_tower_data.range_hexes
-		+ elevation * _tower_data.height_range_bonus_per_level * _get_elevation_range_multiplier()
-	)
-	if _run_card_service != null and is_instance_valid(_run_card_service):
-		range_hexes += float(_run_card_service.call("get_tower_range_add", _tower_data.id))
-	return maxf(range_hexes, 0.0)
+	return get_range_hexes_for(_tower_data, elevation, _run_card_service)
 
 func get_current_area_radius_hexes() -> float:
 	if _tower_data == null:
@@ -458,11 +492,6 @@ func get_current_area_radius_hexes() -> float:
 		radius += float(_run_card_service.call("get_tower_area_radius_add", _tower_data.id))
 		radius *= 1.0 + float(_run_card_service.call("get_tower_area_radius_multiplier_add", _tower_data.id))
 	return maxf(radius, 0.0)
-
-func _get_elevation_range_multiplier() -> float:
-	if _run_card_service == null or not is_instance_valid(_run_card_service):
-		return 1.0
-	return 1.0 + float(_run_card_service.call("get_tower_elevation_range_bonus_multiplier_add", _tower_data.id))
 
 func get_covered_path_cell_count() -> int:
 	if _board_grid == null or _tower_data == null:
@@ -487,9 +516,6 @@ func get_targeting_xp(layer: int) -> float:
 func get_current_range_pixels() -> float:
 	var neighbor_distance: float = HexMath.axial_to_world(HexCoord.new(1, 0), _hex_radius).length()
 	return get_current_range_hexes() * neighbor_distance
-
-func get_targeting_mode() -> int:
-	return _targeting_mode
 
 func get_summary() -> String:
 	if _tower_data == null:
@@ -552,46 +578,6 @@ func get_attack_pattern_name() -> String:
 			return "hoja perforante · Bleed"
 		_:
 			return "desconocido"
-
-func get_damage_tag_name(tags: int) -> String:
-	var names := PackedStringArray()
-	if (tags & DAMAGE_TAG_PHYSICAL) != 0:
-		names.append("Physical")
-	if (tags & DAMAGE_TAG_FIRE) != 0:
-		names.append("Fire")
-	if (tags & DAMAGE_TAG_ARCANE) != 0:
-		names.append("Arcane")
-	if (tags & DAMAGE_TAG_POISON) != 0:
-		names.append("Poison")
-	return " + ".join(names) if not names.is_empty() else "sin tipo"
-
-func get_targeting_mode_name(mode: int = -1) -> String:
-	var active_mode: int = _targeting_mode if mode < 0 else mode
-	match active_mode:
-		TowerData.TargetingMode.FIRST_PROGRESS:
-			return "más avanzado"
-		TowerData.TargetingMode.LAST_PROGRESS:
-			return "menos avanzado"
-		TowerData.TargetingMode.LOWEST_TOTAL_HIT_POINTS:
-			return "casi muerto"
-		TowerData.TargetingMode.HIGHEST_HEALTH:
-			return "más Health"
-		TowerData.TargetingMode.HIGHEST_ARMOR:
-			return "más Armor"
-		TowerData.TargetingMode.HIGHEST_SHIELD:
-			return "más Shield"
-		TowerData.TargetingMode.LOWEST_HEALTH:
-			return "menos Health"
-		TowerData.TargetingMode.LOWEST_ARMOR:
-			return "menos Armor"
-		TowerData.TargetingMode.LOWEST_SHIELD:
-			return "menos Shield"
-		TowerData.TargetingMode.SLOWEST:
-			return "más lento"
-		TowerData.TargetingMode.FASTEST:
-			return "más rápido"
-		_:
-			return "Desconocido"
 
 func _physics_process(delta: float) -> void:
 	if _tower_data == null:
@@ -1095,8 +1081,6 @@ func _draw() -> void:
 	if _tower_data == null:
 		return
 	var pulse: float = 0.5 + 0.5 * sin(_selection_pulse_time * TAU / 1.15) if _is_selected else 0.0
-	if _is_hovered and not _is_selected:
-		draw_arc(Vector2.ZERO, get_current_range_pixels(), 0.0, TAU, 72, Color(0.65, 0.9, 1.0, 0.2), 1.4, true)
 	var visual_scale: float = _get_level_visual_scale() * (1.0 + pulse * 0.055)
 	var icon_rect := _get_tower_art_rect(visual_scale)
 	if _tower_icon != null and _tower_sprite == null:
@@ -1131,6 +1115,50 @@ func _draw() -> void:
 		for target_offset in _shot_target_positions:
 			draw_line(shot_origin, target_offset, SHOT_COLOR, 2.0, true)
 
+func _setup_range_indicator() -> void:
+	if _range_indicator != null and is_instance_valid(_range_indicator):
+		_sync_range_indicator()
+		return
+	_range_indicator_backdrop = Line2D.new()
+	_range_indicator_backdrop.name = "AttackRangeBackdrop"
+	_range_indicator_backdrop.closed = true
+	_range_indicator_backdrop.width = 5.0
+	_range_indicator_backdrop.default_color = Color(0.025, 0.055, 0.075, 0.9)
+	_range_indicator_backdrop.antialiased = true
+	_range_indicator_backdrop.z_as_relative = false
+	_range_indicator_backdrop.z_index = 4094
+	_range_indicator_backdrop.visible = false
+	add_child(_range_indicator_backdrop)
+	_range_indicator = Line2D.new()
+	_range_indicator.name = "AttackRangeIndicator"
+	_range_indicator.closed = true
+	_range_indicator.width = 2.6
+	_range_indicator.default_color = Color("#8be4ff")
+	_range_indicator.antialiased = true
+	_range_indicator.z_as_relative = false
+	_range_indicator.z_index = 4095
+	_range_indicator.visible = false
+	add_child(_range_indicator)
+	_sync_range_indicator()
+
+func _sync_range_indicator() -> void:
+	if _range_indicator == null or not is_instance_valid(_range_indicator):
+		return
+	var indicator_visible: bool = _is_hovered or _is_selected
+	_range_indicator.visible = indicator_visible
+	if _range_indicator_backdrop != null and is_instance_valid(_range_indicator_backdrop):
+		_range_indicator_backdrop.visible = indicator_visible
+	if not indicator_visible:
+		return
+	var radius: float = get_current_range_pixels()
+	var points := PackedVector2Array()
+	for point_index in range(96):
+		var angle: float = TAU * float(point_index) / 96.0
+		points.append(Vector2(cos(angle), sin(angle)) * radius)
+	_range_indicator.points = points
+	if _range_indicator_backdrop != null and is_instance_valid(_range_indicator_backdrop):
+		_range_indicator_backdrop.points = points
+
 func _configure_tower_art(tower_id: StringName) -> void:
 	if _tower_icon == null or TOWER_ART_CATALOG_SCRIPT.get_definition(tower_id).is_empty():
 		return
@@ -1161,7 +1189,7 @@ func _create_outlined_sprite(sprite_name: String) -> Sprite2D:
 	var outline_material := ShaderMaterial.new()
 	outline_material.shader = INTERACTABLE_OUTLINE_SHADER
 	outline_material.set_shader_parameter("outline_color", Color.WHITE)
-	outline_material.set_shader_parameter("outline_size_px", 12.0)
+	outline_material.set_shader_parameter("outline_size_px", 6.0)
 	sprite.material = outline_material
 	return sprite
 

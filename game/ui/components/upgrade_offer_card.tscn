@@ -1,8 +1,39 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://game/ui/components/upgrade_offer_card.gd" id="1_script"]
 [ext_resource type="Theme" path="res://game/ui/themes/rogue_hud_theme.tres" id="2_theme"]
 [ext_resource type="Script" path="res://game/ui/components/balatro_card_hover.gd" id="3_balatro_hover"]
+[ext_resource type="Shader" path="res://game/ui/components/upgrade_card_aura.gdshader" id="4_aura_shader"]
+
+[sub_resource type="StyleBoxEmpty" id="ButtonStateEmpty"]
+
+[sub_resource type="StyleBoxFlat" id="CardNormal"]
+bg_color = Color(0.0666667, 0.0980392, 0.109804, 1)
+border_color = Color(0.262745, 0.321569, 0.341176, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="CardHover"]
+bg_color = Color(0.0980392, 0.141176, 0.156863, 1)
+border_color = Color(0.466667, 0.529412, 0.541176, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="ShaderMaterial" id="CardAura"]
+shader = ExtResource("4_aura_shader")
+shader_parameter/glow_strength = 0.42
 
 [node name="UpgradeOfferCard" type="Button"]
 custom_minimum_size = Vector2(250, 352)
@@ -10,7 +41,14 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 text = ""
 theme = ExtResource("2_theme")
+theme_override_styles/normal = SubResource("ButtonStateEmpty")
+theme_override_styles/hover = SubResource("ButtonStateEmpty")
+theme_override_styles/pressed = SubResource("ButtonStateEmpty")
+theme_override_styles/focus = SubResource("ButtonStateEmpty")
+theme_override_styles/disabled = SubResource("ButtonStateEmpty")
 script = ExtResource("1_script")
+normal_panel_style = SubResource("CardNormal")
+hover_panel_style = SubResource("CardHover")
 
 [node name="AuraGlow" type="ColorRect" parent="."]
 unique_name_in_owner = true
@@ -26,6 +64,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 z_index = -1
+material = SubResource("CardAura")
 
 [node name="CardPanel" type="Panel" parent="."]
 unique_name_in_owner = true
@@ -36,6 +75,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_styles/panel = SubResource("CardNormal")
 
 [node name="ContentMargin" type="MarginContainer" parent="."]
 layout_mode = 1

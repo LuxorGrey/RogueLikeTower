@@ -2,7 +2,7 @@
 
 Esta es la única carpeta activa de documentación del juego. Empieza aquí para saber qué documento manda, qué describe el juego actual y qué sigue siendo una propuesta.
 
-La comparación realizada el 2026-10-09 y sus discrepancias resueltas o pendientes están resumidas en [Auditoría documental](AUDIT.md).
+La revisión integral del estado actual después de M64 (2026-10-15) está en [Auditoría de implementación y documentación](AUDIT_2026-10-15.md). La comparación documental del 2026-10-09 se conserva como [auditoría histórica](AUDIT.md).
 
 ## Autoridad
 
@@ -40,6 +40,7 @@ Para implementación, usa etiquetas concretas como **implementado en código**, 
 - [Auditoría de torres](design/15_AUDITORIA_SISTEMA_DE_TORRES.md): revisión del daño, mejoras, XP, Mana, cadencia, alcance, crítico y estados frente a la wiki.
 - [Progresión de mejoras](design/16_PROGRESION_Y_SELECCION_DE_TORRES.md): límites, curvas, niveles por capa, prioridades y feedback de selección.
 - [Auditoría de sprites](design/17_AUDITORIA_DE_SPRITES.md): inventario de PNG bajo `assets/sprites/` y referencias de runtime localizadas.
+- [Auditoría integral 2026-10-15](AUDIT_2026-10-15.md): fase real M64, limpieza aplicada, funciones eliminadas, recursos conservados y aceptación pendiente.
 - [Importación archivada](archive/initial_import/README.md): snapshot del paquete recibido, incluido el JSON espejo.
 
 ## Incorporar un cambio

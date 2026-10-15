@@ -55,14 +55,15 @@ func record_tower_damage(instance_id: int, damage: int) -> void:
 	var tower_id: StringName = _tower_id_by_instance[instance_id]
 	_tower_damage_totals[tower_id] = int(_tower_damage_totals.get(tower_id, 0)) + damage
 
-func get_tower_run_summary(unlocked_tower_ids: Array[StringName]) -> Array[Dictionary]:
+func get_tower_run_summary() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for tower_id in _tower_build_counts:
-		if not unlocked_tower_ids.has(StringName("tower:%s" % tower_id)):
+		var placed_count: int = int(_tower_build_counts[tower_id])
+		if placed_count <= 0:
 			continue
 		result.append({
 			"tower_id": String(tower_id),
-			"count": int(_tower_build_counts[tower_id]),
+			"count": placed_count,
 			"damage": int(_tower_damage_totals.get(tower_id, 0)),
 		})
 	result.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:

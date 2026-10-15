@@ -13,19 +13,9 @@ enum State { UNCONFIGURED, MOVING, REACHED_BASE, DEAD }
 enum HitPointLayer { HEALTH, ARMOR, SHIELD }
 
 const BODY_COLOR: Color = Color(0.82, 0.30, 0.27)
-const HEALTH_BACK_COLOR: Color = Color(0.12, 0.13, 0.14)
-const HEALTH_FILL_COLOR: Color = Color(0.36, 0.86, 0.40)
-const ARMOR_FILL_COLOR: Color = Color(0.78, 0.69, 0.48)
-const SHIELD_FILL_COLOR: Color = Color(0.31, 0.73, 0.98)
-const DAMAGE_TEXT_COLORS: Dictionary = {
-	HitPointLayer.HEALTH: Color("#ff6b68"),
-	HitPointLayer.ARMOR: Color("#f2c46e"),
-	HitPointLayer.SHIELD: Color("#65ceff"),
-}
 const ICON_CATALOG_SCRIPT: Script = preload("res://game/ui/icon_catalog.gd")
 const ANIMATED_IMPACT_SCRIPT: Script = preload("res://game/vfx/animated_impact.gd")
 const COZY_STATUS_ROOT: String = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/status/"
-const PROJECT_FONT: Font = preload("res://assets/fonts/PatrickHand-Regular.ttf")
 const STATUS_SPRITE_FILES: Dictionary = {
 	&"burn": "burn.png",
 	&"slow": "frost.png",
@@ -35,12 +25,7 @@ const STATUS_SPRITE_FILES: Dictionary = {
 	&"fortification": "buff.png",
 	&"stun": "stun.png",
 }
-const HIT_JUMP_DURATION: float = 0.32
-const HIT_FLASH_DURATION: float = 0.14
-const VISUAL_ART_OFFSET_Y: float = 6.0
 const ENEMY_OUTLINE_SHADER: Shader = preload("res://game/board/interactable_outline.gdshader")
-const ENEMY_OUTLINE_SIZE_PX: float = 2.0
-const ENEMY_OUTLINE_FALLBACK_COLOR: Color = Color("#e8f4ff")
 const ENEMY_OUTLINE_COLORS: Dictionary = {
 	&"campaign_armored_goblin": Color("#e7ffa8"),
 	&"campaign_armored_orc": Color("#c5e9ff"),
@@ -68,18 +53,54 @@ const ENEMY_OUTLINE_COLORS: Dictionary = {
 	&"campaign_vampire": Color("#ffd0dd"),
 	&"campaign_werewolf": Color("#d6d2ff"),
 	&"campaign_witch": Color("#c8ffe8"),
-	&"armored_regenerator_m7_test": Color("#d3ffb8"),
-	&"cyclops_demo": Color("#a8e4ff"),
-	&"status_training_dummy_m8_test": Color("#cffcff"),
-	&"tower_layer_training_dummy": Color("#f1f1ff"),
-	&"werewolf_demo": Color("#c3c3ff"),
 }
-const DAMAGE_POPUP_SIZE_MIN: int = 12
-const DAMAGE_POPUP_SIZE_MAX: int = 22
-const DAMAGE_POPUP_PUNCH_SCALE: float = 1.75
-const DAMAGE_POPUP_PUNCH_DURATION: float = 0.18
-const DAMAGE_POPUP_ARC_MID_DURATION: float = 0.2
-const DAMAGE_POPUP_ARC_END_DURATION: float = 0.42
+
+@export_group("Enemy feedback")
+@export_range(0.05, 1.0, 0.01) var hit_jump_duration: float = 0.32
+@export_range(0.02, 0.5, 0.01) var hit_flash_duration: float = 0.14
+@export_range(-32.0, 32.0, 0.5) var visual_art_offset_y: float = 6.0
+@export_range(0.0, 12.0, 0.5) var enemy_outline_size_px: float = 2.0
+@export var enemy_outline_fallback_color: Color = Color("#e8f4ff")
+@export var health_damage_text_color: Color = Color("#ff6b68")
+@export var armor_damage_text_color: Color = Color("#f2c46e")
+@export var shield_damage_text_color: Color = Color("#65ceff")
+
+@export_group("Enemy health bars")
+@export_range(2.0, 10.0, 0.1) var hit_point_bar_width_factor: float = 5.4
+@export_range(32.0, 180.0, 1.0) var hit_point_bar_min_width: float = 68.0
+@export_range(4.0, 24.0, 0.5) var hit_point_bar_height: float = 8.0
+@export_range(0.0, 12.0, 0.5) var hit_point_bar_row_gap: float = 2.0
+@export_range(0.0, 80.0, 1.0) var hit_point_bar_offset_y: float = 22.0
+@export_range(8.0, 32.0, 0.5) var hit_point_layer_icon_size: float = 14.0
+@export var hit_point_bar_back_color: Color = Color(0.12, 0.13, 0.14)
+@export var health_bar_fill_color: Color = Color(0.36, 0.86, 0.40)
+@export var armor_bar_fill_color: Color = Color(0.78, 0.69, 0.48)
+@export var shield_bar_fill_color: Color = Color(0.31, 0.73, 0.98)
+
+@export_group("Status icons")
+@export_range(12.0, 64.0, 1.0) var status_icon_size: float = 28.0
+@export_range(0.0, 24.0, 1.0) var status_icon_gap: float = 5.0
+@export_range(16.0, 120.0, 1.0) var status_icon_offset_y: float = 58.0
+@export var status_stack_font: Font = preload("res://assets/fonts/PatrickHand-Regular.ttf")
+@export_range(8, 24, 1) var status_stack_font_size: int = 11
+
+@export_group("Damage numbers")
+@export var damage_popup_font: Font = preload("res://assets/fonts/PatrickHand-Regular.ttf")
+@export_range(8, 40, 1) var damage_popup_min_font_size: int = 12
+@export_range(8, 48, 1) var damage_popup_max_font_size: int = 22
+@export_range(0, 12, 1) var critical_popup_font_bonus: int = 3
+@export var damage_popup_label_size: Vector2 = Vector2(128.0, 32.0)
+@export_range(1.0, 3.0, 0.05) var damage_popup_punch_scale: float = 1.75
+@export_range(0.02, 1.0, 0.01) var damage_popup_punch_duration: float = 0.18
+@export_range(0.02, 1.0, 0.01) var damage_popup_arc_mid_duration: float = 0.2
+@export_range(0.02, 1.0, 0.01) var damage_popup_arc_end_duration: float = 0.42
+@export_range(0, 12, 1) var damage_popup_outline_size: int = 3
+@export_range(0, 16, 1) var critical_popup_outline_size: int = 4
+@export var damage_popup_outline_color: Color = Color("#111820")
+@export var damage_popup_arc_mid_offset: Vector2 = Vector2(18.0, -25.0)
+@export var damage_popup_arc_end_offset: Vector2 = Vector2(42.0, -49.0)
+@export_range(0.0, 160.0, 1.0) var damage_popup_top_offset: float = 58.0
+@export_range(0.0, 40.0, 1.0) var damage_popup_lane_gap: float = 9.0
 
 var state: State = State.UNCONFIGURED
 var _enemy_data: EnemyData
@@ -105,6 +126,8 @@ var _damage_feedback_average: float = 0.0
 var _next_damage_popup_side: int = -1
 var _damage_popup_lane: int = 0
 var _is_facing_left: bool = false
+var _run_animation_time: float = 0.0
+var _run_animation_frame: int = 0
 var _haste_strength: float = 0.0
 var _fortification_strength: float = 0.0
 var _route: PathRoute
@@ -115,6 +138,8 @@ var _damage_service: Node
 const RT_STATUS_DECAY_PER_SECOND: float = 6.0
 const RT_STATUS_MAX_STRENGTH: float = 60.0
 const RT_FORTIFICATION_DAMAGE_REDUCTION: float = 5.0
+const RUN_ANIMATION_FRAME_COUNT: int = 4
+const RUN_ANIMATION_FRAMES_PER_SECOND: float = 8.0
 
 @onready var _health: HealthComponent = %Health
 @onready var _path_follower: PathFollowerComponent = %PathFollower
@@ -130,7 +155,7 @@ func _ready() -> void:
 	var outline_material := ShaderMaterial.new()
 	outline_material.shader = ENEMY_OUTLINE_SHADER
 	outline_material.set_shader_parameter("outline_only", true)
-	outline_material.set_shader_parameter("outline_size_px", ENEMY_OUTLINE_SIZE_PX)
+	outline_material.set_shader_parameter("outline_size_px", enemy_outline_size_px)
 	_outline_sprite.material = outline_material
 	add_child(_outline_sprite)
 	_icon_catalog = ICON_CATALOG_SCRIPT.new() as RefCounted
@@ -142,10 +167,28 @@ func _ready() -> void:
 	_status_controller.connect(&"status_changed", _on_status_effects_changed)
 
 func _process(delta: float) -> void:
+	if (
+		state == State.MOVING
+		and _enemy_data != null
+		and _enemy_data.has_run_sprite_sheet()
+		and delta > 0.0
+	):
+		_run_animation_time = fposmod(
+			_run_animation_time + delta,
+			float(RUN_ANIMATION_FRAME_COUNT) / RUN_ANIMATION_FRAMES_PER_SECOND
+		)
+		var next_frame: int = mini(
+			int(floor(_run_animation_time * RUN_ANIMATION_FRAMES_PER_SECOND)),
+			RUN_ANIMATION_FRAME_COUNT - 1
+		)
+		if next_frame != _run_animation_frame:
+			_run_animation_frame = next_frame
+			_sync_outline_sprite()
+			queue_redraw()
 	if _hit_jump_time_left > 0.0 or _hit_flash_time_left > 0.0:
 		_hit_jump_time_left = maxf(_hit_jump_time_left - delta, 0.0)
 		_hit_flash_time_left = maxf(_hit_flash_time_left - delta, 0.0)
-		var jump_progress: float = 1.0 - _hit_jump_time_left / HIT_JUMP_DURATION
+		var jump_progress: float = 1.0 - _hit_jump_time_left / hit_jump_duration
 		_jump_height = sin(clampf(jump_progress, 0.0, 1.0) * PI) * 10.0
 		queue_redraw()
 	else:
@@ -199,6 +242,8 @@ func configure(
 		return false
 	_enemy_data = enemy_data
 	_sprite_texture = enemy_data.sprite_texture
+	_run_animation_time = 0.0
+	_run_animation_frame = 0
 	_body_color = enemy_data.placeholder_color
 	_body_radius = enemy_data.placeholder_radius
 	_sync_outline_sprite()
@@ -370,26 +415,27 @@ func get_enemy_data() -> EnemyData:
 	return _enemy_data
 
 func get_death_vfx_position() -> Vector2:
-	return to_global(Vector2(0.0, -_jump_height + VISUAL_ART_OFFSET_Y))
+	return to_global(Vector2(0.0, -_jump_height + visual_art_offset_y))
 
 func create_death_vfx_sprite_snapshot() -> Sprite2D:
 	if _sprite_texture == null:
 		return null
-	var texture_size: Vector2 = Vector2(_sprite_texture.get_size())
-	if texture_size.x <= 0.0 or texture_size.y <= 0.0:
+	var snapshot_hframes: int = RUN_ANIMATION_FRAME_COUNT if _enemy_data.has_run_sprite_sheet() else 1
+	var frame_size := Vector2(float(_sprite_texture.get_width()) / float(snapshot_hframes), float(_sprite_texture.get_height()))
+	if frame_size.x <= 0.0 or frame_size.y <= 0.0:
 		return null
 	var sprite_extent: float = _get_sprite_extent()
 	var snapshot := Sprite2D.new()
 	snapshot.texture = _sprite_texture
-	snapshot.hframes = 1
+	snapshot.hframes = snapshot_hframes
 	snapshot.vframes = 1
-	snapshot.frame = 0
+	snapshot.frame = _run_animation_frame if _enemy_data.has_run_sprite_sheet() else 0
 	snapshot.flip_h = _is_facing_left
 	snapshot.scale = global_scale * Vector2(
-		sprite_extent / texture_size.x,
-		sprite_extent / texture_size.y
+		sprite_extent / frame_size.x,
+		sprite_extent / frame_size.y
 	)
-	var flash_ratio: float = _hit_flash_time_left / HIT_FLASH_DURATION
+	var flash_ratio: float = _hit_flash_time_left / hit_flash_duration
 	snapshot.modulate = Color.WHITE.lerp(_hit_flash_color, clampf(flash_ratio, 0.0, 1.0))
 	return snapshot
 
@@ -413,6 +459,8 @@ func transform_to(enemy_data: EnemyData, health_override: int = 0) -> bool:
 		return false
 	_enemy_data = enemy_data
 	_sprite_texture = enemy_data.sprite_texture
+	_run_animation_time = 0.0
+	_run_animation_frame = 0
 	_body_color = enemy_data.placeholder_color
 	_body_radius = enemy_data.placeholder_radius
 	_sync_outline_sprite()
@@ -468,9 +516,9 @@ func _get_all_active_status_stacks() -> Dictionary:
 func show_damage_feedback(layer: int, amount: int, is_critical: bool = false) -> void:
 	if amount <= 0:
 		return
-	_hit_jump_time_left = HIT_JUMP_DURATION
-	_hit_flash_time_left = HIT_FLASH_DURATION
-	_hit_flash_color = DAMAGE_TEXT_COLORS.get(layer, Color.WHITE)
+	_hit_jump_time_left = hit_jump_duration
+	_hit_flash_time_left = hit_flash_duration
+	_hit_flash_color = _damage_text_color(layer)
 	queue_redraw()
 	var effects_parent: Node = get_parent()
 	if effects_parent == null:
@@ -479,40 +527,42 @@ func show_damage_feedback(layer: int, amount: int, is_critical: bool = false) ->
 	popup.text = "%s−%d%s" % ["CRIT " if is_critical else "", amount, "!" if is_critical else ""]
 	popup.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	popup.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	popup.size = Vector2(128.0, 32.0)
+	popup.size = damage_popup_label_size
 	popup.pivot_offset = popup.size * 0.5
 	popup.z_index = 100
+	if damage_popup_font != null:
+		popup.add_theme_font_override("font", damage_popup_font)
 	var reference_damage: float = _damage_feedback_average if _damage_feedback_average > 0.0 else float(amount)
 	var relative_damage: float = clampf(float(amount) / reference_damage, 0.65, 1.8)
 	var size_ratio: float = inverse_lerp(0.65, 1.8, relative_damage)
-	var popup_font_size: int = roundi(lerpf(float(DAMAGE_POPUP_SIZE_MIN), float(DAMAGE_POPUP_SIZE_MAX), size_ratio))
+	var popup_font_size: int = roundi(lerpf(float(damage_popup_min_font_size), float(damage_popup_max_font_size), size_ratio))
 	if is_critical:
-		popup_font_size = mini(popup_font_size + 3, DAMAGE_POPUP_SIZE_MAX + 3)
+		popup_font_size = mini(popup_font_size + critical_popup_font_bonus, damage_popup_max_font_size + critical_popup_font_bonus)
 	popup.add_theme_font_size_override("font_size", popup_font_size)
-	popup.add_theme_color_override("font_color", DAMAGE_TEXT_COLORS.get(layer, Color.WHITE))
-	popup.add_theme_color_override("font_outline_color", Color("#111820"))
-	popup.add_theme_constant_override("outline_size", 4 if is_critical else 3)
+	popup.add_theme_color_override("font_color", _damage_text_color(layer))
+	popup.add_theme_color_override("font_outline_color", damage_popup_outline_color)
+	popup.add_theme_constant_override("outline_size", critical_popup_outline_size if is_critical else damage_popup_outline_size)
 	effects_parent.add_child(popup)
 	var side: int = _next_damage_popup_side
 	_next_damage_popup_side *= -1
 	var lane: int = _damage_popup_lane
 	_damage_popup_lane = (_damage_popup_lane + 1) % 3
 	var initial_position: Vector2 = global_position + Vector2(
-		-64.0 + float(side * 8),
-		-_body_radius - 58.0 - float(lane * 9)
+		-damage_popup_label_size.x * 0.5 + float(side * 8),
+		-_body_radius - damage_popup_top_offset - float(lane) * damage_popup_lane_gap
 	)
 	popup.global_position = initial_position
-	popup.scale = Vector2.ONE * DAMAGE_POPUP_PUNCH_SCALE if not is_critical else Vector2.ONE * 2.0
+	popup.scale = Vector2.ONE * damage_popup_punch_scale if not is_critical else Vector2.ONE * 2.0
 	popup.modulate.a = 0.0
-	var middle_position: Vector2 = initial_position + Vector2(float(side * 18), -25.0)
-	var end_position: Vector2 = initial_position + Vector2(float(side * 42), -49.0)
+	var middle_position: Vector2 = initial_position + Vector2(float(side) * damage_popup_arc_mid_offset.x, damage_popup_arc_mid_offset.y)
+	var end_position: Vector2 = initial_position + Vector2(float(side) * damage_popup_arc_end_offset.x, damage_popup_arc_end_offset.y)
 	var tween: Tween = popup.create_tween().bind_node(popup)
 	tween.set_parallel(true)
 	tween.tween_property(popup, "modulate:a", 1.0, 0.06)
-	tween.tween_property(popup, "scale", Vector2.ONE, DAMAGE_POPUP_PUNCH_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(popup, "scale", Vector2.ONE, damage_popup_punch_duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.chain()
-	tween.tween_property(popup, "global_position", middle_position, DAMAGE_POPUP_ARC_MID_DURATION).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(popup, "global_position", end_position, DAMAGE_POPUP_ARC_END_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(popup, "global_position", middle_position, damage_popup_arc_mid_duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(popup, "global_position", end_position, damage_popup_arc_end_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tween.parallel().tween_property(popup, "modulate:a", 0.0, 0.24).set_delay(0.12)
 	tween.chain().tween_callback(popup.queue_free)
 	_damage_feedback_average = float(amount) if _damage_feedback_average <= 0.0 else lerpf(_damage_feedback_average, float(amount), 0.12)
@@ -571,35 +621,11 @@ func get_hit_point_value(layer: int) -> int:
 		_:
 			return 0
 
-func get_total_current_hit_points() -> int:
-	return get_current_health() + get_armor_value() + get_shield_value()
-
-func get_total_maximum_hit_points() -> int:
-	return get_maximum_health() + get_maximum_armor() + get_maximum_shield()
-
 func get_regen_per_second() -> float:
 	return _enemy_data.regen_per_second if _enemy_data != null else 0.0
 
-func get_armor_regen_per_second() -> float:
-	if _enemy_data == null:
-		return 0.0
-	var statuses: PackedStringArray = _status_controller.call("get_active_status_ids")
-	return 0.0 if statuses.has("burn") else _enemy_data.armor_regen_per_second
-
-func get_shield_regen_per_second() -> float:
-	if _enemy_data == null:
-		return 0.0
-	var statuses: PackedStringArray = _status_controller.call("get_active_status_ids")
-	return 0.0 if statuses.has("poison") else _enemy_data.shield_regen_per_second
-
 func get_regen_counter_strength() -> float:
 	return _regen_counter_strength if _regen_counter_time_left > 0.0 else 0.0
-
-func get_regen_counter_time_left() -> float:
-	return _regen_counter_time_left
-
-func get_effective_regen_per_second() -> float:
-	return get_regen_per_second() * (1.0 - get_regen_counter_strength())
 
 func get_damage_tag_multiplier(damage_tags: int) -> float:
 	return _enemy_data.get_damage_tag_multiplier(damage_tags) if _enemy_data != null else 1.0
@@ -614,8 +640,8 @@ func teleport_forward_tiles(tile_count: int) -> bool:
 	return _path_follower.advance_tiles(tile_count)
 
 func _draw() -> void:
-	draw_set_transform(Vector2(0.0, -_jump_height + VISUAL_ART_OFFSET_Y), 0.0, Vector2.ONE)
-	var flash_ratio: float = _hit_flash_time_left / HIT_FLASH_DURATION
+	draw_set_transform(Vector2(0.0, -_jump_height + visual_art_offset_y), 0.0, Vector2.ONE)
+	var flash_ratio: float = _hit_flash_time_left / hit_flash_duration
 	if _sprite_texture != null:
 		var sprite_extent: float = _enemy_data.sprite_extent if _enemy_data.sprite_extent > 0.0 else maxf(_body_radius * 3.2, 48.0)
 		var sprite_rect := Rect2(
@@ -623,9 +649,9 @@ func _draw() -> void:
 			Vector2(sprite_extent, sprite_extent)
 		)
 		var sprite_tint: Color = Color.WHITE.lerp(_hit_flash_color, clampf(flash_ratio, 0.0, 1.0))
-		draw_set_transform(Vector2(0.0, -_jump_height + VISUAL_ART_OFFSET_Y), 0.0, Vector2(-1.0, 1.0) if _is_facing_left else Vector2.ONE)
-		draw_texture_rect(_sprite_texture, sprite_rect, false, sprite_tint)
-		draw_set_transform(Vector2(0.0, -_jump_height + VISUAL_ART_OFFSET_Y), 0.0, Vector2.ONE)
+		draw_set_transform(Vector2(0.0, -_jump_height + visual_art_offset_y), 0.0, Vector2(-1.0, 1.0) if _is_facing_left else Vector2.ONE)
+		draw_texture_rect_region(_sprite_texture, sprite_rect, _get_current_sprite_frame_region(), sprite_tint)
+		draw_set_transform(Vector2(0.0, -_jump_height + visual_art_offset_y), 0.0, Vector2.ONE)
 	else:
 		var outline_color: Color = _get_enemy_outline_color()
 		draw_circle(Vector2.ZERO, _body_radius + 3.0, outline_color)
@@ -653,15 +679,15 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _draw_hit_point_bars() -> void:
-	var bar_width: float = maxf(_body_radius * 5.4, 68.0)
+	var bar_width: float = maxf(_body_radius * hit_point_bar_width_factor, hit_point_bar_min_width)
 	var bar_left: float = -bar_width * 0.5
-	var row_y: float = -_body_radius - 22.0
-	var bar_height: float = 8.0
-	var row_gap: float = 2.0
+	var row_y: float = -_body_radius - hit_point_bar_offset_y
+	var bar_height: float = hit_point_bar_height
+	var row_gap: float = hit_point_bar_row_gap
 	var rows: Array[Dictionary] = [
-		{"id": &"shield", "current": _shield_current, "maximum": _enemy_data.shield, "color": SHIELD_FILL_COLOR},
-		{"id": &"armor", "current": _armor_current, "maximum": _enemy_data.armor, "color": ARMOR_FILL_COLOR},
-		{"id": &"health", "current": _health.current_health, "maximum": _health.maximum_health, "color": HEALTH_FILL_COLOR},
+		{"id": &"shield", "current": _shield_current, "maximum": _enemy_data.shield, "color": shield_bar_fill_color},
+		{"id": &"armor", "current": _armor_current, "maximum": _enemy_data.armor, "color": armor_bar_fill_color},
+		{"id": &"health", "current": _health.current_health, "maximum": _health.maximum_health, "color": health_bar_fill_color},
 	]
 	var displayed_rows: int = 0
 	for row in rows:
@@ -673,8 +699,8 @@ func _draw_hit_point_bars() -> void:
 		var fill_color: Color = row["color"]
 		var layer_icon: Texture2D = _icon_catalog.call("get_icon", icon_name) as Texture2D
 		if layer_icon != null:
-			draw_texture_rect(layer_icon, Rect2(bar_left - 17.0, row_y - 3.0, 14.0, 14.0), false)
-		draw_rect(Rect2(bar_left, row_y, bar_width, bar_height), HEALTH_BACK_COLOR)
+			draw_texture_rect(layer_icon, Rect2(bar_left - hit_point_layer_icon_size - 3.0, row_y + (bar_height - hit_point_layer_icon_size) * 0.5, hit_point_layer_icon_size, hit_point_layer_icon_size), false)
+		draw_rect(Rect2(bar_left, row_y, bar_width, bar_height), hit_point_bar_back_color)
 		var fill_ratio: float = clampf(float(current) / float(maximum), 0.0, 1.0)
 		draw_rect(Rect2(bar_left, row_y, bar_width * fill_ratio, bar_height), fill_color)
 		if icon_name == &"health":
@@ -693,16 +719,16 @@ func _draw_status_icons() -> void:
 		return
 	var status_ids: Array = stacks_by_id.keys()
 	status_ids.sort()
-	var icon_size: float = 44.0
-	var gap: float = 8.0
+	var icon_size: float = status_icon_size
+	var gap: float = status_icon_gap
 	var total_width: float = float(status_ids.size()) * icon_size + float(maxi(status_ids.size() - 1, 0)) * gap
 	var start_x: float = -total_width * 0.5
-	var status_y: float = -_body_radius - 64.0
+	var status_y: float = -_body_radius - status_icon_offset_y
 	for status_id_variant in status_ids:
 		var stacks: int = int(stacks_by_id[status_id_variant])
 		if stacks > 1:
-			var count_position: Vector2 = Vector2(start_x + icon_size + 1.0, status_y + icon_size - 10.0)
-			draw_string(PROJECT_FONT, count_position, str(stacks), HORIZONTAL_ALIGNMENT_RIGHT, 15.0, 14, Color.WHITE)
+			var count_position: Vector2 = Vector2(start_x + icon_size + 1.0, status_y + icon_size - 4.0)
+			draw_string(status_stack_font, count_position, str(stacks), HORIZONTAL_ALIGNMENT_RIGHT, 15.0, status_stack_font_size, Color.WHITE)
 		start_x += icon_size + gap
 
 func _sync_status_icon_sprites() -> void:
@@ -735,7 +761,7 @@ func _sync_status_icon_sprites() -> void:
 				sprite_sheet,
 				frame_count,
 				12.0,
-				44.0,
+				status_icon_size,
 				global_position,
 				true,
 				frame_count,
@@ -745,8 +771,8 @@ func _sync_status_icon_sprites() -> void:
 				icon.queue_free()
 				_status_icon_sprites.erase(status_id)
 				continue
-	var icon_size: float = 44.0
-	var gap: float = 8.0
+	var icon_size: float = status_icon_size
+	var gap: float = status_icon_gap
 	var visible_ids: Array[StringName] = []
 	for status_id in active:
 		if _status_icon_sprites.has(status_id):
@@ -755,7 +781,7 @@ func _sync_status_icon_sprites() -> void:
 	var start_x: float = -total_width * 0.5
 	for status_id in visible_ids:
 		var icon: Sprite2D = _status_icon_sprites[status_id]
-		icon.position = Vector2(start_x + icon_size * 0.5, -_body_radius - 64.0 - _jump_height)
+		icon.position = Vector2(start_x + icon_size * 0.5, -_body_radius - status_icon_offset_y - _jump_height)
 		icon.visible = true
 		start_x += icon_size + gap
 	for status_id_variant in _status_icon_sprites.keys():
@@ -817,12 +843,12 @@ func _on_horizontal_direction_changed(is_facing_left: bool) -> void:
 func _sync_outline_sprite() -> void:
 	if _outline_sprite == null or not is_instance_valid(_outline_sprite):
 		return
-	_outline_sprite.texture = _sprite_texture
+	_outline_sprite.texture = _get_current_sprite_frame_texture()
 	_outline_sprite.visible = _sprite_texture != null
 	if _sprite_texture == null:
 		return
 	var sprite_extent: float = _get_sprite_extent()
-	var texture_size: Vector2 = Vector2(_sprite_texture.get_size())
+	var texture_size: Vector2 = Vector2(_outline_sprite.texture.get_size())
 	_outline_sprite.scale = Vector2(
 		sprite_extent / maxf(texture_size.x, 1.0),
 		sprite_extent / maxf(texture_size.y, 1.0)
@@ -833,13 +859,26 @@ func _sync_outline_sprite() -> void:
 	_sync_outline_sprite_orientation()
 	_sync_outline_sprite_position()
 
+func _get_current_sprite_frame_region() -> Rect2:
+	if _sprite_texture == null:
+		return Rect2()
+	if _enemy_data == null or not _enemy_data.has_run_sprite_sheet():
+		return Rect2(Vector2.ZERO, Vector2(_sprite_texture.get_size()))
+	var frame_width: float = float(_sprite_texture.get_width()) / float(RUN_ANIMATION_FRAME_COUNT)
+	return Rect2(Vector2(frame_width * float(_run_animation_frame), 0.0), Vector2(frame_width, float(_sprite_texture.get_height())))
+
+func _get_current_sprite_frame_texture() -> Texture2D:
+	if _enemy_data == null:
+		return _sprite_texture
+	return _enemy_data.get_sprite_frame_texture(_run_animation_frame)
+
 func _sync_outline_sprite_orientation() -> void:
 	if _outline_sprite != null and is_instance_valid(_outline_sprite):
 		_outline_sprite.flip_h = _is_facing_left
 
 func _sync_outline_sprite_position() -> void:
 	if _outline_sprite != null and is_instance_valid(_outline_sprite):
-		_outline_sprite.position = Vector2(0.0, -_jump_height + VISUAL_ART_OFFSET_Y)
+		_outline_sprite.position = Vector2(0.0, -_jump_height + visual_art_offset_y)
 
 func _get_sprite_extent() -> float:
 	if _enemy_data == null:
@@ -850,9 +889,20 @@ func _get_sprite_extent() -> float:
 
 func _get_enemy_outline_color() -> Color:
 	if _enemy_data == null:
-		return ENEMY_OUTLINE_FALLBACK_COLOR
+		return enemy_outline_fallback_color
 	var outline_color: Color = ENEMY_OUTLINE_COLORS.get(
 		_enemy_data.id,
-		ENEMY_OUTLINE_FALLBACK_COLOR
+		enemy_outline_fallback_color
 	)
 	return outline_color
+
+func _damage_text_color(layer: int) -> Color:
+	match layer:
+		HitPointLayer.HEALTH:
+			return health_damage_text_color
+		HitPointLayer.ARMOR:
+			return armor_damage_text_color
+		HitPointLayer.SHIELD:
+			return shield_damage_text_color
+		_:
+			return Color.WHITE

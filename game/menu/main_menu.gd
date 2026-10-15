@@ -6,6 +6,9 @@ const ANIMATED_IMPACT_SCRIPT: Script = preload("res://game/vfx/animated_impact.g
 const GAME_OVER_CONFETTI: Texture2D = preload("res://assets/sprites/ui/Cozy_Chunky/confetti_burst_01.png")
 const GAME_SCENE_PATH: String = "res://game/main/main.tscn"
 
+@export_group("Run summary feedback")
+@export_range(120.0, 600.0, 1.0) var game_over_confetti_display_size: float = 420.0
+
 @onready var _start_button: Button = %StartButton
 @onready var _shop_button: Button = %ShopButton
 @onready var _exit_button: Button = %ExitButton
@@ -39,7 +42,7 @@ func _play_game_over_confetti() -> void:
 		GAME_OVER_CONFETTI,
 		40,
 		20.0,
-		420.0,
+		game_over_confetti_display_size,
 		viewport_center,
 		false,
 		8,

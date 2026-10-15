@@ -65,9 +65,6 @@ func _process(delta: float) -> void:
 func get_alive_enemy_count() -> int:
 	return _active_enemies.size()
 
-func get_pending_spawn_count() -> int:
-	return _pending_spawn_count
-
 func start_wave(
 	wave_data: WaveData,
 	path_graph: PathGraph,
@@ -164,15 +161,6 @@ func _select_campaign_route(_group: WaveEnemyGroupData) -> PathRoute:
 	var selected_route: PathRoute = available_routes[posmod(_campaign_spawn_index, available_routes.size())]
 	_campaign_spawn_index += 1
 	return selected_route
-
-func _get_spawn_routes(group: WaveEnemyGroupData, pulse_index: int) -> Array[PathRoute]:
-	if _campaign_data != null:
-		return _get_reachable_routes()
-	var routes: Array[PathRoute] = []
-	var route: PathRoute = _select_route(group, pulse_index)
-	if route != null:
-		routes.append(route)
-	return routes
 
 func _get_reachable_routes() -> Array[PathRoute]:
 	if _path_graph == null:

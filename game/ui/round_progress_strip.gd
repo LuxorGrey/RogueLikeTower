@@ -2,13 +2,30 @@ extends Control
 
 const ROUND_COUNT: int = 45
 const VISIBLE_ROUND_COUNT: int = 15
-const CLEARED_COLOR: Color = Color("#7cae81")
-const ACTIVE_COLOR: Color = Color("#f1cf78")
-const FUTURE_COLOR: Color = Color("#74817f")
-const SPECIAL_COLOR: Color = Color("#d98963")
-const TRACK_LEFT_INSET: float = 16.0
-const TRACK_RIGHT_INSET: float = 16.0
 const WAVE_HOVER_TOOLTIP_SCENE: PackedScene = preload("res://game/ui/components/wave_hover_tooltip.tscn")
+
+@export_group("Timeline geometry")
+@export_range(20.0, 100.0, 1.0) var track_height: float = 42.0
+@export_range(0.0, 120.0, 1.0) var track_left_inset: float = 16.0
+@export_range(0.0, 120.0, 1.0) var track_right_inset: float = 16.0
+@export_range(1.0, 12.0, 0.5) var track_line_width: float = 4.0
+@export_range(2.0, 14.0, 0.1) var marker_base_radius: float = 5.0
+@export_range(0.0, 10.0, 0.1) var marker_difficulty_scale: float = 3.8
+@export_range(0.0, 8.0, 0.1) var special_marker_radius_bonus: float = 1.8
+@export_range(0.0, 8.0, 0.1) var current_marker_ring_offset: float = 2.4
+@export_range(0.5, 8.0, 0.1) var current_marker_ring_width: float = 1.4
+@export_range(0.0, 60.0, 1.0) var tooltip_vertical_gap: float = 5.0
+@export_range(120.0, 600.0, 1.0) var tooltip_min_width: float = 226.0
+
+@export_group("Timeline colors")
+@export var cleared_color: Color = Color("#7cae81")
+@export var active_color: Color = Color("#f1cf78")
+@export var future_color: Color = Color("#74817f")
+@export var special_color: Color = Color("#d98963")
+@export var track_color: Color = Color(0.20, 0.26, 0.28, 1.0)
+@export var completed_track_color: Color = Color(0.34, 0.53, 0.40, 1.0)
+@export var special_marker_back_color: Color = Color(0.40, 0.26, 0.22, 1.0)
+@export var current_marker_ring_color: Color = Color("#fff3c9")
 
 var _current_round: int = 1
 var _completed_rounds: int = 0
@@ -18,7 +35,6 @@ var _tooltip_panel: WaveHoverTooltip
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	custom_minimum_size = Vector2(custom_minimum_size.x, 42.0)
 	mouse_exited.connect(_on_track_mouse_exited)
 
 func set_campaign_waves(waves: Array[WaveData]) -> void:
@@ -32,12 +48,12 @@ func set_progress(current_round: int, completed_rounds: int) -> void:
 
 func _draw() -> void:
 	var track_y: float = size.y * 0.5
-	var track_width: float = maxf(size.x - TRACK_LEFT_INSET - TRACK_RIGHT_INSET, 1.0)
+	var track_width: float = maxf(size.x - track_left_inset - track_right_inset, 1.0)
 	var spacing: float = track_width / float(VISIBLE_ROUND_COUNT - 1)
 	var first_visible_round: int = _first_visible_round()
 	for segment in range(VISIBLE_ROUND_COUNT - 1):
-		var from_point := Vector2(TRACK_LEFT_INSET + spacing * float(segment), track_y)
-		var to_point := Vector2(TRACK_LEFT_INSET + spacing * float(segment + 1), track_y)
+		var from_point := Vector2(track_left_inset + spacing * float(segment), track_y)
+		var to_point := Vector2(track_left_inset + spacing * float(segment + 1), track_y)
 		var line_fade_offset: int = first_visible_round + segment - _current_round
 		var fade: float = 1.0
 		if line_fade_offset >= 0:
@@ -46,22 +62,26 @@ func _draw() -> void:
 				0.0,
 				1.0
 			) * 0.78
-		draw_line(from_point, to_point, Color(0.20, 0.26, 0.28, fade), 4.0, true)
+		var inactive_track: Color = track_color
+		inactive_track.a *= fade
+		draw_line(from_point, to_point, inactive_track, track_line_width, true)
 		var from_round: int = first_visible_round + segment
 		if from_round <= _completed_rounds:
-			draw_line(from_point, to_point, Color(0.34, 0.53, 0.40, fade), 4.0, true)
+			var active_track: Color = completed_track_color
+			active_track.a *= fade
+			draw_line(from_point, to_point, active_track, track_line_width, true)
 	for window_index in range(VISIBLE_ROUND_COUNT):
 		var round_number: int = first_visible_round + window_index
 		if round_number > ROUND_COUNT:
 			continue
-		var point := Vector2(TRACK_LEFT_INSET + spacing * float(window_index), track_y)
+		var point := Vector2(track_left_inset + spacing * float(window_index), track_y)
 		var wave: WaveData = _wave_for_round(round_number)
 		var special: bool = _is_special_wave(wave)
-		var color: Color = SPECIAL_COLOR if special else FUTURE_COLOR
+		var color: Color = special_color if special else future_color
 		if round_number <= _completed_rounds:
-			color = CLEARED_COLOR
+			color = cleared_color
 		elif round_number == _current_round:
-			color = ACTIVE_COLOR
+			color = active_color
 		var round_fade_offset: int = round_number - _current_round
 		var fade_alpha: float = 1.0
 		if round_fade_offset >= 0:
@@ -73,19 +93,21 @@ func _draw() -> void:
 		color.a *= fade_alpha
 		var radius: float = _difficulty_radius(wave, special)
 		if special:
-			draw_circle(point, radius + 2.0, Color(0.40, 0.26, 0.22, fade_alpha))
+			var special_back: Color = special_marker_back_color
+			special_back.a *= fade_alpha
+			draw_circle(point, radius + special_marker_radius_bonus, special_back)
 		draw_circle(point, radius, color)
 		if round_number == _current_round:
-			draw_arc(point, radius + 2.4, 0.0, TAU, 32, Color("#fff3c9"), 1.4, true)
+			draw_arc(point, radius + current_marker_ring_offset, 0.0, TAU, 32, current_marker_ring_color, current_marker_ring_width, true)
 
 func _gui_input(event: InputEvent) -> void:
 	if not event is InputEventMouseMotion:
 		return
 	var mouse_event := event as InputEventMouseMotion
-	var track_width: float = maxf(size.x - TRACK_LEFT_INSET - TRACK_RIGHT_INSET, 1.0)
+	var track_width: float = maxf(size.x - track_left_inset - track_right_inset, 1.0)
 	var spacing: float = track_width / float(VISIBLE_ROUND_COUNT - 1)
-	var window_index: int = clampi(roundi((mouse_event.position.x - TRACK_LEFT_INSET) / spacing), 0, VISIBLE_ROUND_COUNT - 1)
-	var point_x: float = TRACK_LEFT_INSET + spacing * float(window_index)
+	var window_index: int = clampi(roundi((mouse_event.position.x - track_left_inset) / spacing), 0, VISIBLE_ROUND_COUNT - 1)
+	var point_x: float = track_left_inset + spacing * float(window_index)
 	var wave_index: int = _first_visible_round() - 1 + window_index
 	if wave_index >= ROUND_COUNT or absf(mouse_event.position.x - point_x) > maxf(10.0, spacing * 0.45):
 		_hide_wave_tooltip()
@@ -125,7 +147,7 @@ func _difficulty_radius(wave: WaveData, special: bool) -> float:
 				count += group.count
 		largest_wave_count = maxi(largest_wave_count, count)
 	var difficulty: float = sqrt(float(enemy_count) / float(largest_wave_count))
-	return 5.0 + difficulty * 3.8 + (1.8 if special else 0.0)
+	return marker_base_radius + difficulty * marker_difficulty_scale + (special_marker_radius_bonus if special else 0.0)
 
 func _show_wave_tooltip(wave_index: int) -> void:
 	_hide_wave_tooltip()
@@ -160,17 +182,17 @@ func _show_wave_tooltip(wave_index: int) -> void:
 			continue
 		repeated_type_count += 1
 		var enemy_data: EnemyData = enemy_data_by_id[enemy_id] as EnemyData
-		panel.add_enemy_row(enemy_data.display_name, enemy_count, enemy_data.sprite_texture)
+		panel.add_enemy_row(enemy_data.display_name, enemy_count, enemy_data.get_sprite_frame_texture())
 	if repeated_type_count == 0:
 		panel.show_empty_note()
 	var tooltip_minimum_size: Vector2 = panel.get_combined_minimum_size()
-	panel.size = Vector2(maxf(226.0, tooltip_minimum_size.x), tooltip_minimum_size.y)
-	var track_width: float = maxf(size.x - TRACK_LEFT_INSET - TRACK_RIGHT_INSET, 1.0)
+	panel.size = Vector2(maxf(tooltip_min_width, tooltip_minimum_size.x), tooltip_minimum_size.y)
+	var track_width: float = maxf(size.x - track_left_inset - track_right_inset, 1.0)
 	var window_index: int = wave_index - (_first_visible_round() - 1)
-	var point_x: float = TRACK_LEFT_INSET + track_width * float(window_index) / float(VISIBLE_ROUND_COUNT - 1)
+	var point_x: float = track_left_inset + track_width * float(window_index) / float(VISIBLE_ROUND_COUNT - 1)
 	panel.position = Vector2(
 		clampf(point_x - panel.size.x * 0.5, 0.0, maxf(0.0, size.x - panel.size.x)),
-		size.y + 5.0
+		size.y + tooltip_vertical_gap
 	)
 
 func _hide_wave_tooltip() -> void:

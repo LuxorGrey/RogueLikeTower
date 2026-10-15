@@ -13,12 +13,6 @@ var _is_following: bool = false
 var _segment_start_position: Vector2 = Vector2.ZERO
 var current_progress: float = 0.0
 
-func get_waypoint_index() -> int:
-	return _waypoint_index
-
-func get_waypoints() -> Array[Vector2]:
-	return _waypoints.duplicate()
-
 func get_remaining_route_waypoints() -> Array[Vector2]:
 	if _actor == null or not is_instance_valid(_actor) or _waypoints.is_empty():
 		return []

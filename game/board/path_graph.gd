@@ -146,11 +146,6 @@ func get_branch_count() -> int:
 			branch_count += 1
 	return branch_count
 
-func get_reachable_node_count() -> int:
-	if base_endpoint == null:
-		return 0
-	return _collect_reachable(base_endpoint.cell_coord).size()
-
 func _build_adjacency(
 	board_cells: Dictionary[Vector2i, HexCell],
 	path_cells: Dictionary[Vector2i, HexCell]

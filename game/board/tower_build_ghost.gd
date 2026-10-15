@@ -15,7 +15,7 @@ var _range_pixels: float = 0.0
 var _icon: Texture2D
 var _tower_id: StringName = &""
 var _icon_size: float = 54.0
-var _elevation_damage_bonus_per_level: float = 1.0
+var _elevation_damage_bonus: float = 0.0
 var _icon_sprite: Sprite2D
 var _ghost_material: ShaderMaterial
 
@@ -40,7 +40,7 @@ func set_preview(
 	icon: Texture2D,
 	icon_size: float,
 	board_cells: Dictionary[Vector2i, HexCell],
-	elevation_damage_bonus_per_level: float,
+	elevation_damage_bonus: float,
 	tower_id: StringName = &""
 ) -> void:
 	_active = active
@@ -50,7 +50,7 @@ func set_preview(
 	_icon = icon
 	_tower_id = tower_id
 	_icon_size = maxf(icon_size, 1.0)
-	_elevation_damage_bonus_per_level = maxf(elevation_damage_bonus_per_level, 0.0)
+	_elevation_damage_bonus = maxf(elevation_damage_bonus, 0.0)
 	_board_cells = board_cells
 	visible = active
 	_sync_ghost_sprite()
@@ -69,8 +69,7 @@ func _sync_ghost_sprite() -> void:
 	if cell == null:
 		_icon_sprite.visible = false
 		return
-	var center: Vector2 = HexMath.axial_to_world(HexCoord.new(_coord.x, _coord.y), HEX_RADIUS)
-	center.y -= float(cell.elevation) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET
+	var center: Vector2 = Tower.get_cell_world_position(Vector2.ZERO, _coord, cell.elevation, HEX_RADIUS)
 	_icon_sprite.texture = preview_texture
 	if use_tower_art:
 		var display_height: float = _icon_size * TOWER_ART_CATALOG_SCRIPT.DISPLAY_HEIGHT_MULTIPLIER
@@ -89,13 +88,12 @@ func _draw() -> void:
 	var cell: HexCell = _board_cells.get(_coord) as HexCell
 	if cell == null:
 		return
-	var center: Vector2 = HexMath.axial_to_world(HexCoord.new(_coord.x, _coord.y), HEX_RADIUS)
-	center.y -= float(cell.elevation) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET
-	var valid_tint := Color(0.22, 1.0, 0.40, 0.96)
-	var invalid_tint := Color(1.0, 0.12, 0.10, 0.98)
+	var center: Vector2 = Tower.get_cell_world_position(Vector2.ZERO, _coord, cell.elevation, HEX_RADIUS)
+	var valid_tint := Color("#b5ff42")
+	var invalid_tint := Color("#ff3152")
 	var tint: Color = valid_tint if _is_valid else invalid_tint
 	if _range_pixels > 0.0:
-		draw_arc(center, _range_pixels, 0.0, TAU, 72, Color(tint.r, tint.g, tint.b, 0.38), 2.0, true)
+		draw_arc(center, _range_pixels, 0.0, TAU, 96, Color(tint.r, tint.g, tint.b, 0.82), 3.0, true)
 	var corners := PackedVector2Array()
 	var axial_coord := HexCoord.new(_coord.x, _coord.y)
 	for corner_index in range(6):
@@ -107,12 +105,11 @@ func _draw() -> void:
 	for corner_index in range(corners.size() - 1):
 		draw_circle(corners[corner_index], 2.0, tint)
 	if cell.elevation > 0:
-		var damage_bonus: float = float(cell.elevation) * _elevation_damage_bonus_per_level
-		var bonus_text: String = "%d" % roundi(damage_bonus) if is_equal_approx(damage_bonus, roundf(damage_bonus)) else "%.1f" % damage_bonus
+		var bonus_text: String = "%d" % roundi(_elevation_damage_bonus) if is_equal_approx(_elevation_damage_bonus, roundf(_elevation_damage_bonus)) else "%.1f" % _elevation_damage_bonus
 		var badge_center: Vector2 = center + Vector2(0.0, -HEX_RADIUS - 13.0)
-		var badge_rect := Rect2(badge_center + Vector2(-26.0, -11.0), Vector2(52.0, 22.0))
+		var badge_rect := Rect2(badge_center + Vector2(-43.0, -11.0), Vector2(86.0, 22.0))
 		draw_rect(badge_rect, Color("#10231a"), true)
-		draw_rect(badge_rect, Color("#8de7aa"), false, 1.5, true)
-		draw_string(ThemeDB.fallback_font, badge_center + Vector2(-20.0, 5.0), "+%s daño" % bonus_text, HORIZONTAL_ALIGNMENT_LEFT, 42.0, 12, Color.WHITE)
+		draw_rect(badge_rect, Color("#b5ff42"), false, 1.8, true)
+		draw_string(ThemeDB.fallback_font, badge_center + Vector2(-38.0, 4.0), "h%d · +%s daño" % [cell.elevation, bonus_text], HORIZONTAL_ALIGNMENT_LEFT, 76.0, 11, Color.WHITE)
 	if _icon == null:
 		draw_circle(center + Vector2(0.0, -7.0 + ART_OFFSET_Y), 9.0, tint)

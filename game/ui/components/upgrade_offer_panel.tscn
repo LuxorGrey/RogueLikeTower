@@ -1,14 +1,17 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://game/ui/components/upgrade_offer_panel.gd" id="1_script"]
 [ext_resource type="Theme" path="res://game/ui/themes/rogue_hud_theme.tres" id="2_theme"]
 [ext_resource type="PackedScene" path="res://game/ui/components/upgrade_offer_card.tscn" id="3_card"]
+
+[sub_resource type="StyleBoxEmpty" id="PanelEmpty"]
 
 [node name="UpgradeOfferPanel" type="PanelContainer"]
 custom_minimum_size = Vector2(900, 440)
 mouse_filter = 0
 z_index = 20
 theme = ExtResource("2_theme")
+theme_override_styles/panel = SubResource("PanelEmpty")
 script = ExtResource("1_script")
 
 [node name="Content" type="VBoxContainer" parent="."]

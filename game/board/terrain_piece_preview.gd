@@ -20,6 +20,8 @@ const HEX_OUTLINE: Color = Color(0.82, 0.87, 0.84)
 const PATH_COLOR: Color = Color(0.35, 0.40, 0.43)
 const GRASS_COLOR: Color = Color(0.28, 0.57, 0.34)
 const MOUNTAIN_COLOR: Color = Color(0.63, 0.58, 0.48)
+const PLACEMENT_VALID_COLOR: Color = Color("#b5ff42")
+const PLACEMENT_INVALID_COLOR: Color = Color("#ff3152")
 const CLIFF_TEXTURE_PIXEL_DENSITY: float = 20.0
 const ROUTE_DEBUG_COLORS: Array[Color] = [
 	Color(0.25, 0.78, 1.0, 0.92),
@@ -136,7 +138,7 @@ func set_tower_build_preview(
 	range_pixels: float = 0.0,
 	icon_texture: Texture2D = null,
 	icon_size: float = 54.0,
-	elevation_damage_bonus_per_level: float = 1.0,
+	elevation_damage_bonus: float = 0.0,
 	tower_id: StringName = &""
 ) -> void:
 	if _tower_build_ghost != null:
@@ -149,7 +151,7 @@ func set_tower_build_preview(
 			icon_texture,
 			icon_size,
 			_board_cells,
-			elevation_damage_bonus_per_level,
+			elevation_damage_bonus,
 			tower_id
 		)
 
@@ -176,13 +178,6 @@ func set_placement_preview(
 	_placement_candidate_cells = candidate_cells
 	_sync_path_flow_overlay()
 	_sync_spawn_portals()
-	_rebuild_display_cells()
-	_refresh_hovered_cell()
-	queue_redraw()
-
-func set_rotation_steps(steps: int) -> void:
-	_rotation_steps = posmod(steps, 6)
-	_sync_path_flow_overlay()
 	_rebuild_display_cells()
 	_refresh_hovered_cell()
 	queue_redraw()
@@ -335,23 +330,20 @@ func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 	var fill_color := _terrain_color(cell.terrain_type)
 	var outline_color := HEX_OUTLINE
 	var outline_width: float = 2.0 if grid_opacity > 0.0 else 0.0
-	var region_color: Color = TERRAIN_VISUAL_CATALOG_SCRIPT.get_region_outline_color(
-		cell.terrain_type
-	)
-	var placement_tint: Color = region_color if _placement_is_valid else Color("#B85C55")
+	var placement_tint: Color = PLACEMENT_VALID_COLOR if _placement_is_valid else PLACEMENT_INVALID_COLOR
 	if is_ghost:
-		fill_color = fill_color.lerp(placement_tint, 0.48)
+		fill_color = fill_color.lerp(placement_tint, 0.38)
 		fill_color.a = 0.78
-		outline_color = region_color.lightened(0.08) if _placement_is_valid else placement_tint
-		outline_width = 2.5
+		outline_color = placement_tint
+		outline_width = 5.0
 		grid_opacity = 1.0
 	if is_hovered:
 		fill_color = _terrain_hover_color(cell.terrain_type)
 		if is_ghost:
-			fill_color = fill_color.lerp(placement_tint, 0.3)
-			fill_color.a = 0.88
+			fill_color = fill_color.lerp(placement_tint, 0.46)
+			fill_color.a = 0.92
 		if is_ghost:
-			outline_color = region_color.lightened(0.12) if _placement_is_valid else placement_tint
+			outline_color = placement_tint
 		else:
 			outline_color = fill_color.lightened(0.18)
 		outline_width = 4.5 if is_ghost else 3.5
@@ -370,7 +362,7 @@ func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 	)
 	if is_ghost or is_hovered:
 		var interaction_overlay: Color = placement_tint if is_ghost else _terrain_hover_color(cell.terrain_type)
-		interaction_overlay.a = 0.24 if is_ghost else 0.17
+		interaction_overlay.a = (0.48 if _placement_is_valid else 0.56) if is_ghost else 0.17
 		draw_colored_polygon(corners, interaction_overlay)
 	var combo_strength: int = int(_combo_strength_by_coord.get(cell.local_coord, 0))
 	if combo_strength >= 3:
@@ -385,6 +377,9 @@ func _draw_cell_top(cell: TerrainPieceCellData, is_ghost: bool = false) -> void:
 		outline_color.a *= grid_opacity if combo_strength < 3 else 1.0
 	if outline_width > 0.0 and (not _board_mode or is_ghost):
 		_draw_smooth_polyline(closed_corners, outline_color, outline_width)
+	if is_ghost:
+		_draw_smooth_polyline(closed_corners, Color(0.025, 0.04, 0.035, 0.92), 9.0)
+		_draw_smooth_polyline(closed_corners, placement_tint, 5.0)
 	if not _board_mode or is_ghost:
 		_draw_path_edges(cell, center, corners, is_ghost)
 

@@ -91,7 +91,7 @@ Contrato de M6: `BuildController` construye solo sobre `GRASS`/`MOUNTAIN` libres
 - UI debug de estadísticas.
 - Resultado: enemigos requieren respuestas diferentes.
 
-Contrato de la primera implementación M7: toda torre inyecta un `DamagePacket` en el `DamageService` de la escena `Main`; el servicio único resuelve tags de daño, Armor, Health y contrarregeneración. `EnemyData` configura Armor, regeneración por segundo y multiplicadores recibidos de daño físico/fuego/arcano. La regeneración acumula fracciones y nunca supera la Health máxima. Los perfiles de `Basic Bolt`, `Armor Piercing Bolt` y `Sapping Bolt`, además de la oleada de diagnóstico con un Armored Regenerator, son placeholders verificables y no balance final. El HUD de M7 ofrecía atajos 1–3; tras el roster M9.5 Ballista ocupa `1` y los perfiles de diagnóstico se acceden con `8`/`9`. `F3` mantiene el panel técnico y las oleadas básica/diagnóstica se pueden repetir para pruebas. M7 no procesa aún status, modificadores de run, recompensas ni economía: corresponden a M8/M11/M9. ADR-0010 registra fórmula, propiedad del servicio y provisionalidades; ADR-0011 documenta el HUD temporal de prueba.
+Histórico de la primera implementación M7: toda torre inyectaba un `DamagePacket` en el `DamageService` de `Main`; el servicio resolvía tags de daño, Armor, Health y contrarregeneración. `EnemyData` configuraba Armor, regeneración por segundo y multiplicadores recibidos de daño físico/fuego/arcano. Los perfiles `Basic Bolt`, `Armor Piercing Bolt` y `Sapping Bolt`, además de la oleada con Armored Regenerator, eran placeholders. El antiguo HUD tenía atajos 1–3 y un panel F3 para repetir diagnósticos; M61 retiró F3 y M64 eliminó la oleada/dummy. Hoy los perfiles `8`/`9` se conservan sin selector de oleadas. M12A define el daño vigente por capas. ADR-0010/0011 preservan el alcance histórico.
 
 ## M8 — Status Effects
 Implementar framework, no catálogo enorme.
@@ -102,7 +102,7 @@ Implementar framework, no catálogo enorme.
 - Resistencias si se necesitan.
 - Resultado: status combinables con torres.
 
-Contrato de la primera implementación: `StatusEffectData` es un Resource configurable; cada `Enemy` posee un controlador de efectos con estado runtime propio y cada torre declara payloads en `TowerData`. Slow reduce velocidad, Burn y Bleed hacen daño periódico a través del `DamageService`, y los estados duran, refrescan o acumulan según sus datos. Se selecciona Bleed como tercer ejemplo M8 provisional; no confirma por sí mismo el catálogo final. No se añaden resistencias porque el diseño todavía no define resistencias de estado. La escena de depuración ofrece `Status Probe (DEBUG)` y una oleada de un enemigo de entrenamiento para verificar acumulación, refresco, ticks, expiración y limpieza; el roster M9.5 reasigna la Status Probe al atajo `0`. Poison se incorpora como cuarto tag/status para el arquetipo M9.5. La aceptación manual sigue pendiente; ver [10_ACCEPTANCE_TESTS.md](10_ACCEPTANCE_TESTS.md) y [ADR-0012](../decisions/ADR-0012-framework-de-estados-m8.md).
+Contrato histórico de la primera implementación M8: `StatusEffectData` configura payloads y cada `Enemy` posee su estado runtime; Slow cambia movimiento y Burn/Bleed hacen ticks por `DamageService`. La oleada/dummy de entrenamiento se retiró en M64; Status Probe se conserva con `0` y se prueba sobre enemigos de campaña. Bleed/Poison y sus valores siguen provisionales; no hay resistencias confirmadas. ADR-0012 conserva el historial y la aceptación vigente está en [10_ACCEPTANCE_TESTS.md](10_ACCEPTANCE_TESTS.md).
 
 ## M9 — Economía de run + Mana
 - Moneda de construcción.
@@ -113,12 +113,12 @@ Contrato de la primera implementación: `StatusEffectData` es un Resource config
 - Sin support buildings.
 - Resultado: economía jugable.
 
-Contrato de implementación M9: `RunEconomyService` pertenece a `Main` y configura su estado desde `RunEconomyData`; el Gold de la run no usa `MetaProgression.meta_currency`. `TowerData` define coste de construcción, coste por cada nivel de mejora y Mana por ataque; `EnemyData` define recompensa por baja y `WaveData` la recompensa de ronda. Una baja concede su recompensa una sola vez; llegar a la base no la concede. La recompensa de ronda solo se paga al completar todos los spawns con cero enemigos vivos. Mejoras y construcciones verifican y cobran antes de confirmar la mutación; el atajo de una torre inasequible queda deshabilitado y atenuado. El Mana se consume antes de disparar y, si falta, la torre espera; la regeneración y capacidad son configurables. El perfil provisional empieza con la reserva completa, y la regeneración se describe sin decimales mediante equivalencias enteras sin cambiar su tasa interna. Los costes y cifras de arranque de esta primera integración son provisionales, no balance final. La escena de prueba mantiene replay de oleadas M7/M8; esto no implementa la secuencia completa M10.
+Contrato de implementación M9: `RunEconomyService` pertenece a `Main` y configura su estado desde `RunEconomyData`; el Gold de la run no usa `MetaProgression.meta_currency`. `TowerData` define coste de construcción, coste por cada nivel de mejora y Mana por ataque; `EnemyData` define recompensa por baja y `WaveData` la recompensa de ronda. Una baja concede su recompensa una sola vez; llegar a la base no la concede. La recompensa de ronda solo se paga al completar todos los spawns con cero enemigos vivos. Mejoras y construcciones verifican y cobran antes de confirmar la mutación; el atajo de una torre inasequible queda deshabilitado y atenuado. El Mana se consume antes de disparar y, si falta, la torre espera; la regeneración y capacidad son configurables. El perfil provisional empieza con la reserva completa, y la regeneración se describe sin decimales mediante equivalencias enteras sin cambiar su tasa interna. Los costes y cifras de arranque de esta primera integración son provisionales, no balance final. La antigua escena permitía repetir oleadas M7/M8; esos recursos se retiraron en M64 y no forman parte del loop M10.
 
 ## M9.5 — Roster jugable de demo (prioridad del usuario)
 - Crear los siete perfiles aceptados: Ballista, Mortar, Tesla Coil, Frost Keep, Flame Thrower, Poison Sprayer y Shredder.
 - Dar a cada perfil un ataque, estado/coste de Mana si aplica, forma vectorial provisional y acceso de construcción en gameplay.
-- Mantener los fixtures de diagnóstico M7/M8 disponibles sin desplazar el roster principal.
+- (HISTÓRICO; retirado en M64) Mantener fixtures de diagnóstico M7/M8 sin desplazar el roster principal; permanecen solo las torres de diagnóstico `8`, `9` y `0`.
 - Actualizar datos, aceptación y ADR antes de comenzar Cards.
 - Resultado: siete torres seleccionables y construibles que pueden probarse en la escena principal.
 
@@ -166,7 +166,7 @@ Contrato M12 implementado: `MetaProgression` conserva su estado fuera de las esc
 - Implementar disparos de Ballista/Mortar, área de Mortar, descarga de Tesla contra todos los enemigos en rango, caída e impacto individual de los copos Frost sobre PATH en rango cuadrado y RPM por cobertura, conos de Flame/Poison y hoja perforante de Shredder.
 - Cada nivel añade +1 de daño base y +1 a una capa H/A/S, al comprarse con Gold o al subir por XP mientras mantiene un objetivo. La torre muestra stats y XP por capa.
 - Añadir crítico por bandas, hasta tres prioridades de objetivo, precio por cantidad de torres del mismo tipo y demolición que reduce el siguiente precio.
-- Añadir una oleada DEBUG Health/Armor/Shield para verificar barra, daño, bonus +1 de ataque de cada estado y bloqueo de regeneración Bleed/Burn/Poison. Los ticks aplican daño completo a su capa asociada y mitad a las otras.
+- (HISTÓRICO; retirado en M64) Se había añadido una oleada DEBUG Health/Armor/Shield para verificar barra, daño, bonus +1 de ataque de cada estado y bloqueo de regeneración Bleed/Burn/Poison. Las capas se aceptan ahora con enemigos de campaña configurados; no se recrea el fixture.
 - Resultado: los siete perfiles y las capas defensivas se pueden inspeccionar, mejorar y probar en `Main` sin alterar stats compartidos ni la campaña.
 
 M12A está implementado en código; la aceptación manual sigue pendiente. Las reglas de capas y estados coinciden con las páginas de referencia indicadas en ADR-0023 y con la confirmación del usuario. Las cifras del roster y el pool siguen siendo configurables/provisionales. El exceso de daño al vaciar una capa se descarta según la implementación; la página de referencia no describe expresamente el overkill, por lo que esa decisión permanece provisional. Los criterios están en `10_ACCEPTANCE_TESTS.md` y [ADR-0023](../decisions/ADR-0023-reglas-de-torres-y-capas-de-vida.md).
@@ -477,6 +477,52 @@ Estas cantidades NO son compromiso de diseño final.
 - Retirar los retratos flotantes de enemigos sobre cada portal y conservar los tipos/conteos en un tooltip de hover con retratos.
 - Numerar las torres reclutadas en orden visible y asignarles atajos dinámicos `1–N`; mostrar la tecla en su card.
 - Reservar la rueda sin modificadores para zoom, incluso durante colocación de terreno; `Ctrl+rueda` rota la pieza y Q/E siguen disponibles.
-- Compartir el panel 9-slice del botón Iniciar ronda entre precios de torre y el Gold del HUD; Mana queda sin panel.
+- Compartir el panel 9-slice del botón Iniciar ronda entre precios de torre y el Gold del HUD; Mana quedó sin panel en esta etapa, sustituido por M61/ADR-0112.
 - Reducir un 10 % adicional la escala de torres colocadas y ghost: 1,056 → 0,9504; los iconos de UI no cambian.
 - Resultado: código/documentación integrados; aceptación visual e interactiva pendiente. Ver [ADR-0105](../decisions/ADR-0105-tooltip-de-spawn-atajos-oro-zoom-y-escala-de-torre.md).
+
+## M56 — Feedback de progresión, cards y oclusión
+- Ampliar y ordenar los iconos de estado; multiplicar por cinco la XP automática de seguimiento y usar el mismo feedback visual para subidas automáticas y manuales.
+- Dar iconos temáticos a las mejoras permanentes y hover inclinado con brillo radial a las cards de mejora, terreno y torre.
+- Mantener la oclusión Y-sort de las fachadas. La columna H/A/S y el agua oscura de esta etapa quedaron sustituidas por M59 y M57.
+- Resultado: integrado; aceptación visual e interactiva pendiente. Ver [ADR-0107](../decisions/ADR-0107-feedback-de-progresion-y-presentacion-de-cards.md).
+
+## M57 — Agua luminosa y explosión pixel de enemigos
+- Sustituir el agua oscura por manchas azules grandes y espuma casi blanca con movimiento lento.
+- Al morir un enemigo, muestrear su sprite/frame/orientación/escala en una ráfaga GPU reutilizable y conservar el feedback `coins_top`.
+- Resultado: integrado; aceptación visual y revisión de rendimiento pendientes. Ver [ADR-0108](../decisions/ADR-0108-agua-wind-waker-y-explosion-pixel-de-enemigo.md).
+
+## M58 — Sombra de nubes y agua anclada a cámara
+- Reforzar la opacidad de la sombra de nubes y anclar el patrón del agua a las coordenadas visibles del mundo durante paneo y zoom.
+- Resultado: integrado; aceptación visual pendiente. Ver [ADR-0109](../decisions/ADR-0109-sombra-de-nubes-reforzada-y-agua-anclada-a-camara.md).
+
+## M59 — Mejoras de torre en fila y shake de ronda
+- Presentar Health, Armor y Shield en una fila de botones cuadrados y compartir el panel de coste con las cards de torre.
+- Añadir una sacudida de cámara ambiental durante la ronda y combinarla con el impacto separado por daño a base.
+- Resultado: integrado; aceptación visual pendiente. Ver [ADR-0110](../decisions/ADR-0110-mejoras-de-capa-en-fila-y-shake-de-ronda.md).
+
+## M60 — Barra de XP y precios de demolición
+- Hacer la barra XP H/A/S más legible y mostrar `DEMOLER` con el reembolso/coste Gold; los portales mantienen `RETIRAR` con su coste.
+- Resultado: integrado; aceptación visual pendiente. Ver [ADR-0111](../decisions/ADR-0111-barra-de-xp-y-precios-de-demolicion.md).
+
+## M61 — Legibilidad de mejoras, HUD y colocación
+- Colorear ganancias y pérdidas, compactar la pausa y hacer visibles Q/E/T durante la colocación de terreno.
+- Mostrar la composición de un portal seleccionado en Tower Info, unificar los paneles Gold/Mana y retirar el panel técnico F3 y el selector runtime de fixtures.
+- Resultado: integrado según la especificación; aceptación visual e interactiva pendiente. Ver [ADR-0112](../decisions/ADR-0112-legibilidad-de-mejoras-hud-y-colocacion.md).
+
+## M62 — Correcciones de paneles y pausa de agua
+- Corregir rutas y jerarquía de paneles de retirada, centrar iconos H/A/S y exponer en Inspector el layout de Tower Info.
+- Mantener el detalle del portal seleccionado y congelar el patrón de agua durante pausa.
+- Resultado: integrado; aceptación de escena pendiente. Ver [ADR-0113](../decisions/ADR-0113-ajustes-de-paneles-y-pausa-de-agua.md).
+
+## M63 — Alcance, ghost exacto y mapa de mejoras
+- Compartir cálculos efectivos de daño/alcance entre torre, ficha y ghost; mostrar el radio de ataque en hover/selección y reforzar el color de validez del terreno.
+- Resumir solo los tipos de torre desplegados y alinear los siete unlocks con tres opciones H/A/S independientes en paralelo.
+- Resultado: integrado; aceptación visual e interactiva pendiente. Ver [ADR-0114](../decisions/ADR-0114-preview-de-torre-resumen-y-mapa-permanente.md).
+
+## M64 — UI editable desde Inspector y limpieza de recursos
+- Hacer que fuentes, tamaños, márgenes, separaciones, estilos de card, timeline, mapa permanente, portales y feedback H/A/S se editen desde escenas, Themes, StyleBoxes o propiedades exportadas, sin valores visuales ocultos que reemplacen la configuración guardada.
+- Reducir iconos de estado a 28×28 px y limitar la resolución importada de iconos, portal y cofre según su tamaño de dibujo, conservando los PNG originales.
+- Retirar recursos sin consumidores: 26 PNG alternativos autorizados, el marco antiguo de Tower Info, la capa de preview de portal no instanciada y Resources de enemigo/oleada M7/M8 que ya no puede seleccionar el juego.
+- Conservar los perfiles de torre DEBUG `8`, `9` y `0`, todavía funcionales en partidas normales.
+- Resultado: código/documentación integrados; aceptación de escena y revisión visual pendientes. Ver [ADR-0115](../decisions/ADR-0115-ui-inspector-y-limpieza-de-recursos.md).

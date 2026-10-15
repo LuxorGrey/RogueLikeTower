@@ -81,9 +81,6 @@ func cancel_build_mode() -> void:
 func is_build_mode() -> bool:
 	return _is_build_mode
 
-func get_active_tower_data() -> TowerData:
-	return _tower_data
-
 func get_tower_at(coord: Vector2i) -> Tower:
 	return _towers_by_coord.get(coord) as Tower
 
@@ -151,12 +148,11 @@ func get_preview_range_pixels(coord: Vector2i) -> float:
 	if _tower_data == null or _board_grid == null or not _board_grid.cells.has(coord):
 		return 0.0
 	var cell: HexCell = _board_grid.cells[coord]
-	var range_hexes: float = (
-		_tower_data.range_hexes
-		+ cell.elevation * _tower_data.height_range_bonus_per_level
+	var range_hexes: float = Tower.get_range_hexes_for(
+		_tower_data,
+		cell.elevation,
+		_run_card_service
 	)
-	if _run_card_service != null and is_instance_valid(_run_card_service):
-		range_hexes += float(_run_card_service.call("get_tower_range_add", _tower_data.id))
 	var neighbor_distance: float = HexMath.axial_to_world(HexCoord.new(1, 0), _hex_radius).length()
 	return range_hexes * neighbor_distance
 
@@ -258,22 +254,6 @@ func demolish_selected_tower() -> bool:
 	if _run_economy != null:
 		credited_refund = int(_run_economy.call("add_gold", refunded_gold, &"tower_demolish_refund"))
 	tower_demolished.emit(tower_data, get_current_build_cost(tower_data), credited_refund)
-	return true
-
-func set_selected_targeting_mode(mode: int) -> bool:
-	if not can_build_in_current_phase() or selected_tower == null or not is_instance_valid(selected_tower):
-		return false
-	if not selected_tower.set_targeting_priority(0, mode):
-		return false
-	tower_selected.emit(selected_tower, selected_tower.cell_coord)
-	return true
-
-func set_selected_targeting_priority(slot: int, mode: int) -> bool:
-	if not can_build_in_current_phase() or selected_tower == null or not is_instance_valid(selected_tower):
-		return false
-	if not selected_tower.set_targeting_priority(slot, mode):
-		return false
-	tower_selected.emit(selected_tower, selected_tower.cell_coord)
 	return true
 
 func set_selected_targeting_priorities(priorities: Array[int]) -> bool:

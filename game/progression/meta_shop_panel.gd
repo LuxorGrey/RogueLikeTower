@@ -12,6 +12,13 @@ var _pan_origin: Vector2 = Vector2.ZERO
 var _pan_last_position: Vector2 = Vector2.ZERO
 var _pan_dragging: bool = false
 
+@export_group("Outcome colors")
+@export var menu_color: Color = Color("#f1cf78")
+@export var debug_color: Color = Color("#f1cf78")
+@export var victory_color: Color = Color("#8fca8c")
+@export var defeat_color: Color = Color("#e58a72")
+@export var abandoned_color: Color = Color("#e0b85e")
+
 @onready var _currency_label: Label = %CurrencyLabel
 @onready var _summary_label: RichTextLabel = %SummaryLabel
 @onready var _outcome_label: Label = %OutcomeLabel
@@ -62,26 +69,26 @@ func _refresh() -> void:
 	match outcome:
 		"DEBUG":
 			_outcome_label.text = "MAPA DE MEJORAS · DEPURACIÓN"
-			_outcome_label.add_theme_color_override("font_color", Color("#f1cf78"))
+			_outcome_label.add_theme_color_override("font_color", debug_color)
 			_summary_label.hide()
 		"VICTORY":
 			_outcome_label.text = "RUN COMPLETADA"
-			_outcome_label.add_theme_color_override("font_color", Color("#8fca8c"))
+			_outcome_label.add_theme_color_override("font_color", victory_color)
 			_summary_label.text = _format_run_summary("Victoria")
 			_summary_label.show()
 		"DEFEAT":
 			_outcome_label.text = "DERROTA · VUELVE A INTENTARLO"
-			_outcome_label.add_theme_color_override("font_color", Color("#e58a72"))
+			_outcome_label.add_theme_color_override("font_color", defeat_color)
 			_summary_label.text = _format_run_summary("Derrota")
 			_summary_label.show()
 		"ABANDONED":
 			_outcome_label.text = "RUN FINALIZADA"
-			_outcome_label.add_theme_color_override("font_color", Color("#e0b85e"))
+			_outcome_label.add_theme_color_override("font_color", abandoned_color)
 			_summary_label.text = _format_run_summary("Run finalizada")
 			_summary_label.show()
 		_:
 			_outcome_label.text = "MAPA DE MEJORAS"
-			_outcome_label.add_theme_color_override("font_color", Color("#f1cf78"))
+			_outcome_label.add_theme_color_override("font_color", menu_color)
 			_summary_label.hide()
 	_currency_label.text = "%d" % int(MetaProgression.call("get_meta_currency"))
 	_progression_map.refresh()

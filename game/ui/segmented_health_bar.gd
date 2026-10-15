@@ -2,6 +2,9 @@ extends Control
 
 @export_range(1, 100, 1) var health_per_segment: int = 10
 @export_range(0.0, 8.0, 0.5) var segment_gap: float = 2.0
+@export var segment_background_color: Color = Color("#253238")
+@export var segment_border_color: Color = Color("#11191d")
+@export_range(0.0, 4.0, 0.25) var segment_border_width: float = 1.0
 
 var current_health: int = 0
 var maximum_health: int = 1
@@ -29,10 +32,10 @@ func _draw() -> void:
 			continue
 		var x: float = float(segment_index) * (segment_width + segment_gap)
 		var rect := Rect2(x, 0.0, segment_width, size.y)
-		draw_rect(rect, Color("#253238"), true)
+		draw_rect(rect, segment_background_color, true)
 		var health_before_segment: int = segment_index * health_per_segment
 		var health_in_segment: float = clampf(float(current_health - health_before_segment), 0.0, float(segment_health))
 		var fill_width: float = segment_width * health_in_segment / float(segment_health)
 		if fill_width > 0.0:
 			draw_rect(Rect2(x, 0.0, fill_width, size.y), fill_color, true)
-		draw_rect(rect, Color("#11191d"), false, 1.0, true)
+		draw_rect(rect, segment_border_color, false, segment_border_width, true)
