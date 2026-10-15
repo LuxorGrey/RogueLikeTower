@@ -9,6 +9,7 @@ signal stats_changed(level: int)
 const ELEVATION_PIXEL_OFFSET: float = 28.0
 const TOWER_VISUAL_SCALE: float = 0.9504
 const TOWER_CELL_VISUAL_OFFSET: Vector2 = Vector2(0.0, 8.0)
+const TARGETING_XP_GAIN_MULTIPLIER: float = 5.0
 const SHOOT_VFX_MIN_INTERVAL: float = 2.0
 const SHOOT_VFX_MAX_INTERVAL: float = 2.5
 const MAX_LEVEL_VISUAL_UPGRADES: int = 45
@@ -897,7 +898,7 @@ func _gain_targeting_xp(target: Enemy, delta: float) -> void:
 	if get_layer_upgrade_level(layer) >= _tower_data.max_layer_upgrades:
 		return
 	var range_hexes: float = maxf(get_current_range_hexes(), 0.25)
-	var earned_xp: float = (0.5 + 1.0 / (2.0 * range_hexes)) * delta
+	var earned_xp: float = (0.5 + 1.0 / (2.0 * range_hexes)) * delta * TARGETING_XP_GAIN_MULTIPLIER
 	var new_total: float = float(_targeting_xp_by_layer.get(layer, 0.0)) + earned_xp
 	while get_layer_upgrade_level(layer) < _tower_data.max_layer_upgrades:
 		var required_xp: float = get_xp_required_for_next_upgrade(layer)

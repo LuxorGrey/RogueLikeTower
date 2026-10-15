@@ -193,15 +193,18 @@ func _emit_node_selected(node_kind: StringName, node_id: StringName, node: Contr
 func _configure_tower_node(node: MetaUpgradeNode, tower_data: TowerData) -> void:
 	var unlocked: bool = bool(MetaProgression.call("is_tower_unlocked", tower_data))
 	var can_purchase: bool = bool(MetaProgression.call("can_purchase_tower", tower_data.unlock_id))
-	var status_text: String = "DESBLOQUEADA" if unlocked else "%d XP" % tower_data.meta_unlock_cost
+	var status_text: String = "DESBLOQUEADA" if unlocked else "%d" % tower_data.meta_unlock_cost
 	var tooltip: String = "%s\n%s\n" % [tower_data.display_name, tower_data.role_summary]
 	if unlocked:
 		tooltip += "Disponible para aparecer como card de reclutamiento en futuras runs."
 	else:
-		tooltip += "Desbloquea esta torre para que pueda aparecer en las cards de run. Coste: %d XP." % tower_data.meta_unlock_cost
+		tooltip += "Desbloquea esta torre para que pueda aparecer en las cards de run."
 	var tower_icon: Texture2D = ICON_CATALOG.call("get_tower_icon", tower_data.id) as Texture2D
 	if tower_icon == null:
 		tower_icon = ICON_CATALOG.call("get_icon", &"damage") as Texture2D
+	var currency_icon: Texture2D = null
+	if not unlocked:
+		currency_icon = ICON_CATALOG.call("get_icon", &"profile_currency") as Texture2D
 	node.configure_node(
 		tower_data.display_name,
 		tower_data.role_summary,
@@ -209,7 +212,8 @@ func _configure_tower_node(node: MetaUpgradeNode, tower_data: TowerData) -> void
 		tower_icon,
 		not can_purchase and not unlocked,
 		unlocked,
-		tooltip
+		tooltip,
+		currency_icon
 	)
 
 func _configure_upgrade_node(node: MetaUpgradeNode, upgrade: PermanentUpgradeData) -> void:
@@ -226,9 +230,9 @@ func _configure_upgrade_node(node: MetaUpgradeNode, upgrade: PermanentUpgradeDat
 	elif locked:
 		status_text = "BLOQUEADA"
 	elif not can_buy:
-		status_text = "FALTAN %d XP" % maxi(cost - current_xp, 0)
+		status_text = "FALTAN %d" % maxi(cost - current_xp, 0)
 	else:
-		status_text = "MEJORAR · %d XP" % cost
+		status_text = "MEJORAR · %d" % cost
 	var title: String = _upgrade_title(upgrade)
 	var details: String = _upgrade_summary(upgrade)
 	if upgrade.max_level > 1:
@@ -244,10 +248,13 @@ func _configure_upgrade_node(node: MetaUpgradeNode, upgrade: PermanentUpgradeDat
 	if not requirement_text.is_empty():
 		tooltip += "\nPara desbloquear: %s" % requirement_text
 	if cost >= 0:
-		tooltip += "\nNivel %d/%d · coste %d XP · saldo %d XP." % [level, upgrade.max_level, cost, current_xp]
+		tooltip += "\nNivel %d/%d." % [level, upgrade.max_level]
 	var upgrade_icon: Texture2D = ICON_CATALOG.call("get_permanent_upgrade_icon", upgrade) as Texture2D
 	if upgrade_icon == null:
 		upgrade_icon = ICON_CATALOG.call("get_icon", &"damage") as Texture2D
+	var currency_icon: Texture2D = null
+	if not locked and not maxed:
+		currency_icon = ICON_CATALOG.call("get_icon", &"profile_currency") as Texture2D
 	node.configure_node(
 		title,
 		details,
@@ -255,7 +262,8 @@ func _configure_upgrade_node(node: MetaUpgradeNode, upgrade: PermanentUpgradeDat
 		upgrade_icon,
 		locked or not can_buy or maxed,
 		level > 0,
-		tooltip
+		tooltip,
+		currency_icon
 	)
 
 func _has_upgrade_requirements(upgrade: PermanentUpgradeData) -> bool:

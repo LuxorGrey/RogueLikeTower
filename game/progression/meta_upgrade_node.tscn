@@ -55,10 +55,27 @@ horizontal_alignment = 1
 vertical_alignment = 1
 mouse_filter = 2
 
-[node name="Status" type="Label" parent="Surface/Content"]
+[node name="StatusRow" type="HBoxContainer" parent="Surface/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+alignment = 1
+mouse_filter = 2
+
+[node name="CurrencyIcon" type="TextureRect" parent="Surface/Content/StatusRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+visible = false
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+
+[node name="Status" type="Label" parent="Surface/Content/StatusRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
+size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 12
 theme_override_colors/font_color = Color(0.55, 0.9, 0.65, 1)
 autowrap_mode = 2

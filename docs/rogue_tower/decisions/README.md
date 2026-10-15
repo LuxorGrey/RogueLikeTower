@@ -92,6 +92,9 @@ Los ADR documentan decisiones de terreno, combate, campaña, progresión y UX en
 | [ADR-0104](ADR-0104-reduccion-del-20-por-ciento-de-escala-de-torre.md) | Reducción adicional del 20 % de escala de torre colocada y ghost | Código/documentación integrados; aceptación visual pendiente. Sustituye la escala de mundo/ghost de ADR-0103; mantiene tamaños UI. |
 | [ADR-0105](ADR-0105-tooltip-de-spawn-atajos-oro-zoom-y-escala-de-torre.md) | Tooltip de spawn, atajos secuenciales, zoom/rotación, panel de Gold y reducción de escala | Código/documentación integrados; aceptación visual/interactiva pendiente. Sustituye la escala de mundo/ghost de ADR-0104; mantiene tamaños UI. |
 | [ADR-0106](ADR-0106-vfx-de-evento-anclados-al-mundo-durante-el-paneo.md) | Anclaje de VFX de evento a coordenadas del mundo durante paneo y zoom | Código/documentación integrados; aceptación visual pendiente. Corrige el posicionamiento descrito en ADR-0101; mantiene su capa superior y proceso ALWAYS. |
+| [ADR-0107](ADR-0107-feedback-de-progresion-y-presentacion-de-cards.md) | XP de torre ×5, iconos de mejora y moneda, oclusión y hover de cards | Código/documentación integrados; aceptación visual pendiente. Añadió el agua oscura de M56, sustituida visualmente por ADR-0108, y botones compactos de demolición. |
+| [ADR-0108](ADR-0108-agua-wind-waker-y-explosion-pixel-de-enemigo.md) | Agua Wind Waker luminosa y muerte de enemigos por explosión de píxeles del sprite | Código/documentación integrados; aceptación visual y rendimiento con oleadas pendientes. Sustituye la presentación oscura del agua de ADR-0107; conserva su capa inferior. |
+| [ADR-0109](ADR-0109-sombra-de-nubes-reforzada-y-agua-anclada-a-camara.md) | Opacidad de nubes 0,20 y patrón de agua anclado a la cámara | Código/documentación integrados; aceptación visual durante paneo y zoom pendiente. Refina ADR-0099 y ADR-0108. |
 
 ## Regla para nuevos ADR
 

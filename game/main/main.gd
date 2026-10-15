@@ -180,8 +180,10 @@ var _priority_visibility_tower_instance_id: int = 0
 ]
 @onready var _camera: Camera2D = %Camera2D
 @onready var _feedback_vfx: Node2D = %FeedbackVfx
+@onready var _enemy_death_particles: Node2D = %EnemyDeathParticles
 var _cursor_feedback_vfx: Node2D
 @onready var _cloud_shadow_material: ShaderMaterial = %CloudShadowOverlay.material as ShaderMaterial
+@onready var _water_background_material: ShaderMaterial = $WaterBackgroundLayer/WaterBackground.material as ShaderMaterial
 @onready var _rotate_left: Button = %RotateLeft
 @onready var _rotate_right: Button = %RotateRight
 @onready var _entities: Node2D = %Entities
@@ -208,6 +210,7 @@ var _cursor_feedback_vfx: Node2D
 @onready var _world_object_enemy_scroll: ScrollContainer = %WorldObjectEnemyScroll
 @onready var _world_object_enemy_list: VBoxContainer = %WorldObjectEnemyList
 @onready var _remove_world_object_button: Button = %RemoveWorldObject
+@onready var _remove_world_object_cost_label: Label = %RemovalCostLabel
 @onready var _tower_priority_buttons: Array[OptionButton] = [
 	%TowerPriority1,
 	%TowerPriority2,
@@ -456,11 +459,19 @@ func _process(_delta: float) -> void:
 	_update_anchor_from_mouse()
 
 func _update_cloud_shadow_transform() -> void:
-	if _cloud_shadow_material == null or _camera == null:
+	if _camera == null:
 		return
-	_cloud_shadow_material.set_shader_parameter("camera_world_position", _camera.global_position)
-	_cloud_shadow_material.set_shader_parameter("viewport_size", get_viewport_rect().size)
-	_cloud_shadow_material.set_shader_parameter("camera_zoom", _camera.zoom.x)
+	var camera_position := _camera.get_screen_center_position()
+	var current_viewport_size := get_viewport_rect().size
+	var current_camera_zoom := _camera.zoom.x
+	if _cloud_shadow_material != null:
+		_cloud_shadow_material.set_shader_parameter("camera_world_position", camera_position)
+		_cloud_shadow_material.set_shader_parameter("viewport_size", current_viewport_size)
+		_cloud_shadow_material.set_shader_parameter("camera_zoom", current_camera_zoom)
+	if _water_background_material != null:
+		_water_background_material.set_shader_parameter("camera_world_position", camera_position)
+		_water_background_material.set_shader_parameter("viewport_size", current_viewport_size)
+		_water_background_material.set_shader_parameter("camera_zoom", current_camera_zoom)
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
@@ -839,9 +850,10 @@ func _configure_tower_upgrade_visuals() -> void:
 	for layer in _tower_upgrade_buttons.size():
 		var button := _tower_upgrade_buttons[layer] as TowerLayerUpgradeButton
 		button.text = ""
-		button.custom_minimum_size = Vector2(96.0, 98.0)
+		button.custom_minimum_size = Vector2(0.0, 96.0)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var layer_icon: TextureRect = button.layer_icon
-		layer_icon.custom_minimum_size = Vector2(32.0, 32.0)
+		layer_icon.custom_minimum_size = Vector2(52.0, 52.0)
 		var level_label: RichTextLabel = button.level_label
 		level_label.add_theme_color_override("default_color", _hp_layer_color(layer))
 		var xp_bar: ProgressBar = button.xp_bar
@@ -1723,8 +1735,9 @@ func _refresh_world_object_controls() -> void:
 	var removal_cost: int = _world_object_removal_cost()
 	var can_remove_now: bool = RunManager.phase == RunManager.Phase.ROUND_PREP and not _is_terrain_selection_locked()
 	var can_afford: bool = bool(_run_economy.call("can_afford_gold", removal_cost))
-	var removal_label: String = "Quitar obstáculo" if _selected_world_object_kind == &"obstacle" else "Quitar portal"
-	_remove_world_object_button.text = "%s · %d Gold" % [removal_label, removal_cost]
+	_remove_world_object_button.text = ""
+	_remove_world_object_cost_label.text = str(removal_cost)
+	_remove_world_object_button.tooltip_text = "Retirar · %d Gold" % removal_cost
 	_remove_world_object_button.disabled = not can_remove_now or not can_afford
 	if _selected_world_object_kind == &"obstacle":
 		var cell: HexCell = _board_grid.cells.get(_selected_obstacle_coord) as HexCell
@@ -2288,8 +2301,16 @@ func _play_ui_click_vfx() -> void:
 		return
 	_spawn_impact_vfx(&"ui_click", get_global_mouse_position())
 
-func _on_enemy_killed(world_position: Vector2) -> void:
-	_spawn_impact_vfx(&"enemy_killed", world_position)
+func _on_enemy_killed(enemy: Enemy) -> void:
+	if enemy == null or not is_instance_valid(enemy):
+		return
+	var death_position: Vector2 = enemy.get_death_vfx_position()
+	var sprite_snapshot: Sprite2D = enemy.create_death_vfx_sprite_snapshot()
+	if sprite_snapshot != null:
+		if is_instance_valid(_enemy_death_particles):
+			_enemy_death_particles.call("emit_death_particles_at", death_position, sprite_snapshot)
+		sprite_snapshot.free()
+	_spawn_impact_vfx(&"enemy_killed", enemy.global_position)
 
 func _on_tower_level_up_vfx(world_position: Vector2) -> void:
 	_spawn_impact_vfx(&"star_burst_gold", world_position)

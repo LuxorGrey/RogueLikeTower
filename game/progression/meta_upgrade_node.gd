@@ -6,6 +6,7 @@ extends Button
 @onready var _title: Label = %Title
 @onready var _description: Label = %Description
 @onready var _status: Label = %Status
+@onready var _currency_icon: TextureRect = %CurrencyIcon
 
 var _normal_style: StyleBoxFlat
 var _hover_style: StyleBoxFlat
@@ -29,13 +30,16 @@ func configure_node(
 	icon_texture: Texture2D,
 	locked: bool,
 	purchased: bool,
-	tooltip: String
+	tooltip: String,
+	status_currency_icon: Texture2D = null
 ) -> void:
 	if _title == null:
 		return
 	_title.text = title
 	_description.text = description
 	_status.text = status_text
+	_currency_icon.texture = status_currency_icon
+	_currency_icon.visible = status_currency_icon != null
 	_icon.texture = icon_texture
 	_icon.visible = true
 	tooltip_text = tooltip

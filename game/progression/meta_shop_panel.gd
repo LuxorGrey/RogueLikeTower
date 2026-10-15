@@ -13,7 +13,7 @@ var _pan_last_position: Vector2 = Vector2.ZERO
 var _pan_dragging: bool = false
 
 @onready var _currency_label: Label = %CurrencyLabel
-@onready var _summary_label: Label = %SummaryLabel
+@onready var _summary_label: RichTextLabel = %SummaryLabel
 @onready var _outcome_label: Label = %OutcomeLabel
 @onready var _close_button: Button = %CloseButton
 @onready var _progression_map: MetaProgressionMap = %ProgressionMap
@@ -83,7 +83,7 @@ func _refresh() -> void:
 			_outcome_label.text = "MAPA DE MEJORAS"
 			_outcome_label.add_theme_color_override("font_color", Color("#f1cf78"))
 			_summary_label.hide()
-	_currency_label.text = "XP DE PERFIL   %d" % int(MetaProgression.call("get_meta_currency"))
+	_currency_label.text = "%d" % int(MetaProgression.call("get_meta_currency"))
 	_progression_map.refresh()
 	var can_save: bool = bool(MetaProgression.call("can_persist_progress"))
 	if not can_save:
@@ -91,13 +91,13 @@ func _refresh() -> void:
 	elif not bool(_run_summary.get("saved", true)):
 		_currency_label.tooltip_text = "La recompensa de esta run no se guardó: %s" % String(MetaProgression.call("get_save_error"))
 	else:
-		_currency_label.tooltip_text = "XP permanente disponible para las mejoras."
+		_currency_label.tooltip_text = "Saldo disponible para las mejoras permanentes."
 
 func _format_run_summary(outcome_label: String) -> String:
 	var reached_round: int = int(_run_summary.get("reached_round", 1))
 	var completed_rounds: int = int(_run_summary.get("completed_rounds", 0))
 	var reward: int = int(_run_summary.get("meta_reward", 0))
-	var summary: String = "%s · ronda %02d/45 · %d completas · +%d XP" % [
+	var summary: String = "%s · ronda %02d/45 · %d completas · [img=18x18]res://assets/sprites/ui/icons/exp.png[/img] +%d" % [
 		outcome_label,
 		reached_round,
 		completed_rounds,

@@ -1,9 +1,9 @@
 # Auditoría de sprites
 
-- Fecha de revisión: 2026-10-14.
-- Alcance: los 147 archivos PNG bajo assets/sprites/, incluidos Tiny Swords y Cozy Chunky.
+- Fecha de revisión: 2026-10-15.
+- Alcance: los 131 archivos PNG bajo assets/sprites/, incluidos Tiny Swords y Cozy Chunky.
 - Método: búsqueda por nombre de archivo en scripts, escenas, Resources y configuración del proyecto (*.gd, *.tscn, *.tres, *.gdshader, *.godot, *.cfg, *.cs). Las coincidencias de TerrainVisualCatalog y los catálogos de iconos son referencias de runtime directas, aunque el contenido se seleccione por ID.
-- Resultado: 128 PNG tienen referencia de runtime localizada. Diecinueve no aparecen en el flujo actual: siete efectos Tiny Swords sustituidos, diez hojas Cozy Chunky aún sin uso y dos sprites históricos de UI. Se conservan; sus nombres y estado quedan reflejados abajo.
+- Resultado: 130 PNG tienen referencia de runtime localizada. Uno no aparece en el flujo actual: un sprite histórico de UI. Se conserva como candidato a legado.
 
 | PNG | Estado de runtime | Referencias / observación |
 |---|---|---|
@@ -74,7 +74,7 @@
 | assets/sprites/terrain/tiles/path_02.png | Usado | game/board/terrain_visual_catalog.gd |
 | assets/sprites/terrain/tiles/path_03.png | Usado | game/board/terrain_visual_catalog.gd |
 | assets/sprites/terrain/treasure_chest.png | Usado | game/board/terrain_visual_catalog.gd |
-| assets/sprites/ui/demolish_tower_icon.png | Sin uso localizado | Solo figura en ADR-0051 histórico; sin uso runtime localizado. Candidato a legado. |
+| assets/sprites/ui/demolish_tower_icon.png | Usado | `game/main/main.tscn`: acciones de demoler torre y retirar obstáculo. |
 | assets/sprites/ui/icons/area.png | Usado | game/ui/resources/icon_catalog.tres |
 | assets/sprites/ui/icons/armor.png | Usado | game/ui/resources/icon_catalog.tres, game/main/main.tscn |
 | assets/sprites/ui/icons/attack_speed.png | Usado | game/ui/resources/icon_catalog.tres |
@@ -86,6 +86,7 @@
 | assets/sprites/ui/icons/damage.png | Usado | game/ui/resources/icon_catalog.tres |
 | assets/sprites/ui/icons/elevation.png | Usado | game/ui/resources/icon_catalog.tres |
 | assets/sprites/ui/icons/enemy.png | Usado | game/ui/resources/icon_catalog.tres |
+| assets/sprites/ui/icons/exp.png | Usado | `game/ui/resources/icon_catalog.tres`, `game/progression/meta_shop_panel.tscn` y resumen BBCode de run. |
 | assets/sprites/ui/icons/flame_thrower.png | Usado | `game/towers/tower_art_catalog.gd` carga el PNG completo; icon catalog y retratos/cards lo comparten. |
 | assets/sprites/ui/icons/frost_keep.png | Usado | `game/towers/tower_art_catalog.gd` carga el PNG completo; icon catalog y retratos/cards lo comparten. |
 | assets/sprites/ui/icons/gold.png | Usado | game/ui/resources/icon_catalog.tres, game/ui/components/tower_shortcut_card.tscn, game/ui/components/tower_layer_upgrade_button.tscn, game/main/main.tscn |
@@ -140,30 +141,13 @@ M51 añadió 41 PNG locales de Cozy Chunky. El código usa directamente estos re
 | assets/sprites/ui/Cozy_Chunky/PNG_1x/status/frost.png | Usado | `game/enemies/enemy.gd`: estado Slow. |
 | assets/sprites/ui/Cozy_Chunky/PNG_1x/status/poison.png | Usado | `game/enemies/enemy.gd`: estado Poison. |
 | assets/sprites/ui/Cozy_Chunky/PNG_1x/status/stun.png | Usado | `game/enemies/enemy.gd`: mapeo de estado Stun, si se activa en runtime. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/magic/fire_hit_side.png | Sin uso localizado | Hoja de magia; no corresponde a ningún evento actual. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/magic/fire_hit_top.png | Sin uso localizado | Hoja de magia; no corresponde a ningún evento actual. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/magic/fireball.png | Sin uso localizado | Hoja de magia; no corresponde a ningún evento actual. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/magic/ice_hit_side.png | Sin uso localizado | Hoja de magia; no corresponde a ningún evento actual. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/magic/ice_hit_top.png | Sin uso localizado | Hoja de magia; no corresponde a ningún evento actual. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/magic/lightning_side.png | Sin uso localizado | Hoja de magia; no corresponde a ningún evento actual. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/magic/lightning_top.png | Sin uso localizado | Hoja de magia; no corresponde a ningún evento actual. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/magic/magic_burst.png | Sin uso localizado | Hoja de magia; no corresponde a ningún evento actual. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/magic/shield.png | Sin uso localizado | Hoja de magia; no corresponde a ningún evento actual. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/status/fire_side.png | Sin uso localizado | Hoja de estado lateral; no se usa para los estados activos actuales. |
 | assets/sprites/third_party/tiny_swords/cursors/Cursor_01.png | Usado | `game/ui/resources/icon_catalog.tres`: cursor normal. |
 | assets/sprites/third_party/tiny_swords/cursors/Cursor_02.png | Usado | `game/ui/resources/icon_catalog.tres`: cursor interactivo. |
 | assets/sprites/third_party/tiny_swords/cursors/Cursor_03.png | Usado | `game/ui/resources/icon_catalog.tres`: cursor de acción inválida. |
 | assets/sprites/third_party/tiny_swords/cursors/Cursor_04.png | Usado | `game/ui/resources/icon_catalog.tres`: cursor de construcción. |
-| assets/sprites/third_party/tiny_swords/particle_fx/Blood.png | Sin uso localizado | Efecto antiguo M16; sustituido por Cozy Chunky Shredder en ADR-0101. |
-| assets/sprites/third_party/tiny_swords/particle_fx/Dust_01.png | Sin uso localizado | Efecto antiguo M16; sustituido por Cozy Chunky Ballista en ADR-0101. |
-| assets/sprites/third_party/tiny_swords/particle_fx/Explosion_01.png | Sin uso localizado | Efecto antiguo M16; sustituido por Cozy Chunky Mortar en ADR-0101. |
-| assets/sprites/third_party/tiny_swords/particle_fx/Fire_03.png | Sin uso localizado | Efecto antiguo M16; sustituido por Cozy Chunky Flame Thrower en ADR-0101. |
-| assets/sprites/third_party/tiny_swords/particle_fx/Ice_01.png | Sin uso localizado | Efecto antiguo M16; sustituido por Cozy Chunky Frost Keep en ADR-0101. |
-| assets/sprites/third_party/tiny_swords/particle_fx/Poison.png | Sin uso localizado | Efecto antiguo M16; sustituido por Cozy Chunky Poison Sprayer en ADR-0101. |
-| assets/sprites/third_party/tiny_swords/particle_fx/TeslaCoil.png | Sin uso localizado | Efecto antiguo M16; sustituido por Cozy Chunky Tesla Coil en ADR-0101. |
 
 ## Conclusión
 
-Los demás PNG tienen referencias explícitas en el proyecto, normalmente en Resources (.tres), escenas (.tscn) o catálogos de arte. No se han detectado sprites usados por runtime que estén fuera de esta raíz. `demolish_tower_icon.png` y `tower_info_panel_frame.png` son UI histórica sin referencias runtime; las nueve hojas de `PNG_1x/magic`, `status/fire_side.png` y las siete partículas Tiny Swords listadas arriba no se usan actualmente. No se elimina ningún archivo en esta auditoría.
+Los demás PNG tienen referencias explícitas en el proyecto, normalmente en Resources (.tres), escenas (.tscn) o catálogos de arte. No se han detectado sprites usados por runtime que estén fuera de esta raíz. `tower_info_panel_frame.png` es el único PNG histórico sin referencia runtime localizada. Los efectos Tiny Swords y las diez hojas Cozy Chunky sin uso se eliminaron del checkout el 2026-10-15.
 
 Esta es una auditoría estática del código y Resources actuales; no infiere usos externos a Godot ni recursos cargados desde rutas construidas dinámicamente. El inventario debe actualizarse al agregar, mover o retirar sprites.

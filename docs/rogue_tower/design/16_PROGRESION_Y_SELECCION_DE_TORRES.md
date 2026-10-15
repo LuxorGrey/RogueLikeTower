@@ -23,22 +23,23 @@ Sea `n` el nivel actual de la capa antes de mejorar:
 ```text
 coste Gold siguiente = round(coste_base_de_capa × factor_coste^n)
 XP requerida siguiente = XP_base × factor_XP^n
-XP/s con objetivo = 0,5 + 1 / (2 × alcance_en_hexes)
+XP/s con objetivo = (0,5 + 1 / (2 × alcance_en_hexes)) × 5
 ```
 
 Las torres jugables usan 10 Gold base para Ballista/Mortar, 20 para Tesla Coil/Frost Keep y 30 para Flame Thrower/Poison Sprayer/Shredder. El umbral inicial es 100 XP por capa. El factor de coste y el factor de XP parten de 1,15. `TowerData` expone los valores para balancearlos independientemente; 1,15 es provisional y no se presenta como el balance exacto de Rogue Tower. Al nivel 15 esa capa ya no recibe XP ni permite compras.
 
-La torre gana XP en la capa de HP activa del objetivo que mantiene en alcance, aunque no lo esté dañando. Si el enemigo cambia de capa durante el seguimiento, la XP nueva va a la capa que esté activa en ese momento. Cada capa conserva su propia XP no gastada.
+La torre gana XP en la capa de HP activa del objetivo que mantiene en alcance, aunque no lo esté dañando. La tasa ejecutable multiplica por cinco la fórmula base. Si el enemigo cambia de capa durante el seguimiento, la XP nueva va a la capa que esté activa en ese momento. Cada capa conserva su propia XP no gastada. Una subida automática llama al mismo `level_up_effect_requested` que una subida manual, por lo que ambos caminos muestran el mismo VFX.
 
 ## Controles y feedback
 
-- Los tres botones muestran capa, nivel `n/15`, XP actual/umbral en barra coloreada, incremento y precio.
+- Los tres botones muestran capa, nivel `n/15`, XP actual/umbral en barra coloreada, incremento y precio; forman una sola columna y cada panel aprovecha el ancho disponible del panel padre. El icono de capa es el elemento visual dominante.
 - Un solo botón mejora una sola capa; los niveles y barras de las otras capas no cambian. El resumen de torre también enseña cada nivel y el total `n/45`.
 - Las prioridades se eligen con un selector inicial y un botón `+` contiguo. Cada pulsación revela la prioridad siguiente, hasta tres; las opciones 2 y 3 quedan ocultas por defecto. La segunda opción solo decide empates de la primera; la tercera solo decide empates anteriores. Si se selecciona un criterio ocupado en otra posición, ambos se intercambian; si se intenta duplicar en una posición vacía, la selección se revierte. La prioridad 1 es obligatoria y no hay criterios duplicados. Los tooltips explican cada métrica; «Menos HP total» suma los puntos actuales de Health, Armor y Shield.
 - La card inferior de la torre seleccionada pulsa. En build mode, el sprite y el alcance del preview se dibujan por delante del terreno y los obstáculos. Verde significa ubicación válida; rojo, no disponible.
 - El panel de información no pulsa. Conserva altura natural y, cuando la ventana no tiene espacio vertical suficiente, reduce su escala vertical desde el borde superior para permanecer entero en pantalla.
 - `Ctrl+K` abre herramientas temporales de depuración: Gold, Mana, curación de base, inicio de ronda, reinicio de run y desbloqueo temporal de torres/cartas. Los desbloqueos solo modifican el estado de memoria de la run y no se escriben al guardado.
 - Al ganar o gastar Gold, moneda e importe rebotan juntos en el HUD. El feedback escala el grupo completo y no desplaza controles hijos dentro del contenedor de recursos.
+- Cada mejora permanente y cada torre desbloqueable presenta su icono temático. Los costes, el saldo y las recompensas de la tienda usan `exp.png` junto a la cifra; no se escribe el nombre de esa moneda en la interfaz. La selección de una card de run, una pieza de terreno o una torre reclutada comparte un hover tipo Balatro con inclinación leve, aumento y brillo radial.
 - El hover sobre un obstáculo dibuja una aureola a partir del alfa del mismo PNG, siguiendo su silueta recortada.
 - PATH siempre está a elevación 0; Grass usa 1–2 y Mountain 2–3, sorteados de forma reproducible por seed de run. El anillo de la base no impone una elevación plana.
 - Ballista, Mortar y Tesla Coil son unlocks permanentes iniciales, pero cada run comienza solo con Ballista reclutada. Mortar/Tesla se ofrecen como reclutamientos en la primera oferta programada; otros unlocks permanentes pasan a ser elegibles en runs futuras. Sin la card de reclutamiento elegida, una torre no aparece en la barra ni se puede construir.

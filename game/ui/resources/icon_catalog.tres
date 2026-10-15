@@ -29,6 +29,7 @@
 [ext_resource type="Texture2D" uid="uid://byu7c3sfwmc21" path="res://assets/sprites/ui/icons/enemy.png" id="27_enemy"]
 [ext_resource type="Texture2D" uid="uid://dk4rb2emv1q2y" path="res://assets/sprites/ui/icons/elevation.png" id="28_elevation"]
 [ext_resource type="Texture2D" uid="uid://hvg4u5nx0u43" path="res://assets/sprites/ui/icons/card_archive.png" id="29_card_archive"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/icons/exp.png" id="30_profile_currency"]
 
 [resource]
 script = ExtResource("1_script")
@@ -52,6 +53,7 @@ flame_thrower = ExtResource("11_flame_thrower")
 poison_sprayer = ExtResource("12_poison_sprayer")
 shredder = ExtResource("13_shredder")
 card_archive = ExtResource("29_card_archive")
+profile_currency = ExtResource("30_profile_currency")
 burn = ExtResource("14_burn")
 slow = ExtResource("15_slow")
 poison = ExtResource("16_poison")

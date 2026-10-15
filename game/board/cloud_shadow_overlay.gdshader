@@ -2,7 +2,7 @@ shader_type canvas_item;
 render_mode unshaded;
 
 uniform vec4 shadow_color : source_color = vec4(0.025, 0.035, 0.055, 1.0);
-uniform float shadow_opacity : hint_range(0.0, 0.35) = 0.16;
+uniform float shadow_opacity : hint_range(0.0, 0.35) = 0.20;
 uniform float wind_speed : hint_range(0.0, 0.02) = 0.0025;
 uniform vec2 camera_world_position = vec2(0.0);
 uniform vec2 viewport_size = vec2(1152.0, 648.0);

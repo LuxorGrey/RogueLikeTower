@@ -83,7 +83,7 @@ Estas comparaciones muestran por qué elegir la capa es una decisión de daño y
 
 ### XP automática
 
-Durante `COMBAT`, una torre gana XP mientras mantiene un objetivo válido en alcance, aunque ese objetivo no reciba daño. La capa de HP activa del objetivo determina qué reserva recibe la XP. La tasa implementada es `0,5 + 1 / (2 × rango_en_hexes)` XP/s: a rango 2 da 0,75 XP/s (100 XP en ~133 s); a rango 5 da 0,6 XP/s (~167 s); a rango 10 da 0,55 XP/s (~182 s). Cada capa tiene su XP y contador de nivel independientes. El requisito siguiente es `base_xp × factor_xp^nivel_de_capa`, inicialmente 100 XP con factor provisional 1,15. Al reunirlo, sube esa capa y da el mismo +1 daño base y +1 multiplicador. Se deja de acumular XP únicamente cuando esa capa llega a nivel 15.
+Durante `COMBAT`, una torre gana XP mientras mantiene un objetivo válido en alcance, aunque ese objetivo no reciba daño. La capa de HP activa del objetivo determina qué reserva recibe la XP. La tasa base es `0,5 + 1 / (2 × rango_en_hexes)` XP/s y el multiplicador vigente es ×5: a rango 2 da 3,75 XP/s; a rango 5 da 3,0 XP/s; a rango 10 da 2,75 XP/s. Cada capa tiene su XP y contador de nivel independientes. El requisito siguiente es `base_xp × factor_xp^nivel_de_capa`, inicialmente 100 XP con factor provisional 1,15. Al reunirlo, sube esa capa y da el mismo +1 daño base y +1 multiplicador. La subida automática emite el mismo evento visual que la manual. Se deja de acumular XP únicamente cuando esa capa llega a nivel 15.
 
 La fórmula de XP coincide con la publicada por la wiki; el máximo 15 por capa y el umbral exponencial son reglas de progresión propias/configurables. Las tres prioridades cambian qué objetivo sostiene la XP y por tanto a qué capa se asigna.
 

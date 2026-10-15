@@ -369,6 +369,30 @@ func get_fortification_damage_reduction() -> float:
 func get_enemy_data() -> EnemyData:
 	return _enemy_data
 
+func get_death_vfx_position() -> Vector2:
+	return to_global(Vector2(0.0, -_jump_height + VISUAL_ART_OFFSET_Y))
+
+func create_death_vfx_sprite_snapshot() -> Sprite2D:
+	if _sprite_texture == null:
+		return null
+	var texture_size: Vector2 = Vector2(_sprite_texture.get_size())
+	if texture_size.x <= 0.0 or texture_size.y <= 0.0:
+		return null
+	var sprite_extent: float = _get_sprite_extent()
+	var snapshot := Sprite2D.new()
+	snapshot.texture = _sprite_texture
+	snapshot.hframes = 1
+	snapshot.vframes = 1
+	snapshot.frame = 0
+	snapshot.flip_h = _is_facing_left
+	snapshot.scale = global_scale * Vector2(
+		sprite_extent / texture_size.x,
+		sprite_extent / texture_size.y
+	)
+	var flash_ratio: float = _hit_flash_time_left / HIT_FLASH_DURATION
+	snapshot.modulate = Color.WHITE.lerp(_hit_flash_color, clampf(flash_ratio, 0.0, 1.0))
+	return snapshot
+
 func get_route() -> PathRoute:
 	return _route
 
@@ -669,16 +693,16 @@ func _draw_status_icons() -> void:
 		return
 	var status_ids: Array = stacks_by_id.keys()
 	status_ids.sort()
-	var icon_size: float = 22.0
-	var gap: float = 4.0
+	var icon_size: float = 44.0
+	var gap: float = 8.0
 	var total_width: float = float(status_ids.size()) * icon_size + float(maxi(status_ids.size() - 1, 0)) * gap
 	var start_x: float = -total_width * 0.5
-	var status_y: float = -_body_radius - 48.0
+	var status_y: float = -_body_radius - 64.0
 	for status_id_variant in status_ids:
 		var stacks: int = int(stacks_by_id[status_id_variant])
 		if stacks > 1:
-			var count_position: Vector2 = Vector2(start_x + icon_size + 1.0, status_y + icon_size + 1.0)
-			draw_string(PROJECT_FONT, count_position, str(stacks), HORIZONTAL_ALIGNMENT_RIGHT, 15.0, 12, Color.WHITE)
+			var count_position: Vector2 = Vector2(start_x + icon_size + 1.0, status_y + icon_size - 10.0)
+			draw_string(PROJECT_FONT, count_position, str(stacks), HORIZONTAL_ALIGNMENT_RIGHT, 15.0, 14, Color.WHITE)
 		start_x += icon_size + gap
 
 func _sync_status_icon_sprites() -> void:
@@ -711,7 +735,7 @@ func _sync_status_icon_sprites() -> void:
 				sprite_sheet,
 				frame_count,
 				12.0,
-				22.0,
+				44.0,
 				global_position,
 				true,
 				frame_count,
@@ -721,8 +745,8 @@ func _sync_status_icon_sprites() -> void:
 				icon.queue_free()
 				_status_icon_sprites.erase(status_id)
 				continue
-	var icon_size: float = 22.0
-	var gap: float = 4.0
+	var icon_size: float = 44.0
+	var gap: float = 8.0
 	var visible_ids: Array[StringName] = []
 	for status_id in active:
 		if _status_icon_sprites.has(status_id):
@@ -731,7 +755,7 @@ func _sync_status_icon_sprites() -> void:
 	var start_x: float = -total_width * 0.5
 	for status_id in visible_ids:
 		var icon: Sprite2D = _status_icon_sprites[status_id]
-		icon.position = Vector2(start_x + icon_size * 0.5, -_body_radius - 48.0 - _jump_height)
+		icon.position = Vector2(start_x + icon_size * 0.5, -_body_radius - 64.0 - _jump_height)
 		icon.visible = true
 		start_x += icon_size + gap
 	for status_id_variant in _status_icon_sprites.keys():

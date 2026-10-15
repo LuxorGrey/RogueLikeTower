@@ -810,7 +810,7 @@ Ejecutar `tests/ui_migration_smoke.tscn` en Godot 4.7. Debe completar e imprimir
 4. Completa una ronda que ofrezca mejoras: abre/cierra la oferta, inspecciona exactamente tres cartas y elige una. Confirma orden, contenido, animación y estado de la run; verifica que el `offer_size` de `CardPoolData` está fijado en 3 y el panel no deja seleccionar botones adicionales.
 5. Abre la tienda terminal y cambia entre pestañas. Desplaza listas largas, compra contenido disponible/no disponible, verifica monedas/mensajes, resultado y «Nueva run». Confirma que el guardado y los unlocks conservan el comportamiento anterior.
 6. Pasa el cursor por varios puntos de `RoundProgressStrip`. El tooltip debe conservar anclaje/ocultación y total; una sola fila por tipo repetido, mismo retrato y conteo. Comprueba cursor y hover al salir del strip.
-7. Selecciona `Main` y expande `ui_icon_catalog`: deben verse las 31 texturas del catálogo, agrupadas por recursos, capas, torres, estados y cursor. Cambia un icono de torre y confirma que se refleja en el retrato/cards que consultan el catálogo. Selecciona `TowerShortcut1…7` y `UpgradeHealth/Armor/Shield`; cada instancia debe exponer su `tower_icon_texture` o `layer_icon_texture` y previsualizarla en el `TextureRect` hijo. Comprueba también en esta propiedad los cuatro cursores usados por `BuildCursorOverlay`.
+7. Selecciona `Main` y expande `ui_icon_catalog`: deben verse las 32 texturas del catálogo, agrupadas por recursos, capas, torres, estados, moneda de perfil y cursor. Cambia un icono de torre y confirma que se refleja en el retrato/cards que consultan el catálogo. Selecciona `TowerShortcut1…7` y `UpgradeHealth/Armor/Shield`; cada instancia debe exponer su `tower_icon_texture` o `layer_icon_texture` y previsualizarla en el `TextureRect` hijo. Comprueba también en esta propiedad los cuatro cursores usados por `BuildCursorOverlay`.
 8. Selecciona `StartWave` y las tres `TerrainCard` en `main.tscn`; expande `Theme Overrides > Styles` y comprueba que sus StyleBoxTexture exponen el PNG, nueve cortes, márgenes y tintes de normal/hover/pressed/disabled. Cambia la textura para comprobar la vista previa. Abre `tower_shortcut_card.tscn` y revisa el marco 9-slice del botón.
 9. Abre `game/ui/themes/rogue_hud_theme.tres` y edita `Panel`/`PanelContainer`. Las superficies generales son StyleBoxFlat y no usan sprite; los cambios se deben ver en HUD, tienda, oferta y debug sin cambiar su jerarquía.
 10. Abre por separado las escenas de componentes en `game/ui/components/` y `game/progression/`. Ajusta tamaños en `custom_minimum_size`, márgenes y separación en sus `Container`, sustituye una textura en el `TextureRect` y confirma que los cambios se reflejan al instanciarlas desde `Main`.
@@ -820,3 +820,36 @@ M13 requiere además revisar los estados de selección/build mode del HUD y legi
 ## Scope
 - No existe support building.
 - Mana no depende de support building.
+
+## M56 — feedback de progresión, cards y oclusión
+
+1. Aplica estados con acumulaciones a enemigos de campaña: cada sprite de estado debe verse al menos al doble del tamaño anterior (44×44 px), mantener su animación, acumular iconos en una fila legible y conservar el contador de stacks.
+2. Revisa enemigos que cruzan junto a fachadas en elevaciones 1–3 y desde ambos lados visibles. La fachada debe cubrirlos cuando están detrás y quedar cubierta cuando pasan delante; el sesgo de empate no debe mover la textura ni abrir juntas.
+3. Comprueba la fila H/A/S en una ventana estrecha y una ancha: siempre es una columna, los tres controles ocupan el máximo ancho disponible del padre y los iconos se leen con claridad.
+4. Demuele una torre y un obstáculo: ambos botones son cuadrados compactos, muestran `demolish_tower_icon.png` como elemento principal y ejecutan la acción. El coste de obstáculo aparece con el icono Gold, no como texto dentro del botón.
+5. Abre cada rama del mapa permanente: todos los nodos tienen un icono que coincide con la torre/efecto; el saldo, coste y recompensa se acompañan de `exp.png` y no aparece texto «XP», «EXP» ni «experiencia» en esa interfaz.
+6. Durante varios ataques, compara tiempo hasta subida de nivel automática con la fórmula documentada ×5. Confirma que una subida automática reproduce el mismo `star_burst_gold` y `tower_level_up` que una mejora manual.
+7. Pasa el cursor por una mejora de run, una card de terreno y una card de torre. Las tres deben inclinarse y escalar ligeramente, con un brillo radial que sigue el cursor; los clics y la selección deben seguir funcionando.
+8. **Criterio histórico, sustituido por M57:** el fondo de agua de M56 era oscuro y de bajo contraste. La apariencia vigente se verifica en la sección M57.
+
+M56 está implementado en código/documentación; no se ejecutó Godot ni revisión visual/interactiva. La aceptación queda pendiente. Ver [ADR-0107](../decisions/ADR-0107-feedback-de-progresion-y-presentacion-de-cards.md).
+
+## M57 — agua luminosa y explosión pixel de enemigos
+
+1. Observa el fondo visible alrededor y entre las celdas: debe mostrar grandes manchas orgánicas azul medio/azul claro sobre espuma casi blanca, con movimiento lento y continuo, parecido a la referencia del usuario. Comprueba 1440×900 y 1280×720; el patrón debe conservar escala razonable y cubrir toda la pantalla.
+2. Confirma que `WaterBackgroundLayer` permanece por debajo del tablero, las unidades, los VFX y el HUD; el agua no intercepta clics ni altera terreno, hover, selección o zoom de cámara.
+3. Mata enemigos con sprites de proporciones y tamaños distintos, incluyendo uno que se mueve hacia la izquierda y uno durante el salto: el burst debe partir del centro visual, mostrar píxeles con los colores del sprite, respetar espejo y escala, y no usar coordenadas desfasadas.
+4. Panea y haz zoom mientras el burst está activo: las partículas deben permanecer junto al lugar del mundo donde murió el enemigo. Abre cards/terreno durante la animación: debe terminar por encima de la UI, sin detenerse.
+5. Verifica que cada muerte final reproduce tanto `coins_top` como el burst una sola vez y entrega su recompensa solo una vez; una transformación activada al morir no debe generar ninguna baja falsa.
+6. Durante bajas simultáneas confirma que cada efecto conserva su propia textura y orientación, el pool reutiliza emisores al terminar y no quedan partículas visibles en la siguiente baja por datos anteriores. Observa el tiempo de GPU con una oleada densa y sprites grandes.
+
+M57 está implementado en código/documentación; no se ejecutó Godot ni revisión visual o de rendimiento. La aceptación queda pendiente. Ver [ADR-0108](../decisions/ADR-0108-agua-wind-waker-y-explosion-pixel-de-enemigo.md).
+
+## M58 — sombra de nubes y agua anclada a cámara
+
+1. En un mapa con terreno visible, compara el sombreado con la versión anterior: las nubes deben notarse un poco más, sin tapar la textura ni cambiar el brillo del HUD.
+2. Panea en ambas direcciones: el patrón del agua debe desplazarse junto al mundo y conservar continuidad respecto a las celdas, sin quedarse fijo en pantalla ni flotar sobre el tablero.
+3. Cambia el zoom: el agua debe mantener cobertura completa del viewport, acompañar la escala del mundo y no modificar la posición de los controles, el tablero o la simulación.
+4. Confirma que agua y sombra siguen debajo del HUD, y que la animación procedural continúa en el tiempo.
+
+M58 está implementado en código/documentación; no se ejecutó Godot ni revisión visual. La aceptación queda pendiente. Ver [ADR-0109](../decisions/ADR-0109-sombra-de-nubes-reforzada-y-agua-anclada-a-camara.md).

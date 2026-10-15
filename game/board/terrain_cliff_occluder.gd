@@ -3,6 +3,7 @@ extends Node2D
 const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
 const HEX_RADIUS: float = 52.0
 const CLIFF_TEXTURE_PIXEL_DENSITY: float = 20.0
+const OCCLUSION_DEPTH_TIE_BIAS: float = 1.0
 
 var _terrain_type: int = HexCell.TerrainType.GRASS
 var _coord: Vector2i = Vector2i.ZERO
@@ -18,13 +19,17 @@ func configure_cliff(
 	coord: Vector2i,
 	elevation: int,
 	neighbor_elevation: int,
-	direction_index: int
+	direction_index: int,
+	base_sort_position: Vector2
 ) -> void:
 	_terrain_type = terrain_type
 	_coord = coord
 	_elevation = maxi(elevation, 0)
 	_neighbor_elevation = clampi(neighbor_elevation, 0, _elevation)
 	_direction_index = posmod(direction_index, 6)
+	# Shift only the Y-sort origin. `_draw` compensates the same offset in its
+	# local vertices, so the rendered facade stays at its original world position.
+	global_position = base_sort_position + Vector2(0.0, OCCLUSION_DEPTH_TIE_BIAS)
 	queue_redraw()
 
 func _draw() -> void:
@@ -53,6 +58,7 @@ func _draw() -> void:
 		(upper_start_world + upper_end_world) * 0.5
 		- ground_center
 		- lower_offset
+		+ Vector2(0.0, OCCLUSION_DEPTH_TIE_BIAS)
 	)
 	var cliff_texture: Texture2D = TERRAIN_VISUAL_CATALOG_SCRIPT.get_cliff_texture(_terrain_type)
 	var texture_size: Vector2i = cliff_texture.get_size()

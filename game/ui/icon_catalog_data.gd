@@ -30,6 +30,7 @@ extends Resource
 
 @export_group("Progresión")
 @export var card_archive: Texture2D
+@export var profile_currency: Texture2D
 
 @export_group("Estados")
 @export var burn: Texture2D
@@ -66,6 +67,7 @@ func get_icon(icon_name: StringName) -> Texture2D:
 		&"poison_sprayer": icon = poison_sprayer
 		&"shredder": icon = shredder
 		&"card_archive": icon = card_archive
+		&"profile_currency": icon = profile_currency
 		&"burn": icon = burn
 		&"slow": icon = slow
 		&"poison": icon = poison
@@ -94,16 +96,30 @@ func get_permanent_upgrade_icon(upgrade: Resource) -> Texture2D:
 	for tower_id in ["ballista", "mortar", "tesla_coil", "frost_keep", "flame_thrower", "poison_sprayer", "shredder"]:
 		if upgrade_id.begins_with("permanent_%s_" % tower_id):
 			return get_tower_icon(StringName(tower_id))
-	if upgrade_id in ["card_archive", "card_draw"]:
-		return get_icon(&"card_archive")
-	if upgrade_id in ["mana_reservoir", "mana_wellspring"]:
-		return get_icon(&"mana")
-	if upgrade_id in ["starting_coffers", "gold_drop", "chest_finder", "meta:chest_finder"]:
-		return get_icon(&"gold")
-	if upgrade_id == "tower_calibration":
-		return get_icon(&"damage")
-	if upgrade_id.begins_with("main_tower_"):
-		return get_icon(&"health")
+	var operations: Array = upgrade.get("operations_by_level")
+	for operation_variant in operations:
+		var operation: PermanentUpgradeOperation = operation_variant as PermanentUpgradeOperation
+		if operation == null:
+			continue
+		match operation.effect_type:
+			PermanentUpgradeOperation.EffectType.STARTING_GOLD_ADD, PermanentUpgradeOperation.EffectType.CHEST_SPAWN_CHANCE_ADD, PermanentUpgradeOperation.EffectType.GOLD_PER_KILL_ADD:
+				return get_icon(&"gold")
+			PermanentUpgradeOperation.EffectType.STARTING_MANA_ADD, PermanentUpgradeOperation.EffectType.MAXIMUM_MANA_ADD, PermanentUpgradeOperation.EffectType.MANA_REGEN_ADD:
+				return get_icon(&"mana")
+			PermanentUpgradeOperation.EffectType.TOWER_DAMAGE_MULTIPLIER:
+				return get_icon(&"damage")
+			PermanentUpgradeOperation.EffectType.UNLOCK_CONTENT:
+				var content_id := String(operation.unlocked_content_id)
+				for tower_id in ["ballista", "mortar", "tesla_coil", "frost_keep", "flame_thrower", "poison_sprayer", "shredder"]:
+					if content_id.contains(tower_id):
+						return get_tower_icon(StringName(tower_id))
+				return get_icon(&"card_archive")
+			PermanentUpgradeOperation.EffectType.CARD_OFFER_SIZE_ADD:
+				return get_icon(&"card_archive")
+			PermanentUpgradeOperation.EffectType.BASE_MAX_HEALTH_ADD, PermanentUpgradeOperation.EffectType.BASE_REPAIR_MAX_CHANCE_ADD:
+				return get_icon(&"health")
+			PermanentUpgradeOperation.EffectType.TOWER_HIT_POINT_MULTIPLIER_ADD:
+				return get_tower_icon(operation.affected_tower_id)
 	return get_icon(&"damage")
 
 func get_card_icon(card: Resource) -> Texture2D:

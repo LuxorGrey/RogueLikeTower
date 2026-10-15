@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://game/progression/meta_shop_panel.gd" id="1_script"]
 [ext_resource type="Theme" path="res://game/ui/themes/rogue_hud_theme.tres" id="2_theme"]
 [ext_resource type="PackedScene" path="res://game/progression/meta_progression_map.tscn" id="3_map"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/icons/exp.png" id="4_profile_currency"]
 
 [node name="MetaShopPanel" type="CanvasLayer"]
 script = ExtResource("1_script")
@@ -59,21 +60,36 @@ theme_override_colors/font_color = Color(0.91, 0.78, 0.47, 1)
 text = "MAPA DE MEJORAS"
 vertical_alignment = 1
 
-[node name="CurrencyLabel" type="Label" parent="MetaShopRoot/MetaShop/Margin/Content/Header"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(230, 38)
+[node name="CurrencyGroup" type="HBoxContainer" parent="MetaShopRoot/MetaShop/Margin/Content/Header"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 19
+theme_override_constants/separation = 7
+alignment = 1
+
+[node name="CurrencyIcon" type="TextureRect" parent="MetaShopRoot/MetaShop/Margin/Content/Header/CurrencyGroup"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+texture = ExtResource("4_profile_currency")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CurrencyLabel" type="Label" parent="MetaShopRoot/MetaShop/Margin/Content/Header/CurrencyGroup"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(74, 38)
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
 theme_override_colors/font_color = Color(0.9, 0.75, 0.42, 1)
 horizontal_alignment = 2
-text = "XP DE PERFIL   0"
+text = "0"
 
-[node name="SummaryLabel" type="Label" parent="MetaShopRoot/MetaShop/Margin/Content"]
+[node name="SummaryLabel" type="RichTextLabel" parent="MetaShopRoot/MetaShop/Margin/Content"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 theme_override_colors/font_color = Color(0.8, 0.83, 0.82, 1)
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
 autowrap_mode = 2
 text = ""
 

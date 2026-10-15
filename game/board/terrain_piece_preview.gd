@@ -577,14 +577,14 @@ func _sync_elevation_cliff_occluders() -> void:
 			var corner_start: Vector2 = HexMath.axial_hex_corner(axial_coord, edge_start, HEX_RADIUS)
 			var corner_end: Vector2 = HexMath.axial_hex_corner(axial_coord, edge_end, HEX_RADIUS)
 			var sort_anchor: Vector2 = (corner_start + corner_end) * 0.5 - ground_center - lower_offset
-			cliff.global_position = global_position + ground_center + sort_anchor
 			cliff.call(
 				"configure_cliff",
 				cell.terrain_type,
 				coord,
 				cell.elevation,
 				neighbor_elevation,
-				direction_index
+				direction_index,
+				global_position + ground_center + sort_anchor
 			)
 	for edge_key in _terrain_cliff_occluders_by_edge.keys():
 		if active_edges.has(edge_key):

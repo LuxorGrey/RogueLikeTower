@@ -1,92 +1,92 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://d1bqlt8bxhsso"]
 
-[ext_resource type="Script" path="res://game/ui/components/tower_layer_upgrade_button.gd" id="1_script"]
-[ext_resource type="Theme" path="res://game/ui/themes/rogue_hud_theme.tres" id="2_theme"]
-[ext_resource type="Texture2D" path="res://assets/sprites/ui/icons/gold.png" id="3_gold"]
+[ext_resource type="Script" uid="uid://bd26kot1b8dl" path="res://game/ui/components/tower_layer_upgrade_button.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://b8nogcxauq43u" path="res://game/ui/themes/rogue_hud_theme.tres" id="2_theme"]
+[ext_resource type="Texture2D" uid="uid://d4li2faa8wpjj" path="res://assets/sprites/ui/icons/gold.png" id="3_gold"]
 
-[node name="TowerLayerUpgradeButton" type="Button"]
-custom_minimum_size = Vector2(96, 98)
-text = ""
+[node name="TowerLayerUpgradeButton" type="Button" unique_id=2003624187]
+custom_minimum_size = Vector2(0, 96)
+offset_right = 109.0
+offset_bottom = 96.0
+size_flags_horizontal = 3
 theme = ExtResource("2_theme")
 script = ExtResource("1_script")
 
-[node name="Content" type="VBoxContainer" parent="."]
+[node name="Content" type="VBoxContainer" parent="." unique_id=1169266231]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-alignment = 1
-theme_override_constants/separation = 1
 mouse_filter = 2
+theme_override_constants/separation = 1
+alignment = 1
 
-[node name="LayerIcon" type="TextureRect" parent="Content"]
+[node name="LayerIcon" type="TextureRect" parent="Content" unique_id=681367541]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(32, 32)
+custom_minimum_size = Vector2(52, 52)
 layout_mode = 2
 size_flags_horizontal = 4
+mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
-mouse_filter = 2
 
-[node name="LevelLabel" type="RichTextLabel" parent="Content"]
+[node name="LevelLabel" type="RichTextLabel" parent="Content" unique_id=786992838]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 12)
 layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/normal_font_size = 9
+bbcode_enabled = true
+text = "[b]NIVEL 0 / 15[/b]"
 fit_content = true
 scroll_active = false
-bbcode_enabled = true
-theme_override_font_sizes/normal_font_size = 9
-text = "[b]NIVEL 0 / 15[/b]"
 horizontal_alignment = 1
-mouse_filter = 2
 
-[node name="XPBar" type="ProgressBar" parent="Content"]
+[node name="XPBar" type="ProgressBar" parent="Content" unique_id=1539706282]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
 size_flags_horizontal = 3
-max_value = 100.0
-show_percentage = false
 mouse_filter = 2
+theme_override_font_sizes/font_size = 16
+show_percentage = false
 
-[node name="XPLabel" type="Label" parent="Content"]
+[node name="XPLabel" type="Label" parent="Content" unique_id=485188366]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
-theme_override_font_sizes/font_size = 9
 theme_override_colors/font_color = Color(0.835294, 0.862745, 0.878431, 1)
+theme_override_font_sizes/font_size = 9
 text = "XP 0 / 1"
 horizontal_alignment = 1
-mouse_filter = 2
 
-[node name="EffectLabel" type="Label" parent="Content"]
+[node name="EffectLabel" type="Label" parent="Content" unique_id=1968686617]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 9
+theme_override_font_sizes/font_size = 13
 text = "Efecto de capa"
 horizontal_alignment = 1
-mouse_filter = 2
 
-[node name="PriceRow" type="HBoxContainer" parent="Content"]
+[node name="PriceRow" type="HBoxContainer" parent="Content" unique_id=1564537834]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 4
 alignment = 1
-mouse_filter = 2
 
-[node name="CostIcon" type="TextureRect" parent="Content/PriceRow"]
+[node name="CostIcon" type="TextureRect" parent="Content/PriceRow" unique_id=491820901]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(14, 14)
 layout_mode = 2
+mouse_filter = 2
 texture = ExtResource("3_gold")
 expand_mode = 1
 stretch_mode = 5
-mouse_filter = 2
 
-[node name="AmountLabel" type="Label" parent="Content/PriceRow"]
+[node name="AmountLabel" type="Label" parent="Content/PriceRow" unique_id=1062410038]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
 theme_override_colors/font_color = Color(1, 0.886275, 0.603922, 1)
+theme_override_font_sizes/font_size = 18
 text = "0"
-mouse_filter = 2
