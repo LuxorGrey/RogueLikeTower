@@ -29,6 +29,17 @@ const MAIN_MENU_PATH: String = "res://game/menu/main_menu.tscn"
 const DEBUG_HACKS_PANEL_SCENE: PackedScene = preload("res://game/ui/debug_hacks_panel.tscn")
 const ICON_CATALOG_RESOURCE: Resource = preload("res://game/ui/resources/icon_catalog.tres")
 const IMPACT_VFX_SCRIPT: Script = preload("res://game/vfx/animated_impact.gd")
+const TOWER_VFX_LOOP_COUNTS: Dictionary = {
+	&"shot_ballista": 8, &"impact_ballista": 12,
+	&"shot_mortar": 12, &"impact_mortar": 18,
+	&"shot_tesla": 18, &"impact_tesla": 12,
+	&"shot_frost": 12, &"impact_frost": 12,
+	&"shot_flame": 18, &"impact_flame": 18,
+	&"shot_poison": 12, &"impact_poison": 12,
+	&"shot_shredder": 12, &"impact_shredder": 12,
+	&"mortar_target_ripple": 16,
+}
+const TOWER_LEVEL_UP_FEEDBACK_SCENE: PackedScene = preload("res://game/vfx/tower_level_up_feedback.tscn")
 const TERRAIN_VISUAL_CATALOG_SCRIPT: Script = preload("res://game/board/terrain_visual_catalog.gd")
 const TOWER_ART_CATALOG_SCRIPT: Script = preload("res://game/towers/tower_art_catalog.gd")
 const TOWER_ROSTER: TowerRosterData = preload("res://data/towers/tower_roster.tres")
@@ -69,6 +80,7 @@ var _active_wave_name: String = "Oleada básica"
 var _campaign_round_number: int = 1
 var _campaign_is_valid: bool = true
 var _awaiting_campaign_expansion: bool = false
+var _debug_terrain_selection_open: bool = false
 var _selected_tower_data: TowerData = BALLISTA_TOWER
 var _hovered_coord: Vector2i = Vector2i.ZERO
 var _has_hovered_cell: bool = false
@@ -82,7 +94,7 @@ var _placement_preview_board: Dictionary[Vector2i, HexCell] = {}
 var _placement_blocks_future_path: bool = false
 var _pending_expansion_round: int = 0
 var _pending_expansion_reward: int = 0
-var _upgrade_card_buttons: Array[Button] = []
+var _upgrade_card_buttons: Array[UpgradeOfferCard] = []
 var _upgrade_card_titles: Array[RichTextLabel] = []
 var _upgrade_card_descriptions: Array[RichTextLabel] = []
 var _upgrade_card_heading: Label
@@ -91,6 +103,7 @@ var _island_offer_return_phase: int = RunManager.Phase.ROUND_PREP
 var _island_offer_was_paused: bool = false
 var _pending_island_treasure_id: StringName = &""
 var _island_exploration_timer: float = 0.0
+var _fog_reveal_radius: float = 0.0
 var _meta_shop_panel: CanvasLayer
 @export var ui_icon_catalog: Resource = ICON_CATALOG_RESOURCE
 
@@ -139,8 +152,7 @@ var _meta_shop_panel: CanvasLayer
 @export_range(0.5, 4.0, 0.1) var camera_pan_margin_round_45_hexes: float = 2.5
 
 @export_group("Map fog")
-@export_range(0.0, 8.0, 0.1) var fog_margin_round_one_hexes: float = 1.5
-@export_range(0.0, 8.0, 0.1) var fog_margin_round_45_hexes: float = 3.0
+@export_range(0.0, 8.0, 0.1) var fog_terrain_margin_hexes: float = 1.5
 @export_range(24.0, 600.0, 1.0) var fog_fade_distance: float = 170.0
 @export_range(0.0, 120.0, 1.0) var fog_edge_roughness: float = 34.0
 
@@ -155,6 +167,7 @@ var _meta_shop_panel: CanvasLayer
 @export var base_health_warning_color: Color = Color("#e5be6a")
 @export var gold_reward_flash_color: Color = Color("#fff0a6")
 @export var gold_spend_flash_color: Color = Color("#f5e2a8")
+
 @export_group("Base health feedback")
 @export_range(0.0, 0.5, 0.01) var base_health_vignette_three_hp_intensity: float = 0.12
 @export_range(0.0, 0.6, 0.01) var base_health_vignette_two_hp_intensity: float = 0.23
@@ -170,13 +183,13 @@ var _meta_shop_panel: CanvasLayer
 
 @export_group("Combat feedback sprite sizes")
 @export var impact_vfx_display_sizes: Dictionary = {
-	&"shot_ballista": 78.0, &"impact_ballista": 68.0,
-	&"shot_mortar": 90.0, &"impact_mortar": 128.0,
-	&"shot_tesla": 88.0, &"impact_tesla": 90.0,
-	&"shot_frost": 86.0, &"impact_frost": 86.0,
-	&"shot_flame": 92.0, &"impact_flame": 92.0,
-	&"shot_poison": 88.0, &"impact_poison": 88.0,
-	&"shot_shredder": 84.0, &"impact_shredder": 84.0,
+	&"shot_ballista": 50.0, &"impact_ballista": 90.0,
+	&"shot_mortar": 60.0, &"impact_mortar": 128.0,
+	&"shot_tesla": 70.0, &"impact_tesla": 96.0,
+	&"shot_frost": 62.0, &"impact_frost": 100.0,
+	&"shot_flame": 70.0, &"impact_flame": 96.0,
+	&"shot_poison": 65.0, &"impact_poison": 96.0,
+	&"shot_shredder": 64.0, &"impact_shredder": 90.0,
 	&"mortar_target_ripple": 108.0, &"star_burst_gold": 156.0,
 	&"coin_burst_gold": 152.0, &"terrain_piece_placed": 126.0,
 	&"enemy_killed": 86.0, &"tower_level_up": 78.0,
@@ -193,7 +206,6 @@ var _camera_shake_origin: Vector2 = Vector2.ZERO
 var _camera_damage_shake_offset: Vector2 = Vector2.ZERO
 var _wave_camera_shake_active: bool = false
 var _wave_camera_shake_elapsed: float = 0.0
-var _water_background_time: float = 0.0
 var _base_health_vignette_intensity: float = 0.0
 var _base_health_vignette_display_intensity: float = 0.0
 var _base_health_vignette_level: int = 0
@@ -237,6 +249,7 @@ var _priority_visibility_tower_instance_id: int = 0
 @onready var _hud: CanvasLayer = %HUD
 @onready var _selection_backdrop: ColorRect = %SelectionBackdrop
 @onready var _upgrade_card_panel: UpgradeOfferPanel = %UpgradeCardPanel
+@onready var _run_card_tray: RunCardTray = %RunCardTray
 @onready var _build_cursor_overlay: TextureRect = %BuildCursor
 @onready var _terrain_card_panel: PanelContainer = %TerrainCardPanel
 @onready var _terrain_card_buttons: Array[Button] = [
@@ -335,7 +348,12 @@ var _base_repair_rng := RandomNumberGenerator.new()
 var _pause_menu: Node
 var _run_end_in_progress: bool = false
 
+@onready var _scene_transition_overlay: ColorRect = %SceneTransitionOverlay
+
 func _ready() -> void:
+	_scene_transition_overlay.visible = true
+	_scene_transition_overlay.modulate = Color(1.0, 1.0, 1.0, 0.18)
+	UIButtonHoverInstaller.install(self)
 	Engine.time_scale = 1.0
 	_ensure_cursor_feedback_layer()
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
@@ -357,8 +375,12 @@ func _ready() -> void:
 	_camera.position = get_viewport_rect().size * 0.5
 	_camera.make_current()
 	_camera_shake_origin = _camera.offset
+	var initial_water_time: float = GameState.water_background_time
 	if _water_background_material != null:
 		_water_background_material.set_shader_parameter("parallax_origin", _camera.position)
+		_water_background_material.set_shader_parameter("water_time", initial_water_time)
+	if _map_fog_material != null:
+		_map_fog_material.set_shader_parameter("water_time", initial_water_time)
 	_update_cloud_shadow_transform()
 	_pieces = [
 		STRAIGHT_PIECE, GENTLE_TURN_PIECE, HARD_TURN_PIECE, FORK_PIECE, CONVERGENCE_PIECE,
@@ -515,6 +537,18 @@ func _ready() -> void:
 	_terrain_card_panel.hide()
 	_upgrade_card_panel.hide()
 	_sync_selection_backdrop()
+	_play_scene_intro()
+
+func _play_scene_intro() -> void:
+	_scene_transition_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	var tween := create_tween().set_ignore_time_scale(true)
+	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(_scene_transition_overlay, "modulate:a", 0.0, 0.52)
+	tween.tween_callback(func() -> void:
+		if is_instance_valid(_scene_transition_overlay):
+			_scene_transition_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			_scene_transition_overlay.queue_free()
+	)
 
 func _exit_tree() -> void:
 	Engine.time_scale = 1.0
@@ -544,11 +578,12 @@ func _ensure_cursor_feedback_layer() -> void:
 	_cursor_feedback_vfx = cursor_vfx
 
 func _process(_delta: float) -> void:
-	_water_background_time += _delta
+	GameState.water_background_time += _delta
+	var water_time: float = GameState.water_background_time
 	if _water_background_material != null:
-		_water_background_material.set_shader_parameter("water_time", _water_background_time)
+		_water_background_material.set_shader_parameter("water_time", water_time)
 	if _map_fog_material != null:
-		_map_fog_material.set_shader_parameter("water_time", _water_background_time)
+		_map_fog_material.set_shader_parameter("water_time", water_time)
 	_update_base_health_vignette(_delta)
 	_update_camera_keyboard_pan(_delta)
 	_update_camera_shake_motion(_delta)
@@ -574,13 +609,14 @@ func _update_island_exploration(delta: float) -> void:
 		return
 	_island_exploration_timer = fposmod(_island_exploration_timer, 0.15)
 	var camera_position: Vector2 = _camera.get_screen_center_position()
-	var viewport_size: Vector2 = get_viewport_rect().size
-	var safe_zoom: float = maxf(_camera.zoom.x, 0.001)
-	var world_size: Vector2 = viewport_size / safe_zoom
-	var world_rect := Rect2(camera_position - world_size * 0.5, world_size)
-	if _island_field.update_exploration(camera_position, world_rect):
+	if _island_field.update_exploration(
+		_base.global_position,
+		_fog_reveal_radius,
+		_get_fog_clear_edge_margin()
+	):
 		_refresh_map_environment()
-	_island_compass.set_targets(_island_field.get_compass_targets(camera_position))
+	var compass_target: Dictionary = _island_field.get_nearest_undiscovered_compass_target(camera_position)
+	_island_compass.set_target(compass_target)
 
 func _update_cloud_shadow_transform() -> void:
 	if _camera == null:
@@ -607,17 +643,23 @@ func _update_cloud_shadow_transform() -> void:
 func _refresh_map_environment() -> void:
 	if _island_field != null:
 		_island_field.set_campaign_state(_campaign_round_number, _board_grid.cells)
+	var fog_radius: float = _update_map_fog_radius()
+	if _island_field != null:
+		_island_field.update_exploration(
+			_base.global_position,
+			fog_radius,
+			_get_fog_clear_edge_margin()
+		)
 	if _shoreline_overlay != null:
 		var decorative_cells: Array[TerrainPieceCellData] = []
 		if _island_field != null:
 			decorative_cells.assign(_island_field.get_visible_cells())
 		_shoreline_overlay.call("set_surface_cells", _board_grid.cells, decorative_cells)
-	_update_map_fog_radius()
 	_clamp_camera_to_board_bounds()
 
-func _update_map_fog_radius() -> void:
-	if _map_fog_material == null or _board_grid.cells.is_empty():
-		return
+func _update_map_fog_radius() -> float:
+	if _board_grid.cells.is_empty():
+		return _fog_reveal_radius
 	var farthest_visible_land_distance: float = 0.0
 	for coord_variant in _board_grid.cells:
 		var coord: Vector2i = coord_variant
@@ -637,35 +679,13 @@ func _update_map_fog_radius() -> void:
 				farthest_visible_land_distance,
 				_base.global_position.distance_to(world_corner)
 			)
-	if _island_field != null:
-		var decorative_cells: Array[TerrainPieceCellData] = []
-		decorative_cells.assign(_island_field.call("get_visible_cells"))
-		for decorative_cell in decorative_cells:
-			var elevation_offset := Vector2(
-				0.0,
-				float(decorative_cell.elevation) * HexMath.TERRAIN_ELEVATION_PIXEL_OFFSET
-			)
-			var axial_coord := HexCoord.new(
-				decorative_cell.local_coord.x,
-				decorative_cell.local_coord.y
-			)
-			for corner_index in range(6):
-				var world_corner: Vector2 = _island_field.to_global(
-					HexMath.axial_hex_corner(axial_coord, corner_index, HEX_RADIUS) - elevation_offset
-				)
-				farthest_visible_land_distance = maxf(
-					farthest_visible_land_distance,
-					_base.global_position.distance_to(world_corner)
-				)
-	var fog_margin_hexes: float = lerpf(
-		fog_margin_round_one_hexes,
-		fog_margin_round_45_hexes,
-		_campaign_progress_fraction()
-	)
-	_map_fog_material.set_shader_parameter(
-		"fog_reveal_radius",
-		farthest_visible_land_distance + fog_margin_hexes * HEX_RADIUS
-	)
+	_fog_reveal_radius = farthest_visible_land_distance + fog_terrain_margin_hexes * HEX_RADIUS
+	if _map_fog_material != null:
+		_map_fog_material.set_shader_parameter("fog_reveal_radius", _fog_reveal_radius)
+	return _fog_reveal_radius
+
+func _get_fog_clear_edge_margin() -> float:
+	return fog_fade_distance * 0.45 + fog_edge_roughness * 0.5 + 6.0
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey:
@@ -871,6 +891,8 @@ func _on_debug_hack_requested(action_id: StringName) -> void:
 			_refresh_tower_controls()
 		&"skip_to_cards":
 			_debug_skip_to_next_card_offer()
+		&"choose_terrain":
+			_begin_debug_terrain_selection()
 		&"open_general_upgrades":
 			if _meta_shop_panel != null:
 				_meta_shop_panel.call("present_for_debug")
@@ -923,6 +945,27 @@ func _debug_skip_to_next_card_offer() -> void:
 	_offered_path_extension.clear()
 	_terrain_card_panel.hide()
 	_present_upgrade_card_offer(offer_round, upgrade_cards)
+
+func _begin_debug_terrain_selection() -> void:
+	if RunManager.phase != RunManager.Phase.ROUND_PREP or _awaiting_campaign_expansion:
+		_wave_status.text = "El hack de terreno solo está disponible durante la preparación de una ronda."
+		return
+	if _debug_terrain_selection_open:
+		return
+	_clear_selected_world_object()
+	_debug_terrain_selection_open = true
+	_offered_terrain_pieces.clear()
+	_offered_path_extension.clear()
+	_present_terrain_card_offer()
+	if not _terrain_card_panel.visible:
+		_debug_terrain_selection_open = false
+		_offered_terrain_pieces.clear()
+		_offered_path_extension.clear()
+		_start_wave_button.disabled = not _can_start_selected_wave()
+		_refresh_tower_controls()
+		_wave_status.text = "No se pudo preparar una pieza de terreno legal para el hack."
+		return
+	_wave_status.text = "Hack de terreno · elige una pieza y colócala sin bloquear la ruta."
 
 func _configure_hud_visuals() -> void:
 	_icon_catalog = ui_icon_catalog
@@ -1238,11 +1281,7 @@ func _refresh_placement() -> void:
 		_placement_status.text = "Elige una carta de mejora antes de la siguiente ronda."
 		return
 	var can_edit_terrain: bool = _placement_enabled and not _build_controller.is_build_mode()
-	var is_campaign_card_placement: bool = (
-		_awaiting_campaign_expansion
-		and RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION
-		and _selected_expansion_piece != null
-	)
+	var preserve_future_path: bool = _is_path_preserving_terrain_placement()
 	if _selected_piece == null:
 		_latest_placement = null
 		_placement_path_graph = null
@@ -1253,7 +1292,7 @@ func _refresh_placement() -> void:
 		_terrain_placement_prompt.hide()
 		_placement_status.text = (
 			"Elige una carta de terreno para continuar."
-			if _awaiting_campaign_expansion
+			if _awaiting_campaign_expansion or _debug_terrain_selection_open
 			else "Elige una pieza para iniciar la colocación."
 		)
 		return
@@ -1261,7 +1300,8 @@ func _refresh_placement() -> void:
 		_selected_piece,
 		_anchor_coord,
 		_rotation_steps,
-		_board_grid.cells
+		_board_grid.cells,
+		_island_field.get_reserved_coords()
 	)
 	_placement_path_graph = null
 	_placement_preview_board.clear()
@@ -1270,7 +1310,7 @@ func _refresh_placement() -> void:
 	if placement_is_valid and can_edit_terrain:
 		_placement_path_graph = _build_placement_preview_graph()
 		placement_is_valid = _placement_path_graph.is_valid
-		if placement_is_valid and is_campaign_card_placement:
+		if placement_is_valid and preserve_future_path:
 			_placement_blocks_future_path = _find_path_extension_option(
 				_placement_preview_board,
 				_placement_path_graph,
@@ -1366,11 +1406,7 @@ func _find_automatic_placement_candidate() -> Dictionary:
 		var candidate_to_swap: Dictionary = candidates[index]
 		candidates[index] = candidates[swap_index]
 		candidates[swap_index] = candidate_to_swap
-	var is_campaign_card_placement: bool = (
-		_awaiting_campaign_expansion
-		and RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION
-		and _selected_expansion_piece != null
-	)
+	var preserve_future_path: bool = _is_path_preserving_terrain_placement()
 	var minimum_route_cells: int = int(STARTING_BOARD.get("minimum_spawn_route_cells"))
 	for candidate in candidates:
 		var candidate_anchor: Vector2i = candidate.get("anchor_coord", Vector2i.ZERO)
@@ -1379,7 +1415,8 @@ func _find_automatic_placement_candidate() -> Dictionary:
 			_selected_piece,
 			candidate_anchor,
 			candidate_rotation,
-			_board_grid.cells
+			_board_grid.cells,
+			_island_field.get_reserved_coords()
 		)
 		if not placement.is_valid:
 			continue
@@ -1394,7 +1431,7 @@ func _find_automatic_placement_candidate() -> Dictionary:
 		_apply_removed_spawn_endpoints(candidate_graph)
 		if not candidate_graph.is_valid:
 			continue
-		if is_campaign_card_placement and _find_path_extension_option(
+		if preserve_future_path and _find_path_extension_option(
 			candidate_board,
 			candidate_graph,
 			null,
@@ -1411,7 +1448,7 @@ func _build_placement_preview_graph() -> PathGraph:
 		_anchor_coord,
 		_rotation_steps,
 		_next_piece_instance_id,
-		_awaiting_campaign_expansion
+		(_awaiting_campaign_expansion or _debug_terrain_selection_open)
 	)
 	var candidate_graph := PathGraph.new()
 	candidate_graph.rebuild(
@@ -1465,7 +1502,10 @@ func _build_candidate_board(
 		candidate_board[coord] = piece_cells[coord]
 	var candidate_grid := HexGrid.new()
 	candidate_grid.cells = candidate_board
+	var reserved_island_coords: Dictionary[Vector2i, bool] = _island_field.get_reserved_coords()
 	for hole_coord in candidate_grid.get_enclosed_void_coords():
+		if reserved_island_coords.has(hole_coord):
+			continue
 		# El tipo de relleno no cambia el grafo porque solo PATH tiene conexiones.
 		var preview_fill: HexCell = _create_auto_fill_cell(hole_coord)
 		candidate_board[hole_coord] = preview_fill
@@ -1510,7 +1550,8 @@ func _find_path_extension_option(
 						piece,
 						anchor_coord,
 						rotation_step,
-						board_cells
+						board_cells,
+						_island_field.get_reserved_coords()
 					)
 					if not placement.is_valid:
 						continue
@@ -1645,6 +1686,11 @@ func _confirm_placement() -> void:
 		_awaiting_campaign_expansion
 		and RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION
 	)
+	var confirmed_debug_terrain: bool = (
+		_debug_terrain_selection_open
+		and RunManager.phase == RunManager.Phase.ROUND_PREP
+		and _selected_expansion_piece != null
+	)
 	if _placement_preview_board.is_empty():
 		_placement_status.text = "No se confirma: falta el snapshot exacto de la vista previa."
 		return
@@ -1661,7 +1707,7 @@ func _confirm_placement() -> void:
 	if not candidate_graph.is_valid:
 		_placement_status.text = "No se confirma: red PATH inválida · %s" % "; ".join(candidate_graph.errors)
 		return
-	if confirmed_campaign_expansion:
+	if confirmed_campaign_expansion or confirmed_debug_terrain:
 		var next_path_option: Dictionary = _find_path_extension_option(
 			candidate_board,
 			candidate_graph,
@@ -1688,7 +1734,21 @@ func _confirm_placement() -> void:
 		_offered_terrain_pieces.clear()
 		_offered_path_extension.clear()
 		_terrain_card_panel.hide()
+	elif confirmed_debug_terrain:
+		_debug_terrain_selection_open = false
+		_selected_expansion_piece = null
+		_offered_terrain_pieces.clear()
+		_offered_path_extension.clear()
+		_terrain_card_panel.hide()
+		_placement_enabled = false
 	_cancel_placement()
+	if confirmed_debug_terrain:
+		_start_wave_button.disabled = not _can_start_selected_wave()
+		_set_start_wave_button_text("▶ Iniciar ronda %d/45" % _campaign_round_number)
+		_wave_status.text = "Hack de terreno · pieza colocada; la ronda no ha avanzado."
+		_refresh_tower_controls()
+		_sync_selection_backdrop()
+		return
 	if confirmed_campaign_expansion:
 		_placement_enabled = false
 		if _offer_campaign_upgrade_cards_if_scheduled(_pending_expansion_round):
@@ -1744,6 +1804,16 @@ func _cancel_placement() -> void:
 func _cancel_active_tool() -> void:
 	if RunManager.phase == RunManager.Phase.CARD_OFFER:
 		return
+	if _debug_terrain_selection_open:
+		if _selected_expansion_piece != null:
+			if _build_controller.is_build_mode():
+				_build_controller.cancel_build_mode()
+				_refresh_build_preview()
+			_return_to_terrain_card_offer()
+			_wave_status.text = "Hack de terreno · elige una pieza y colócala sin bloquear la ruta."
+		else:
+			_cancel_debug_terrain_selection()
+		return
 	if _terrain_card_panel.visible and _selected_expansion_piece == null:
 		return
 	if (
@@ -1767,13 +1837,13 @@ func _cancel_active_tool() -> void:
 func _handle_board_click() -> void:
 	if RunManager.phase == RunManager.Phase.CARD_OFFER:
 		return
-	if _island_field != null and _island_field.try_activate_chest_at_world_position(
-		get_global_mouse_position()
-	):
-		return
 	if _is_terrain_selection_locked():
 		if _placement_enabled and _selected_expansion_piece != null:
 			_confirm_placement()
+		return
+	if _island_field != null and _island_field.try_activate_chest_at_world_position(
+		get_global_mouse_position()
+	):
 		return
 	if not _placement_enabled and _has_hovered_cell:
 		var object_cell: HexCell = _board_grid.cells.get(_hovered_coord) as HexCell
@@ -2357,31 +2427,28 @@ func _spawn_impact_vfx(effect_id: StringName, world_position: Vector2) -> void:
 	var display_size: float = 72.0
 	match effect_id:
 		&"shot_ballista", &"impact_ballista":
-			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/ballista_%s.png" % ("shoot" if effect_id == &"shot_ballista" else "impact")
-			display_size = 78.0 if effect_id == &"shot_ballista" else 68.0
+			sheet_path = "res://assets/sprites/vfx/towers/%s_ballista.png" % ("shot" if effect_id == &"shot_ballista" else "impact")
+			display_size = 50.0 if effect_id == &"shot_ballista" else 90.0
 		&"shot_mortar", &"impact_mortar":
-			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/mortar_%s.png" % ("shoot" if effect_id == &"shot_mortar" else "impact")
-			display_size = 90.0 if effect_id == &"shot_mortar" else 128.0
+			sheet_path = "res://assets/sprites/vfx/towers/%s_mortar.png" % ("shot" if effect_id == &"shot_mortar" else "impact")
+			display_size = 60.0 if effect_id == &"shot_mortar" else 128.0
 		&"shot_tesla", &"impact_tesla":
-			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/teslaCoil_%s.png" % ("shoot" if effect_id == &"shot_tesla" else "impact")
-			display_size = 88.0 if effect_id == &"shot_tesla" else 90.0
+			sheet_path = "res://assets/sprites/vfx/towers/%s_tesla.png" % ("shot" if effect_id == &"shot_tesla" else "impact")
+			display_size = 70.0 if effect_id == &"shot_tesla" else 96.0
 		&"shot_frost", &"impact_frost":
-			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/ice_%s.png" % ("shoot" if effect_id == &"shot_frost" else "impact")
-			display_size = 86.0
+			sheet_path = "res://assets/sprites/vfx/towers/%s_frost.png" % ("shot" if effect_id == &"shot_frost" else "impact")
+			display_size = 62.0 if effect_id == &"shot_frost" else 100.0
 		&"shot_flame", &"impact_flame":
-			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/fire_%s.png" % ("shoot" if effect_id == &"shot_flame" else "impact")
-			display_size = 92.0
+			sheet_path = "res://assets/sprites/vfx/towers/%s_flame.png" % ("shot" if effect_id == &"shot_flame" else "impact")
+			display_size = 70.0 if effect_id == &"shot_flame" else 96.0
 		&"shot_poison", &"impact_poison":
-			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/poisonSprayer_%s.png" % ("shoot" if effect_id == &"shot_poison" else "impact")
-			display_size = 88.0
+			sheet_path = "res://assets/sprites/vfx/towers/%s_poison.png" % ("shot" if effect_id == &"shot_poison" else "impact")
+			display_size = 65.0 if effect_id == &"shot_poison" else 96.0
 		&"shot_shredder", &"impact_shredder":
-			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/shredder_%s.png" % ("shoot" if effect_id == &"shot_shredder" else "impact")
-			display_size = 84.0
+			sheet_path = "res://assets/sprites/vfx/towers/%s_shredder.png" % ("shot" if effect_id == &"shot_shredder" else "impact")
+			display_size = 64.0 if effect_id == &"shot_shredder" else 90.0
 		&"mortar_target_ripple":
-			sheet_path = "res://assets/sprites/ui/Cozy_Chunky/tap_ripple.png"
-			frame_count = 16
-			columns = 8
-			source_frame_size = Vector2i(192, 192)
+			sheet_path = "res://assets/sprites/vfx/towers/mortar_target.png"
 			frames_per_second = 24.0
 			display_size = 108.0
 		&"star_burst_gold":
@@ -2435,8 +2502,14 @@ func _spawn_impact_vfx(effect_id: StringName, world_position: Vector2) -> void:
 	var sprite_sheet := load(sheet_path) as Texture2D
 	if sprite_sheet == null:
 		return
-	if source_frame_size == Vector2i.ZERO:
-		source_frame_size = Vector2i(128, 128)
+	var is_tower_combat_sprite: bool = TOWER_VFX_LOOP_COUNTS.has(effect_id)
+	if is_tower_combat_sprite:
+		frame_count = 1
+		columns = 1
+		source_frame_size = Vector2i(sprite_sheet.get_width(), sprite_sheet.get_height())
+	else:
+		if source_frame_size == Vector2i.ZERO:
+			source_frame_size = Vector2i(128, 128)
 		if sprite_sheet.get_width() % source_frame_size.x != 0:
 			return
 		frame_count = int(float(sprite_sheet.get_width()) / float(source_frame_size.x))
@@ -2455,7 +2528,7 @@ func _spawn_impact_vfx(effect_id: StringName, world_position: Vector2) -> void:
 		effect.queue_free()
 		return
 	effect_parent.add_child(effect)
-	var repeat_count: int = 2 if effect_id == &"terrain_piece_placed" else 1
+	var repeat_count: int = 2 if effect_id == &"terrain_piece_placed" else int(TOWER_VFX_LOOP_COUNTS.get(effect_id, 1))
 	var z_order: int = 120 if effect_id == &"star_burst_gold" else 130
 	if effect_id == &"ui_click":
 		z_order = 180
@@ -2470,7 +2543,8 @@ func _spawn_impact_vfx(effect_id: StringName, world_position: Vector2) -> void:
 		columns,
 		source_frame_size,
 		z_order,
-		repeat_count
+		repeat_count,
+		is_tower_combat_sprite
 	)):
 		effect.queue_free()
 
@@ -2490,9 +2564,15 @@ func _on_enemy_killed(enemy: Enemy) -> void:
 		sprite_snapshot.free()
 	_spawn_impact_vfx(&"enemy_killed", enemy.global_position)
 
-func _on_tower_level_up_vfx(world_position: Vector2) -> void:
+func _on_tower_level_up_vfx(world_position: Vector2, new_level: int) -> void:
 	_spawn_impact_vfx(&"star_burst_gold", world_position)
 	_spawn_impact_vfx(&"tower_level_up", world_position + Vector2(0.0, -108.0))
+	var level_feedback := TOWER_LEVEL_UP_FEEDBACK_SCENE.instantiate() as TowerLevelUpFeedback
+	if level_feedback == null or _feedback_vfx == null:
+		return
+	level_feedback.configure(new_level)
+	_feedback_vfx.add_child(level_feedback)
+	level_feedback.global_position = world_position
 
 func _get_cell_world_position(coord: Vector2i, cell: HexCell = null) -> Vector2:
 	var world_position: Vector2 = _piece_preview.to_global(
@@ -2949,8 +3029,17 @@ func _on_population_changed(pending_count: int, alive_count: int) -> void:
 func _is_terrain_selection_locked() -> bool:
 	return (
 		_awaiting_campaign_expansion
+		or _debug_terrain_selection_open
 		or RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION
 		or RunManager.phase == RunManager.Phase.CARD_OFFER
+	)
+
+func _is_path_preserving_terrain_placement() -> bool:
+	if _selected_expansion_piece == null:
+		return false
+	return (
+		(_awaiting_campaign_expansion and RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION)
+		or (_debug_terrain_selection_open and RunManager.phase == RunManager.Phase.ROUND_PREP)
 	)
 
 func _can_start_selected_wave() -> bool:
@@ -3538,7 +3627,15 @@ func _present_upgrade_card_offer(
 		)
 		_upgrade_card_buttons[index].tooltip_text = ""
 		var card_icon: Texture2D = _icon_catalog.call("get_card_icon", card) as Texture2D
-		_upgrade_card_buttons[index].call("configure_visuals", card_icon, int(card.get("rarity")))
+		var preview_rows: Array[Dictionary] = []
+		preview_rows.assign(_run_card_service.call("get_card_preview_rows", card))
+		_upgrade_card_buttons[index].configure_visuals(
+			card_icon,
+			int(card.get("rarity")),
+			preview_rows,
+			positive_effect_text_color,
+			negative_effect_text_color
+		)
 	_upgrade_card_panel.show()
 	_terrain_card_panel.hide()
 	_placement_enabled = false
@@ -3558,6 +3655,7 @@ func _present_upgrade_card_offer(
 	_set_start_wave_button_text("Elige mejora")
 	_refresh_tower_controls()
 	_sync_selection_backdrop()
+	await _upgrade_card_panel.reveal_offer()
 
 func _on_upgrade_card_selected(index: int) -> void:
 	if RunManager.phase != RunManager.Phase.CARD_OFFER:
@@ -3570,9 +3668,18 @@ func _on_upgrade_card_selected(index: int) -> void:
 	if not bool(_run_card_service.call("select_card", index)):
 		push_error("No se pudo seleccionar la carta: %s" % _run_card_service.get("last_error"))
 		return
+	_upgrade_card_panel.disable_card_input()
 	var granted_tower_id: StringName = StringName(selected_card.get("grant_tower_id"))
 	if granted_tower_id != &"":
 		RunManager.grant_tower(granted_tower_id)
+	var selected_icon: Texture2D = _icon_catalog.call("get_card_icon", selected_card) as Texture2D
+	var tray_icon: TextureRect = _run_card_tray.append_card_icon(
+		selected_icon,
+		String(selected_card.get("display_name")),
+		String(selected_card.get("description"))
+	)
+	await get_tree().process_frame
+	await _upgrade_card_panel.resolve_choice(index, tray_icon)
 	_upgrade_card_panel.hide()
 	if _upgrade_offer_kind == UpgradeOfferKind.ISLAND_TREASURE:
 		_island_field.mark_treasure_claimed(_pending_island_treasure_id)
@@ -3659,12 +3766,15 @@ func _set_rich_text_with_currency_icons(label: RichTextLabel, source_text: Strin
 	label.append_text(source_text.substr(cursor))
 
 func _on_terrain_card_selected(index: int) -> void:
-	if (
-		index < 0
-		or index >= _offered_terrain_pieces.size()
-		or not _awaiting_campaign_expansion
-		or RunManager.phase != RunManager.Phase.TERRAIN_EXPANSION
-	):
+	var is_campaign_expansion: bool = (
+		_awaiting_campaign_expansion
+		and RunManager.phase == RunManager.Phase.TERRAIN_EXPANSION
+	)
+	var is_debug_selection: bool = (
+		_debug_terrain_selection_open
+		and RunManager.phase == RunManager.Phase.ROUND_PREP
+	)
+	if index < 0 or index >= _offered_terrain_pieces.size() or not (is_campaign_expansion or is_debug_selection):
 		return
 	if _build_controller.is_build_mode():
 		_build_controller.cancel_build_mode()
@@ -3688,7 +3798,9 @@ func _on_terrain_card_selected(index: int) -> void:
 		if selected_path_extension
 		else "coloca en una posición válida"
 	)
-	_wave_status.text = "Expansión · %s seleccionada · %s" % [
+	var selection_label: String = "Hack de terreno" if is_debug_selection else "Expansión"
+	_wave_status.text = "%s · %s seleccionada · %s" % [
+		selection_label,
 		_selected_piece.display_name,
 		placement_prompt,
 	]
@@ -3704,6 +3816,22 @@ func _return_to_terrain_card_offer() -> void:
 	_latest_placement = null
 	_placement_enabled = false
 	_present_terrain_card_offer()
+
+func _cancel_debug_terrain_selection() -> void:
+	_debug_terrain_selection_open = false
+	_selected_expansion_piece = null
+	_selected_piece = null
+	_latest_placement = null
+	_placement_enabled = false
+	_offered_terrain_pieces.clear()
+	_offered_path_extension.clear()
+	_terrain_card_panel.hide()
+	_start_wave_button.disabled = not _can_start_selected_wave()
+	_set_start_wave_button_text("▶ Iniciar ronda %d/45" % _campaign_round_number)
+	_wave_status.text = "Selección de terreno cancelada."
+	_refresh_placement()
+	_refresh_tower_controls()
+	_sync_selection_backdrop()
 
 func _set_terrain_card_layout(is_inventory: bool) -> void:
 	_terrain_card_panel.anchor_left = 0.5

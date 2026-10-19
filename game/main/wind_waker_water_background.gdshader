@@ -10,11 +10,13 @@ uniform vec4 FOAM_COL : source_color = vec4(0.87451, 0.988235, 1, 1.0);
 uniform float distortion_speed = 0.65;
 uniform vec2 tile = vec2(1.35, 1.35);
 uniform vec2 offset = vec2(0, 0);
-uniform vec2 camera_world_position = vec2(0.0);
+uniform vec2 camera_world_position = vec2(720.0, 450.0);
 uniform vec2 parallax_origin = vec2(720.0, 450.0);
-uniform vec2 viewport_size = vec2(1152.0, 648.0);
+uniform vec2 viewport_size = vec2(1440.0, 900.0);
 uniform float camera_zoom = 1.0;
-uniform float camera_parallax_factor : hint_range(0.0, 1.0) = 0.62;
+// Follow most of the camera displacement like a world plane, with a small
+// residual screen-space drift so the water keeps its layered parallax feel.
+uniform float camera_parallax_factor : hint_range(0.0, 1.0) = 0.86;
 uniform float water_time = 0.0;
 
 const float TWOPI = 6.283185307;

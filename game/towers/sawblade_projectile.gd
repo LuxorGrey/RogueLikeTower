@@ -1,7 +1,7 @@
 extends Node2D
 
-const BLADE_COLOR: Color = Color(0.84, 0.86, 0.78)
-const BLADE_DARK_COLOR: Color = Color(0.16, 0.20, 0.19)
+const BLADE_SPRITE: Texture2D = preload("res://assets/sprites/vfx/towers/shot_shredder.png")
+const BLADE_DISPLAY_SIZE: float = 38.0
 
 var _route: Array[Vector2] = []
 var _route_index: int = 1
@@ -14,9 +14,17 @@ var _travel_speed: float = 560.0
 var _damage_loss_per_hit: float = 1.0
 var _hit_enemy_ids: Dictionary[int, bool] = {}
 var _blade_angle: float = 0.0
+var _blade_sprite: Sprite2D
 
 func _ready() -> void:
 	set_physics_process(false)
+	_blade_sprite = Sprite2D.new()
+	_blade_sprite.name = "SawbladeSprite"
+	_blade_sprite.texture = BLADE_SPRITE
+	_blade_sprite.centered = true
+	_blade_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	_blade_sprite.scale = Vector2.ONE * (BLADE_DISPLAY_SIZE / float(BLADE_SPRITE.get_width()))
+	add_child(_blade_sprite)
 
 func configure(
 	launch_position: Vector2,
@@ -51,6 +59,7 @@ func _physics_process(delta: float) -> void:
 		return
 	var distance_budget: float = _travel_speed * delta
 	_blade_angle += delta * 14.0
+	_blade_sprite.rotation = _blade_angle
 	while distance_budget > 0.0 and _route_index < _route.size():
 		var destination: Vector2 = _route[_route_index]
 		var displacement: Vector2 = destination - global_position
@@ -80,7 +89,6 @@ func _physics_process(delta: float) -> void:
 		if _remaining_damage <= 0.0:
 			queue_free()
 			return
-	queue_redraw()
 	if _route_index >= _route.size():
 		queue_free()
 
@@ -119,13 +127,3 @@ func _distance_squared_to_segment(point: Vector2, start: Vector2, end: Vector2) 
 		return point.distance_squared_to(start)
 	var fraction: float = clampf((point - start).dot(segment) / length_squared, 0.0, 1.0)
 	return point.distance_squared_to(start + segment * fraction)
-
-func _draw() -> void:
-	var teeth := PackedVector2Array()
-	for tooth in 16:
-		var angle: float = float(tooth) * TAU / 16.0 + _blade_angle
-		var radius: float = 12.0 if tooth % 2 == 0 else 8.0
-		teeth.append(Vector2.RIGHT.rotated(angle) * radius)
-	draw_colored_polygon(teeth, BLADE_COLOR)
-	draw_circle(Vector2.ZERO, 4.0, BLADE_DARK_COLOR)
-	draw_circle(Vector2.ZERO, 1.5, Color(0.83, 0.34, 0.35))

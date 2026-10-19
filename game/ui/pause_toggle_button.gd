@@ -1,20 +1,60 @@
+@tool
 class_name PauseToggleButton
 extends Button
 
 const PAUSE_ACTION: StringName = &"toggle_pause"
+
+@export_group("Pause button glyph")
+@export_range(0.0, 40.0, 1.0) var glyph_left_inset: float = 15.0:
+	set(value):
+		glyph_left_inset = value
+		queue_redraw()
+@export_range(2.0, 20.0, 1.0) var pause_bar_width: float = 4.0:
+	set(value):
+		pause_bar_width = value
+		queue_redraw()
+@export_range(0.0, 20.0, 1.0) var pause_bar_gap: float = 4.0:
+	set(value):
+		pause_bar_gap = value
+		queue_redraw()
+@export_range(4.0, 32.0, 1.0) var glyph_height: float = 16.0:
+	set(value):
+		glyph_height = value
+		queue_redraw()
+@export_range(4.0, 32.0, 1.0) var play_glyph_width: float = 13.0:
+	set(value):
+		play_glyph_width = value
+		queue_redraw()
+@export_range(0.0, 40.0, 1.0) var label_offset_x: float = 19.0:
+	set(value):
+		label_offset_x = value
+		queue_redraw()
+@export_range(0.0, 1.0, 0.01) var label_baseline_factor: float = 0.34:
+	set(value):
+		label_baseline_factor = value
+		queue_redraw()
+
 var _pause_locked: bool = false
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
 	toggle_mode = true
+	if Engine.is_editor_hint():
+		text = ""
+		queue_redraw()
+		return
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	toggled.connect(_on_toggled)
 	_ensure_pause_action()
 	sync_pause_state()
 
 func _process(_delta: float) -> void:
+	if Engine.is_editor_hint():
+		return
 	sync_pause_state()
 
 func _unhandled_key_input(event: InputEvent) -> void:
+	if Engine.is_editor_hint():
+		return
 	if _pause_locked:
 		return
 	var key_event := event as InputEventKey
@@ -30,6 +70,10 @@ func set_pause_locked(locked: bool) -> void:
 	sync_pause_state()
 
 func sync_pause_state() -> void:
+	if Engine.is_editor_hint():
+		text = ""
+		queue_redraw()
+		return
 	var is_paused: bool = get_tree().paused
 	if button_pressed != is_paused:
 		set_pressed_no_signal(is_paused)
@@ -38,25 +82,29 @@ func sync_pause_state() -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	var is_paused: bool = get_tree().paused
+	var is_paused: bool = not Engine.is_editor_hint() and get_tree().paused
 	var glyph_color: Color = get_theme_color("font_color")
 	var center_y: float = size.y * 0.5
-	var glyph_left: float = size.x * 0.5 - 15.0
+	var glyph_left: float = size.x * 0.5 - glyph_left_inset
+	var glyph_top: float = center_y - glyph_height * 0.5
 	if is_paused:
 		var play_points := PackedVector2Array([
-			Vector2(glyph_left, center_y - 8.0),
-			Vector2(glyph_left, center_y + 8.0),
-			Vector2(glyph_left + 13.0, center_y),
+			Vector2(glyph_left, glyph_top),
+			Vector2(glyph_left, glyph_top + glyph_height),
+			Vector2(glyph_left + play_glyph_width, center_y),
 		])
 		draw_colored_polygon(play_points, glyph_color)
 	else:
-		draw_rect(Rect2(glyph_left, center_y - 8.0, 4.0, 16.0), glyph_color)
-		draw_rect(Rect2(glyph_left + 8.0, center_y - 8.0, 4.0, 16.0), glyph_color)
+		draw_rect(Rect2(glyph_left, glyph_top, pause_bar_width, glyph_height), glyph_color)
+		draw_rect(
+			Rect2(glyph_left + pause_bar_width + pause_bar_gap, glyph_top, pause_bar_width, glyph_height),
+			glyph_color
+		)
 	var label_font: Font = get_theme_font("font")
 	var label_size: int = get_theme_font_size("font_size")
 	draw_string(
 		label_font,
-		Vector2(glyph_left + 19.0, center_y + label_size * 0.34),
+		Vector2(glyph_left + label_offset_x, center_y + label_size * label_baseline_factor),
 		"P",
 		HORIZONTAL_ALIGNMENT_LEFT,
 		-1.0,
@@ -65,6 +113,8 @@ func _draw() -> void:
 	)
 
 func _on_toggled(toggled_on: bool) -> void:
+	if Engine.is_editor_hint():
+		return
 	if _pause_locked:
 		set_pressed_no_signal(true)
 		return

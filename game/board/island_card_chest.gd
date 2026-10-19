@@ -20,6 +20,7 @@ var _item_glow: Sprite2D
 var _collision_shape: CollisionShape2D
 var _appearance_tween: Tween
 var _hover_tween: Tween
+var _idle_bounce_tween: Tween
 var _base_position: Vector2 = Vector2.ZERO
 var _base_scale: Vector2 = Vector2.ONE
 var _available: bool = false
@@ -106,6 +107,28 @@ func set_pointer_hovered(is_over_chest: bool) -> void:
 func is_pointer_hovered() -> bool:
 	return _hovered and _available
 
+func intersects_world_rect(world_rect: Rect2) -> bool:
+	if not _available or not is_visible_in_tree() or _chest_sprite == null:
+		return false
+	var sprite_rect: Rect2 = _chest_sprite.get_rect()
+	var sprite_transform: Transform2D = _chest_sprite.global_transform
+	var local_corners := PackedVector2Array([
+		sprite_rect.position,
+		Vector2(sprite_rect.end.x, sprite_rect.position.y),
+		sprite_rect.end,
+		Vector2(sprite_rect.position.x, sprite_rect.end.y),
+	])
+	var first_corner: Vector2 = sprite_transform * local_corners[0]
+	var minimum: Vector2 = first_corner
+	var maximum: Vector2 = first_corner
+	for corner_index in range(1, local_corners.size()):
+		var world_corner: Vector2 = sprite_transform * local_corners[corner_index]
+		minimum.x = minf(minimum.x, world_corner.x)
+		minimum.y = minf(minimum.y, world_corner.y)
+		maximum.x = maxf(maximum.x, world_corner.x)
+		maximum.y = maxf(maximum.y, world_corner.y)
+	return Rect2(minimum, maximum - minimum).grow(3.0).intersects(world_rect)
+
 func _on_input_event(viewport: Node, event: InputEvent, _shape_index: int) -> void:
 	if not visible or not event is InputEventMouseButton:
 		return
@@ -124,6 +147,8 @@ func _on_mouse_exited() -> void:
 func _sync_hover_visual() -> void:
 	if _chest_sprite == null:
 		return
+	if _idle_bounce_tween != null and _idle_bounce_tween.is_running():
+		_idle_bounce_tween.kill()
 	if _hover_tween != null and _hover_tween.is_running():
 		_hover_tween.kill()
 	_chest_sprite.position = _base_position
@@ -157,6 +182,8 @@ func _sync_hover_visual() -> void:
 		).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	else:
 		_chest_sprite.modulate = Color.WHITE
+		if _available:
+			_start_idle_bounce()
 	if _hover_sprite != null:
 		_hover_sprite.visible = _available and _hovered
 
@@ -166,12 +193,48 @@ func _set_available(available: bool) -> void:
 	input_pickable = available
 	_hovered = false
 	if not available:
+		if _idle_bounce_tween != null and _idle_bounce_tween.is_running():
+			_idle_bounce_tween.kill()
 		if _appearance_tween != null and _appearance_tween.is_running():
 			_appearance_tween.kill()
 		_chest_sprite.position = _base_position
 		_chest_sprite.scale = _base_scale
 	_sync_hover_visual()
 	_sync_item_glow()
+
+func _start_idle_bounce() -> void:
+	if not _available or _hovered or _chest_sprite == null:
+		return
+	if _idle_bounce_tween != null and _idle_bounce_tween.is_running():
+		return
+	var phase_delay: float = fposmod(float(get_instance_id()) * 0.61803398875, 0.8)
+	_idle_bounce_tween = create_tween().set_loops()
+	_idle_bounce_tween.tween_interval(0.75 + phase_delay)
+	_idle_bounce_tween.tween_property(
+		_chest_sprite,
+		"position:y",
+		_base_position.y - 9.0,
+		0.2
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_idle_bounce_tween.parallel().tween_property(
+		_chest_sprite,
+		"scale",
+		_base_scale * 1.045,
+		0.2
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_idle_bounce_tween.tween_property(
+		_chest_sprite,
+		"position:y",
+		_base_position.y,
+		0.3
+	).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	_idle_bounce_tween.parallel().tween_property(
+		_chest_sprite,
+		"scale",
+		_base_scale,
+		0.3
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_idle_bounce_tween.tween_interval(1.15)
 
 func _configure_item_glow() -> void:
 	if _item_glow == null:

@@ -1,11 +1,15 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://game/progression/meta_progression_map.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://game/progression/meta_upgrade_node.tscn" id="2_preview_node"]
 
 [node name="ProgressionMap" type="Control"]
 custom_minimum_size = Vector2(7000, 2020)
 mouse_filter = 2
 script = ExtResource("1_script")
+
+[node name="PreviewUpgradeNode" parent="." instance=ExtResource("2_preview_node")]
+position = Vector2(36, 110)
 
 [node name="CenterLabel" type="Label" parent="."]
 unique_name_in_owner = true

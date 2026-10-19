@@ -6,6 +6,9 @@ var _frames_per_second: float = 12.0
 var _display_size: float = 64.0
 var _elapsed: float = 0.0
 var _frame_size := Vector2.ZERO
+var _initial_scale := Vector2.ONE
+var _static_sprite_duration: float = 0.0
+var _animate_static_sprite: bool = false
 var _loop_forever: bool = false
 var _loop_count: int = 1
 
@@ -19,7 +22,8 @@ func configure(
 	columns: int = 0,
 	source_frame_size: Vector2i = Vector2i.ZERO,
 	layer_z_index: int = 8,
-	loop_count: int = 1
+	loop_count: int = 1,
+	animate_static_sprite: bool = false
 ) -> bool:
 	if sprite_sheet == null or frame_count <= 0 or frames_per_second <= 0.0 or display_size <= 0.0:
 		return false
@@ -47,6 +51,8 @@ func configure(
 	_display_size = display_size
 	_loop_forever = loop_forever
 	_loop_count = maxi(loop_count, 1)
+	_animate_static_sprite = animate_static_sprite and _frame_count == 1
+	_static_sprite_duration = float(_loop_count) / _frames_per_second
 	_elapsed = 0.0
 	texture = sprite_sheet
 	region_enabled = true
@@ -54,6 +60,8 @@ func configure(
 	centered = true
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	scale = Vector2(_display_size / _frame_size.x, _display_size / _frame_size.y)
+	_initial_scale = scale
+	modulate.a = 1.0
 	global_position = world_position
 	z_index = layer_z_index
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -64,6 +72,11 @@ func _process(delta: float) -> void:
 	_elapsed += delta
 	var elapsed_frames: float = _elapsed * _frames_per_second
 	var completed_loops: int = floori(elapsed_frames / float(_frame_count))
+	if _animate_static_sprite:
+		var progress: float = clampf(_elapsed / maxf(_static_sprite_duration, 0.001), 0.0, 1.0)
+		var eased_progress: float = 1.0 - (1.0 - progress) * (1.0 - progress)
+		scale = _initial_scale * lerpf(0.82, 1.10, eased_progress)
+		modulate.a = 1.0 - progress
 	if not _loop_forever and completed_loops >= _loop_count:
 		queue_free()
 		return

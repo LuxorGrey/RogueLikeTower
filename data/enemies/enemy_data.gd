@@ -44,7 +44,7 @@ func get_sprite_frame_texture(frame_index: int = 0) -> Texture2D:
 		return sprite_texture
 	var texture_width: int = sprite_texture.get_width()
 	var texture_height: int = sprite_texture.get_height()
-	var frame_width: int = texture_width / RUN_SPRITE_FRAME_COUNT
+	var frame_width: int = int(float(texture_width) / float(RUN_SPRITE_FRAME_COUNT))
 	var frame: int = posmod(frame_index, RUN_SPRITE_FRAME_COUNT)
 	var frame_texture := AtlasTexture.new()
 	frame_texture.atlas = sprite_texture

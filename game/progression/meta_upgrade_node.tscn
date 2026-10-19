@@ -1,9 +1,29 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://game/progression/meta_upgrade_node.gd" id="1_script"]
 [ext_resource type="Theme" path="res://game/ui/themes/rogue_hud_theme.tres" id="2_theme"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/icons/damage.png" id="3_damage_icon"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/icons/exp.png" id="4_profile_currency"]
 
 [sub_resource type="StyleBoxEmpty" id="ButtonStateEmpty"]
+
+[sub_resource type="StyleBoxFlat" id="NodePreviewStyle"]
+bg_color = Color(0.062745, 0.090196, 0.101961, 1)
+border_color = Color(0.509804, 0.576471, 0.541176, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.501961, 0.878431, 0.521569, 0.22)
+shadow_size = 10
+content_margin_left = 13.0
+content_margin_top = 11.0
+content_margin_right = 13.0
+content_margin_bottom = 9.0
 
 [node name="MetaUpgradeNode" type="Button"]
 custom_minimum_size = Vector2(236, 282)
@@ -25,6 +45,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_styles/panel = SubResource("NodePreviewStyle")
 
 [node name="Content" type="VBoxContainer" parent="Surface"]
 layout_mode = 2
@@ -39,6 +60,7 @@ size_flags_horizontal = 3
 expand_mode = 1
 stretch_mode = 5
 mouse_filter = 2
+texture = ExtResource("3_damage_icon")
 
 [node name="Title" type="Label" parent="Surface/Content"]
 unique_name_in_owner = true
@@ -46,6 +68,7 @@ custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.91, 0.91, 0.85, 1)
+text = "Mejora permanente"
 autowrap_mode = 2
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -58,6 +81,7 @@ layout_mode = 2
 theme_override_font_sizes/normal_font_size = 12
 theme_override_colors/font_color = Color(0.68, 0.75, 0.72, 1)
 bbcode_enabled = true
+text = "Mejora de ejemplo para previsualizar el panel."
 fit_content = true
 scroll_active = false
 autowrap_mode = 2
@@ -80,6 +104,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 21
 theme_override_colors/font_color = Color(0.55, 0.9, 0.65, 1)
+text = "120"
 autowrap_mode = 2
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -89,7 +114,8 @@ mouse_filter = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
-visible = false
+visible = true
 expand_mode = 1
 stretch_mode = 5
 mouse_filter = 2
+texture = ExtResource("4_profile_currency")

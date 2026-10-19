@@ -3,7 +3,7 @@ extends Node2D
 
 signal attack_fired(target: Enemy, damage: int)
 signal impact_effect_requested(effect_id: StringName, world_position: Vector2)
-signal level_up_effect_requested(world_position: Vector2)
+signal level_up_effect_requested(world_position: Vector2, new_level: int)
 signal stats_changed(level: int)
 
 const ELEVATION_PIXEL_OFFSET: float = 28.0
@@ -15,8 +15,12 @@ const SHOOT_VFX_MAX_INTERVAL: float = 2.5
 const MAX_LEVEL_VISUAL_UPGRADES: int = 45
 const MAX_LEVEL_VISUAL_GROWTH: float = 0.12
 const PROJECT_FONT: Font = preload("res://assets/fonts/PatrickHand-Regular.ttf")
+const TESLA_BEAM_SPRITE: Texture2D = preload("res://assets/sprites/vfx/towers/tesla_beam.png")
 const SCAN_INTERVAL: float = 0.1
 const SHOT_FLASH_DURATION: float = 0.12
+const TOWER_IDLE_ANIMATION: StringName = &"idle"
+const TOWER_ATTACK_ANIMATION: StringName = &"attack"
+const IDLE_ANIMATION_PHASE_STAGGER_MAX_SECONDS: float = 0.28
 const BALLISTA_MISSED_TARGET_COOLDOWN_REFUND: float = 0.33
 const RANGE_COLOR: Color = Color(0.30, 0.80, 1.0, 0.48)
 const SHOT_COLOR: Color = Color(1.0, 0.91, 0.46, 0.96)
@@ -107,7 +111,7 @@ var _is_hovered: bool = false
 var _icon_catalog: RefCounted
 var _tower_icon: Texture2D
 var _tower_art_root: Node2D
-var _tower_sprite: Sprite2D
+var _tower_sprite: AnimatedSprite2D
 var _range_indicator_backdrop: Line2D
 var _range_indicator: Line2D
 var _current_target: Enemy
@@ -168,6 +172,7 @@ func configure(
 	cell_coord = coord
 	elevation = cell_elevation
 	_hex_radius = hex_radius
+	_start_tower_idle_animation(StringName(tower_data.id))
 	_targeting_mode = tower_data.targeting_mode
 	_targeting_priorities = [tower_data.targeting_mode, -1, -1]
 	_critical_rng.seed = int(GameState.run_seed) ^ int(get_instance_id())
@@ -279,7 +284,7 @@ func upgrade(hit_point_layer: int = Enemy.HitPointLayer.HEALTH) -> bool:
 	_layer_upgrade_levels[hit_point_layer] = get_layer_upgrade_level(hit_point_layer) + 1
 	_sync_tower_art_scale()
 	stats_changed.emit(level)
-	level_up_effect_requested.emit(global_position + TOWER_CELL_VISUAL_OFFSET)
+	level_up_effect_requested.emit(global_position + TOWER_CELL_VISUAL_OFFSET, level)
 	queue_redraw()
 	return true
 
@@ -586,6 +591,7 @@ func _physics_process(delta: float) -> void:
 		_shot_flash_timer = maxf(_shot_flash_timer - delta, 0.0)
 		queue_redraw()
 	if RunManager.phase != RunManager.Phase.COMBAT:
+		_play_tower_idle_animation()
 		return
 	if _tower_data.attack_pattern == TowerData.AttackPattern.FROST_SNOWFALL:
 		var mana_drain: float = get_current_mana_drain_rate() * delta
@@ -895,7 +901,7 @@ func _gain_targeting_xp(target: Enemy, delta: float) -> void:
 		_layer_upgrade_levels[layer] = get_layer_upgrade_level(layer) + 1
 		_sync_tower_art_scale()
 		stats_changed.emit(level)
-		level_up_effect_requested.emit(global_position + TOWER_CELL_VISUAL_OFFSET)
+		level_up_effect_requested.emit(global_position + TOWER_CELL_VISUAL_OFFSET, level)
 		queue_redraw()
 	_targeting_xp_by_layer[layer] = new_total
 
@@ -1031,6 +1037,7 @@ func _emit_impact_effect(world_position: Vector2) -> void:
 func _emit_shoot_effect() -> void:
 	if _tower_data == null:
 		return
+	_play_tower_attack_animation()
 	var rate_limit_continuous_vfx: bool = _uses_continuous_shoot_vfx()
 	if rate_limit_continuous_vfx and _shoot_vfx_cooldown_remaining > 0.0:
 		return
@@ -1113,7 +1120,31 @@ func _draw() -> void:
 	if _shot_flash_timer > 0.0:
 		var shot_origin := Vector2(0.0, -8.0)
 		for target_offset in _shot_target_positions:
-			draw_line(shot_origin, target_offset, SHOT_COLOR, 2.0, true)
+			if _tower_data.visual_archetype == TowerData.VisualArchetype.TESLA:
+				_draw_tesla_beam(shot_origin, target_offset)
+			else:
+				draw_line(shot_origin, target_offset, SHOT_COLOR, 2.0, true)
+
+func _draw_tesla_beam(beam_start: Vector2, beam_end: Vector2) -> void:
+	var displacement: Vector2 = beam_end - beam_start
+	var beam_length: float = displacement.length()
+	if beam_length <= 0.001:
+		return
+	var texture_width: float = float(TESLA_BEAM_SPRITE.get_width())
+	var texture_height: float = float(TESLA_BEAM_SPRITE.get_height())
+	var beam_thickness: float = 64.0
+	draw_set_transform(
+		beam_start,
+		displacement.angle(),
+		Vector2(beam_length / texture_width, beam_thickness / texture_height)
+	)
+	draw_texture_rect(
+		TESLA_BEAM_SPRITE,
+		Rect2(Vector2(0.0, -texture_height * 0.57), Vector2(texture_width, texture_height)),
+		false,
+		Color(1.0, 1.0, 1.0, clampf(_shot_flash_timer / SHOT_FLASH_DURATION, 0.0, 1.0))
+	)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _setup_range_indicator() -> void:
 	if _range_indicator != null and is_instance_valid(_range_indicator):
@@ -1166,9 +1197,12 @@ func _configure_tower_art(tower_id: StringName) -> void:
 		_tower_art_root = Node2D.new()
 		_tower_art_root.name = "TowerArtwork"
 		add_child(_tower_art_root)
-		_tower_sprite = _create_outlined_sprite("TowerSprite")
+		_tower_sprite = _create_outlined_animated_sprite("TowerSprite")
 		_tower_art_root.add_child(_tower_sprite)
-	_tower_sprite.texture = _tower_icon
+	_tower_sprite.sprite_frames = TOWER_ART_CATALOG_SCRIPT.get_tower_sprite_frames(tower_id)
+	if _tower_sprite.sprite_frames == null:
+		_tower_sprite.sprite_frames = _create_static_fallback_frames(_tower_icon)
+	_tower_sprite.animation_finished.connect(_on_tower_animation_finished)
 	var texture_size: Vector2 = _tower_icon.get_size()
 	var display_height: float = (
 		_tower_data.visual_icon_size
@@ -1185,8 +1219,8 @@ func _configure_tower_art(tower_id: StringName) -> void:
 	_sync_tower_art_tint()
 	_sync_tower_art_scale()
 
-func _create_outlined_sprite(sprite_name: String) -> Sprite2D:
-	var sprite := Sprite2D.new()
+func _create_outlined_animated_sprite(sprite_name: String) -> AnimatedSprite2D:
+	var sprite := AnimatedSprite2D.new()
 	sprite.name = sprite_name
 	sprite.centered = true
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -1197,6 +1231,55 @@ func _create_outlined_sprite(sprite_name: String) -> Sprite2D:
 	sprite.material = outline_material
 	return sprite
 
+func _create_static_fallback_frames(texture: Texture2D) -> SpriteFrames:
+	var frames := SpriteFrames.new()
+	frames.add_animation(TOWER_IDLE_ANIMATION)
+	frames.set_animation_loop(TOWER_IDLE_ANIMATION, true)
+	frames.add_frame(TOWER_IDLE_ANIMATION, texture)
+	frames.add_animation(TOWER_ATTACK_ANIMATION)
+	frames.set_animation_loop(TOWER_ATTACK_ANIMATION, false)
+	frames.add_frame(TOWER_ATTACK_ANIMATION, texture)
+	return frames
+
+func _start_tower_idle_animation(tower_id: StringName) -> void:
+	if _tower_sprite == null or _tower_sprite.sprite_frames == null:
+		return
+	_tower_sprite.play(TOWER_IDLE_ANIMATION)
+	var idle_speed: float = _tower_sprite.sprite_frames.get_animation_speed(TOWER_IDLE_ANIMATION)
+	var idle_frames: int = _tower_sprite.sprite_frames.get_frame_count(TOWER_IDLE_ANIMATION)
+	if idle_speed <= 0.0 or idle_frames <= 0:
+		return
+	var phase_rng := RandomNumberGenerator.new()
+	phase_rng.seed = (
+		int(GameState.run_seed)
+		^ (cell_coord.x * 73856093)
+		^ (cell_coord.y * 19349663)
+		^ String(tower_id).hash()
+	)
+	var phase_seconds: float = phase_rng.randf_range(
+		0.0,
+		minf(1.0 / idle_speed, IDLE_ANIMATION_PHASE_STAGGER_MAX_SECONDS)
+	)
+	var frame_phase: float = phase_seconds * idle_speed
+	_tower_sprite.frame = int(floor(frame_phase)) % idle_frames
+	_tower_sprite.frame_progress = fposmod(frame_phase, 1.0)
+
+func _play_tower_idle_animation() -> void:
+	if _tower_sprite == null or _tower_sprite.sprite_frames == null:
+		return
+	if _tower_sprite.animation != TOWER_IDLE_ANIMATION or not _tower_sprite.is_playing():
+		_tower_sprite.play(TOWER_IDLE_ANIMATION)
+
+func _play_tower_attack_animation() -> void:
+	if _tower_sprite == null or _tower_sprite.sprite_frames == null:
+		return
+	if _tower_sprite.animation != TOWER_ATTACK_ANIMATION or not _tower_sprite.is_playing():
+		_tower_sprite.play(TOWER_ATTACK_ANIMATION)
+
+func _on_tower_animation_finished() -> void:
+	if _tower_sprite != null and _tower_sprite.animation == TOWER_ATTACK_ANIMATION:
+		_play_tower_idle_animation()
+
 func _sync_tower_facing(target_position: Vector2) -> void:
 	if _tower_sprite == null:
 		return
@@ -1205,7 +1288,7 @@ func _sync_tower_facing(target_position: Vector2) -> void:
 	var anchor_offset: Vector2 = TOWER_ART_CATALOG_SCRIPT.get_tower_anchor_offset(StringName(_tower_data.id))
 	_tower_sprite.position = Vector2(
 		anchor_offset.x * _tower_sprite.scale.x * (-1.0 if flip_h else 1.0),
-		-_tower_sprite.texture.get_height() * _tower_sprite.scale.y * 0.5
+		-_tower_icon.get_height() * _tower_sprite.scale.y * 0.5
 			+ anchor_offset.y * _tower_sprite.scale.y
 	)
 

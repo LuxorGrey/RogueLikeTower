@@ -15,9 +15,25 @@ Usa primero el estado actual. El roadmap describe el orden histórico; la lista 
 ## Estado actual, milestones y siguiente paso
 
 ### Estado
-Última actualización: 2026-10-16
+Última actualización: 2026-10-19
 
-**Resumen vigente:** M72 es el último milestone integrado. M65–M72 cubren animación de correr, ofertas de reclutamiento, HUD de vida de base, velocidad ×1/×2/×3, colores/gradiente de fachadas, límites de cámara, niebla, seis islas con cofres explorables, espuma Voronoi móvil y anclaje de torre. El smoke anterior en Godot 4.7 inició `main.tscn` sin errores; persiste un aviso de división entera en `data/enemies/enemy_data.gd:47`, ajeno a M72. La aceptación visual o interactiva sigue pendiente; la tabla de milestones es la fuente única del estado y la sección «Próximo paso» fija el orden de revisión.
+**Resumen vigente:** M80 es el último hito integrado. M65–M72 cubren animación de correr, ofertas de reclutamiento, HUD de vida de base, velocidad ×1/×2/×3, colores/gradiente de fachadas, límites de cámara, niebla, seis islas con cofres explorables, espuma Voronoi móvil y anclaje de torre. M73 fija el parallax residual del agua; M74 añade el radar de tesoros; M75 anima las siete torres; M76 hace opaca la niebla fuera de su transición; M77 renueva la presentación de Upgrade Cards. M78 incorpora feedback de nivel, reserva islas, mantiene la niebla hasta ampliar terreno, apunta siempre al tesoro sin reclamar, anima el idle de todos los cofres y añade sprites propios al menú. M79 sustituye los efectos de disparo/impacto de las siete torres por sprites transparentes de dibujo infantil tosco, cambia el marcador Mortar, representa el rayo Tesla con una textura estirable y aplica sprites a los proyectiles móviles de Ballista, Mortar, Frost Keep y Shredder. M80 deja las escenas de menú, pausa y tienda editables en el editor, instala hover Balatro en los botones y sus instancias dinámicas, comparte el shader/material y la fase del agua, reconfigura el mapa permanente cuando recibe su catálogo y mantiene visible el fondo durante la transición a Play. La corrección ADR-0135 reutiliza `map_fog.gdshader` solo en el fondo del MainMenu; la tienda queda opaca y gameplay conserva su `MapFog`. El smoke previo a M78 inició `main.tscn` en Godot 4.7 sin errores; M79, M80 y la corrección actual no se han validado en Godot ni visual/interactivamente.
+
+Actualización M79 (2026-10-18; [ADR-0131](DECISION_HISTORY.md#adr-0131)): cada una de las siete torres tiene PNG independientes `shot` e `impact`, Mortar tiene su marcador y Tesla Coil un rayo estirable; todos conservan alfa transparente y tamaños configurables. Los proyectiles viajeros de Ballista, Mortar, Frost Keep y Shredder usan el sprite correspondiente. Se conserva la duración de los efectos y los límites de disparo continuo; la implementación solo cambia presentación. Código, assets y documentación integrados; aceptación visual/interactiva pendiente. No se ejecutó Godot ni pruebas.
+
+Actualización M80 (2026-10-19; [ADR-0132](DECISION_HISTORY.md#adr-0132), [ADR-0133](DECISION_HISTORY.md#adr-0133), correcciones [ADR-0134](DECISION_HISTORY.md#adr-0134), [ADR-0135](DECISION_HISTORY.md#adr-0135) y [ADR-0136](DECISION_HISTORY.md#adr-0136)): menú principal, pausa y tienda guardan directamente sus StyleBoxes, geometría, tipografía y colores en las escenas. El panel de pausa comparte con `MainMenu.MenuPanel` el StyleBox de fondo y los cinco StyleBoxes de botones; conserva dimensiones, márgenes, tipografía, colores y tamaños, cambiando solo el título y las acciones. La tienda incluye un nodo de muestra, las filas de bonus y el feedback de subida reutilizan escenas editables, y PauseButton usa `@tool` con guardas para mostrar el glyph en el editor. El hover Balatro cubre todos los `BaseButton` visibles y dinámicos. La tienda propaga el catálogo a su mapa aunque ya esté listo. Menú y gameplay comparten el material de agua y el reloj de fase; MainMenu usa `map_fog.gdshader` solo sobre su fondo y la tienda cubre el fondo con un velo opaco. Gameplay conserva la niebla de mapa. Play precarga `main.tscn` y cambia de escena con una capa oscura translúcida que deja visible el fondo. Código y documentación integrados; aceptación visual e interactiva pendiente. No se ejecutó Godot ni pruebas.
+
+Actualización M78 (2026-10-18; [ADR-0130](DECISION_HISTORY.md#adr-0130)): los estados aparecen en iconos de 44 px agrupados a 3 px de la barra activa; cada subida manual o automática añade halo elíptico, partículas doradas y `¡NIVEL n!`. Las seis islas fijan y reservan sus coordenadas al iniciar la run; las rondas posteriores solo habilitan su revelado. Ya no se relocalizan ni desaparecen: el área de niebla depende solo del tablero, el grupo insular se revela al quedar enteramente libre de niebla y el cofre permanece bloqueado hasta entonces. PATH no ocupa hexágonos de isla ni los toca por una arista; Grass/Mountain sí pueden quedar junto a ellos. El radar permanece visible mientras queden tesoros sin reclamar. Cofres normales y de isla saltan periódicamente en idle. El menú usa tres sprites propios —botón, panel nine-slice y fondo de isla hexagonal—. El log posterior se corrigió: `MenuPanel` ahora es único en la escena, el código ya no asigna `texture_scale` inexistente y el ancho de frame usa conversión explícita. Código, assets y documentación integrados; aceptación visual/interactiva pendiente. No se ejecutó Godot ni pruebas.
+
+Actualización M77 (2026-10-18; [ADR-0129](DECISION_HISTORY.md#adr-0129)): las cartas muestran nombre, icono, descripción y bonus actual→posterior; cada rareza tiñe toda la superficie. El panel reparte tres cartas en abanico y las revela una a una, dejando la rara para el final con destello y rayos. El hover cuenta los valores; al elegir, el icono vuela a una bandeja HUD de siete iconos recientes con contador total y los descartes se queman. Código y documentación integrados; aceptación visual/interactiva pendiente. No se ejecutó Godot ni pruebas.
+
+Actualización M76 (2026-10-16; [ADR-0128](DECISION_HISTORY.md#adr-0128)): la máscara mantiene radio, transición y borde en coordenadas del mundo al cambiar el zoom. Se retira la opacidad variable que dejaba traslucir el mar; el alfa queda totalmente opaco fuera de la transición y los trazos estilizados modulan el color. Aceptación visual pendiente; no se ejecutó Godot ni pruebas.
+
+Actualización M75 (2026-10-16; [ADR-0127](DECISION_HISTORY.md#adr-0127)): los siete PNG originales pasan a `assets/sprites/towers/`, y cada torre colocada carga su atlas 2×2 con dos poses de idle en loop y dos de ataque de una sola reproducción. El idle empieza con un desfase determinista de hasta 0,28 s según seed/coordenada/tipo; los disparos válidos activan ataque y al finalizar se vuelve a idle. El UI y el ghost conservan el PNG completo. Código y assets integrados; queda aceptación visual en Godot. No se ejecutaron pruebas.
+
+Actualización M74 (2026-10-16; [ADR-0126](DECISION_HISTORY.md#adr-0126)): el radar de islas pasa a la esquina superior izquierda, debajo de la barra de vida, con dibujo vectorial simple. Solo apunta a la isla no descubierta más cercana a cualquier distancia; desaparece mientras un cofre disponible intersecte el área visible. Aceptación visual pendiente; no se ejecutó Godot.
+
+Actualización M73 (2026-10-16; [ADR-0125](DECISION_HISTORY.md#adr-0125)): el shader de agua sigue el 86 % del desplazamiento de la cámara en coordenadas visibles del mundo y conserva un 14 % de desfase parallax. La geometría de `CanvasLayer` permanece a pantalla completa; cámara, paneo, zoom y oleaje continúan usando sus rutas actuales. Revisión visual pendiente; no se ejecutó Godot.
 
 Actualización M72 (2026-10-16; [ADR-0124](DECISION_HISTORY.md#adr-0124)): el clic izquierdo del tablero comprueba primero cofres insulares para evitar que la gestión de entrada de `Main` los consuma antes del picking de física. El cofre conserva el sprite especial, recibe rebote al aparecer, brillo animado, outline y rebote al hover; al abrirse emite `coin_burst_gold` y `chest_pickup`. Se retira el rótulo sobre el cofre. La banda Voronoi pasa a unos 39 px totales (tres veces el ancho anterior), anima su dominio y, en caras delanteras elevadas contra agua, se coloca a la altura inferior de la fachada. Inspección visual e interactiva pendiente.
 
@@ -170,6 +186,11 @@ Actualización solicitada (2026-10-14, M35): `RoundProgressStrip` ahora muestra 
 | M70 Exploración del mapa y límites de cámara | Integrado; espuma/islas actualizadas por M71 | Mar con parallax, paneo limitado, zoom progresivo hasta rango completo en R45 y niebla radial desde Main Tower. La espuma animada y las islas sin interacción son históricas; ver ADR-0123. |
 | M71 Islas explorables y tesoros de cartas | Integrado; refinado por M72 | Seis islas por run, brújula, descubrimiento por costa visible, cofres con oferta bonus de tres cartas y reubicación ante expansiones. Borde inicial estático Voronoi y sprites de torre anclados por su base. ADR-0123. |
 | M72 Interacción de cofre insular y espuma de costa | Código/documentación integrados; aceptación visual/interactiva pendiente | Clic de cofre priorizado en la entrada del tablero, feedback de aparición/hover/partículas como el cofre normal, sin rótulo. Espuma blanca Voronoi animada de ~39 px y anclada al nivel del agua en fachadas delanteras costeras elevadas. ADR-0124. |
+| M73 Agua más anclada al plano del mundo | Código/documentación integrados; aceptación visual pendiente | Las coordenadas de la superficie siguen el 86 % del paneo de cámara y dejan 14 % de parallax residual; el fondo conserva su `CanvasLayer` a pantalla completa y responde al zoom. ADR-0125. |
+| M74 Radar para el cofre insular más cercano | Código/documentación integrados; aceptación visual pendiente | Radar vectorial infantil debajo de la vida, con una única dirección hacia la isla no descubierta más cercana; se oculta al aparecer cualquier cofre disponible en pantalla. ADR-0126. |
+| M75 Animaciones de torre y carpeta propia | Código/assets/documentación integrados; aceptación visual pendiente | Los sprites completos se trasladan a `assets/sprites/towers/`; las siete torres colocadas animan idle y ataque con cuatro cuadros por atlas y desfase inicial por instancia. Ghost y retratos conservan los PNG completos. ADR-0127. |
+| M76 Niebla oscura estable al cambiar el zoom | Código/documentación integrados; aceptación visual pendiente | El radio se conserva en coordenadas del mundo; la zona cubierta queda opaca y oculta el agua al alejar la cámara. ADR-0128. |
+| M77 Presentación y feedback de elección de Upgrade Cards | Código/documentación integrados; aceptación visual/interactiva pendiente | Nombre, icono, descripción y preview de valores actuales→posteriores con color favorable/desfavorable; tintes de rareza en la superficie completa; reparto en abanico y revelado secuencial con Rara al final; hover con conteo; vuelo del icono elegido al HUD y quemado de descartes. ADR-0129. |
 
 Actualización transversal (2026-10-13, ADR-0055): se añadió tinte rojo y sacudida de cámara al daño de la base, inclinación/vibración del grupo de Gold al recibir recompensas y abrir cofres, velo translúcido detrás de las ofertas de terreno/mejoras con reaparición al cancelar la colocación, y portal reducido a 64×96 px. M41 sustituye parcialmente ese tamaño por el portal animado de 96×96 px. Implementación integrada; revisión visual/interactiva pendiente según `IMPLEMENTATION_AND_QA.md#acceptance`. No se ejecutaron pruebas en esta actualización.
 
@@ -252,12 +273,12 @@ Implementada sin crear un milestone de gameplay nuevo: `MetaShopPanel`, hacks `C
 - Las pruebas no sustituyen la inspección visual con ratón: quedan por revisar el hover/cliffs, rotación/colocación y overlay `Ctrl+D` en ventana Godot.
 
 ### Próximo paso
-Completar las revisiones manuales pendientes de `IMPLEMENTATION_AND_QA.md#acceptance` en este orden: M72, M71 y M70; M65–M69; M63–M64; M62 y M55; M50, M49, M48, M47 y M45; M41, M40, M39, M38, M36, M35 y M34; luego M33, M32, M30, M31, M28, M27, M26 y M25. Después, completar las inspecciones M8–M14 y M17–M24; el contrato histórico M7 se verifica con M12A. El último smoke de motor es M71: `main.tscn` inició en Godot 4.7 sin errores; M72 queda pendiente de validación visual/interactiva y de flujo.
+Completar las revisiones manuales pendientes de `IMPLEMENTATION_AND_QA.md#acceptance` en este orden: M80, M79, M78, M77, M76, M75, M74, M73, M72, M71 y M70; M65–M69; M63–M64; M62 y M55; M50, M49, M48, M47 y M45; M41, M40, M39, M38, M36, M35 y M34; luego M33, M32, M30, M31, M28, M27, M26 y M25. Después, completar las inspecciones M8–M14 y M17–M24; el contrato histórico M7 se verifica con M12A. El último smoke de motor es M71: `main.tscn` inició en Godot 4.7 sin errores; M72–M80 quedan pendientes de validación visual/interactiva y de flujo.
 
 <a id='roadmap'></a>
 ## Roadmap e historial de milestones
 
-Este documento conserva la secuencia y el alcance histórico de los milestones; no es el estado actual. El último milestone integrado es M72. La lista de trabajo pendiente y aceptación vive solo en [09 — Progreso](#progress); los contratos de diseño y sistema están asignados en el [índice maestro](README.md#index). Al trabajar, no uses una fila histórica para revivir una regla sustituida.
+Este documento conserva la secuencia y el alcance histórico de los milestones; no es el estado actual. El último milestone integrado es M80. La lista de trabajo pendiente y aceptación vive solo en [09 — Progreso](#progress); los contratos de diseño y sistema están asignados en el [índice maestro](README.md#index). Al trabajar, no uses una fila histórica para revivir una regla sustituida.
 
 Los milestones se implementan en orden cuando la petición del usuario es «avanza». **No saltar al contenido final.**
 
@@ -823,11 +844,18 @@ Estas cantidades NO son compromiso de diseño final.
 ### M71 — Islas explorables y tesoros de cartas
 - Reemplazar la espuma animada por un borde blanco estático, roto y distorsionado por celdas Voronoi, limitado al litoral expuesto; las juntas internas no reciben trazo.
 - Mantener seis islas por run: una desde R1 a un máximo de 8 hexes de la base y cinco posteriores en anillos axiales progresivos, generadas en R10, 19, 28, 37 y 45. Su distribución es reproducible por seed; cada isla contiene 3–7 celdas visuales de altura 0–2 fuera de `HexGrid`.
-- Mostrar una brújula con dirección y distancia por cada isla/cofre sin cobrar a un máximo de 12 hexes de la cámara. Si cualquier arista costera entra en la vista, revelar la isla entera y colocar su cofre de cartas.
+- Si cualquier arista costera entra en la vista, revelar la isla entera y colocar su cofre de cartas. El comportamiento actualizado del radar único se valida en M74, que sustituye la regla anterior de M71.
 - Al abrir un cofre, pausar la run y ofrecer tres cartas del mismo pool/selector usado por la mejora cada tres rondas; al elegir, reanudar la fase de preparación o combate que estaba activa. No consumir ni sustituir la oferta programada.
 - Si el tablero alcanza una isla pendiente, mover el conjunto y el cofre a agua segura. Confirmar que el terreno decorativo no ocupa celdas lógicas, no altera PATH y nunca desaparece detrás del tablero.
 - Alinear la base del sprite completo de cada torre con el centro de su hex, dejando el volumen hacia arriba sin recorte en el tablero ni en el ghost.
 - Resultado: código/documentación integrados; aceptación visual e interactiva pendiente. Ver [ADR-0123](DECISION_HISTORY.md#adr-0123).
+
+### M80 — Menús, paneles y botones editables desde Inspector
+- Guardar la presentación de los menús, paneles y botones en nodos, Themes, StyleBoxes y escenas reutilizables para verla en el editor antes de ejecutar.
+- Proporcionar muestras visuales para los nodos de la tienda, las filas de bonus de Upgrade Cards y el texto de subida de torre; el runtime las sustituye con estado/contenido real.
+- Dibujar el glyph de pausa en el editor sin cambiar el estado del juego ni InputMap.
+- Conservar separadas la configuración de presentación y la lógica de juego.
+- Resultado: código/documentación integrados; aceptación visual pendiente. Ver [ADR-0132](DECISION_HISTORY.md#adr-0132).
 
 <a id='acceptance'></a>
 ## Criterios de aceptación y revisión manual
@@ -1123,7 +1151,7 @@ M13 queda aceptado cuando los nueve puntos anteriores pasan en una ventana Godot
 2. Activa build mode y apunta a obstáculos de varios tipos: el preview debe marcarlos inválidos y no se debe colocar torre. Repite en una celda Grass/Mountain con cofre; la torre tampoco se debe construir hasta abrirlo. Haz clic en el cofre y confirma que desaparece y añade 25 Gold una sola vez, sin alterar la ruta ni la celda axial. Vuelve a hacer clic y confirma que no duplica la recompensa.
 3. En la tienda permanente compra «Suerte del explorador» nivel por nivel y comienza otra run para que cambie el porcentaje de cofres. Comprueba que parte del 1 %, sube en pasos de 5 puntos porcentuales y se limita al 20 % tras cuatro niveles; la configuración persiste al reiniciar el juego.
 4. Pasa el cursor sobre un cofre sin abrirlo. Debe botar suavemente y mostrar un resplandor dorado mientras siga el hover; al salir, animación y brillo deben detenerse. Al abrirlo, la animación debe terminar sin bloquear la retirada del cofre.
-5. Comprueba el VFX al impactar cada torre: Ballista Dust_01, Mortar Explosion_01, Tesla Coil TeslaCoil, Frost Keep Ice_01, Flame Thrower Fire_03, Poison Sprayer Poison y Shredder Blood. Los efectos deben aparecer en la posición de impacto y concluir su animación sin quedarse congelados.
+5. El criterio visual de impactos de M14 quedó reemplazado por M79/ADR-0131. Revisa los sprites actuales y sus posiciones en [M79](#m79-tower-projectile-sprites).
 6. Comprueba los cuatro estados del cursor: Cursor_01 normal, Cursor_02 al pasar sobre controles u objetos interactivos, Cursor_03 al apuntar a terreno inválido o una acción deshabilitada, y Cursor_04 mientras se coloca una torre. Confirma que los tres primeros se asignan al puntero del sistema y que al salir del overlay de construcción se restaura el cursor del estado actual.
 7. Verifica que el panel lateral de torre no tiene barras de desplazamiento a 1280×720 y 1440×900; debe mostrar todo su contenido y adaptarse a la altura disponible. Revisa que la tienda conserve su scroll cuando una categoría exceda el espacio.
 
@@ -1282,7 +1310,7 @@ M26 está implementado en código. La escena se inició con Godot 4.7 sin errore
 
 #### Revisión manual en ventana
 
-1. Criterio visual original de M27, sustituido por M34/M36 y luego por M40/ADR-0088: consulta el layout plano, tier y aura en M40.
+1. El criterio visual de M27 se sustituyó sucesivamente por M34/M36 y M40/ADR-0088; la card plana de M40 es histórica y quedó reemplazada por M77/ADR-0129. La presentación vigente se revisa en [M77](#m77-upgrade-cards).
 2. Inspecciona cartas de cada operación general vigente: daño, crítico, alcance, elevación, cadencia, área, Mana, capas Health/Armor/Shield, Gold, enemigo y estados. Ninguna card debe quedar sin imagen. Las cartas de torre específica deben conservar el retrato de la torre.
 3. Coloca dos o más torres del mismo tipo. Comprueba que el reembolso de demoler la última torre seleccionada coincide con `precio_base + (cantidad_antes - 1) × incremento`, el conteo baja y el siguiente precio de compra disminuye. Sube una torre de nivel antes de demolerla y confirma que su reembolso no cambia.
 4. En una oferta de terreno y al mover/rotar su ghost, verifica que no aparecen cofres en miniaturas ni losas seleccionadas. Confirma terreno Grass/Mountain sin obstáculo: si la tirada genera cofre, aparece en la celda ya colocada con un salto visible; PATH y celdas con obstáculo nunca reciben cofre. Abre uno y confirma que conserva hover, pago y retirada.
@@ -1330,7 +1358,7 @@ Los perfiles actuales cargan y el feedback está integrado; la aceptación manua
 
 #### Revisión manual en ventana
 
-1. Criterio visual de card sustituido por M34; el panel unificado y las auras por rareza se revisan en esa sección.
+1. El criterio visual de card de M32 quedó sustituido por M34 y M40; la presentación de M40 también quedó reemplazada por M77/ADR-0129. La revisión vigente está en [M77](#m77-upgrade-cards).
 2. Abre una oferta de terreno. Las miniaturas de bifurcación y convergencia muestran los hexágonos y obstáculos, sin brazos, ramas ni flechas PATH superpuestos.
 3. Elige una pieza y comprueba que aparece `T · Auto-colocar (no recomendado)`. Pulsa T: la pieza debe colocarse en una posición libre que pase las validaciones geométricas y de PATH, incluida la continuación futura de campaña. Repite en un estado donde no exista una posición válida: debe mostrarse un aviso y el tablero no debe cambiar. Comprueba que la rotación manual y la confirmación usual siguen disponibles.
 
@@ -1357,7 +1385,7 @@ La implementación está integrada; no se ejecutaron pruebas ni revisión visual
 3. Genera varios mapas/ofertas. PATH siempre usa altura 0, Grass solo 1 o 2 y Mountain 2 o 3; los valores permanecen iguales desde la miniatura y el ghost hasta confirmar la expansión. La altura Grass varía de forma reproducible por seed.
 4. Construye torres en alturas 1, 2 y 3. El badge superior muestra +1/+2/+3 de daño, el alcance aumenta 0,5 hex por altura y la torre conserva su selección/click con el sprite elevado. En torres con coste de Mana escalado por daño, comprueba que el coste por ataque también aumenta con la altura.
 5. Selecciona Ballista para construir y mueve el cursor por Grass/Mountain de alturas diferentes. El ghost debe mostrar en todo momento el bonus de daño de la celda; PATH, huecos, obstáculos y casillas inválidas no deben tapar el indicador ni permitir construcción.
-6. La presentación vigente de upgrade cards está definida por M40/ADR-0088; comprueba esa sección. El criterio temporal del sprite vertical de M36 queda sustituido.
+6. La revisión de presentación citada en M34 correspondía a M40/ADR-0088 y quedó sustituida por M77/ADR-0129; la aceptación vigente está en [M77](#m77-upgrade-cards). El criterio temporal del sprite vertical de M36 queda sustituido.
 
 La aceptación visual/interactiva de M34 está pendiente. No se ejecutaron pruebas en esta actualización. Ver [ADR-0073](DECISION_HISTORY.md#adr-0073), [ADR-0074](DECISION_HISTORY.md#adr-0074) y [ADR-0075](DECISION_HISTORY.md#adr-0075).
 
@@ -1381,11 +1409,11 @@ La integración de M35 está en código y documentos. Tras los arreglos de ID, d
 
 #### Revisión manual en ventana
 
-1. El criterio de sprite vertical de esta sección quedó sustituido por M40/ADR-0088. Conserva aquí la comprobación de ramas H/A/S paralelas; la intensidad del tinte se actualizó en M49.
+1. El criterio de sprite vertical de esta sección quedó sustituido por M40/ADR-0088, cuya presentación plana se reemplazó por M77/ADR-0129. Conserva aquí la comprobación de ramas H/A/S paralelas; la intensidad del tinte se actualizó en M49. La presentación vigente se revisa en [M77](#m77-upgrade-cards).
 2. En el mapa permanente, desbloquea una torre y confirma que sus mejoras Health, Armor y Shield pasan juntas a disponibles y que las tres conexiones salen del nodo de torre. Compra una de ellas y verifica que las otras dos siguen comprables; comprueba que puedes elegir las tres en cualquier orden para Ballista y otra torre.
 3. Compara tapas Grass/Mountain a elevaciones 0, 1, 2 y 3 junto a sus copias elevadas Y-sorted. El nivel 0 conserva el color original y cada nivel oscurece el RGB con multiplicadores 1,00/0,95/0,90/0,85. Deben seguir visibles los detalles de textura y el patrón no debe estirarse. Verifica que la cámara top-down isométrica, UV, geometría cerrada y oclusión delante/detrás no cambian.
 
-Las ramas H/A/S y el tinte de M36 permanecen vigentes; su presentación de card se reemplazó en M40. No se ejecutaron pruebas automatizadas ni se hizo revisión visual/interactiva; la aceptación queda pendiente. Ver [ADR-0080](DECISION_HISTORY.md#adr-0080), [ADR-0081](DECISION_HISTORY.md#adr-0081), [ADR-0082](DECISION_HISTORY.md#adr-0082) y ADR-0088.
+Las ramas H/A/S y el tinte de M36 permanecen vigentes; su presentación de card se reemplazó en M40 y volvió a rediseñarse en M77. No se ejecutaron pruebas automatizadas ni se hizo revisión visual/interactiva; la aceptación queda pendiente. Ver [ADR-0080](DECISION_HISTORY.md#adr-0080), [ADR-0081](DECISION_HISTORY.md#adr-0081), [ADR-0082](DECISION_HISTORY.md#adr-0082), ADR-0088 y [ADR-0129](DECISION_HISTORY.md#adr-0129).
 
 ### M37/M38 Geometría axial y fachadas delanteras
 
@@ -1412,6 +1440,8 @@ M37 estableció la retícula axial compartida. M38 simplifica el renderer para r
 El código, los assets y la documentación de M39 están integrados; sus valores visuales vigentes se actualizan en M41/ADR-0089. No se ejecutaron pruebas ni revisión visual/interactiva en esta actualización; aceptación pendiente. Ver [ADR-0087](DECISION_HISTORY.md#adr-0087) y [ADR-0089](DECISION_HISTORY.md#adr-0089).
 
 ### M40 Presentación compacta de upgrade cards
+
+Estos criterios describen la presentación aprobada en M40 y se conservan como registro histórico; M77/ADR-0129 los sustituye. La aceptación vigente está en [M77](#m77-upgrade-cards).
 
 #### Revisión manual en ventana
 
@@ -1540,7 +1570,7 @@ M50 está implementado en código/documentación; no se ejecutó Godot ni revisi
 
 #### Revisión manual en ventana
 
-1. Deja disparar a cada una de las siete torres: debe reproducirse su hoja `shoot` sobre la torre y su hoja `impact` donde ocurre el impacto. Dispara con Mortar y confirma que `tap_ripple` marca la posición objetivo al lanzar el proyectil.
+1. Deja disparar a cada una de las siete torres: debe aparecer su PNG `shot` y después su PNG `impact` en el punto de contacto, con el estilo y la transparencia de M79. Dispara con Mortar y confirma que `mortar_target.png` marca la posición objetivo al lanzar el proyectil.
 2. Aplica Bleed, Burn, Poison y Slow; también Haste/Fortification en un perfil compatible. Cada uno debe mostrar su spritesheet animado correcto encima del personaje, mantener su contador actual y desaparecer al terminar el estado. El mapeo vigente está en ADR-0101.
 3. Sube una torre mediante cada ruta de mejora: `star_burst_gold` y `level_up` deben aparecer sobre ella para la subida manual y la automática por XP. Abre una oferta de cards o una expansión de terreno durante el efecto; la animación debe seguir encima de la interfaz y terminar por sí misma.
 4. Deja aparecer un cofre: `item_glow` debe animar detrás del sprite durante toda su disponibilidad. Al abrirlo deben aparecer `coin_burst_gold`, `pickup` y `ui_click`; confirma `coins_top` en cada muerte final de enemigo y `base_hit` sobre la base al recibir daño.
@@ -1767,7 +1797,7 @@ M69 queda integrado en código/documentación; la revisión visual en Godot qued
 
 1. En R1, comprueba que la rueda no permite zoom por debajo de 0,82× ni por encima de 1,35×; tras avanzar rondas, los límites deben ampliarse gradualmente y en R45 alcanzar 0,45×–2,5×. `R` debe centrar el terreno actual a 1×.
 2. Panea con botón central y WASD en las cuatro direcciones: la cámara debe permanecer dentro de los límites del tablero más su margen. Al confirmar una expansión, el límite debe incluirla; los cambios de tamaño de ventana no deben dejar la cámara fuera del área permitida.
-3. Desde Main Tower, verifica que el mundo se oscurece gradualmente al alejar la cámara, que el borde de niebla tiene irregularidad/trazo estilizado y que su radio aumenta al crecer el tablero y al avanzar de ronda. En distancias extremas debe quedar casi todo oscuro; HUD, interacción y reglas de juego siguen activos.
+3. Desde Main Tower, verifica que el mundo se oscurece gradualmente al alejar la cámara y que el borde mantiene su trazo estilizado. Aleja y acerca el zoom sobre un mismo punto: el radio y el borde deben conservar su posición en el mundo, y el agua fuera de la transición no debe verse a través de la niebla. El radio solo aumenta al ampliar el tablero con terreno, nunca por descubrir islas, avanzar ronda o cambiar el zoom. HUD, interacción y reglas de juego siguen activos.
 
 M70 queda integrado en código/documentación; aceptación visual e interactiva pendiente. No se ejecutó Godot. Ver [ADR-0122](DECISION_HISTORY.md#adr-0122) y la revisión vigente de islas/espuma en M71.
 
@@ -1775,9 +1805,9 @@ M70 queda integrado en código/documentación; aceptación visual e interactiva 
 
 1. Revisa el agua mientras paneas: el patrón conserva su parallax lento. El borde costero debe ser blanco, estático y fragmentado con distorsión Voronoi; aparece solo en costas expuestas y no forma costuras en las juntas internas.
 2. En R1, confirma que hay una isla alcanzable situada a no más de 8 hexes de Main Tower. A medida que avanzan las rondas aparecen las otras cinco en anillos progresivamente más alejados; las mismas seeds reproducen la misma disposición. Todas tienen 3–7 celdas y alturas 0–2 sin ocupar ni alterar el `HexGrid`.
-3. Panea hasta que una arista exterior de una isla entre en pantalla: deben descubrirse todas sus celdas y el cofre. La brújula debe dar número, dirección y distancia para cada objetivo sin cobrar a 12 hexes o menos de la cámara; al descubrirla, su marcador debe pasar de isla a cofre.
+3. En la isla inicial, mirar o panear no debe descubrirla: sigue bajo la niebla mientras el radar indica su dirección. Las expansiones del tablero amplían el área revelada; cuando todas las celdas de una isla quedan libres de niebla, se revela el grupo y se habilita el cofre.
 4. Clica un cofre durante preparación y durante combate: la oferta muestra exactamente tres cartas, pausa el combate si estaba activo y reanuda la misma fase tras elegir. La oferta regular de cada tres rondas debe seguir ocurriendo en su ronda sin consumirse por el tesoro.
-5. Acerca una expansión a una isla pendiente: todo el grupo y su cofre deben trasladarse a agua libre y seguir siendo localizables/reclamables. Ninguna expansión, ruta PATH, construcción o torre debe colisionar con las celdas decorativas.
+5. Acerca una expansión a una isla pendiente: su grupo y cofre conservan las coordenadas y siguen localizables. Ninguna pieza ocupa las celdas de la isla y PATH tampoco toca un hexágono vecino; Grass/Mountain sí pueden quedar junto a ella.
 6. Compara las torres construidas y el ghost: el centro de la base inferior del sprite debe coincidir con el centro del hex y la imagen debe sobresalir hacia arriba sin quedar recortada.
 
 M71 queda integrado en código/documentación; `main.tscn` inició en Godot 4.7 sin errores de análisis ni ejecución. Aceptación visual e interactiva y pruebas específicas de flujo pendientes. Ver [ADR-0123](DECISION_HISTORY.md#adr-0123).
@@ -1791,11 +1821,100 @@ M71 queda integrado en código/documentación; `main.tscn` inició en Godot 4.7 
 
 M72 queda integrado en código/documentación; aceptación visual/interactiva y validación del flujo del cofre pendientes. No se ejecutó Godot en esta actualización. Ver [ADR-0124](DECISION_HISTORY.md#adr-0124).
 
+### M73 — Agua más anclada al plano del mundo
+
+1. Panea el mapa en varias direcciones y confirma que el patrón de agua se desplaza con el terreno, sin quedarse visualmente fijo al viewport.
+2. Compara el movimiento del agua y del tablero: el agua debe avanzar algo más despacio, con un desfase leve y perceptible, no con la deriva amplia anterior.
+3. Prueba varios niveles de zoom y el reajuste del viewport: el patrón debe conservar escala coherente con las coordenadas del mundo, sin saltos al acercar, alejar o centrar el mapa.
+
+M73 queda integrado en shader y documentación; la revisión visual queda pendiente. No se ejecutó Godot. Ver [ADR-0125](DECISION_HISTORY.md#adr-0125).
+
+### M74 — Radar del tesoro insular más cercano
+
+1. Confirma que el radar aparece debajo de la barra de vida, en la esquina superior izquierda, y que el dibujo sencillo se lee como un radar de isla.
+2. Panea en distintas direcciones: el marcador señala el tesoro sin reclamar más cercano y actualiza su distancia, antes y después de descubrir su isla.
+3. Mantén un cofre insular visible sin abrirlo: el radar debe seguir señalándolo. Al reclamarlo, debe saltar al siguiente tesoro pendiente aunque ya esté descubierto o visible.
+4. Después de reclamar todos los cofres insulares, el radar permanece oculto.
+
+M74 queda integrado en código y documentación; aceptación visual e interactiva pendiente. No se ejecutó Godot. Ver [ADR-0126](DECISION_HISTORY.md#adr-0126).
+
+### M75 — Idle y ataque animados para las siete torres
+
+1. Construye las siete torres en celdas distintas: deben comenzar con fases de idle diferentes, conservar el anclaje de la base al centro del hex y mantener una escala visual equivalente a la imagen anterior.
+2. Sin enemigos y durante preparación, cada torre debe recorrer en loop sus dos cuadros superiores. Al aparecer un objetivo válido, Ballista, Mortar, Tesla Coil, Frost Keep, Flame Thrower, Poison Sprayer y Shredder deben reproducir sus dos cuadros inferiores una vez por disparo/ataque y regresar a idle.
+3. Comprueba destellos/descargas/ráfagas propios de cada arma, orientación con espejo hacia ambos lados, outline, elevación, selección y crecimiento por nivel. El cambio de frame no debe desplazar la base ni modificar alcance, daño o cadencia.
+4. Revisa las cards, el retrato de Tower Info y el ghost de construcción: deben seguir mostrando el PNG completo y estático, sin recortes del spritesheet.
+
+M75 queda integrado en código, assets y documentación; aceptación visual e interactiva pendiente. No se ejecutaron pruebas ni smoke de escena. Ver [ADR-0127](DECISION_HISTORY.md#adr-0127).
+
+### M76 — Niebla opaca independiente del zoom
+
+1. A un mismo punto de cámara y ronda, acerca y aleja el zoom. El borde de revelado debe permanecer asociado al mismo radio de mundo; el zoom solo cambia cuánto terreno cabe en pantalla.
+2. Comprueba el área más allá del borde de transición: debe quedar completamente cubierta por el color de niebla, sin mostrar el patrón de agua ni huecos generados por el trazo estilizado.
+3. Cambia de posición de cámara y redimensiona el viewport: la máscara debe seguir centrada en Main Tower, mantener la opacidad exterior y dejar el HUD visible y usable.
+4. Confirma que solo una expansión de terreno puede aumentar el radio. Descubrir una isla, abrir un cofre, avanzar ronda o cambiar el zoom no modifica la niebla.
+
+M76 queda integrado en código y documentación; aceptación visual pendiente. No se ejecutaron pruebas ni smoke de escena. Ver [ADR-0128](DECISION_HISTORY.md#adr-0128).
+
+<a id='m77-upgrade-cards'></a>
+### M77 — Presentación y feedback de elección de Upgrade Cards
+
+1. Revisa una oferta regular y una oferta de cofre: cada carta coloca el nombre arriba, un icono grande al centro y la descripción con las filas de valores acumulados antes→después debajo. Comprueba operaciones aditivas, porcentajes, multiplicadores y reclutamientos sin bonus numérico; verifica que el efecto favorable se resalte en verde y la penalización en rojo, incluida la subida de crítico y caída de daño de Quality over Quantity.
+2. Confirma que Común, Poco común y Rara se distinguen por el tinte de toda la superficie y por la etiqueta escrita; las cartas aparecen boca abajo en un abanico sutil y se revelan una por una.
+3. Cuando haya una Rara, confirma que se revela la última y que el impulso, destello y rayos refuerzan su aparición sin permanecer sobredimensionada.
+4. Pasa el cursor por cada carta: debe inclinarse/brillar y contar los valores desde el actual hasta el posterior; salir del hover no revierte el valor final.
+5. Elige una carta: su icono debe volar hasta la bandeja del HUD y quedar visible, el total debe subir una unidad y las dos cartas no elegidas deben quemarse. Revisa que una carta de reclutamiento habilite su torre y que una oferta de cofre reanude la misma fase previa.
+6. Comprueba textos largos, legibilidad de los números y el espacio del HUD en la resolución mínima y a zoom normal; la bandeja mantiene los siete iconos recientes.
+
+M77 queda integrado en código y documentación; aceptación visual/interactiva pendiente. No se ejecutó Godot ni pruebas. Ver [ADR-0129](DECISION_HISTORY.md#adr-0129).
+
+<a id='m78-island-menu-feedback'></a>
+### M78 — Exploración persistente, feedback y menú
+
+1. En enemigos con solo Health, verifica que los iconos de estado grandes queden inmediatamente encima de esa barra; con Armor/Shield activos, deben seguir arriba de la primera capa visible, alineados y legibles con sus stacks.
+2. Compra una mejora de torre y deja que otra suba por XP: ambas deben crear alrededor de la torre la aureola, destello/partículas y el texto flotante `¡NIVEL n!`, sin retrasar ni modificar la mejora.
+3. En R1, confirma que la isla cercana se mantiene oculta bajo niebla y el radar apunta hacia ella. Mirar o panear no debe descubrirla; al ampliar terreno, solo se revela cuando todas sus celdas y el cofre quedan fuera de niebla. No permitir clic antes de descubrirla.
+4. Tras abrir una isla, el radar debe seguir activo hacia el siguiente tesoro sin reclamar, incluso si el cofre de destino está visible. La niebla no cambia al descubrir islas, abrir cofres, avanzar ronda o cambiar zoom; solo crece con nuevas celdas de terreno.
+5. Coloca una pieza cerca de una isla: PATH no puede tocar ni solapar sus celdas; Grass/Mountain sí pueden colocarse junto a ellas. Ningún tipo de terreno puede ocupar su huella y la isla/costa/cofre no deben trasladarse ni desaparecer.
+6. Espera junto a un cofre normal y uno insular: ambos deben saltar en idle cada cierto tiempo, detener ese loop mientras el hover los anima y desaparecer al reclamarlos.
+7. Abre el menú en varias resoluciones: el fondo debe mostrar la isla hexagonal rodeada de agua; el panel y botones mantienen esquinas y bordes al escalar, con los tres textos centrados y legibles.
+8. En `ROUND_PREP`, abre `Ctrl+K` → «Elegir pieza de terreno»: se muestran tres piezas, la selección permite rotar y colocar, conserva las reservas de isla y la continuidad futura de PATH, y no cambia la ronda. Clic derecho cancela la colocación y vuelve a las tres opciones; otro clic derecho cierra el hack. En combate, la acción debe informar que solo está disponible durante la preparación sin cambiar la partida.
+
+Corrección posterior a M78: se implementó `_set_burn_progress`, que faltaba en la animación de descarte de cartas y causaba un error del parser. Los botones del menú ahora miden como mínimo 300 × 100 px y se centran para respetar mejor la proporción del sprite; también se ajustó el panel y su espaciado. Revisión estática realizada; no se ejecutó Godot ni pruebas.
+
+Herramienta de depuración (2026-10-18): `Ctrl+K` puede abrir el selector de tres piezas de terreno durante `ROUND_PREP`; su colocación preserva PATH/islas y no avanza campaña. La aceptación funcional queda pendiente de Godot.
+
+M78 queda integrado en código, assets y documentación; aceptación visual/interactiva pendiente. Ver [ADR-0130](DECISION_HISTORY.md#adr-0130).
+
+<a id='m79-tower-projectile-sprites'></a>
+### M79 — Sprites infantiles para disparos y proyectiles de torre
+
+1. Construye y deja atacar a las siete torres. Comprueba que cada `shot_<torre>.png` aparece en el disparo y cada `impact_<torre>.png` en el contacto, sin fondo opaco; Tesla Coil debe estirar `tesla_beam.png` hasta cada objetivo y mostrar después el estallido azul.
+2. Comprueba el marcador `mortar_target.png`, la explosión AoE de Mortar y la llegada del proyectil. Ballista debe mover el virote; Frost Keep debe dejar caer el copo y Shredder recorrer PATH con la hoja rotatoria. El daño, los impactos por objetivo y la trayectoria deben permanecer iguales.
+3. Revisa que los cinco VFX continuos conserven el primer disparo inmediato y el intervalo aleatorio de 2,0–2,5 s, que Ballista/Mortar no dosifiquen disparos, y que las imágenes animadas con pulso/desvanecimiento terminen tras la duración previa.
+4. Inspecciona los efectos a 1280×720 y 1440×900, comprobando legibilidad, tamaño relativo entre las torres, enemigos y celdas; los ajustes viven en `Main.impact_vfx_display_sizes` y en las constantes de escala de los tres scripts de proyectil.
+
+M79 está integrado en código, assets y documentación; aceptación visual/interactiva pendiente. No se ejecutó Godot ni pruebas. Ver [ADR-0131](DECISION_HISTORY.md#adr-0131).
+
+### M80 — Menús, paneles y botones editables desde Inspector
+
+1. Abre `main_menu.tscn` en el editor. Comprueba que el agua se ve como en `main.tscn` y que el fondo del menú usa `map_fog.gdshader`, el mismo shader de gameplay, para la viñeta negra. La capa queda limitada al fondo de MainMenu; no hay una imagen de fondo. Ajusta nodos, StyleBoxes y Theme desde el Inspector; la previsualización debe actualizarse sin ejecutar el juego y las acciones deben seguir funcionando.
+2. Abre `pause_menu.tscn`; confirma que `MenuPanel` usa los StyleBoxes compartidos de MainMenu y conserva exactamente sprite, tamaño 452×506 px, cortes, márgenes, título 55 px, botones 300×100 px, fuente 24 px, colores y estados. El único contenido distinto es el título `PAUSA` y los botones `Continuar`/`Volver al menú`; continúa y volver al menú deben seguir funcionando. El overlay de pausa permanece detrás del panel.
+3. Abre `meta_shop_panel.tscn`; ajusta inset, márgenes, tipografía, saldo y botón de cierre en la escena. El mapa contiene un nodo de muestra para previsualizar la superficie, icono, etiquetas y estado; la tienda abierta en juego debe sustituirlo por el mapa runtime.
+4. En `upgrade_offer_card.tscn`, modifica la fila de muestra mediante el recurso reusable `upgrade_offer_preview_row.tscn`. Comprueba que la carta se ve en el editor y que las filas generadas por una oferta usan el mismo estilo.
+5. En `main.tscn`, selecciona `PauseButton`; el glyph debe dibujarse en el editor y responder al cambio de sus medidas exportadas, conservando el Theme y sin alterar el estado de pausa del editor.
+6. Abre `tower_level_up_feedback.tscn`; ajusta fuente, color, contorno y caja directamente en `LevelUpText`, y el formato, nivel de muestra y movimiento desde la raíz. La escena debe mostrar el feedback estático en el editor; una subida por compra y otra por XP deben usar ese mismo recurso.
+7. Revisa el hover de pausa, tienda, HUD, cards de terreno y torres, tienda permanente, debug y botones creados durante la partida: escala con un rebote breve, salto sutil, inclinación que sigue el puntero y brillo Balatro; al salir, todo vuelve suavemente al estado base. Los clicks y el foco siguen funcionando, y Upgrade Cards no reciben un segundo efecto.
+8. Pulsa Play y confirma que el botón evita un segundo arranque, el agua permanece visible durante el cambio y ni el patrón ni la fase saltan al aparecer el tablero. Revisa el resultado en dos relaciones de aspecto.
+9. Desde MainMenu abre “Mejoras permanentes”: confirma que aparecen los nodos del catálogo, sus conexiones, costes y niveles guardados, y que el velo opaco de la tienda oculta por completo la viñeta del fondo. Compra un nodo disponible y confirma que el saldo y el nivel se actualizan.
+
+M80 está integrado en escenas, recursos y documentación; aceptación visual/interactiva pendiente. No se ejecutó Godot ni pruebas en esta actualización. Ver [ADR-0132](DECISION_HISTORY.md#adr-0132), [ADR-0133](DECISION_HISTORY.md#adr-0133), [ADR-0134](DECISION_HISTORY.md#adr-0134), la corrección de alcance [ADR-0135](DECISION_HISTORY.md#adr-0135) y el panel de pausa [ADR-0136](DECISION_HISTORY.md#adr-0136).
+
 <a id='doc-audit'></a>
 ## Auditoría de coherencia documental actual
 
 - Fecha: 2026-10-16.
-- Alcance: índices, diseño activo, roadmap, progreso, aceptación, ADR, catálogos de sprites, elevación, islas explorables, ofertas bonus y presentación de costa.
+- Alcance: índices, diseño activo, roadmap, progreso, aceptación, ADR, catálogos de sprites, animaciones de torre M75, elevación, islas explorables, ofertas bonus y presentación de costa.
 - Autoridad documental: [índice maestro](README.md#index). Esta página registra los resultados de la conciliación; no introduce reglas adicionales.
 
 ### Resultado
@@ -1808,17 +1927,18 @@ Los ADR conservan las razones e historia de los cambios. No prevalecen sobre el 
 
 ### Cambios conciliados
 
-- **Estado:** M65–M70 aparecen en roadmap, progreso y aceptación. El último escaneo/smoke de Godot registrado sigue siendo M64; no se atribuye validación de motor a cambios posteriores.
+- **Estado:** M65–M75 aparecen en progreso y aceptación. El último smoke de escena de Godot registrado sigue siendo M71; M75 solo importó sus atlas, sin ejecutar escena ni pruebas.
 - **Elevación:** por la decisión explícita del usuario, `AGENTS.md`, ADR-0073, código y documentos propietarios coinciden en elevación lógica 0–3: PATH 0, Grass 1–2 y Mountain 2–3. La generación reproducible, validadores y bonus por nivel permanecen alineados.
 - **Enemigos:** M65 mantiene los 26 spritesheets runtime y el orden/nombres confirmados en ADR-0116. La carpeta `assets/sprites/enemies/new/` no existe en el checkout, aunque varios documentos anteriores la daban por conservada; el inventario ya indica que las fuentes originales no están disponibles localmente.
+- **Torres:** M75 mueve sus PNG completos de `ui/icons/` a `assets/sprites/towers/` y registra los siete atlas con cuatro cuadros por hoja. Cards, retratos y ghost siguen en los PNG completos; `TowerArtCatalog` crea `SpriteFrames` para el mundo.
 - **Fachadas y terreno:** los valores de M69 (#407850 Grass y #3b3c41 Mountain con negro opaco abajo a transparente arriba) se alinean entre diseño, implementación documentada, criterios y catálogo de sprites. Los colores del contorno regional permanecen separados.
 - **Referencias:** se corrigieron enlaces a ADR con nombre equivocado, README de terreno en ruta obsoleta y destinos de auditoría; se retiró la referencia a un README de fuentes de enemigo inexistente.
 
 ### Comprobaciones y límites
 
-- El escaneo del checkout encontró 130 PNG bajo `assets/sprites/` y 26 PNG canónicos de enemigo bajo `assets/sprites/enemies/`; no encontró `assets/sprites/enemies/new/`.
+- El escaneo del checkout encontró 138 PNG bajo `assets/sprites/`, incluidos 26 PNG canónicos de enemigo y siete atlas de torre; no encontró `assets/sprites/enemies/new/`.
 - Se revisaron los enlaces Markdown locales y `git diff --check`: no hay destinos locales rotos ni errores de whitespace.
-- M70 añade criterios manuales para cámara, espuma, parallax, islas y niebla. No se ejecutó Godot ni pruebas automatizadas en este cambio; la aceptación visual/interactiva de M65–M70 sigue pendiente según [Progreso](#progress) y [Aceptación](#acceptance).
+- M75 añade criterios manuales para fase idle, ataques de las siete torres, anclaje y retratos estáticos. Los atlas se importaron con Godot 4.7; no se ejecutó una escena ni pruebas automatizadas. La aceptación visual/interactiva de M65–M75 sigue pendiente según [Progreso](#progress) y [Aceptación](#acceptance).
 
 <a id='m64-audit'></a>
 ## Snapshot de verificación M64

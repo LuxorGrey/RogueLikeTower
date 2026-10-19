@@ -5,7 +5,8 @@ static func evaluate(
 	piece: TerrainPieceData,
 	anchor_coord: Vector2i,
 	rotation_steps: int,
-	board_cells: Dictionary[Vector2i, HexCell]
+	board_cells: Dictionary[Vector2i, HexCell],
+	reserved_island_coords: Dictionary[Vector2i, bool] = {}
 ) -> TerrainPlacementResult:
 	var result := TerrainPlacementResult.new()
 	if piece == null:
@@ -23,9 +24,21 @@ static func evaluate(
 	var candidate_data: Dictionary[Vector2i, TerrainPieceCellData] = {}
 	for cell in piece.rotated_cells(rotation_steps):
 		var global_coord: Vector2i = anchor_coord + cell.local_coord
+		if reserved_island_coords.has(global_coord):
+			result.errors.append("La pieza ocuparía una celda reservada de una isla (%s)." % global_coord)
+			continue
 		if board_cells.has(global_coord):
 			result.errors.append("Solapa una casilla existente en %s." % global_coord)
 			continue
+		if cell.terrain_type == HexCell.TerrainType.PATH:
+			var touches_island: bool = false
+			for offset in HexCoord.DIRECTION_OFFSETS:
+				if reserved_island_coords.has(global_coord + offset):
+					touches_island = true
+					break
+			if touches_island:
+				result.errors.append("PATH no puede colocarse junto a una isla (%s)." % global_coord)
+				continue
 		candidate_data[global_coord] = cell
 
 	if not result.errors.is_empty():

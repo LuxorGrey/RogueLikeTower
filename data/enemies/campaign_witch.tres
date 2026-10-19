@@ -15,7 +15,6 @@ script = ExtResource("1_enemy_data")
 id = &"campaign_witch"
 display_name = "Witch"
 max_health = 1000
-move_speed = 135
 base_damage = 1
 kill_reward = 16
 shield = 1000

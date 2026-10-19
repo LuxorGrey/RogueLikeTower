@@ -30,7 +30,6 @@ script = ExtResource("1_enemy_data")
 id = &"campaign_battering_ram"
 display_name = "Battering Ram"
 max_health = 300
-move_speed = 45
 base_damage = 1
 kill_reward = 11
 armor = 1500

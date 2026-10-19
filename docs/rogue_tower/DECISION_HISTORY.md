@@ -128,6 +128,16 @@ Este archivo contiene el registro histórico completo. La regla aprobada vigente
 - [ADR-0122 — Exploración del mapa, mar e islas decorativas](#adr-0122)
 - [ADR-0123 — Islas explorables, tesoros de cartas y borde costero](#adr-0123)
 - [ADR-0124 — Clic y presentación de cofres insulares; espuma costera ancha y móvil](#adr-0124)
+- [ADR-0125 — Agua más anclada al plano del mundo](#adr-0125)
+- [ADR-0126 — Radar único para la isla no descubierta más cercana](#adr-0126)
+- [ADR-0127 — Arte y animaciones de idle/ataque para las siete torres](#adr-0127)
+- [ADR-0128 — Niebla opaca e independiente del zoom](#adr-0128)
+- [ADR-0129 — Presentación y feedback de selección de Upgrade Cards](#adr-0129)
+- [ADR-0130 — Islas persistentes, niebla por terreno y feedback visual](#adr-0130)
+- [ADR-0131 — Proyectiles dibujados a mano para las siete torres](#adr-0131)
+- [ADR-0132 — Ajustes de menús y controles desde Inspector](#adr-0132)
+- [ADR-0133 — Hover Balatro, fondo procedural y transición al juego](#adr-0133)
+- [ADR-0134 — Recuperar las mejoras permanentes y compartir el agua del fondo](#adr-0134)
 
 ## Cómo mantener el historial
 
@@ -4004,7 +4014,6 @@ El usuario pidió que las islas incentivaran la exploración y pudieran localiza
 - `game/board/decorative_island_field.gd`
 - `game/board/exploration_island_data.gd`
 - `game/board/island_card_chest.gd`
-- `game/ui/island_compass_indicator.gd`
 - `game/cards/run_card_service.gd`
 - `game/board/shoreline_foam_overlay.gd`
 - `game/board/shoreline_foam.gdshader`
@@ -4054,3 +4063,460 @@ El usuario informó que podía ver los cofres de isla, pero no activarlos; pidi�
 - `docs/rogue_tower/PROJECT_SPEC.md`
 - `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#progress`
 - `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#acceptance`
+
+<a id='adr-0125'></a>
+## ADR-0125 — Agua mayormente anclada al plano del mundo
+
+- Fecha: 2026-10-16.
+- Estado: código y documentación integrados; aceptación visual pendiente.
+- Decisiones relacionadas: ADR-0109 convierte UV de pantalla en coordenadas visibles del mundo; ADR-0122 introdujo el parallax de cámara 0,62×; ADR-0123 conserva ese comportamiento para el mar.
+
+### Contexto
+
+El usuario pidió que el agua acompañara el paneo como una superficie del mundo en vez de sentirse fijada al canvas, sin perder completamente el parallax sutil que daba profundidad.
+
+### Decisiones
+
+1. Mantener `WaterBackgroundLayer` como `CanvasLayer` a pantalla completa; no mover ni escalar su rectángulo con la cámara, evitando introducir un segundo transform sobre las coordenadas visibles que ya calcula el shader.
+2. Cambiar `camera_parallax_factor` de 0,62 a 0,86. El patrón sigue el 86 % del desplazamiento de cámara y el 14 % restante conserva una deriva más lenta. Posición de cámara, tamaño de viewport y zoom continúan actualizados por `Main` como antes.
+3. Mantener el oleaje lento y el shader procedural sin modificar sus colores, espuma costera ni animación temporal.
+
+### Consecuencias
+
+- El mar se percibe más unido al tablero durante paneos largos y conserva una diferencia de velocidad pequeña que sugiere profundidad.
+- El factor sigue editable como uniforme del shader. La validación visual debe revisar el desplazamiento en múltiples direcciones y zooms, además del redimensionado; no se ejecutó Godot ni pruebas automatizadas en este cambio.
+
+### Implementación
+
+- `game/main/wind_waker_water_background.gdshader`
+- `game/main/main.gd` (actualización ya existente de posición/viewport/zoom)
+- `docs/rogue_tower/PROJECT_SPEC.md`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#progress`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#acceptance`
+
+<a id='adr-0126'></a>
+## ADR-0126 — Radar único para la isla no descubierta más cercana
+
+- Fecha: 2026-10-16.
+- Estado: código y documentación integrados; aceptación visual e interactiva pendiente.
+- Decisiones relacionadas: ADR-0123 define el descubrimiento de islas y cofres; ADR-0125 mantiene el HUD independiente del movimiento del mundo.
+
+### Contexto
+
+El usuario pidió que el indicador de exploración estuviera junto a la vida, debajo de ella, y guiara a la isla pendiente más próxima. Si ya hay un cofre en la vista, el jugador puede localizarlo visualmente y el radar no debe competir con él.
+
+### Decisiones
+
+1. Colocar `IslandCompass` dentro del panel superior izquierdo del HUD, bajo `BaseHealthRow`. Conservarlo como Control vectorial en código: anillos irregulares, cruz, aguja y marcador de tesoro bastan para un estilo de dibujo infantil sencillo, sin añadir PNG.
+2. Elegir la isla no descubierta más próxima por distancia desde el centro de cámara hasta la coordenada real de su tesoro. Eliminar el máximo anterior de 12 hexes; no incluir islas descubiertas ni tesoros reclamados.
+3. Ocultar el radar si el sprite de cualquier cofre disponible intersecta el rectángulo visible del mundo. Al abrir/cobrar un cofre este deja de contar para la condición; si quedan islas sin descubrir, se muestra la siguiente más cercana.
+4. Si no queda ningún tesoro sin descubrir, mantener el indicador oculto. El cálculo se refresca con la actualización de exploración de cámara y no participa en acciones ni lógica de terreno.
+
+### Consecuencias
+
+- Hay un único objetivo legible y su dirección se actualiza al paneo; el radar se retira justo cuando un cofre visible ya comunica el objetivo.
+- La revisión visual debe comprobar posición bajo la vida, legibilidad en distintos tamaños de viewport, dirección/distancia, ocultación por cofre visible y reaparición hacia el siguiente tesoro. No se ejecutó Godot ni pruebas automatizadas en este cambio.
+
+### Implementación
+
+- `game/board/decorative_island_field.gd`
+- `game/board/island_card_chest.gd`
+- `game/main/main.gd`
+- `game/main/main.tscn`
+- `docs/rogue_tower/PROJECT_SPEC.md`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#progress`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#acceptance`
+
+<a id='adr-0127'></a>
+## ADR-0127 — Arte y animaciones de idle/ataque para las siete torres
+
+### Contexto
+
+El usuario pidió sacar los sprites completos de torre de `ui/icons`, generar una hoja idle/ataque para Ballista, Mortar, Tesla Coil, Frost Keep, Flame Thrower, Poison Sprayer y Shredder, y reproducir ambas animaciones en las torres colocadas sin sincronizar entre sí las de un mismo tipo. La presentación solicitada conserva las siluetas y colores de los sprites y usa una lectura de dibujo animado sencilla, de pocos detalles y contorno grueso.
+
+### Decisiones
+
+1. Mover los siete PNG completos a `assets/sprites/towers/`; conservarlos como fuente estática para cards, retratos de Tower Info y ghost. Las torres colocadas usan hojas independientes `<id>_animations.png` en la misma carpeta.
+2. Cada hoja es una cuadrícula transparente 2×2: fila superior, dos cuadros idle en loop; fila inferior, dos cuadros de ataque de una reproducción. Los cuatro cuadros comparten dimensión y mantienen la dimensión del PNG fuente correspondiente. No se cambia la orientación lógica; el sprite se espeja horizontalmente hacia la izquierda.
+3. `TowerArtCatalog` recorta las regiones con `AtlasTexture` y cachea `SpriteFrames` compartidos. `AnimatedSprite2D` reproduce idle a 2,4 FPS y ataque a 12 FPS. Un ataque válido lanza la animación una vez; al acabar vuelve a idle.
+4. El idle recibe una fase determinista de hasta 0,28 s a partir de seed, coordenada y tipo de torre, para evitar que torres del mismo tipo respiren a la vez sin añadir estado de gameplay.
+5. Usar ImageGen integrado, con cada PNG original como referencia visual, para generar hojas que mantengan la paleta y silueta y añadan el gesto/efecto de disparo propio de cada arma. Los atlas importan con límite de 512 px; el PNG completo conserva su importación de icono.
+
+### Consecuencias
+
+- Las siete torres animan en el mundo; UI y preview de construcción siguen usando arte estático con el mismo tamaño y anclaje.
+- Idle es sutil; ataque dura dos cuadros y luego regresa a idle. La fase no afecta a daño, alcance ni cadencia.
+- La aceptación visual en Godot debe revisar cada hoja, el anclaje de base, el espejo horizontal, el retorno a idle, outline/selección y los retratos. No se ejecutaron pruebas ni smoke de escena en esta actualización.
+
+### Implementación
+
+- `assets/sprites/towers/` (siete PNG completos y siete hojas 2×2)
+- `game/towers/tower_art_catalog.gd`
+- `game/towers/tower.gd`
+- `game/ui/resources/icon_catalog.tres`
+- `docs/rogue_tower/CONTENT_AND_ASSETS.md`
+- `docs/rogue_tower/PROJECT_SPEC.md`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#progress`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#acceptance`
+
+<a id='adr-0128'></a>
+## ADR-0128 — Niebla opaca e independiente del zoom
+
+- Fecha: 2026-10-16.
+- Estado: código y documentación integrados; aceptación visual pendiente.
+- Decisiones relacionadas: ADR-0122 establece la niebla radial desde Main Tower; este ADR fija su opacidad exterior e invariancia frente al zoom.
+
+### Contexto
+
+Al alejar la cámara, el agua seguía visible bajo la niebla y daba la impresión de que el shader abría o extendía su zona de visibilidad. La máscara ya convertía las UV de pantalla a coordenadas del mundo, pero la opacidad quedaba entre 91 % y 98 %, y el ruido/trazo variaba esa opacidad.
+
+### Decisiones
+
+1. Conservar la conversión de pantalla a mundo mediante centro de cámara, tamaño de viewport y zoom. El radio de revelado, el ancho de transición y las coordenadas del ruido permanecen en unidades de mundo; el zoom no recalcula ni amplía esos parámetros.
+2. Hacer opaca la niebla fuera de la zona de transición. Los trazos y el grano estilizan el color de la niebla, sin modular su alfa ni dejar ver el agua cubierta.
+3. El radio puede cambiar cuando progresa la campaña o se actualiza el tablero/islas descubiertas, como define la especificación; el zoom solo cambia qué parte del mundo cabe en pantalla.
+
+### Consecuencias
+
+- Alejar la cámara permite ver más mundo dentro del viewport, pero el área exterior al radio de revelado sigue completamente oscura.
+- La inspección visual debe comprobar varios niveles de zoom, el borde de transición, paneo, progreso de ronda y HUD. No se ejecutó Godot ni pruebas automatizadas en este cambio.
+
+### Implementación
+
+- `game/main/map_fog.gdshader`
+- `game/main/main.tscn`
+- `docs/rogue_tower/PROJECT_SPEC.md`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#progress`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#acceptance`
+
+<a id='adr-0129'></a>
+## ADR-0129 — Presentación y feedback de selección de Upgrade Cards
+
+- Fecha: 2026-10-18.
+- Estado: código y documentación integrados; aceptación visual/interactiva pendiente.
+- Decisiones relacionadas: ADR-0065/0075/0080/0088 fijan la superficie, iconografía y lectura de rareza previas; ADR-0112 colorea los valores de efectos.
+- Fuente externa: [post de CapyEmber sobre presentación de cartas](https://www.instagram.com/p/DekMIJAEhbA/). El post pudo leerse por su pie de texto; la reproducción del video no estuvo disponible sin iniciar sesión. Esta decisión aplica las seis sugerencias resumidas en ese pie, no importa mecánicas ni balance de Capy of Gods.
+
+### Contexto
+
+El usuario pidió aplicar a las cartas de mejora el feedback del post. La interfaz vigente ya mostraba tier, icono, título y descripción, y tenía hover con aura; no revelaba ofertas por etapas, no comparaba valores antes/después, ni daba feedback visual al descartar o incorporar una elección al HUD.
+
+### Decisiones
+
+1. Mantener la oferta de tres cartas, el pool, la elegibilidad y los efectos. La jerarquía visual será nombre, icono, descripción y filas de preview con el valor acumulado actual y el valor tras aplicar la carta, agrupados por operación y alcance compatible. El color identifica si el cambio favorece o perjudica al jugador: por ejemplo, reducir el coste de Mana es favorable y reducir el daño es desfavorable.
+2. Dar a toda la superficie un tinte específico para Común, Poco común o Rara y conservar la rareza escrita. La oferta visual se ordena por rareza solo después del sorteo; las cartas se muestran boca abajo en un abanico sutil y se revelan secuencialmente. Si la oferta contiene una Rara, aparece al final con impulso, destello y el aura radial existente reforzada.
+3. El hover conserva inclinación/brillo y vuelve a animar los valores nuevos desde los actuales. Al elegir una carta, su icono vuela a la bandeja de mejoras activas del HUD; las dos descartadas se consumen con una animación procedural de quemado.
+4. La bandeja mantiene visibles los siete iconos elegidos más recientes y muestra el total acumulado de elecciones. La presentación y sus animaciones no cambian las reglas de run ni la resolución de modificadores.
+
+### Consecuencias
+
+- Las mejoras muestran cómo cambia el bonus acumulado sin alterar el Resource ni aplicarlo durante el preview; seleccionar la carta continúa siendo el único punto que activa sus operaciones.
+- La lectura por rareza ocupa toda la card, no solo el aura. El orden de revelado controla el suspense sin cambiar el peso o resultado de la tirada.
+- La aceptación visual debe revisar oferta regular y bonus de cofre, textos largos, valores con distintos formatos, colores semánticos de mejoras y penalizaciones, estados Común/Poco común/Rara, reveal en abanico, rara al final, animación de hover, aterrizaje del icono en el HUD y quemado de descartes.
+- No se ejecutó Godot ni pruebas automatizadas en este cambio.
+
+### Implementación
+
+- `game/cards/run_card_service.gd`
+- `game/ui/components/upgrade_offer_card.gd`
+- `game/ui/components/upgrade_offer_card.tscn`
+- `game/ui/components/upgrade_card_burn.gdshader`
+- `game/ui/components/upgrade_offer_panel.gd`
+- `game/ui/components/run_card_tray.gd`
+- `game/ui/components/run_card_tray.tscn`
+- `game/ui/components/balatro_card_hover.gd`
+- `game/main/main.gd`
+- `game/main/main.tscn`
+- `docs/rogue_tower/PROJECT_SPEC.md`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#progress`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md#acceptance`
+
+<a id='adr-0130'></a>
+## ADR-0130 — Islas persistentes, niebla por terreno y feedback visual
+
+- Fecha: 2026-10-18.
+- Estado: código, assets y documentación integrados; aceptación visual/interactiva pendiente.
+- Sustituye: el descubrimiento por entrar en pantalla y la relocalización de islas de ADR-0123; la ocultación del radar al ver un cofre de ADR-0126; el aumento de radio por ronda/islas de ADR-0128.
+- Decisiones relacionadas: ADR-0052/0101/0102 rigen el feedback de combate y efectos, y ADR-0124 rige el rebote de aparición de cofres.
+
+### Contexto
+
+El usuario pidió iconos de estado más grandes y pegados a la primera barra de vida presente, una subida de nivel de torre más celebratoria, islas que no desaparezcan al construir cerca, niebla persistente que solo avance con terreno, una brújula que siga guiando hacia tesoros pendientes, cofres con animación de idle y arte propio para el menú inicial. El comportamiento previo revelaba islas al panear hasta ellas, las movía cuando una expansión se acercaba, incorporaba las islas descubiertas al radio de niebla y ocultaba el radar al tener un cofre disponible en pantalla.
+
+### Decisiones
+
+1. Los iconos de estados activos usan tamaño de 44 px, una separación horizontal de 3 px y se colocan 3 px por encima de la primera barra disponible en orden `Shield → Armor → Health`. El conteo de acumulaciones se dibuja con contorno oscuro para conservar contraste.
+2. Toda subida manual o por XP emite el mismo efecto de torre: anillo áureo alrededor de la huella, halo, partículas ascendentes y el texto flotante `¡NIVEL n!`. El nivel se transporta en la señal para que ambas rutas muestren el mismo total.
+3. Las seis islas se generan al iniciar la run; las rondas solo controlan cuándo pueden revelarse. Las coordenadas de cada isla y cofre son estables durante la run. Las celdas insulares quedan reservadas y ni las piezas ni el relleno automático pueden ocuparlas; PATH tampoco puede ocupar una celda vecina. Grass y Mountain pueden quedar junto a ellas. Las expansiones ya no trasladan ni ocultan islas.
+4. La primera isla conserva su generación de R1 dentro del radio de 8 hexes, pero permanece bajo la niebla inicial. Descubrir una isla requiere que todo el grupo quede dentro de la zona despejada; abrir el cofre está bloqueado hasta ese momento. La cámara por sí sola no revela islas.
+5. El radio de `MapFog` cubre las celdas de `HexGrid` más un margen fijo. Solo las nuevas celdas de terreno lo amplían; el descubrimiento/reclamo de islas, el avance de ronda y el zoom no. El borde y el shader conservan coordenadas del mundo.
+6. El radar siempre apunta al tesoro insular sin reclamar más cercano, aunque ya se descubriera la isla, el cofre esté visible o la isla aún espere su ronda de aparición; en este último caso, muestra esa ronda. Al reclamarlo, el radar pasa al próximo; se oculta únicamente cuando los seis tesoros ya se reclamaron.
+7. Los cofres habituales y los insulares hacen un pequeño salto de idle periódico mientras están disponibles, con fases desfasadas. El hover mantiene su respuesta propia y evita que ambos ciclos compitan.
+8. El menú inicial usa tres imágenes nuevas de Rogue Tower: botón vacío NinePatch, panel de madera/dorado NinePatch y una ilustración top-down de isla hexagonal rodeada de agua. Los textos permanecen como controles de Godot para conservar legibilidad y localización.
+
+### Consecuencias
+
+- El radar puede seguir visible mientras el jugador ya tiene el cofre objetivo en pantalla o apunta a una isla futura oculta e indica cuándo aparece; descubrirlo con niebla despejada no equivale a reclamarlo.
+- La niebla deja de aumentar solo por avanzar la campaña o descubrir una isla; las expansiones de terreno son la única fuente del nuevo radio.
+- Un PATH no puede conectar una pieza directamente contra el borde de una isla. Grass y Mountain sí conservan la colocación adyacente permitida.
+- Los sprites de menú son arte creado para el proyecto, no dependen de terceros, y sus esquinas se preservan al escalar mediante nueve segmentos.
+- La validación visual/interactiva debe revisar enemigos con una, dos y tres capas, subidas manual/automática, R1 con isla oculta, expansión/revelado, prohibición de clic bajo niebla, dirección del radar tras cada cofre, terrenos permitidos junto a isla, loops idle/hover y menú a varias resoluciones. No se ejecutó Godot ni pruebas automatizadas en este cambio.
+
+### Implementación
+
+- `game/enemies/enemy.gd`
+- `game/towers/tower.gd`
+- `game/vfx/tower_level_up_feedback.gd`
+- `game/board/decorative_island_field.gd`
+- `game/board/exploration_island_data.gd`
+- `game/board/terrain_placement_validator.gd`
+- `game/board/terrain_cell_decoration.gd`
+- `game/board/island_card_chest.gd`
+- `game/ui/island_compass_indicator.gd`
+- `game/main/main.gd`
+- `game/menu/main_menu.gd`
+- `game/menu/main_menu.tscn`
+- `assets/sprites/ui/menu_button.png`
+- `assets/sprites/ui/menu_panel.png`
+- `assets/sprites/ui/main_menu_island.png`
+- `docs/rogue_tower/PROJECT_SPEC.md`
+- `docs/rogue_tower/CONTENT_AND_ASSETS.md`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md`
+
+<a id='adr-0133'></a>
+## ADR-0133 — Hover Balatro, fondo procedural y transición al juego
+
+- Fecha: 2026-10-19.
+- Estado: código y documentación integrados; aceptación visual e interactiva pendiente.
+- Decisor: usuario.
+- Complementa: ADR-0129 y ADR-0132.
+- Sustituye: el fondo ilustrado de MainMenu aprobado en M78; no afecta los sprites NinePatch del botón y panel.
+
+### Contexto
+
+El usuario pidió una animación de bounce y un efecto Balatro para todos los botones, que el fondo del menú dejara de ser una imagen y usara niebla negra como viñeta, y que Play condujera al juego con una transición fluida. MainMenu tenía un PNG ilustrado y el botón cambiaba de escena directamente. Upgrade Cards ya usaban un componente de hover propio.
+
+### Decisiones
+
+1. `UIButtonHoverInstaller` observa las ramas Control/CanvasLayer de cada interfaz y aplica `BalatroCardHover` a cada `BaseButton`, incluidos nodos que se añaden en runtime. Las cartas con el componente existente se reconocen y no lo reciben dos veces. El hover combina brillo foil orientado al puntero, inclinación ligera, escala con overshoot breve y escala pivotada en el borde inferior para sugerir el salto sin animar la posición administrada por un Container ni recorrer el árbol de entidades del mundo.
+2. `MainMenu.MenuBackground` es un `ColorRect` con `menu_backdrop.gdshader`: gradiente teal oscuro, ruido procedural lento y niebla casi negra que forma una viñeta irregular alrededor de los bordes. `main_menu_island.png` deja de cargarse y queda como arte histórico; los nine-slice de panel y botones se conservan.
+3. MainMenu solicita la carga threaded de `main.tscn` al mostrarse. Play bloquea pulsaciones repetidas, hace fade a la niebla y cambia a la escena precargada cuando está disponible. `Main` activa su cubierta opaca al entrar en `_ready()`, después de inicializar el tablero la desvanece; la cubierta comienza oculta en el editor para no tapar la escena estática. Si la precarga falla, se usa el cambio de escena habitual bajo el velo.
+
+### Consecuencias y aceptación
+
+- La animación no modifica tamaño mínimo, posición ni orden de controles hermanos; foco, estados deshabilitados y señales `pressed` permanecen funcionales. La aceptación revisa botones estáticos y dinámicos, incluyendo la reversión al retirar el puntero y las cartas ya animadas.
+- El fondo no carga una textura. La aceptación visual comprueba niebla/viñeta a distintas relaciones de aspecto y que panel/textos mantengan contraste.
+- La aceptación de Play comprueba que la transición no admite dobles arranques, oculta la carga y revela el tablero sin un frame de corte negro.
+- No se ejecutó Godot ni pruebas en este cambio.
+
+### Implementación
+
+- `game/ui/button_hover_installer.gd`
+- `game/ui/components/balatro_card_hover.gd`
+- `game/menu/menu_backdrop.gdshader`
+- `game/menu/main_menu.gd`
+- `game/menu/main_menu.tscn`
+- `game/main/main.gd`
+- `game/main/main.tscn`
+- `docs/rogue_tower/PROJECT_SPEC.md`
+- `docs/rogue_tower/CONTENT_AND_ASSETS.md`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md`
+
+<a id='adr-0131'></a>
+## ADR-0131 — Proyectiles dibujados a mano para las siete torres
+
+- Fecha: 2026-10-18.
+- Estado: Aceptado; assets y código integrados, aceptación visual pendiente.
+- Decisores: usuario y equipo del proyecto.
+- Complementa: ADR-0101, ADR-0102 y ADR-0130.
+- Sustituye: las hojas Cozy Chunky de disparo e impacto para las siete torres y `tap_ripple` de Mortar. No cambia la dirección artística de las torres, los efectos de estado ni el feedback de recompensas.
+
+### Contexto
+
+El usuario pidió sprites de proyectil e impacto para todas las torres, con transparencia, tamaños adecuados, fácil sustitución y apariencia de dibujo infantil tosco. Los efectos de combate usaban hojas Cozy Chunky, cuatro proyectiles móviles se dibujaban con primitivas y el marcador de Mortar era una hoja de terceros.
+
+### Decisiones
+
+1. Cada torre usa PNG `shot` e `impact` propios. Mortar añade `mortar_target.png`; Tesla Coil añade `tesla_beam.png`, estirado entre la torre y cada objetivo, seguido del sprite de impacto.
+2. El estilo se limita a los efectos de combate: crayón/rotulador infantil, contornos irregulares, formas gruesas y sencillas, pocos detalles y colores acordes a madera, explosión, rayo, hielo, fuego, veneno o metal. Los PNG tienen alfa transparente, nombres independientes y lienzo fuente de 1254×1254 px; Godot los importa con límite de 256 px.
+3. Ballista, Mortar, Frost Keep y Shredder usan los PNG `shot` en sus proyectiles móviles. El tamaño se fija en los scripts de proyectil y los tamaños de los efectos en `Main.impact_vfx_display_sizes`.
+4. Los efectos estáticos pulsan y se desvanecen durante la duración equivalente a las hojas que sustituyen. Se conservan señales, posiciones, cadencia, limitación de efectos continuos, trayectoria, colisiones, daño y estados.
+5. El arte se genera para este proyecto. Las imágenes Cozy Chunky anteriores permanecen en su paquete para usos no relacionados, pero ya no se cargan para proyectiles, impactos ni marcador Mortar.
+
+### Consecuencias
+
+- Las imágenes se pueden sustituir en `assets/sprites/vfx/towers/` con los mismos nombres; el tamaño de presentación se ajusta desde los tamaños configurables y las constantes señaladas.
+- El rayado Tesla mantiene el destello breve del ataque y el daño de área actuales; solo cambia su textura.
+- La aceptación manual M79 debe confirmar proporción y lectura a distintas resoluciones, alfa, posición de impactos y comportamiento de los proyectiles. No se ejecutó Godot ni pruebas en este cambio.
+
+### Implementación
+
+- `assets/sprites/vfx/towers/*.png`
+- `game/main/main.gd`
+- `game/vfx/animated_impact.gd`
+- `game/towers/tower.gd`
+- `game/towers/tower_projectile.gd`
+- `game/towers/frost_snowflake.gd`
+- `game/towers/sawblade_projectile.gd`
+- `docs/rogue_tower/CONTENT_AND_ASSETS.md`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md`
+
+## ADR-0132 — Ajustes de menús y controles desde Inspector
+
+- Fecha: 2026-10-19 (revisión del alcance de previsualización).
+- Estado: integrado en escenas y recursos; aceptación visual pendiente.
+- Decisor: usuario.
+- Complementa: ADR-0050 y ADR-0115.
+- Alcance: accesibilidad de los parámetros de presentación de menús, paneles y controles. No cambia reglas de juego ni balance.
+
+### Contexto
+
+El usuario pidió poder ajustar en el Inspector, de forma sencilla, la mayoría de los menús, paneles, botones y elementos de interfaz, incluyendo tipografía, color y tamaño. Aclaró que necesita ver el aspecto final en el editor, sin reproducir el juego, y modificar los nodos que lo componen. Los estilos de M80 que solo se aplicaban en `_ready()` no cumplían esa necesidad aunque estuvieran exportados.
+
+### Decisiones
+
+1. La presentación estática de `MainMenu`, `PauseMenu` y `MetaShopPanel` vive en las propiedades serializadas de sus nodos y recursos de escena. La imagen de fondo, StyleBoxes, nueve cortes, tipografía, geometría y colores deben aparecer en el editor; los scripts manejan acciones y estado. `MainMenu` incluye la tienda como hija oculta para encontrarla desde el mismo árbol.
+2. `UpgradeOfferCard` presenta una fila de muestra creada desde `upgrade_offer_preview_row.tscn`; esa misma escena provee los estilos a las filas que se instancian al recibir datos runtime. `MetaProgressionMap` incluye un nodo visual de muestra que se retira al construir el mapa real.
+3. `PauseToggleButton` usa `@tool` únicamente para dibujar el glyph en el editor; el código evita leer/escribir el estado de pausa y modificar InputMap durante la edición.
+4. El texto flotante de subida usa `tower_level_up_feedback.tscn`. Su Label, fuente, colores, contorno y caja son editables directamente; la escena previsualiza un nivel y su feedback estático. El juego solo entrega el nivel que debe mostrar.
+5. Los datos y estados de partida siguen siendo dinámicos. Las muestras del editor solo permiten ajustar la presentación; un override de color condicionado por estado se limita a ese cambio semántico.
+
+### Consecuencias y aceptación
+
+- Los cambios en propiedades de nodo/StyleBox se previsualizan en las escenas antes de ejecutar el juego; los componentes generados usan una escena reusable editable o un valor de muestra.
+- La aceptación M80 debe comparar la escena editada con el juego, cambiar valores desde Inspector y comprobar las acciones de los menús a dos resoluciones.
+- No se ejecutó Godot ni pruebas en esta revisión.
+
+### Implementación
+
+- `game/menu/main_menu.gd`
+- `game/menu/pause_menu.gd`
+- `game/progression/meta_shop_panel.gd`
+- `game/progression/meta_shop_panel.tscn`
+- `game/progression/meta_progression_map.tscn`
+- `game/progression/meta_upgrade_node.gd`
+- `game/progression/meta_upgrade_node.tscn`
+- `game/main/main.gd`
+- `game/vfx/tower_level_up_feedback.gd`
+- `game/vfx/tower_level_up_feedback.tscn`
+- `game/ui/components/upgrade_offer_card.gd`
+- `game/ui/components/upgrade_offer_card.tscn`
+- `game/ui/components/upgrade_offer_preview_row.gd`
+- `game/ui/components/upgrade_offer_preview_row.tscn`
+- `game/ui/pause_toggle_button.gd`
+- `docs/rogue_tower/PROJECT_SPEC.md`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md`
+
+## ADR-0134 — Recuperar las mejoras permanentes y compartir el agua del fondo
+
+- Fecha: 2026-10-19.
+- Estado: código y documentación integrados; aceptación visual e interactiva pendiente.
+- Decisor: usuario.
+- Corrige: ADR-0133 en el fondo y la transición; no cambia la animación Balatro.
+- Alcance: restauración del catálogo de tienda de MainMenu y continuidad visual entre menú y gameplay.
+
+### Contexto
+
+Tras M80, el mapa de mejoras permanentes del menú se construía antes de que `MainMenu` entregara el catálogo a `MetaShopPanel`. El panel retenía los datos nuevos, pero no los reenviaba al mapa ya listo, que se quedaba sin nodos. Además, la viñeta procedural sustituyó el fondo por agua teal plana, distinta del agua animada de gameplay. El usuario pidió recuperar las mejoras y que ambos fondos compartan el mismo aspecto durante una transición fluida.
+
+### Decisiones
+
+1. `MetaShopPanel.configure()` actualiza también `MetaProgressionMap` si el panel ya está en el árbol. La tienda de MainMenu conserva el catálogo runtime completo y lo refleja al abrir el mapa.
+2. MainMenu y gameplay usan el mismo `wind_waker_water_background_material.tres`, con parámetros de cámara/viewport equivalentes y una fase almacenada en `GameState.water_background_time`. Ambas escenas la avanzan con su delta de proceso; al pausar, `Main` la congela. Una capa común `water_fog_vignette_material.tres` recibe esa misma fase y dibuja el borde negro irregular sobre el agua en ambas escenas; el agua queda visible en el centro y el fondo no carga una imagen.
+3. Play precarga la escena y mantiene una cubierta negra translúcida de baja opacidad en ambos lados del cambio de escena. El agua y la fase siguen visibles durante el fundido; no se ocultan bajo una pantalla negra opaca.
+
+### Consecuencias y aceptación
+
+- La tienda debe mostrar nodos de mejoras, unlocks, prerequisitos, costes y niveles persistentes al abrirse desde MainMenu.
+- La transición debe conservar continuidad del agua y la viñeta al cambiar de escena, incluyendo el movimiento; verificar también dos relaciones de aspecto.
+- No se ejecutó Godot ni pruebas en esta corrección.
+
+### Implementación
+
+- `autoload/game_state.gd`
+- `game/progression/meta_shop_panel.gd`
+- `game/main/wind_waker_water_background_material.tres`
+- `game/main/water_fog_vignette.gdshader`
+- `game/main/water_fog_vignette_material.tres`
+- `game/main/main.gd`
+- `game/main/main.tscn`
+- `game/menu/main_menu.gd`
+- `game/menu/main_menu.tscn`
+- `docs/rogue_tower/PROJECT_SPEC.md`
+- `docs/rogue_tower/CONTENT_AND_ASSETS.md`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md`
+
+## ADR-0135 — Reutilizar la niebla de gameplay solo en el fondo de MainMenu
+
+- Fecha: 2026-10-19.
+- Estado: código y documentación integrados; aceptación visual pendiente.
+- Decisor: usuario.
+- Corrige: alcance de la viñeta definido en ADR-0134.
+- Alcance: shader de niebla sobre el agua del menú y separación visual de la tienda; mantiene la continuidad de agua establecida en ADR-0134.
+
+### Contexto
+
+El usuario indicó que la viñeta nueva del MainMenu no coincidía con la niebla de gameplay. Pidió conservar exactamente el shader de gameplay y limitar la viñeta al fondo de MainMenu, sin aplicarla a menús superpuestos como Mejoras permanentes.
+
+### Decisiones
+
+1. El fondo de MainMenu usa el mismo recurso `game/main/map_fog.gdshader` que `MapFog` de gameplay. La pantalla del menú tiene su propia instancia de `ShaderMaterial`, con centro en el viewport y radio configurable en la escena; no comparte el material mutable de la partida.
+2. La capa de niebla del menú se dibuja únicamente sobre el agua del MainMenu. El `MapFog` de gameplay conserva su responsabilidad de ocultar terreno; no se agrega la viñeta nueva a gameplay ni a otras interfaces. El fondo de `MetaShopPanel` es opaco para evitar que se transparente la capa que queda detrás.
+3. MainMenu y gameplay siguen compartiendo el shader/material de agua y `GameState.water_background_time`. La transición a Play conserva la fase del agua.
+
+### Consecuencias y aceptación
+
+- MainMenu debe mostrar el mismo patrón de niebla que gameplay alrededor del agua, sin cargar una imagen de fondo.
+- Al abrir Mejoras permanentes, el fondo opaco debe ocultar por completo la viñeta del MainMenu.
+- Verificar a 1280×720 y 1440×900 que el agua mantiene continuidad y la viñeta permanece limitada al fondo del MainMenu.
+- No se ejecutó Godot ni pruebas en esta corrección.
+
+### Implementación
+
+- `game/main/map_fog.gdshader`
+- `game/main/main.gd`
+- `game/main/main.tscn`
+- `game/menu/main_menu.gd`
+- `game/menu/main_menu.tscn`
+- `game/progression/meta_shop_panel.tscn`
+- `docs/rogue_tower/PROJECT_SPEC.md`
+- `docs/rogue_tower/CONTENT_AND_ASSETS.md`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md`
+
+## ADR-0136 — Igualar el panel de pausa al panel de MainMenu
+
+- Fecha: 2026-10-19.
+- Estado: recursos y escenas integrados; aceptación visual e interactiva pendiente.
+- Decisor: usuario.
+- Complementa: ADR-0132, edición de la interfaz desde Inspector.
+- Alcance: presentación del panel y botones de `PauseMenu`; conserva sus acciones y overlay de pausa.
+
+### Contexto
+
+El usuario pidió que el panel de pausa de gameplay se viera idéntico a `MainMenu.MenuPanel`, manteniendo el sprite, tamaño, colores, tipografía, fuente y estilos de botones. El contenido debe corresponder a pausa.
+
+### Decisiones
+
+1. `MainMenu.MenuPanel` y `PauseMenu.MenuPanel` comparten los mismos recursos StyleBox de panel y botones para mantener una única presentación visual.
+2. Ambos paneles usan la misma geometría de 452×506 px, márgenes internos 34/24 px, separación vertical de 10 px y StyleBox NinePatch. El título conserva color, sombra, contorno y fuente de 55 px. Los botones conservan sprite, estados, color, tamaño de 300×100 px y fuente de 24 px.
+3. En pausa el título dice `PAUSA` y los botones ejecutan `Continuar` y `Volver al menú`. El overlay translúcido de gameplay se mantiene detrás del panel.
+
+### Consecuencias y aceptación
+
+- Al comparar ambas escenas, el panel y sus botones deben compartir los mismos StyleBox, dimensiones, cortes, márgenes, colores y tamaños de fuente.
+- Reanudar y volver al menú deben seguir emitiendo las señales existentes y responder como antes.
+- No se ejecutó Godot ni pruebas en esta actualización.
+
+### Implementación
+
+- `game/menu/main_menu.tscn`
+- `game/menu/pause_menu.tscn`
+- `game/ui/themes/main_menu_panel_style.tres`
+- `game/ui/themes/main_menu_button_normal_style.tres`
+- `game/ui/themes/main_menu_button_pressed_style.tres`
+- `game/ui/themes/main_menu_button_hover_style.tres`
+- `game/ui/themes/main_menu_button_disabled_style.tres`
+- `game/ui/themes/main_menu_button_focus_style.tres`
+- `docs/rogue_tower/PROJECT_SPEC.md`
+- `docs/rogue_tower/CONTENT_AND_ASSETS.md`
+- `docs/rogue_tower/IMPLEMENTATION_AND_QA.md`

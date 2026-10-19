@@ -9,4 +9,3 @@ var treasure_coord: Vector2i = Vector2i.ZERO
 var cells: Array[TerrainPieceCellData] = []
 var discovered: bool = false
 var treasure_claimed: bool = false
-var relocation_count: int = 0

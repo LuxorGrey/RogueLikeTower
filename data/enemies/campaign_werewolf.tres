@@ -23,7 +23,6 @@ max_health = 3000
 base_damage = 1
 kill_reward = 24
 shield = 2000
-regen_per_second = 100
 placeholder_color = Color(0.45, 0.47, 0.5, 1)
 placeholder_radius = 15.0
 sprite_texture = ExtResource("3_sprite")

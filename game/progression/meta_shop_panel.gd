@@ -29,6 +29,8 @@ var _pan_dragging: bool = false
 func configure(tower_profiles: Array[TowerData], permanent_upgrades: Array[PermanentUpgradeData]) -> void:
 	_tower_profiles = tower_profiles.duplicate()
 	_permanent_upgrades = permanent_upgrades.duplicate()
+	if _progression_map != null:
+		_progression_map.configure(_tower_profiles, _permanent_upgrades)
 
 func _ready() -> void:
 	layer = 10

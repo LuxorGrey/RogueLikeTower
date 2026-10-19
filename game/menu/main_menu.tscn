@@ -1,9 +1,30 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://dqra55h2wqalq"]
 
-[ext_resource type="Script" path="res://game/menu/main_menu.gd" id="1_script"]
-[ext_resource type="Theme" path="res://game/ui/themes/rogue_hud_theme.tres" id="2_theme"]
+[ext_resource type="Script" uid="uid://dvdxrcetqxnos" path="res://game/menu/main_menu.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://b8nogcxauq43u" path="res://game/ui/themes/rogue_hud_theme.tres" id="2_theme"]
+[ext_resource type="Material" path="res://game/main/wind_waker_water_background_material.tres" id="3_water_background"]
+[ext_resource type="PackedScene" path="res://game/progression/meta_shop_panel.tscn" id="6_meta_shop"]
+[ext_resource type="Shader" uid="uid://bclha7c336oki" path="res://game/main/map_fog.gdshader" id="7_map_fog"]
+[ext_resource type="StyleBox" path="res://game/ui/themes/main_menu_panel_style.tres" id="8_menu_panel_style"]
+[ext_resource type="StyleBox" path="res://game/ui/themes/main_menu_button_normal_style.tres" id="9_menu_button_normal"]
+[ext_resource type="StyleBox" path="res://game/ui/themes/main_menu_button_pressed_style.tres" id="10_menu_button_pressed"]
+[ext_resource type="StyleBox" path="res://game/ui/themes/main_menu_button_hover_style.tres" id="11_menu_button_hover"]
+[ext_resource type="StyleBox" path="res://game/ui/themes/main_menu_button_disabled_style.tres" id="12_menu_button_disabled"]
+[ext_resource type="StyleBox" path="res://game/ui/themes/main_menu_button_focus_style.tres" id="13_menu_button_focus"]
 
-[node name="MainMenu" type="Control"]
+[sub_resource type="ShaderMaterial" id="MenuMapFogMaterial"]
+shader = ExtResource("7_map_fog")
+shader_parameter/fog_color = Color(0.035, 0.075, 0.09, 1)
+shader_parameter/camera_world_position = Vector2(720, 450)
+shader_parameter/fog_center_world_position = Vector2(720, 450)
+shader_parameter/viewport_size = Vector2(1440, 900)
+shader_parameter/camera_zoom = 1.0
+shader_parameter/fog_reveal_radius = 530.0
+shader_parameter/fog_fade_distance = 170.0
+shader_parameter/fog_edge_roughness = 34.0
+shader_parameter/water_time = 0.0
+
+[node name="MainMenu" type="Control" unique_id=501322116]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -13,7 +34,8 @@ grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_script")
 
-[node name="Backdrop" type="ColorRect" parent="."]
+[node name="MenuBackground" type="ColorRect" parent="." unique_id=907757302]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -21,76 +43,131 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.055, 0.09, 0.095, 1)
+material = ExtResource("3_water_background")
 
-[node name="GameOverFeedbackLayer" type="CanvasLayer" parent="."]
-layer = 11
+[node name="BackgroundFog" type="ColorRect" parent="MenuBackground" unique_id=1320070544]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+material = SubResource("MenuMapFogMaterial")
+
+[node name="GameOverFeedbackLayer" type="CanvasLayer" parent="." unique_id=141605722]
 process_mode = 3
+layer = 11
 
-[node name="GameOverEffects" type="Node2D" parent="GameOverFeedbackLayer"]
+[node name="GameOverEffects" type="Node2D" parent="GameOverFeedbackLayer" unique_id=755801238]
 unique_name_in_owner = true
 process_mode = 3
 
-[node name="MenuPanel" type="PanelContainer" parent="."]
+[node name="PlayTransitionLayer" type="CanvasLayer" parent="." unique_id=2051172332]
+layer = 240
+
+[node name="TransitionOverlay" type="ColorRect" parent="PlayTransitionLayer" unique_id=492521876]
+unique_name_in_owner = true
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.002, 0.004, 0.006, 1)
+modulate = Color(1, 1, 1, 0)
+
+[node name="MetaShopPanel" parent="." unique_id=2116964385 instance=ExtResource("6_meta_shop")]
+unique_name_in_owner = true
+visible = false
+
+[node name="MenuPanel" type="PanelContainer" parent="." unique_id=1640898612]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -245.0
-offset_top = -215.0
-offset_right = 245.0
-offset_bottom = 215.0
+offset_left = -226.0
+offset_top = -173.0
+offset_right = 226.0
+offset_bottom = 333.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = ExtResource("8_menu_panel_style")
 
-[node name="Margin" type="MarginContainer" parent="MenuPanel"]
+[node name="Margin" type="MarginContainer" parent="MenuPanel" unique_id=1236685992]
 layout_mode = 2
 theme_override_constants/margin_left = 34
-theme_override_constants/margin_top = 34
+theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 34
-theme_override_constants/margin_bottom = 34
+theme_override_constants/margin_bottom = 24
 
-[node name="Content" type="VBoxContainer" parent="MenuPanel/Margin"]
+[node name="Content" type="VBoxContainer" parent="MenuPanel/Margin" unique_id=2116927264]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 10
 
-[node name="Title" type="Label" parent="MenuPanel/Margin/Content"]
+[node name="Title" type="Label" parent="MenuPanel/Margin/Content" unique_id=226147199]
 layout_mode = 2
-theme_override_font_sizes/font_size = 38
 theme_override_colors/font_color = Color(0.91, 0.78, 0.47, 1)
+theme_override_colors/font_shadow_color = Color(0.16078432, 0.09803922, 0.20392157, 0.85882354)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 19
+theme_override_font_sizes/font_size = 55
 text = "ROGUE TOWER"
 horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="MenuPanel/Margin/Content"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 15
-theme_override_colors/font_color = Color(0.72, 0.79, 0.76, 1)
-text = "Defiende la base. Construye tu camino."
-horizontal_alignment = 1
-
-[node name="Spacer" type="Control" parent="MenuPanel/Margin/Content"]
-custom_minimum_size = Vector2(0, 24)
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="StartButton" type="Button" parent="MenuPanel/Margin/Content"]
+[node name="StartButton" type="Button" parent="MenuPanel/Margin/Content" unique_id=1490381238]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 58)
+custom_minimum_size = Vector2(300, 100)
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.88713735, 0.78043324, 0.6732586, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_disabled_color = Color(0.454902, 0.419608, 0.360784, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("9_menu_button_normal")
+theme_override_styles/pressed = ExtResource("10_menu_button_pressed")
+theme_override_styles/hover = ExtResource("11_menu_button_hover")
+theme_override_styles/disabled = ExtResource("12_menu_button_disabled")
+theme_override_styles/focus = ExtResource("13_menu_button_focus")
 text = "Empezar run"
 
-[node name="ShopButton" type="Button" parent="MenuPanel/Margin/Content"]
+[node name="ShopButton" type="Button" parent="MenuPanel/Margin/Content" unique_id=1084159970]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 52)
+custom_minimum_size = Vector2(300, 100)
 layout_mode = 2
-theme_override_font_sizes/font_size = 17
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.88713735, 0.78043324, 0.6732586, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_disabled_color = Color(0.454902, 0.419608, 0.360784, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("9_menu_button_normal")
+theme_override_styles/pressed = ExtResource("10_menu_button_pressed")
+theme_override_styles/hover = ExtResource("11_menu_button_hover")
+theme_override_styles/disabled = ExtResource("12_menu_button_disabled")
+theme_override_styles/focus = ExtResource("13_menu_button_focus")
 text = "Mejoras permanentes"
 
-[node name="ExitButton" type="Button" parent="MenuPanel/Margin/Content"]
+[node name="ExitButton" type="Button" parent="MenuPanel/Margin/Content" unique_id=430052912]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 42)
+custom_minimum_size = Vector2(300, 100)
 layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.88713735, 0.78043324, 0.6732586, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_disabled_color = Color(0.454902, 0.419608, 0.360784, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("9_menu_button_normal")
+theme_override_styles/pressed = ExtResource("10_menu_button_pressed")
+theme_override_styles/hover = ExtResource("11_menu_button_hover")
+theme_override_styles/disabled = ExtResource("12_menu_button_disabled")
+theme_override_styles/focus = ExtResource("13_menu_button_focus")
 text = "Salir"

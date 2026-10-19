@@ -15,6 +15,7 @@ func _ready() -> void:
 	%HealBaseButton.pressed.connect(_on_action_pressed.bind(&"heal_base"))
 	_unlock_button.pressed.connect(_on_action_pressed.bind(&"toggle_unlocks"))
 	%SkipToCardsButton.pressed.connect(_on_action_pressed.bind(&"skip_to_cards"))
+	%ChooseTerrainButton.pressed.connect(_on_action_pressed.bind(&"choose_terrain"))
 	%OpenGeneralUpgradesButton.pressed.connect(_on_action_pressed.bind(&"open_general_upgrades"))
 	%StartWaveButton.pressed.connect(_on_action_pressed.bind(&"start_wave"))
 	%RestartRunButton.pressed.connect(_on_action_pressed.bind(&"restart_run"))

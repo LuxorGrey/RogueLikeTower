@@ -21,7 +21,6 @@ id = &"campaign_oogie"
 display_name = "Ooogie"
 boss_tier = 1
 max_health = 20000
-move_speed = 45
 base_damage = 100000
 kill_reward = 315
 placeholder_color = Color(0.48, 0.34, 0.28, 1)

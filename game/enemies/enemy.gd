@@ -78,11 +78,11 @@ const ENEMY_OUTLINE_COLORS: Dictionary = {
 @export var shield_bar_fill_color: Color = Color(0.31, 0.73, 0.98)
 
 @export_group("Status icons")
-@export_range(12.0, 64.0, 1.0) var status_icon_size: float = 28.0
-@export_range(0.0, 24.0, 1.0) var status_icon_gap: float = 5.0
-@export_range(16.0, 120.0, 1.0) var status_icon_offset_y: float = 58.0
+@export_range(24.0, 72.0, 1.0) var status_icon_size: float = 44.0
+@export_range(0.0, 12.0, 1.0) var status_icon_gap: float = 3.0
+@export_range(0.0, 12.0, 1.0) var status_icon_bar_gap: float = 3.0
 @export var status_stack_font: Font = preload("res://assets/fonts/PatrickHand-Regular.ttf")
-@export_range(8, 24, 1) var status_stack_font_size: int = 11
+@export_range(10, 28, 1) var status_stack_font_size: int = 15
 
 @export_group("Damage numbers")
 @export var damage_popup_font: Font = preload("res://assets/fonts/PatrickHand-Regular.ttf")
@@ -723,12 +723,30 @@ func _draw_status_icons() -> void:
 	var gap: float = status_icon_gap
 	var total_width: float = float(status_ids.size()) * icon_size + float(maxi(status_ids.size() - 1, 0)) * gap
 	var start_x: float = -total_width * 0.5
-	var status_y: float = -_body_radius - status_icon_offset_y
+	var status_y: float = -_body_radius - hit_point_bar_offset_y - status_icon_bar_gap - icon_size
 	for status_id_variant in status_ids:
 		var stacks: int = int(stacks_by_id[status_id_variant])
 		if stacks > 1:
-			var count_position: Vector2 = Vector2(start_x + icon_size + 1.0, status_y + icon_size - 4.0)
-			draw_string(status_stack_font, count_position, str(stacks), HORIZONTAL_ALIGNMENT_RIGHT, 15.0, status_stack_font_size, Color.WHITE)
+			var count_position: Vector2 = Vector2(start_x + icon_size + 1.0, status_y + icon_size - 3.0)
+			draw_string_outline(
+				status_stack_font,
+				count_position,
+				str(stacks),
+				HORIZONTAL_ALIGNMENT_RIGHT,
+				15.0,
+				status_stack_font_size,
+				3,
+				Color("#17212a")
+			)
+			draw_string(
+				status_stack_font,
+				count_position,
+				str(stacks),
+				HORIZONTAL_ALIGNMENT_RIGHT,
+				15.0,
+				status_stack_font_size,
+				Color.WHITE
+			)
 		start_x += icon_size + gap
 
 func _sync_status_icon_sprites() -> void:
@@ -781,7 +799,12 @@ func _sync_status_icon_sprites() -> void:
 	var start_x: float = -total_width * 0.5
 	for status_id in visible_ids:
 		var icon: Sprite2D = _status_icon_sprites[status_id]
-		icon.position = Vector2(start_x + icon_size * 0.5, -_body_radius - status_icon_offset_y - _jump_height)
+		var bar_top_y: float = -_body_radius - hit_point_bar_offset_y
+		var icon_center_y: float = bar_top_y - status_icon_bar_gap - icon_size * 0.5
+		icon.position = Vector2(
+			start_x + icon_size * 0.5,
+			icon_center_y + visual_art_offset_y - _jump_height
+		)
 		icon.visible = true
 		start_x += icon_size + gap
 	for status_id_variant in _status_icon_sprites.keys():

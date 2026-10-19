@@ -19,8 +19,7 @@ const START_ISLAND_MAX_DISTANCE: int = 8
 const ISLAND_RING_BASE_DISTANCE: int = 8
 const ISLAND_RING_STEP: int = 2
 const ISLAND_RING_WIDTH: int = 3
-const RELOCATION_RING_STEP: int = 4
-const ISLAND_COMPASS_RANGE_HEXES: float = 12.0
+const ISLAND_RING_EXPANSION_STEP: int = 4
 const EMPTY_COORD: Vector2i = Vector2i(2147483647, 2147483647)
 const TERRAIN_COLORS: Dictionary[int, Color] = {
 	HexCell.TerrainType.GRASS: Color("#477653"),
@@ -30,11 +29,13 @@ const TERRAIN_COLORS: Dictionary[int, Color] = {
 var _templates: Array[TerrainPieceData] = []
 var _island_groups: Array[ExplorationIslandData] = []
 var _island_chests: Dictionary[StringName, IslandCardChest] = {}
+var _reserved_island_coords: Dictionary[Vector2i, bool] = {}
 var _board_cells: Dictionary[Vector2i, HexCell] = {}
 var _run_seed: int = 0
 var _campaign_round: int = 1
 var _next_island_index: int = 0
 var _base_coord: Vector2i = Vector2i.ZERO
+var _initial_board_cell_count: int = 0
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -51,6 +52,7 @@ func configure(
 	_run_seed = run_seed
 	_campaign_round = clampi(campaign_round, 1, CAMPAIGN_ROUND_COUNT)
 	_board_cells = board_cells
+	_initial_board_cell_count = board_cells.size()
 	_base_coord = base_coord
 	_island_groups.clear()
 	_next_island_index = 0
@@ -58,7 +60,8 @@ func configure(
 		if is_instance_valid(chest):
 			chest.queue_free()
 	_island_chests.clear()
-	_reveal_due_islands()
+	_reserved_island_coords.clear()
+	_ensure_island_groups_generated()
 	queue_redraw()
 
 func set_campaign_state(
@@ -67,8 +70,7 @@ func set_campaign_state(
 ) -> void:
 	_campaign_round = clampi(campaign_round, 1, CAMPAIGN_ROUND_COUNT)
 	_board_cells = board_cells
-	_reveal_due_islands()
-	_relocate_unsafe_islands()
+	_ensure_island_groups_generated()
 	queue_redraw()
 
 func get_visible_cells() -> Array[TerrainPieceCellData]:
@@ -79,35 +81,49 @@ func get_visible_cells() -> Array[TerrainPieceCellData]:
 		visible_cells.append_array(island.cells)
 	return visible_cells
 
-func get_compass_targets(camera_world_position: Vector2) -> Array[Dictionary]:
-	var targets: Array[Dictionary] = []
+func get_nearest_undiscovered_compass_target(camera_world_position: Vector2) -> Dictionary:
+	var nearest_target: Dictionary = {}
+	var nearest_distance: float = INF
 	for island in _island_groups:
-		if island.treasure_claimed or not _island_group_is_clear(island):
+		if island.treasure_claimed:
 			continue
-		var world_position: Vector2 = to_global(_draw_axial_world_center(island.anchor_coord))
-		var distance_hexes: float = world_position.distance_to(camera_world_position) / HEX_NEIGHBOR_DISTANCE
-		if distance_hexes > ISLAND_COMPASS_RANGE_HEXES:
+		var world_position: Vector2 = to_global(_draw_axial_world_center(island.treasure_coord))
+		var distance_world: float = world_position.distance_to(camera_world_position)
+		if distance_world >= nearest_distance:
 			continue
-		targets.append({
+		nearest_distance = distance_world
+		nearest_target = {
 			"island_id": island.island_id,
 			"island_number": island.island_index + 1,
+			"spawn_round": island.spawn_round,
+			"campaign_round": _campaign_round,
 			"world_position": world_position,
 			"camera_position": camera_world_position,
-			"distance_hexes": distance_hexes,
-			"discovered": island.discovered,
-		})
-	targets.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		return float(a.get("distance_hexes", INF)) < float(b.get("distance_hexes", INF))
-	)
-	return targets
+			"distance_hexes": distance_world / HEX_NEIGHBOR_DISTANCE,
+		}
+	return nearest_target
 
-func update_exploration(_camera_world_position: Vector2, viewport_world_rect: Rect2) -> bool:
+func get_reserved_coords() -> Dictionary[Vector2i, bool]:
+	return _reserved_island_coords.duplicate()
+
+func update_exploration(
+	fog_center_world_position: Vector2,
+	fog_reveal_radius: float,
+	clear_edge_margin: float
+) -> bool:
 	var changed: bool = false
-	var discovery_rect: Rect2 = viewport_world_rect.grow(HEX_RADIUS * 0.12)
+	var safe_reveal_radius: float = maxf(fog_reveal_radius - clear_edge_margin, 0.0)
 	for island in _island_groups:
-		if island.discovered or island.treasure_claimed or not _island_group_is_clear(island):
+		if (
+			island.spawn_round > _campaign_round
+			or island.discovered
+			or island.treasure_claimed
+			or not _island_group_is_clear(island)
+		):
 			continue
-		if not _has_coast_edge_in_rect(island, discovery_rect):
+		if island.island_index == 0 and _board_cells.size() <= _initial_board_cell_count:
+			continue
+		if not _island_group_is_inside_reveal_radius(island, fog_center_world_position, safe_reveal_radius):
 			continue
 		island.discovered = true
 		_sync_island_chest(island)
@@ -155,17 +171,16 @@ func has_hovered_chest() -> bool:
 			return true
 	return false
 
-func _reveal_due_islands() -> void:
+func _ensure_island_groups_generated() -> void:
 	while _next_island_index < MAX_ISLANDS:
 		var spawn_round: int = _island_spawn_round(_next_island_index)
-		if _campaign_round < spawn_round:
-			break
 		var island: ExplorationIslandData = _create_island(_next_island_index, spawn_round)
 		if island == null:
-			push_warning("La isla %d espera un espacio seguro junto a una futura expansión." % (_next_island_index + 1))
+			push_warning("No se pudo reservar un espacio seguro para la isla %d." % (_next_island_index + 1))
 			return
 		_island_groups.append(island)
 		_next_island_index += 1
+		_rebuild_reserved_island_coords()
 
 func _island_spawn_round(island_index: int) -> int:
 	if island_index == 0:
@@ -206,18 +221,11 @@ func _create_island(island_index: int, spawn_round: int) -> ExplorationIslandDat
 		cell.visual_variant = &""
 		relative_cells.append(cell)
 
-	var anchor: Vector2i = EMPTY_COORD
-	for ring_expansion in range(4):
-		anchor = _find_anchor(
-			rng,
-			island_index,
-			relative_cells,
-			&"",
-			island_index == 0,
-			ring_expansion
-		)
-		if anchor != EMPTY_COORD:
-			break
+	var anchor: Vector2i = (
+		_find_start_island_anchor(rng, island_index, relative_cells)
+		if island_index == 0
+		else _find_future_island_anchor(rng, island_index, relative_cells)
+	)
 	if anchor == EMPTY_COORD:
 		return null
 	var island := ExplorationIslandData.new()
@@ -231,13 +239,59 @@ func _create_island(island_index: int, spawn_round: int) -> ExplorationIslandDat
 	island.treasure_coord = island.cells[rng.randi_range(0, island.cells.size() - 1)].local_coord
 	return island
 
+func _find_start_island_anchor(
+	rng: RandomNumberGenerator,
+	island_index: int,
+	relative_cells: Array[TerrainPieceCellData]
+) -> Vector2i:
+	for ring_expansion in range(4):
+		var anchor: Vector2i = _find_anchor(
+			rng,
+			island_index,
+			relative_cells,
+			&"",
+			true,
+			ring_expansion
+		)
+		if anchor != EMPTY_COORD:
+			return anchor
+	return EMPTY_COORD
+
+func _find_future_island_anchor(
+	rng: RandomNumberGenerator,
+	island_index: int,
+	relative_cells: Array[TerrainPieceCellData]
+) -> Vector2i:
+	var board_coords: Array[Vector2i] = []
+	board_coords.assign(_board_cells.keys())
+	board_coords.sort_custom(Callable(self, "_sort_axial_coords"))
+	for ring_expansion in range(8):
+		var island_ring: Vector2i = _island_anchor_ring(island_index, ring_expansion)
+		var candidate_set: Dictionary[Vector2i, bool] = {}
+		for q_offset in range(-island_ring.y, island_ring.y + 1):
+			for r_offset in range(-island_ring.y, island_ring.y + 1):
+				var offset := Vector2i(q_offset, r_offset)
+				var distance_from_base: int = _hex_distance(offset, Vector2i.ZERO)
+				if distance_from_base < island_ring.x or distance_from_base > island_ring.y:
+					continue
+				var candidate: Vector2i = _base_coord + offset
+				if not _candidate_is_safe(candidate, relative_cells, board_coords, &""):
+					continue
+				candidate_set[candidate] = true
+		var candidates: Array[Vector2i] = []
+		candidates.assign(candidate_set.keys())
+		candidates.sort_custom(Callable(self, "_sort_axial_coords"))
+		if not candidates.is_empty():
+			return candidates[rng.randi_range(0, candidates.size() - 1)]
+	return EMPTY_COORD
+
 func _find_anchor(
 	rng: RandomNumberGenerator,
 	island_index: int,
 	relative_cells: Array[TerrainPieceCellData],
 	excluded_island_id: StringName,
 	require_start_distance: bool,
-	relocation_step: int = 0
+	ring_expansion: int = 0
 ) -> Vector2i:
 	var board_coords: Array[Vector2i] = []
 	board_coords.assign(_board_cells.keys())
@@ -255,11 +309,10 @@ func _find_anchor(
 					continue
 				if _minimum_board_distance(candidate, board_coords) < MIN_ANCHOR_GAP:
 					continue
-				if relocation_step >= 0:
-					var island_ring: Vector2i = _island_anchor_ring(island_index, relocation_step)
-					var distance_from_base: int = _hex_distance(candidate, _base_coord)
-					if distance_from_base < island_ring.x or distance_from_base > island_ring.y:
-						continue
+				var island_ring: Vector2i = _island_anchor_ring(island_index, ring_expansion)
+				var distance_from_base: int = _hex_distance(candidate, _base_coord)
+				if distance_from_base < island_ring.x or distance_from_base > island_ring.y:
+					continue
 				if require_start_distance and not _shape_is_within_start_distance(candidate, relative_cells):
 					continue
 				if not _candidate_is_safe(candidate, relative_cells, board_coords, excluded_island_id):
@@ -272,14 +325,14 @@ func _find_anchor(
 		return EMPTY_COORD
 	return candidates[rng.randi_range(0, candidates.size() - 1)]
 
-func _island_anchor_ring(island_index: int, relocation_step: int) -> Vector2i:
+func _island_anchor_ring(island_index: int, ring_expansion: int) -> Vector2i:
 	var minimum_distance: int = 3 if island_index == 0 else (
 		ISLAND_RING_BASE_DISTANCE + (island_index - 1) * ISLAND_RING_STEP
 	)
 	var maximum_distance: int = START_ISLAND_MAX_DISTANCE if island_index == 0 else (
 		minimum_distance + ISLAND_RING_WIDTH
 	)
-	var expansion: int = maxi(relocation_step, 0) * RELOCATION_RING_STEP
+	var expansion: int = maxi(ring_expansion, 0) * ISLAND_RING_EXPANSION_STEP
 	return Vector2i(minimum_distance + expansion, maximum_distance + expansion)
 
 func _candidate_is_safe(
@@ -312,67 +365,25 @@ func _shape_is_within_start_distance(
 			return true
 	return false
 
-func _relocate_unsafe_islands() -> void:
+func _rebuild_reserved_island_coords() -> void:
+	_reserved_island_coords.clear()
 	for island in _island_groups:
-		if island.treasure_claimed or _island_group_is_clear(island):
-			continue
-		var relative_cells: Array[TerrainPieceCellData] = []
 		for cell in island.cells:
-			var relative_cell := cell.duplicate(true) as TerrainPieceCellData
-			if relative_cell == null:
-				continue
-			relative_cell.local_coord -= island.anchor_coord
-			relative_cells.append(relative_cell)
-		var rng := RandomNumberGenerator.new()
-		rng.seed = _run_seed ^ (104729 * (island.island_index + 1)) ^ (island.relocation_count + 1)
-		var new_anchor: Vector2i = EMPTY_COORD
-		for attempt in range(6):
-			new_anchor = _find_anchor(
-				rng,
-				island.island_index,
-				relative_cells,
-				island.island_id,
-				false,
-				island.relocation_count + attempt + 1
-			)
-			if new_anchor != EMPTY_COORD:
-				break
-		if new_anchor == EMPTY_COORD:
-			new_anchor = _find_anchor(
-				rng,
-				island.island_index,
-				relative_cells,
-				island.island_id,
-				false,
-				-1
-			)
-		if new_anchor == EMPTY_COORD:
-			push_warning("El tesoro %s conserva su posición hasta encontrar agua segura." % island.island_id)
-			continue
-		var translation: Vector2i = new_anchor - island.anchor_coord
-		island.anchor_coord = new_anchor
-		island.treasure_coord += translation
-		island.relocation_count += 1
-		for cell in island.cells:
-			cell.local_coord += translation
-		_sync_island_chest(island)
-	queue_redraw()
+			_reserved_island_coords[cell.local_coord] = true
 
-func _has_coast_edge_in_rect(island: ExplorationIslandData, view_rect: Rect2) -> bool:
-	var cells_by_coord: Dictionary[Vector2i, TerrainPieceCellData] = {}
+func _island_group_is_inside_reveal_radius(
+	island: ExplorationIslandData,
+	fog_center_world_position: Vector2,
+	safe_reveal_radius: float
+) -> bool:
 	for cell in island.cells:
-		cells_by_coord[cell.local_coord] = cell
-	for cell in island.cells:
-		for direction_index in HexCoord.DIRECTION_OFFSETS.size():
-			if cells_by_coord.has(cell.local_coord + HexCoord.DIRECTION_OFFSETS[direction_index]):
-				continue
-			var start_corner: int = posmod(direction_index + 1, 6)
-			var end_corner: int = posmod(direction_index + 2, 6)
-			var start: Vector2 = _cell_corner(cell.local_coord, start_corner, cell.elevation)
-			var end: Vector2 = _cell_corner(cell.local_coord, end_corner, cell.elevation)
-			if view_rect.has_point(to_global((start + end) * 0.5)):
-				return true
-	return false
+		for corner_index in range(6):
+			var world_corner: Vector2 = to_global(
+				_cell_corner(cell.local_coord, corner_index, cell.elevation)
+			)
+			if world_corner.distance_to(fog_center_world_position) > safe_reveal_radius:
+				return false
+	return true
 
 func _sync_island_chest(island: ExplorationIslandData) -> void:
 	var chest: IslandCardChest = _island_chests.get(island.island_id) as IslandCardChest
@@ -551,10 +562,8 @@ func _island_group_is_clear(island: ExplorationIslandData) -> bool:
 	if _board_cells.is_empty():
 		return true
 	for island_cell in island.cells:
-		for board_coord_variant in _board_cells:
-			var board_coord: Vector2i = board_coord_variant
-			if _hex_distance(island_cell.local_coord, board_coord) <= 1:
-				return false
+		if _board_cells.has(island_cell.local_coord):
+			return false
 	return true
 
 func _minimum_board_distance(candidate: Vector2i, board_coords: Array[Vector2i]) -> int:

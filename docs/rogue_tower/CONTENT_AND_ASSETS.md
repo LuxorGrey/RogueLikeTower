@@ -106,7 +106,7 @@ Este apartado conserva como **estado inicial/histórico** las 18 cards placehold
 
 La política actual de ofertas ya no se define en este documento histórico de placeholders. Consulta [Progresión](PROJECT_SPEC.md#progression) para la regla vigente y [Catálogo](#content-roster) para el índice de IDs/Resources.
 
-Los siete PNG completos de torre están en `assets/sprites/ui/icons/`. `TowerArtCatalog` carga y cachea directamente cada textura, sin recortar ni combinar regiones. El mundo, el ghost, la card de construcción y el retrato de Tower Info usan el mismo sprite único. En combate, la torre mira a derecha o izquierda mediante espejo horizontal, sin rotación visual. No se añade un arquetipo Raider: el séptimo asset corresponde a Shredder, nombre canónico del roster. El shader de contorno blanco se aplica al sprite único y a los obstáculos.
+Los siete PNG originales de torre están en `assets/sprites/towers/`, fuera de UI. `TowerArtCatalog` conserva sus texturas completas para el ghost, los retratos/cards y el panel de Tower Info. Las torres colocadas usan una hoja animada propia; en combate miran a derecha o izquierda mediante espejo horizontal, sin rotación visual. El shader de contorno blanco se aplica al sprite animado y a los obstáculos. No se añade un arquetipo Raider: el séptimo asset corresponde a Shredder, nombre canónico del roster.
 
 <a id='canonical-names'></a>
 ## Nombres canónicos
@@ -665,7 +665,7 @@ La torre gana XP en la capa de HP activa del objetivo que mantiene en alcance, a
 - Las prioridades se eligen con un selector inicial y un botón `+` contiguo. Cada pulsación revela la prioridad siguiente, hasta tres; las opciones 2 y 3 quedan ocultas por defecto. La segunda opción solo decide empates de la primera; la tercera solo decide empates anteriores. Si se selecciona un criterio ocupado en otra posición, ambos se intercambian; si se intenta duplicar en una posición vacía, la selección se revierte. La prioridad 1 es obligatoria y no hay criterios duplicados. Los tooltips explican cada métrica; «Menos HP total» suma los puntos actuales de Health, Armor y Shield.
 - La card inferior de la torre seleccionada pulsa. En build mode, el sprite y el alcance del preview se dibujan por delante del terreno y los obstáculos. Verde significa ubicación válida; rojo, no disponible.
 - El panel de información no pulsa. Conserva altura natural y, cuando la ventana no tiene espacio vertical suficiente, reduce su escala vertical desde el borde superior para permanecer entero en pantalla.
-- `Ctrl+K` abre herramientas temporales de depuración: Gold, Mana, curación de base, inicio de ronda, reinicio de run y desbloqueo temporal de torres/cartas. Los desbloqueos solo modifican el estado de memoria de la run y no se escriben al guardado.
+- `Ctrl+K` abre herramientas temporales de depuración: Gold, Mana, curación de base, inicio de ronda, reinicio de run, desbloqueo temporal de torres/cartas y selección de terreno. El hack de terreno está disponible en `ROUND_PREP`, presenta tres piezas del catálogo y permite colocar una con las mismas validaciones de PATH/isla, sin avanzar la ronda; clic derecho deshace la selección y vuelve a las opciones, y otro clic derecho cierra el hack. Los desbloqueos solo modifican el estado de memoria de la run y no se escriben al guardado.
 - Al ganar o gastar Gold, moneda e importe rebotan juntos en el HUD. El feedback escala el grupo completo y no desplaza controles hijos dentro del contenedor de recursos.
 - Cada mejora permanente y cada torre desbloqueable presenta su icono temático. Los costes, el saldo y las recompensas de la tienda usan `exp.png` junto a la cifra; no se escribe el nombre de esa moneda en la interfaz. En el mapa, los siete unlocks de torre comparten una fila; cada unlock conecta con tres nodos H/A/S colocados horizontalmente y comprables en cualquier orden. El precio de cada nodo muestra la cifra centrada y grande, y el icono XP a su derecha. La selección de una card de run, una pieza de terreno o una torre reclutada comparte un hover tipo Balatro con inclinación leve, aumento y brillo radial.
 - El hover sobre un obstáculo dibuja una aureola a partir del alfa del mismo PNG, siguiendo su silueta recortada.
@@ -689,7 +689,7 @@ La [wiki de Rogue Tower](https://rogue-tower.fandom.com/wiki/Towers) documenta l
 > **Inventario, no especificación:** este snapshot documenta qué PNG y referencias se encontraron en la revisión indicada. Las rutas runtime se consultan en el código/Resources; los criterios visuales y decisiones aprobadas pertenecen a las páginas asignadas en el [índice maestro](README.md#index). No eliminar assets solo porque esta búsqueda no encuentre una referencia.
 
 - Fecha de revisión: 2026-10-16.
-- Alcance: 131 archivos PNG bajo assets/sprites/, incluidos los 26 spritesheets de correr activos y el cofre de cartas de isla añadido en M71. La carpeta `assets/sprites/enemies/new/` citada en registros previos no existe en este checkout; no hay copias locales de los PNG fuente originales.
+- Alcance: 138 archivos PNG bajo assets/sprites/, incluidos los 26 spritesheets de correr de enemigos, siete hojas de animación de torre y el cofre de cartas de isla. Los PNG completos de las siete torres se trasladaron de `ui/icons/` a `towers/`. La carpeta `assets/sprites/enemies/new/` citada en registros previos no existe en este checkout; no hay copias locales de los PNG fuente originales.
 - Método: búsqueda por nombre de archivo en scripts, escenas, Resources y configuración del proyecto (*.gd, *.tscn, *.tres, *.gdshader, *.godot, *.cfg, *.cs). Las coincidencias de TerrainVisualCatalog y los catálogos de iconos son referencias de runtime directas, aunque el contenido se seleccione por ID.
 - Resultado: los 26 PNG canónicos de enemigos son spritesheets de cuatro cuadros y mantienen las rutas usadas por los Resources. En el checkout se encontraron 26 archivos de enemigo, todos bajo la carpeta canónica `assets/sprites/enemies/`; no se encontraron las 26 fuentes previas que documentos anteriores daban por conservadas. Los PNG alternativos autorizados y el marco histórico de Tower Info se retiraron en M64.
 
@@ -767,7 +767,8 @@ La [wiki de Rogue Tower](https://rogue-tower.fandom.com/wiki/Towers) documenta l
 | assets/sprites/ui/icons/area.png | Usado | game/ui/resources/icon_catalog.tres |
 | assets/sprites/ui/icons/armor.png | Usado | game/ui/resources/icon_catalog.tres, game/main/main.tscn |
 | assets/sprites/ui/icons/attack_speed.png | Usado | game/ui/resources/icon_catalog.tres |
-| assets/sprites/ui/icons/ballista.png | Usado | `game/towers/tower_art_catalog.gd` carga el PNG completo; icon catalog y retratos/cards lo comparten. |
+| assets/sprites/towers/ballista.png | Usado | `game/towers/tower_art_catalog.gd` carga el PNG completo; icon catalog y retratos/cards lo comparten. |
+| assets/sprites/towers/ballista_animations.png | Usado | `TowerArtCatalog` recorta en runtime los dos cuadros idle y los dos de ataque. |
 | assets/sprites/ui/icons/bleed.png | Usado | game/ui/resources/icon_catalog.tres |
 | assets/sprites/ui/icons/burn.png | Usado | game/ui/resources/icon_catalog.tres |
 | assets/sprites/ui/icons/card_archive.png | Usado | game/ui/resources/icon_catalog.tres |
@@ -776,21 +777,30 @@ La [wiki de Rogue Tower](https://rogue-tower.fandom.com/wiki/Towers) documenta l
 | assets/sprites/ui/icons/elevation.png | Usado | game/ui/resources/icon_catalog.tres |
 | assets/sprites/ui/icons/enemy.png | Usado | game/ui/resources/icon_catalog.tres |
 | assets/sprites/ui/icons/exp.png | Usado | `game/ui/resources/icon_catalog.tres`, `game/progression/meta_shop_panel.tscn` y resumen BBCode de run. |
-| assets/sprites/ui/icons/flame_thrower.png | Usado | `game/towers/tower_art_catalog.gd` carga el PNG completo; icon catalog y retratos/cards lo comparten. |
-| assets/sprites/ui/icons/frost_keep.png | Usado | `game/towers/tower_art_catalog.gd` carga el PNG completo; icon catalog y retratos/cards lo comparten. |
+| assets/sprites/towers/flame_thrower.png | Usado | `game/towers/tower_art_catalog.gd` carga el PNG completo; icon catalog y retratos/cards lo comparten. |
+| assets/sprites/towers/flame_thrower_animations.png | Usado | `TowerArtCatalog` recorta en runtime los dos cuadros idle y los dos de ataque. |
+| assets/sprites/towers/frost_keep.png | Usado | `game/towers/tower_art_catalog.gd` carga el PNG completo; icon catalog y retratos/cards lo comparten. |
+| assets/sprites/towers/frost_keep_animations.png | Usado | `TowerArtCatalog` recorta en runtime los dos cuadros idle y los dos de ataque. |
 | assets/sprites/ui/icons/gold.png | Usado | game/ui/resources/icon_catalog.tres, game/ui/components/tower_shortcut_card.tscn, game/ui/components/tower_layer_upgrade_button.tscn, game/main/main.tscn |
 | assets/sprites/ui/icons/health.png | Usado | game/ui/resources/icon_catalog.tres, game/main/main.tscn |
 | assets/sprites/ui/icons/mana.png | Usado | game/main/main.tscn, game/ui/resources/icon_catalog.tres |
-| assets/sprites/ui/icons/mortar.png | Usado | `game/towers/tower_art_catalog.gd` carga el PNG completo; icon catalog y retratos/cards lo comparten. |
-| assets/sprites/ui/icons/poison_sprayer.png | Usado | `game/towers/tower_art_catalog.gd` carga el PNG completo; icon catalog y retratos/cards lo comparten. |
+| assets/sprites/towers/mortar.png | Usado | `game/towers/tower_art_catalog.gd` carga el PNG completo; icon catalog y retratos/cards lo comparten. |
+| assets/sprites/towers/mortar_animations.png | Usado | `TowerArtCatalog` recorta en runtime los dos cuadros idle y los dos de ataque. |
+| assets/sprites/towers/poison_sprayer.png | Usado | `game/towers/tower_art_catalog.gd` carga el PNG completo; icon catalog y retratos/cards lo comparten. |
+| assets/sprites/towers/poison_sprayer_animations.png | Usado | `TowerArtCatalog` recorta en runtime los dos cuadros idle y los dos de ataque. |
 | assets/sprites/ui/icons/poison.png | Usado | game/ui/resources/icon_catalog.tres |
 | assets/sprites/ui/icons/range.png | Usado | game/ui/resources/icon_catalog.tres |
 | assets/sprites/ui/icons/shield.png | Usado | game/main/main.tscn, game/ui/resources/icon_catalog.tres |
-| assets/sprites/ui/icons/shredder.png | Usado | `game/towers/tower_art_catalog.gd` carga el PNG completo; icon catalog y retratos/cards lo comparten. |
+| assets/sprites/towers/shredder.png | Usado | `game/towers/tower_art_catalog.gd` carga el PNG completo; icon catalog y retratos/cards lo comparten. |
+| assets/sprites/towers/shredder_animations.png | Usado | `TowerArtCatalog` recorta en runtime los dos cuadros idle y los dos de ataque. |
 | assets/sprites/ui/icons/slow.png | Usado | game/ui/resources/icon_catalog.tres |
-| assets/sprites/ui/icons/tesla_coil.png | Usado | `game/towers/tower_art_catalog.gd` carga el PNG completo; icon catalog y retratos/cards lo comparten. |
+| assets/sprites/towers/tesla_coil.png | Usado | `game/towers/tower_art_catalog.gd` carga el PNG completo; icon catalog y retratos/cards lo comparten. |
+| assets/sprites/towers/tesla_coil_animations.png | Usado | `TowerArtCatalog` recorta en runtime los dos cuadros idle y los dos de ataque. |
 | assets/sprites/ui/start_round_button.png | Usado | game/main/main.tscn |
 | assets/sprites/ui/tower_card_button.png | Usado | game/ui/components/tower_shortcut_card.tscn |
+| assets/sprites/ui/menu_button.png | Usado | `game/menu/main_menu.tscn` y `game/menu/pause_menu.tscn`: botones NinePatch con estilos compartidos; el texto sigue siendo dinámico. |
+| assets/sprites/ui/menu_panel.png | Usado | `game/menu/main_menu.tscn` y `game/menu/pause_menu.tscn`: panel NinePatch con StyleBox compartido. |
+| assets/sprites/ui/main_menu_island.png | Sustituido (ADR-0133) | Ilustración creada para M78; el menú usa el agua compartida de `game/main/wind_waker_water_background_material.tres` y reutiliza `game/main/map_fog.gdshader` solo en el fondo del MainMenu (ADR-0135). |
 
 ### Cozy Chunky y dependencia de cursores
 
@@ -800,29 +810,45 @@ M51 añadió 41 PNG locales de Cozy Chunky. El código usa directamente estos re
 |---|---|---|
 | assets/sprites/ui/Cozy_Chunky/confetti_burst_01.png | Usado | `game/menu/main_menu.gd`: Game Over al presentar el resumen de run. |
 | assets/sprites/ui/Cozy_Chunky/sparkle_twinkle_white_loop.png | Usado | `game/main/main.gd`: confirmación de pieza de terreno. |
-| assets/sprites/ui/Cozy_Chunky/tap_ripple.png | Usado | `game/main/main.gd`: marca del objetivo previsto al disparar Mortar. |
+| assets/sprites/ui/Cozy_Chunky/tap_ripple.png | Reemplazado (M79) | El marcador del objetivo de Mortar usa `assets/sprites/vfx/towers/mortar_target.png`. |
 | assets/sprites/ui/Cozy_Chunky/Rewards/coin_burst_gold.png | Usado | `game/main/main.gd`: cofre abierto. |
 | assets/sprites/ui/Cozy_Chunky/Rewards/star_burst_gold.png | Usado | `game/main/main.gd`: cualquier nivel nuevo de torre. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/ballista_impact.png | Usado | `game/main/main.gd`: impacto de Ballista. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/ballista_shoot.png | Usado | `game/main/main.gd`: disparo de Ballista. |
+| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/ballista_impact.png | Reemplazado (M79) | Ballista usa `assets/sprites/vfx/towers/impact_ballista.png`. |
+| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/ballista_shoot.png | Reemplazado (M79) | Ballista usa `assets/sprites/vfx/towers/shot_ballista.png`. |
 | assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/base_hit.png | Usado | `game/main/main.gd`: daño recibido por la base. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/fire_impact.png | Usado | `game/main/main.gd`: impacto de Flame Thrower. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/fire_shoot.png | Usado | `game/main/main.gd`: disparo de Flame Thrower. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/ice_impact.png | Usado | `game/main/main.gd`: impacto de Frost Keep. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/ice_shoot.png | Usado | `game/main/main.gd`: disparo de Frost Keep. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/mortar_impact.png | Usado | `game/main/main.gd`: explosión de área de Mortar. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/mortar_shoot.png | Usado | `game/main/main.gd`: disparo de Mortar. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/poisonSprayer_impact.png | Usado | `game/main/main.gd`: impacto de Poison Sprayer. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/poisonSprayer_shoot.png | Usado | `game/main/main.gd`: disparo de Poison Sprayer. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/shredder_impact.png | Usado | `game/main/main.gd`: impacto de Shredder. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/shredder_shoot.png | Usado | `game/main/main.gd`: disparo de Shredder. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/teslaCoil_impact.png | Usado | `game/main/main.gd`: impacto de Tesla Coil. |
-| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/teslaCoil_shoot.png | Usado | `game/main/main.gd`: disparo de Tesla Coil. |
+| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/fire_impact.png | Reemplazado (M79) | Flame Thrower usa `assets/sprites/vfx/towers/impact_flame.png`. |
+| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/fire_shoot.png | Reemplazado (M79) | Flame Thrower usa `assets/sprites/vfx/towers/shot_flame.png`. |
+| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/ice_impact.png | Reemplazado (M79) | Frost Keep usa `assets/sprites/vfx/towers/impact_frost.png`. |
+| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/ice_shoot.png | Reemplazado (M79) | Frost Keep usa `assets/sprites/vfx/towers/shot_frost.png`. |
+| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/mortar_impact.png | Reemplazado (M79) | Mortar usa `assets/sprites/vfx/towers/impact_mortar.png`. |
+| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/mortar_shoot.png | Reemplazado (M79) | Mortar usa `assets/sprites/vfx/towers/shot_mortar.png`. |
+| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/poisonSprayer_impact.png | Reemplazado (M79) | Poison Sprayer usa `assets/sprites/vfx/towers/impact_poison.png`. |
+| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/poisonSprayer_shoot.png | Reemplazado (M79) | Poison Sprayer usa `assets/sprites/vfx/towers/shot_poison.png`. |
+| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/shredder_impact.png | Reemplazado (M79) | Shredder usa `assets/sprites/vfx/towers/impact_shredder.png`. |
+| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/shredder_shoot.png | Reemplazado (M79) | Shredder usa `assets/sprites/vfx/towers/shot_shredder.png`. |
+| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/teslaCoil_impact.png | Reemplazado (M79) | Tesla Coil usa `assets/sprites/vfx/towers/impact_tesla.png`. |
+| assets/sprites/ui/Cozy_Chunky/PNG_1x/combat/teslaCoil_shoot.png | Reemplazado (M79) | Tesla Coil usa `assets/sprites/vfx/towers/shot_tesla.png`. |
 | assets/sprites/ui/Cozy_Chunky/PNG_1x/pickup_ui/coins_top.png | Usado | `game/main/main.gd`: feedback “Coin stomp” proporcionado para una baja final. |
 | assets/sprites/ui/Cozy_Chunky/PNG_1x/pickup_ui/item_glow.png | Usado | `game/board/terrain_cell_decoration.gd`: loop detrás de cofres disponibles. |
 | assets/sprites/ui/Cozy_Chunky/PNG_1x/pickup_ui/level_up.png | Usado | `game/main/main.gd`: subida manual o automática de torre. |
 | assets/sprites/ui/Cozy_Chunky/PNG_1x/pickup_ui/pickup.png | Usado | `game/main/main.gd`: apertura de cofre, construcción de torre y retirada de obstáculo. |
 | assets/sprites/ui/Cozy_Chunky/PNG_1x/pickup_ui/ui_click.png | Usado | `game/main/main.gd`: clic sobre objetos interactuables, en el cursor. |
+
+### Sprites de combate de las torres (2026-10-18)
+
+ADR-0131 fija el lenguaje visual de estos efectos: dibujo infantil tosco de crayón/rotulador, formas gruesas y simples, contornos irregulares y poca textura. Cada torre conserva una paleta legible para su material o elemento. No cambia la dirección artística de las torres ni otros sprites del juego.
+
+| Torre | Disparo/proyectil | Impacto |
+|---|---|---|
+| Ballista | `assets/sprites/vfx/towers/shot_ballista.png` | `assets/sprites/vfx/towers/impact_ballista.png` |
+| Mortar | `assets/sprites/vfx/towers/shot_mortar.png` | `assets/sprites/vfx/towers/impact_mortar.png`; marcador `mortar_target.png` |
+| Tesla Coil | `assets/sprites/vfx/towers/shot_tesla.png`; rayo `tesla_beam.png` | `assets/sprites/vfx/towers/impact_tesla.png` |
+| Frost Keep | `assets/sprites/vfx/towers/shot_frost.png` | `assets/sprites/vfx/towers/impact_frost.png` |
+| Flame Thrower | `assets/sprites/vfx/towers/shot_flame.png` | `assets/sprites/vfx/towers/impact_flame.png` |
+| Poison Sprayer | `assets/sprites/vfx/towers/shot_poison.png` | `assets/sprites/vfx/towers/impact_poison.png` |
+| Shredder | `assets/sprites/vfx/towers/shot_shredder.png` | `assets/sprites/vfx/towers/impact_shredder.png` |
+
+Los 16 PNG (14 efectos, marcador Mortar y rayo Tesla) tienen lienzo fuente cuadrado de 1254×1254 px con alfa transparente y límite de importación de 256 px. Son archivos independientes, fáciles de cambiar conservando sus nombres. `Main.impact_vfx_display_sizes` expone el tamaño de cada efecto; los tamaños de proyectil viajero están en `tower_projectile.gd`, `frost_snowflake.gd` y `sawblade_projectile.gd`. Los VFX de una sola imagen pulsan y se desvanecen con la duración equivalente a sus hojas anteriores. Ballista, Mortar, Frost Keep y Shredder usan además su PNG `shot` en el proyectil móvil. El rayo Tesla estira `tesla_beam.png` entre la torre y cada objetivo antes de mostrar `impact_tesla.png`. El ataque, las colisiones, daño, cadencia, estados y recorrido no cambian.
 | assets/sprites/ui/Cozy_Chunky/PNG_1x/status/bleed.png | Usado | `game/enemies/enemy.gd`: estado Bleed. |
 | assets/sprites/ui/Cozy_Chunky/PNG_1x/status/buff.png | Usado | `game/enemies/enemy.gd`: Haste y Fortification. |
 | assets/sprites/ui/Cozy_Chunky/PNG_1x/status/burn.png | Usado | `game/enemies/enemy.gd`: estado Burn. |
@@ -841,6 +867,20 @@ M51 añadió 41 PNG locales de Cozy Chunky. El código usa directamente estos re
 | assets/sprites/enemies/*.png (26 de enemigos) | Usados | Cada archivo mide 512×128 px y tiene 4 cuadros horizontales de 128×128 px. `EnemyData` reconoce las cuatro poses; `Enemy` las alterna a 8 FPS mientras está en estado `MOVING`, desde que aparece. El tamaño visual por enemigo sigue configurado en su Resource. |
 | `assets/sprites/enemies/new/` | Ausente del checkout | No se han podido contrastar ni enlazar los PNG fuente; los 26 archivos runtime canónicos están enumerados arriba y sus nombres visibles son propietarios de [Nomenclatura](#canonical-names). |
 
+### Spritesheets de torres integrados (2026-10-16)
+
+Cada hoja `assets/sprites/towers/<id>_animations.png` forma una cuadrícula 2×2: fila superior con dos cuadros de idle en loop; fila inferior con dos cuadros de ataque de una sola reproducción. Los siete tienen los mismos cuatro cuadros y las celdas conservan la dimensión exacta del PNG completo correspondiente. `TowerArtCatalog` crea y cachea los `SpriteFrames` con `AtlasTexture`; el idle corre a 2,4 FPS y el ataque a 12 FPS. La fase inicial se desfasa hasta 0,28 s de forma reproducible por seed, coordenada y tipo de torre. El ataque se inicia al emitir un disparo/impacto válido y vuelve a idle al terminar. Los atlas importan con límite de 512 px para conservar hasta 256 px por cuadro.
+
+| ID | PNG completo / tamaño de cuadro | Hoja 2×2 |
+|---|---:|---:|
+| `ballista` | 702×729 px | 1404×1458 px |
+| `mortar` | 724×837 px | 1448×1674 px |
+| `tesla_coil` | 724×774 px | 1448×1548 px |
+| `frost_keep` | 693×801 px | 1386×1602 px |
+| `flame_thrower` | 711×777 px | 1422×1554 px |
+| `poison_sprayer` | 704×785 px | 1408×1570 px |
+| `shredder` | 724×827 px | 1448×1654 px |
+
 ### Conclusión
 
 Los spritesheets activos conservan las rutas de los 26 recursos canónicos de enemigo y reemplazan el arte anterior. El juego los reconoce como ciclos de cuatro cuadros. No se han detectado sprites de enemigos usados por runtime que estén fuera de esta raíz. En M64 se retiraron los 26 PNG alternativos de enemigos que no tenían uso ni previsión aprobada, además del antiguo `tower_info_panel_frame.png`. Los efectos Tiny Swords y las diez hojas Cozy Chunky sin uso se habían eliminado del checkout el 2026-10-15. El origen de los sprites actuales no está archivado en este checkout.
@@ -856,7 +896,9 @@ Esta es la raíz única de sprites que usa el runtime y sus recursos de interfaz
 |---|---|
 | `base/` | Sprite de Main Tower |
 | `enemies/` | Sprites de enemigos y jefes |
+| `towers/` | PNG completos y spritesheets de animación de las siete torres |
 | `terrain/` | Suelos, fachadas, obstáculos, props, portales y cofres; consulta su [catálogo](#sprite-catalog) |
+| `vfx/towers/` | Sprites de disparo, impacto y marcador de Mortar, separados por torre |
 | `ui/` | Botones y marcos, más `icons/` y propuestas visuales |
 | `third_party/tiny_swords/` | Puede contener cursores locales excluidos de Git por sus condiciones de redistribución. No se consideran assets canónicos del juego ni deben copiarse sin verificar su licencia. |
 
@@ -898,8 +940,13 @@ Dimensiones fuente y tamaño de representación en runtime:
 | `treasure_chest.png` | 168 × 168 | 84 × 84 |
 | `island_card_chest.png` | 101 × 115 | 47,4 × 54; borde inferior anclado al centro del hex |
 | `assets/sprites/ui/tower_card_button.png` | 288 × 296 | 144 × 148 |
+| `assets/sprites/ui/menu_button.png` | 2172 × 724 | Estilo NinePatch con margen escalado; texto dibujado por Godot |
+| `assets/sprites/ui/menu_panel.png` | 1448 × 1086 | Estilo NinePatch alrededor del contenido del menú |
+| `assets/sprites/ui/main_menu_island.png` | 1672 × 941 | Arte histórico de M78; ya no se carga como fondo |
 
 El sprite de Main Tower conserva su resolución PNG y se escala al rectángulo visual actual de 93,6 × 145,6 px desde la huella de 52 px; el borde inferior permanece anclado y la huella lógica sigue ocupando un hexágono. El cofre normal se ajusta al rectángulo cuadrado que ya se dibuja en el juego, para mantener 2× píxeles en ambos ejes. `island_card_chest.png` se generó el 2026-10-16 con fondo transparente tomando `treasure_chest.png` como referencia de estilo; conserva madera y herrajes dorados, y añade una gema turquesa para identificar la recompensa de cartas. Es arte nuevo para Rogue Tower, no un asset de terceros; se muestra a 54 px de alto y su base se alinea con el centro de la celda.
+
+Los sprites de botón y panel del menú se generaron para M78 con fondo transparente. Button y panel comparten madera, metal dorado y contorno marcado con los paneles existentes; `StyleBoxTexture` usa nueve segmentos para conservar las esquinas al cambiar de tamaño; el botón se importa con límite de 512 px y el panel de 768 px, con márgenes ajustados a esas texturas importadas. La ilustración de isla generada para M78 se conserva como arte histórico. El fondo actual no carga imagen: MainMenu y gameplay comparten el material de agua; la viñeta del fondo del MainMenu instancia el mismo `game/main/map_fog.gdshader` que usa gameplay, sin aplicarlo a la tienda permanente. La transición mantiene el agua visible (ADR-0135). No se incorporaron assets de terceros.
 
 ### Fuente y regeneración
 

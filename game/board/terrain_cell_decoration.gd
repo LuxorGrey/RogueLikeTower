@@ -16,6 +16,7 @@ var _chest_available: bool = false
 var _decorative_prop_ids: Array[StringName] = []
 var _chest_appearance_tween: Tween
 var _chest_hover_tween: Tween
+var _chest_idle_tween: Tween
 var _obstacle_hovered: bool = false
 var _chest_hovered: bool = false
 var _obstacle_sprite: Sprite2D
@@ -133,11 +134,14 @@ func configure(
 	_sync_obstacle_hover_sprite()
 	if chest_appeared:
 		_play_chest_appearance()
+		_start_chest_idle_bounce()
 	elif not chest_available and _chest_appearance_tween != null and _chest_appearance_tween.is_running():
 		_chest_appearance_tween.kill()
 		_chest_sprite.position = _chest_base_position
 		_chest_sprite.scale = _chest_base_scale
 	if not chest_available:
+		if _chest_idle_tween != null and _chest_idle_tween.is_running():
+			_chest_idle_tween.kill()
 		set_chest_hovered(false)
 	queue_redraw()
 
@@ -153,12 +157,16 @@ func set_chest_hovered(is_hovered: bool) -> void:
 		return
 	_chest_hovered = should_hover
 	_sync_chest_hover_sprite()
+	if _chest_idle_tween != null and _chest_idle_tween.is_running():
+		_chest_idle_tween.kill()
 	if _chest_hover_tween != null and _chest_hover_tween.is_running():
 		_chest_hover_tween.kill()
 	_chest_sprite.position = _chest_base_position
 	_chest_sprite.scale = _chest_base_scale
 	_chest_sprite.modulate = Color.WHITE
 	if not _chest_hovered:
+		if _chest_available:
+			_start_chest_idle_bounce()
 		return
 	_chest_sprite.modulate = Color("#fff0bd")
 	_chest_hover_tween = create_tween().set_loops()
@@ -284,3 +292,37 @@ func _sync_chest_item_glow() -> void:
 	if _chest_item_glow == null or not is_instance_valid(_chest_item_glow):
 		return
 	_chest_item_glow.visible = _chest_available
+
+func _start_chest_idle_bounce() -> void:
+	if not _chest_available or _chest_hovered or _chest_sprite == null:
+		return
+	if _chest_idle_tween != null and _chest_idle_tween.is_running():
+		return
+	var phase_delay: float = fposmod(float(get_instance_id()) * 0.61803398875, 0.8)
+	_chest_idle_tween = create_tween().set_loops()
+	_chest_idle_tween.tween_interval(0.8 + phase_delay)
+	_chest_idle_tween.tween_property(
+		_chest_sprite,
+		"position:y",
+		_chest_base_position.y - 10.0,
+		0.2
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_chest_idle_tween.parallel().tween_property(
+		_chest_sprite,
+		"scale",
+		_chest_base_scale * 1.05,
+		0.2
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_chest_idle_tween.tween_property(
+		_chest_sprite,
+		"position:y",
+		_chest_base_position.y,
+		0.3
+	).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	_chest_idle_tween.parallel().tween_property(
+		_chest_sprite,
+		"scale",
+		_chest_base_scale,
+		0.3
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_chest_idle_tween.tween_interval(1.1)

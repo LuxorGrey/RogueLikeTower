@@ -9,7 +9,6 @@ uniform float camera_zoom = 1.0;
 uniform float fog_reveal_radius = 360.0;
 uniform float fog_fade_distance = 170.0;
 uniform float fog_edge_roughness = 34.0;
-uniform float fog_max_opacity : hint_range(0.0, 1.0) = 0.98;
 uniform float water_time = 0.0;
 
 float hash21(vec2 point) {
@@ -41,6 +40,8 @@ void fragment() {
 		+ sin(world_position.y * 0.019 + water_time * 0.025) * 1.4);
 	float ink_marks = smoothstep(0.76, 0.97, abs(strokes));
 	float grain = value_noise(world_position * 0.027 + vec2(3.7, water_time * 0.01));
-	float opacity = fog_amount * min(fog_max_opacity, 0.91 + ink_marks * 0.055 + grain * 0.025);
-	COLOR = vec4(fog_color.rgb, opacity);
+	// El trazo da textura al color; nunca abre huecos transparentes en la zona cubierta.
+	float brush_shade = clamp(1.0 - ink_marks * 0.12 - grain * 0.06, 0.82, 1.0);
+	float opacity = fog_amount;
+	COLOR = vec4(fog_color.rgb * brush_shade, opacity);
 }

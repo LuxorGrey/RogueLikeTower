@@ -1,11 +1,11 @@
 [gd_scene format=3 uid="uid://deb8o4st6rba"]
 
 [ext_resource type="Script" uid="uid://krsrocfocujn" path="res://game/ui/components/tower_shortcut_card.gd" id="1_script"]
-[ext_resource type="Theme" path="res://game/ui/themes/rogue_hud_theme.tres" id="2_theme"]
+[ext_resource type="Theme" uid="uid://b8nogcxauq43u" path="res://game/ui/themes/rogue_hud_theme.tres" id="2_theme"]
 [ext_resource type="Texture2D" uid="uid://h6pl4dytx3oo" path="res://assets/sprites/ui/tower_card_button.png" id="3_texture"]
 [ext_resource type="Texture2D" uid="uid://d4li2faa8wpjj" path="res://assets/sprites/ui/icons/gold.png" id="4_gold"]
-[ext_resource type="StyleBox" path="res://game/ui/themes/gold_panel_style.tres" id="5_gold_panel_style"]
-[ext_resource type="Script" path="res://game/ui/components/balatro_card_hover.gd" id="6_balatro_hover"]
+[ext_resource type="StyleBox" uid="uid://ixki47ks6fdx" path="res://game/ui/themes/gold_panel_style.tres" id="5_gold_panel_style"]
+[ext_resource type="Script" uid="uid://dn3x22g17jvyb" path="res://game/ui/components/balatro_card_hover.gd" id="6_balatro_hover"]
 
 [sub_resource type="StyleBoxTexture" id="TowerCardNormal"]
 content_margin_left = 9.0
@@ -126,7 +126,7 @@ stretch_mode = 5
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 22
 text = "TORRE"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -159,7 +159,7 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 24
 text = "0"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -183,5 +183,5 @@ theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="BalatroHoverEffect" type="Node" parent="."]
+[node name="BalatroHoverEffect" type="Node" parent="." unique_id=1586337623]
 script = ExtResource("6_balatro_hover")

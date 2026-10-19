@@ -2,8 +2,10 @@ extends Node2D
 
 enum ImpactMode { SINGLE_TARGET, AREA }
 
-const BOLT_COLOR: Color = Color("f2d894")
-const SHELL_COLOR: Color = Color("d99b62")
+const BALLISTA_SPRITE: Texture2D = preload("res://assets/sprites/vfx/towers/shot_ballista.png")
+const MORTAR_SPRITE: Texture2D = preload("res://assets/sprites/vfx/towers/shot_mortar.png")
+const BALLISTA_SPRITE_SIZE: float = 38.0
+const MORTAR_SPRITE_SIZE: float = 32.0
 
 var _target: Enemy
 var _impact_position: Vector2 = Vector2.ZERO
@@ -16,6 +18,7 @@ var _splash_radius: float = 0.0
 var _impact_mode: int = ImpactMode.SINGLE_TARGET
 var _ballista_cooldown_cycle_id: int = 0
 var _is_resolving_impact: bool = false
+var _projectile_sprite: Sprite2D
 
 func configure(
 	launch_position: Vector2,
@@ -46,6 +49,14 @@ func configure(
 	_splash_radius = splash_radius
 	_impact_mode = impact_mode
 	_ballista_cooldown_cycle_id = ballista_cooldown_cycle_id
+	_projectile_sprite = Sprite2D.new()
+	_projectile_sprite.name = "ProjectileSprite"
+	_projectile_sprite.centered = true
+	_projectile_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	_projectile_sprite.texture = MORTAR_SPRITE if _impact_mode == ImpactMode.AREA else BALLISTA_SPRITE
+	var sprite_display_size: float = MORTAR_SPRITE_SIZE if _impact_mode == ImpactMode.AREA else BALLISTA_SPRITE_SIZE
+	_projectile_sprite.scale = Vector2.ONE * (sprite_display_size / float(_projectile_sprite.texture.get_width()))
+	add_child(_projectile_sprite)
 	global_position = launch_position
 	if _ballista_cooldown_cycle_id > 0:
 		_target.state_changed.connect(_on_target_state_changed)
@@ -78,7 +89,6 @@ func _process(delta: float) -> void:
 	if _impact_mode == ImpactMode.SINGLE_TARGET and _distance_squared_to_segment(_target.global_position, previous_position, global_position) <= _hit_radius * _hit_radius:
 		_apply_impact()
 		return
-	queue_redraw()
 
 func _apply_impact() -> void:
 	if _impact_mode == ImpactMode.SINGLE_TARGET:
@@ -125,11 +135,3 @@ func _distance_squared_to_segment(point: Vector2, start: Vector2, end: Vector2) 
 		return point.distance_squared_to(start)
 	var fraction: float = clampf((point - start).dot(segment) / length_squared, 0.0, 1.0)
 	return point.distance_squared_to(start + segment * fraction)
-
-func _draw() -> void:
-	if _impact_mode == ImpactMode.AREA:
-		draw_circle(Vector2.ZERO, 7.0, SHELL_COLOR)
-		draw_circle(Vector2(-2.0, -2.0), 2.2, Color("ffe4ad"))
-	else:
-		draw_line(Vector2(-8.0, 0.0), Vector2(5.0, 0.0), BOLT_COLOR, 3.0, true)
-		draw_colored_polygon(PackedVector2Array([Vector2(5.0, 0.0), Vector2(1.0, -3.0), Vector2(1.0, 3.0)]), Color("fff2c7"))

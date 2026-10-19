@@ -1,7 +1,8 @@
 class_name FrostSnowflake
 extends Node2D
 
-const FLAKE_COLOR: Color = Color(0.76, 0.93, 1.0, 0.92)
+const FLAKE_SPRITE: Texture2D = preload("res://assets/sprites/vfx/towers/shot_frost.png")
+const FLAKE_DISPLAY_SIZE: float = 28.0
 
 var _landing_position: Vector2 = Vector2.ZERO
 var _fall_speed: float = 0.0
@@ -10,6 +11,7 @@ var _damage_packet: RefCounted
 var _damage_service: Node
 var _source_tower: Node
 var _rotation_speed: float = 0.0
+var _flake_sprite: Sprite2D
 
 func configure(
 	landing_position: Vector2,
@@ -33,6 +35,13 @@ func configure(
 	_damage_service = damage_service
 	_source_tower = source_tower
 	_rotation_speed = rotation_speed
+	_flake_sprite = Sprite2D.new()
+	_flake_sprite.name = "SnowflakeSprite"
+	_flake_sprite.texture = FLAKE_SPRITE
+	_flake_sprite.centered = true
+	_flake_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	_flake_sprite.scale = Vector2.ONE * (FLAKE_DISPLAY_SIZE / float(FLAKE_SPRITE.get_width()))
+	add_child(_flake_sprite)
 	global_position = landing_position - Vector2(0.0, fall_height)
 	z_index = 5
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -53,7 +62,6 @@ func _process(delta: float) -> void:
 	if global_position.y >= _landing_position.y:
 		queue_free()
 		return
-	queue_redraw()
 
 func _try_hit_enemy(segment_start: Vector2, segment_end: Vector2) -> bool:
 	var segment: Vector2 = segment_end - segment_start
@@ -80,9 +88,3 @@ func _try_hit_enemy(segment_start: Vector2, segment_end: Vector2) -> bool:
 		queue_free()
 		return true
 	return false
-
-func _draw() -> void:
-	draw_line(Vector2(-4.0, 0.0), Vector2(4.0, 0.0), FLAKE_COLOR, 1.5, true)
-	draw_line(Vector2(0.0, -4.0), Vector2(0.0, 4.0), FLAKE_COLOR, 1.5, true)
-	draw_line(Vector2(-2.8, -2.8), Vector2(2.8, 2.8), FLAKE_COLOR, 1.0, true)
-	draw_line(Vector2(-2.8, 2.8), Vector2(2.8, -2.8), FLAKE_COLOR, 1.0, true)
