@@ -1,13 +1,12 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://clhd5l3vngmxs"]
 
-[ext_resource type="Script" path="res://game/cards/card_data.gd" id="1_card"]
+[ext_resource type="Script" uid="uid://caqxycoyf65ra" path="res://game/cards/card_data.gd" id="1_card"]
 
 [resource]
 script = ExtResource("1_card")
 id = &"recruit_poison_sprayer"
 display_name = "Reclutar · Poison Sprayer"
-description = "Añade Poison Sprayer al arsenal de esta run."
-rarity = 0
+description = "Recluta Poison Sprayer para esta run. Su cono de veneno deja Poison en los enemigos."
+rarity = 3
 unlock_requirement = &"tower:poison_sprayer_demo"
 grant_tower_id = &"poison_sprayer_demo"
-modifier_operations = Array[Resource]([])

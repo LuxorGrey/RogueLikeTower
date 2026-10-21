@@ -1,13 +1,12 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://cl25ac4oev2ba"]
 
-[ext_resource type="Script" path="res://game/cards/card_data.gd" id="1_card"]
+[ext_resource type="Script" uid="uid://caqxycoyf65ra" path="res://game/cards/card_data.gd" id="1_card"]
 
 [resource]
 script = ExtResource("1_card")
 id = &"recruit_flame_thrower"
 display_name = "Reclutar · Flame Thrower"
-description = "Añade Flame Thrower al arsenal de esta run."
-rarity = 0
+description = "Recluta Flame Thrower para esta run. Su cono de fuego deja Burn en los enemigos."
+rarity = 3
 unlock_requirement = &"tower:flame_thrower_demo"
 grant_tower_id = &"flame_thrower_demo"
-modifier_operations = Array[Resource]([])

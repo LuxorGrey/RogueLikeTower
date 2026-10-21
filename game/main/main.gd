@@ -84,6 +84,7 @@ var _debug_terrain_selection_open: bool = false
 var _selected_tower_data: TowerData = BALLISTA_TOWER
 var _hovered_coord: Vector2i = Vector2i.ZERO
 var _has_hovered_cell: bool = false
+var _tower_info_fit_queued: bool = false
 var _terrain_rng := RandomNumberGenerator.new()
 var _run_seed: int = 0
 var _chest_spawn_chance: float = TERRAIN_VISUAL_CATALOG_SCRIPT.BASE_CHEST_CHANCE
@@ -108,12 +109,14 @@ var _meta_shop_panel: CanvasLayer
 @export var ui_icon_catalog: Resource = ICON_CATALOG_RESOURCE
 
 @export_group("Tower Info layout")
-@export_range(220.0, 640.0, 1.0) var tower_info_max_width: float = 460.0
+@export_range(220.0, 640.0, 1.0) var tower_info_max_width: float = 520.0
 @export_range(220.0, 500.0, 1.0) var tower_info_min_width: float = 280.0
 @export_range(0.0, 128.0, 1.0) var tower_info_right_inset: float = 24.0
 @export_range(0.0, 200.0, 1.0) var tower_info_top_inset: float = 76.0
 @export_range(0.0, 128.0, 1.0) var tower_info_bottom_padding: float = 24.0
 @export_range(96.0, 360.0, 1.0) var tower_info_min_height: float = 150.0
+@export var tower_stat_positive_color: Color = Color("#23733b")
+@export var tower_stat_negative_color: Color = Color("#a32929")
 
 @export_group("Spawn enemy list")
 @export_range(0.0, 24.0, 1.0) var world_enemy_row_spacing: float = 6.0
@@ -121,6 +124,7 @@ var _meta_shop_panel: CanvasLayer
 @export_range(16.0, 64.0, 1.0) var world_enemy_icon_size: float = 30.0
 @export_range(8, 32, 1) var world_enemy_font_size: int = 13
 @export_range(8, 24, 1) var world_enemy_empty_font_size: int = 12
+@export var world_enemy_font_color: Color = Color(0.24, 0.16, 0.1)
 
 @export_group("Portal wave tooltip rows")
 @export_range(0.0, 24.0, 1.0) var portal_tooltip_row_spacing: float = 6.0
@@ -313,11 +317,18 @@ var _cursor_feedback_vfx: Node2D
 @onready var _tower_actions: VBoxContainer = %TowerActions
 @onready var _world_object_actions: VBoxContainer = %WorldObjectActions
 @onready var _world_object_description: Label = %WorldObjectDescription
+@onready var _obstacle_removal_info: VBoxContainer = %ObstacleRemovalInfo
+@onready var _obstacle_removal_number: Label = %ObstacleRemovalNumber
+@onready var _next_obstacle_removal_price: Label = %NextObstacleRemovalPrice
 @onready var _world_object_enemy_scroll: ScrollContainer = %WorldObjectEnemyScroll
 @onready var _world_object_enemy_list: VBoxContainer = %WorldObjectEnemyList
+@onready var _remove_world_object_row: HBoxContainer = %RemoveWorldObjectRow
 @onready var _remove_world_object_button: Button = %RemoveWorldObject
 @onready var _remove_world_object_cost_label: Label = %RemovalCostLabel
 @onready var _remove_world_object_action_label: Label = %RemoveWorldObjectLabel
+@onready var _obstacle_demolish_row: HBoxContainer = %ObstacleDemolishRow
+@onready var _obstacle_demolish_button: Button = %ObstacleDemolish
+@onready var _obstacle_demolish_cost: Label = %ObstacleDemolishCost
 @onready var _tower_priority_buttons: Array[OptionButton] = [
 	%TowerPriority1,
 	%TowerPriority2,
@@ -335,7 +346,6 @@ var _cursor_feedback_vfx: Node2D
 	%UpgradeShield,
 ]
 @onready var _demolish_tower_button: Button = %DemolishTower
-@onready var _tower_demolition_refund_panel: PanelContainer = %TowerDemolitionRefundPanel
 @onready var _demolish_tower_amount_label: Label = %DemolishTowerAmountLabel
 @onready var _damage_service: Node = %DamageService
 @onready var _run_economy: Node = %RunEconomyService
@@ -441,6 +451,7 @@ func _ready() -> void:
 		_tower_upgrade_buttons[layer].pressed.connect(_on_upgrade_tower_pressed.bind(layer))
 	_demolish_tower_button.pressed.connect(_on_demolish_tower_pressed)
 	_remove_world_object_button.pressed.connect(_on_remove_world_object_pressed)
+	_obstacle_demolish_button.pressed.connect(_on_remove_world_object_pressed)
 	_build_controller.configure(
 		_board_grid,
 		_entities,
@@ -1105,6 +1116,11 @@ func _configure_tower_upgrade_visuals() -> void:
 		_tower_upgrade_xp_bars.append(xp_bar)
 
 func _fit_tower_info_panel() -> void:
+	if _tower_info_fit_queued:
+		return
+	_tower_info_fit_queued = true
+	await get_tree().process_frame
+	_tower_info_fit_queued = false
 	if not is_instance_valid(_tower_info_panel) or not _tower_info_panel.visible:
 		return
 	var viewport_size: Vector2 = _tower_info_panel.get_viewport_rect().size
@@ -1125,6 +1141,7 @@ func _fit_tower_info_panel() -> void:
 	_tower_info_panel.offset_bottom = _tower_info_panel.offset_top + desired_height
 	_tower_info_panel.pivot_offset = Vector2(panel_width * 0.5, 0.0)
 	_tower_info_panel.scale = Vector2(1.0, vertical_scale)
+	_tower_info_panel.modulate.a = 1.0
 
 func _update_tower_card_pulse(index: int) -> void:
 	if _tower_card_pulsing_index == index and _tower_card_pulse_tween != null and _tower_card_pulse_tween.is_running():
@@ -1864,18 +1881,15 @@ func _handle_board_click() -> void:
 			return
 		if _build_controller.get_tower_at(_hovered_coord) != null:
 			_play_ui_click_vfx()
+		_tower_info_panel.modulate.a = 0.0
 		if _build_controller.place_tower(_hovered_coord):
-			_set_rich_text_with_currency_icons(_build_status, "%s construida por %d Gold en (%d, %d)." % [
-				_selected_tower_data.display_name,
-				_selected_tower_data.build_cost,
-				_hovered_coord.x,
-				_hovered_coord.y,
-			])
+			_build_status.clear()
 			_build_controller.cancel_build_mode()
 			_refresh_build_preview()
 			_refresh_placement()
 			_refresh_tower_controls()
 		else:
+			_tower_info_panel.modulate.a = 1.0
 			_set_rich_text_with_currency_icons(_build_status, _build_controller.last_error)
 			_refresh_build_preview()
 		return
@@ -2018,24 +2032,30 @@ func _refresh_world_object_controls() -> void:
 	_world_object_actions.visible = has_world_object
 	if not has_world_object:
 		return
+	var is_obstacle: bool = _selected_world_object_kind == &"obstacle"
+	_obstacle_removal_info.visible = is_obstacle
+	_obstacle_demolish_row.visible = is_obstacle
+	_remove_world_object_row.visible = not is_obstacle
 	var removal_cost: int = _world_object_removal_cost()
 	var can_remove_now: bool = RunManager.phase == RunManager.Phase.ROUND_PREP and not _is_terrain_selection_locked()
 	var can_afford: bool = bool(_run_economy.call("can_afford_gold", removal_cost))
-	_remove_world_object_action_label.text = "DEMOLER" if _selected_world_object_kind == &"obstacle" else "RETIRAR"
+	var action_button: Button = _obstacle_demolish_button if is_obstacle else _remove_world_object_button
+	_remove_world_object_action_label.text = "RETIRAR"
 	_remove_world_object_cost_label.text = "-%d" % removal_cost
-	_remove_world_object_button.tooltip_text = "Retirar · %d Gold" % removal_cost
-	_remove_world_object_button.disabled = not can_remove_now or not can_afford
-	if _selected_world_object_kind == &"obstacle":
+	_obstacle_demolish_cost.text = "-%d" % removal_cost
+	action_button.tooltip_text = "Retirar · %d Gold" % removal_cost
+	action_button.disabled = not can_remove_now or not can_afford
+	if is_obstacle:
 		var cell: HexCell = _board_grid.cells.get(_selected_obstacle_coord) as HexCell
-		var obstacle_name: String = TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_display_name(cell.obstacle_type)
-		_world_object_description.text = "%s · %s · altura h%d\nRetirada n.º %d · coste progresivo." % [
-			obstacle_name,
-			_terrain_display_name(cell.terrain_type),
-			cell.elevation,
-			_obstacles_removed_count + 1,
-		]
+		var removal_number: int = _obstacles_removed_count + 1
+		var next_number: int = removal_number + 1
+		_obstacle_removal_number.text = "RETIRADA Nº %d" % removal_number
+		_next_obstacle_removal_price.text = "%d" % (25 * next_number * next_number)
+		_world_object_description.text = TERRAIN_VISUAL_CATALOG_SCRIPT.get_obstacle_description(cell.obstacle_type)
 		_world_object_enemy_scroll.hide()
-		_remove_world_object_button.tooltip_text = "Cada obstáculo retirado sube el precio: 25, 100, 225, 400…"
+		action_button.tooltip_text = "Esta retirada cuesta %d Gold. La siguiente costará %d Gold." % [
+			removal_cost, 25 * next_number * next_number,
+		]
 	else:
 		var portal: SpawnPortal = _selected_spawn_portal if is_instance_valid(_selected_spawn_portal) else _get_spawn_portal_by_key(_selected_spawn_endpoint_key)
 		var wave_number: int = portal.get_wave_preview_round_number() if portal != null else _campaign_round_number
@@ -2055,9 +2075,9 @@ func _refresh_world_object_controls() -> void:
 		else:
 			_remove_world_object_button.tooltip_text = "El portal cuesta el doble del precio actual de retirada de obstáculos."
 	if not can_remove_now:
-		_remove_world_object_button.tooltip_text = "Puedes retirar obstáculos y portales durante la preparación de ronda."
+		action_button.tooltip_text = "Puedes retirar obstáculos y portales durante la preparación de ronda."
 	elif not can_afford:
-		_remove_world_object_button.tooltip_text = "No hay Gold suficiente."
+		action_button.tooltip_text = "No hay Gold suficiente."
 
 func _populate_spawn_enemy_list(entries: Array[Dictionary]) -> void:
 	for child in _world_object_enemy_list.get_children():
@@ -2078,6 +2098,7 @@ func _populate_spawn_enemy_list(entries: Array[Dictionary]) -> void:
 		enemy_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		enemy_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		enemy_label.add_theme_font_size_override("font_size", world_enemy_font_size)
+		enemy_label.add_theme_color_override("font_color", world_enemy_font_color)
 		enemy_label.text = "%s  ×%d" % [
 			String(entry.get("display_name", "Enemigo")),
 			int(entry.get("count", 0)),
@@ -2088,6 +2109,7 @@ func _populate_spawn_enemy_list(entries: Array[Dictionary]) -> void:
 		var empty_label := Label.new()
 		empty_label.text = "Sin enemigos asignados."
 		empty_label.add_theme_font_size_override("font_size", world_enemy_empty_font_size)
+		empty_label.add_theme_color_override("font_color", world_enemy_font_color)
 		_world_object_enemy_list.add_child(empty_label)
 
 func _populate_portal_wave_tooltip_entries(entries: Array[Dictionary]) -> void:
@@ -2140,14 +2162,20 @@ func _on_remove_world_object_pressed() -> void:
 	if not bool(_run_economy.call("try_spend_gold", removal_cost, &"remove_terrain_object")):
 		_refresh_tower_controls()
 		return
+	_play_ui_click_vfx()
 	if _selected_world_object_kind == &"obstacle":
 		obstacle_cell.obstacle_type = HexCell.ObstacleType.NONE
 		_obstacles_removed_count += 1
+		_set_rich_text_with_currency_icons(
+			_wave_status,
+			"Obstáculo retirado · -%d Gold · próxima retirada %d Gold." % [removal_cost, _next_obstacle_removal_cost()]
+		)
 		_spawn_impact_vfx(&"obstacle_removed", obstacle_world_position)
 		_clear_selected_world_object()
 		_piece_preview.set_board_cells(_board_grid.cells)
 		_piece_preview.queue_redraw()
 	else:
+		_set_rich_text_with_currency_icons(_wave_status, "Portal retirado · -%d Gold." % removal_cost)
 		_removed_spawn_endpoint_keys[_selected_spawn_endpoint_key] = true
 		_path_graph.set_spawn_endpoint_removed(_selected_spawn_endpoint_key, true)
 		_clear_selected_world_object()
@@ -2374,8 +2402,13 @@ func _on_upgrade_tower_pressed(layer: int) -> void:
 	_refresh_tower_controls()
 
 func _on_demolish_tower_pressed() -> void:
+	var selected: Tower = _build_controller.selected_tower
+	var refund: int = _build_controller.get_demolition_refund(selected) if is_instance_valid(selected) else 0
 	if _build_controller.demolish_selected_tower():
-		_build_status.text = "Torre retirada. El siguiente precio de este tipo baja."
+		_play_ui_click_vfx()
+		var confirmation: String = "Torre retirada · +%d Gold. El siguiente precio de este tipo baja." % refund
+		_set_rich_text_with_currency_icons(_build_status, confirmation)
+		_set_rich_text_with_currency_icons(_wave_status, confirmation)
 	else:
 		_set_rich_text_with_currency_icons(_build_status, _build_controller.last_error)
 	_refresh_tower_controls()
@@ -2706,7 +2739,6 @@ func _refresh_tower_controls() -> void:
 	_tower_toolbar.visible = _hud.visible and not terrain_selection_locked
 	_tower_actions.visible = has_selected_tower and not build_mode and not has_selected_world_object
 	_world_object_actions.visible = has_selected_world_object
-	_tower_demolition_refund_panel.visible = has_selected_tower and demolition_refund >= 0
 	_demolish_tower_amount_label.text = "+%d" % demolition_refund if demolition_refund >= 0 else "+0"
 	_tower_info_panel.visible = (
 		_hud.visible
@@ -2749,8 +2781,6 @@ func _refresh_tower_controls() -> void:
 	for selector in _tower_priority_buttons:
 		selector.disabled = build_mode or not has_selected_tower or not _build_controller.can_build_in_current_phase()
 	_sync_targeting_priority_menu(selected if has_selected_tower else null)
-	if _tower_info_panel.visible:
-		call_deferred("_fit_tower_info_panel")
 	for layer in _tower_upgrade_buttons.size():
 		var upgrade_button: Button = _tower_upgrade_buttons[layer]
 		var next_upgrade_cost: int = selected.get_next_upgrade_cost(layer) if has_selected_tower else -1
@@ -2762,12 +2792,13 @@ func _refresh_tower_controls() -> void:
 		_tower_upgrade_cost_icons[layer].visible = has_selected_tower and next_upgrade_cost >= 0
 		_tower_upgrade_effect_labels[layer].visible = has_selected_tower
 		_tower_upgrade_level_labels[layer].visible = has_selected_tower
-		_tower_upgrade_xp_labels[layer].visible = false
 		_tower_upgrade_xp_bars[layer].visible = has_selected_tower and next_upgrade_cost >= 0
+		_tower_upgrade_xp_labels[layer].visible = _tower_upgrade_xp_bars[layer].visible
 		_tower_upgrade_level_labels[layer].text = "[b]NIVEL %d/%d[/b]" % [layer_level, max_layer_upgrades]
 		if next_upgrade_cost >= 0:
 			_tower_upgrade_amounts[layer].text = "%d" % next_upgrade_cost
 			_tower_upgrade_xp_bars[layer].value = clampf(xp_value / maxf(xp_required, 0.001) * 100.0, 0.0, 100.0)
+			_tower_upgrade_xp_labels[layer].text = "XP %.0f/%.0f" % [xp_value, xp_required]
 		else:
 			_tower_upgrade_amounts[layer].text = "máx."
 			_tower_upgrade_xp_bars[layer].value = 100.0
@@ -2887,9 +2918,9 @@ func _format_selected_tower_summary(tower: Tower) -> String:
 
 func _colorize_stat_value(value_text: String, is_positive: bool, is_negative: bool = false) -> String:
 	if is_positive:
-		return "[color=#75df8b]%s[/color]" % value_text
+		return "[color=#%s]%s[/color]" % [tower_stat_positive_color.to_html(false), value_text]
 	if is_negative:
-		return "[color=#f07872]%s[/color]" % value_text
+		return "[color=#%s]%s[/color]" % [tower_stat_negative_color.to_html(false), value_text]
 	return value_text
 
 func _tower_attack_description(tower_data: TowerData) -> String:

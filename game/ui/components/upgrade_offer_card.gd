@@ -4,11 +4,13 @@ extends Button
 const PREVIEW_ROW_SCENE: PackedScene = preload("res://game/ui/components/upgrade_offer_preview_row.tscn")
 
 @onready var tower_icon: TextureRect = %TowerIcon
+@onready var icon_center: CenterContainer = $ContentMargin/CardContent/IconCenter
 @onready var title_label: RichTextLabel = %TitleLabel
 @onready var description_label: RichTextLabel = %DescriptionLabel
 @onready var card_panel: Panel = %CardPanel
 @onready var aura_glow: ColorRect = %AuraGlow
 @onready var rarity_label: Label = %RarityLabel
+@onready var recruitment_banner: PanelContainer = %RecruitmentBanner
 @onready var content_margin: MarginContainer = %ContentMargin
 @onready var card_back: Panel = %CardBack
 @onready var preview_values: VBoxContainer = %PreviewValues
@@ -20,13 +22,18 @@ const PREVIEW_ROW_SCENE: PackedScene = preload("res://game/ui/components/upgrade
 @export var hover_panel_style: StyleBoxFlat
 @export var uncommon_surface_color: Color = Color("#203a2f")
 @export var rare_surface_color: Color = Color("#202f4a")
+@export var recruitment_surface_color: Color = Color("#251d31")
 @export var common_aura_color: Color = Color("#c2cdca")
 @export var uncommon_aura_color: Color = Color("#68d49a")
 @export var rare_aura_color: Color = Color("#6eaaff")
+@export var recruitment_aura_color: Color = Color("#ffd071")
+@export var recruitment_border_color: Color = Color("#e8b44f")
 @export_group("Card appearance")
 @export_range(0.0, 1.0, 0.01) var rarity_label_lighten_amount: float = 0.12
 @export_range(0.0, 1.5, 0.01) var normal_aura_strength: float = 0.42
 @export_range(0.0, 1.5, 0.01) var hover_aura_strength: float = 0.82
+@export_range(0.0, 2.0, 0.01) var recruitment_aura_strength: float = 1.05
+@export_range(0.0, 2.0, 0.01) var recruitment_hover_aura_strength: float = 1.45
 @export_group("Card animation")
 @export_range(0.05, 1.0, 0.01) var flip_duration: float = 0.16
 @export_range(0.05, 1.0, 0.01) var rare_reveal_duration: float = 0.32
@@ -68,11 +75,17 @@ func configure_visuals(
 	_negative_preview_color = negative_color
 	tower_icon.texture = icon_texture
 	tower_icon.visible = icon_texture != null
+	var is_recruitment: bool = rarity == CardData.Rarity.RECRUITMENT
+	recruitment_banner.visible = is_recruitment
+	tower_icon.custom_minimum_size = Vector2(108.0, 108.0) if is_recruitment else Vector2(88.0, 88.0)
+	icon_center.custom_minimum_size.y = 112.0 if is_recruitment else 94.0
+	title_label.add_theme_color_override("default_color", Color("#fff1cd") if is_recruitment else Color("#f4f7f3"))
 	var aura_color: Color = _rarity_aura_color(rarity)
 	rarity_label.text = _rarity_tier_text(rarity)
 	rarity_label.add_theme_color_override("font_color", aura_color.lightened(rarity_label_lighten_amount))
 	if _aura_material != null:
 		_aura_material.set_shader_parameter("aura_color", aura_color)
+		_aura_material.set_shader_parameter("glow_strength", _normal_glow_strength())
 	_apply_rarity_panel_styles()
 	_set_preview_rows(preview_rows)
 
@@ -206,6 +219,20 @@ func _apply_rarity_panel_styles() -> void:
 		normal_style.border_color = rarity_color.darkened(0.14)
 		hover_style.bg_color = normal_style.bg_color.lightened(0.08)
 		hover_style.border_color = normal_style.border_color.lightened(0.08)
+	if _current_rarity == CardData.Rarity.RECRUITMENT:
+		normal_style.border_color = recruitment_border_color
+		hover_style.border_color = recruitment_border_color.lightened(0.22)
+		for style: StyleBoxFlat in [normal_style, hover_style]:
+			style.border_width_left = 4
+			style.border_width_top = 4
+			style.border_width_right = 4
+			style.border_width_bottom = 4
+			style.corner_radius_top_left = 12
+			style.corner_radius_top_right = 12
+			style.corner_radius_bottom_right = 12
+			style.corner_radius_bottom_left = 12
+			style.shadow_color = Color(0.92, 0.56, 0.16, 0.45)
+			style.shadow_size = 12
 	card_panel.add_theme_stylebox_override("panel", normal_style)
 	_hover_panel_style = hover_style
 	_normal_panel_style = normal_style
@@ -216,6 +243,8 @@ func _rarity_tier_text(rarity: int) -> String:
 			return "TIER II · POCO COMÚN"
 		CardData.Rarity.RARE:
 			return "TIER III · RARA"
+		CardData.Rarity.RECRUITMENT:
+			return "TIER IV · RECLUTAMIENTO"
 		_:
 			return "TIER I · COMÚN"
 
@@ -225,6 +254,8 @@ func _rarity_surface_color(rarity: int) -> Color:
 			return uncommon_surface_color
 		CardData.Rarity.RARE:
 			return rare_surface_color
+		CardData.Rarity.RECRUITMENT:
+			return recruitment_surface_color
 		_:
 			return normal_panel_style.bg_color if normal_panel_style != null else Color("#202a27")
 
@@ -234,21 +265,29 @@ func _rarity_aura_color(rarity: int) -> Color:
 			return uncommon_aura_color
 		CardData.Rarity.RARE:
 			return rare_aura_color
+		CardData.Rarity.RECRUITMENT:
+			return recruitment_aura_color
 		_:
 			return common_aura_color
 
+func _normal_glow_strength() -> float:
+	return recruitment_aura_strength if _current_rarity == CardData.Rarity.RECRUITMENT else normal_aura_strength
+
+func _hover_glow_strength() -> float:
+	return recruitment_hover_aura_strength if _current_rarity == CardData.Rarity.RECRUITMENT else hover_aura_strength
+
 func _play_rare_reveal() -> void:
 	if _aura_material != null:
-		_aura_material.set_shader_parameter("glow_strength", 1.5)
+		_aura_material.set_shader_parameter("glow_strength", 1.85 if _current_rarity == CardData.Rarity.RECRUITMENT else 1.5)
 	var start_color: Color = card_panel.self_modulate
 	var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.tween_property(self, "scale", Vector2(1.08, 1.08), rare_reveal_duration * 0.45)
-	tween.parallel().tween_property(card_panel, "self_modulate", Color(1.8, 1.8, 1.8, 1.0), rare_reveal_duration * 0.25)
+	tween.tween_property(self, "scale", Vector2(1.13, 1.13) if _current_rarity == CardData.Rarity.RECRUITMENT else Vector2(1.08, 1.08), rare_reveal_duration * 0.45)
+	tween.parallel().tween_property(card_panel, "self_modulate", Color(2.1, 1.85, 1.35, 1.0) if _current_rarity == CardData.Rarity.RECRUITMENT else Color(1.8, 1.8, 1.8, 1.0), rare_reveal_duration * 0.25)
 	tween.chain().tween_property(self, "scale", Vector2.ONE, rare_reveal_duration * 0.55)
 	tween.parallel().tween_property(card_panel, "self_modulate", start_color, rare_reveal_duration * 0.55)
 	await tween.finished
 	if _aura_material != null:
-		_aura_material.set_shader_parameter("glow_strength", normal_aura_strength)
+		_aura_material.set_shader_parameter("glow_strength", _normal_glow_strength())
 
 func _animate_preview_values() -> void:
 	if _preview_rows.is_empty():
@@ -274,14 +313,14 @@ func _on_mouse_entered() -> void:
 	if _hover_panel_style != null:
 		card_panel.add_theme_stylebox_override("panel", _hover_panel_style)
 	if _aura_material != null:
-		_aura_material.set_shader_parameter("glow_strength", hover_aura_strength)
+		_aura_material.set_shader_parameter("glow_strength", _hover_glow_strength())
 	_animate_preview_values()
 
 func _on_mouse_exited() -> void:
 	if _normal_panel_style != null:
 		card_panel.add_theme_stylebox_override("panel", _normal_panel_style)
 	if _aura_material != null:
-		_aura_material.set_shader_parameter("glow_strength", normal_aura_strength)
+		_aura_material.set_shader_parameter("glow_strength", _normal_glow_strength())
 
 func _sync_pivot() -> void:
 	pivot_offset = size * 0.5

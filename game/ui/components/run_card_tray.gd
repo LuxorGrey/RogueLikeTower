@@ -30,7 +30,8 @@ func append_card_icon(icon_texture: Texture2D, display_name: String, description
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_STOP
-	icon.tooltip_text = "%s\n%s" % [display_name, description]
+	icon.mouse_default_cursor_shape = Control.CURSOR_HELP
+	icon.tooltip_text = "%s\n%s" % [display_name.strip_edges(), description.strip_edges().replace("\n", " ")]
 	icon.modulate = Color(1.0, 1.0, 1.0, 0.0)
 	icon_row.add_child(icon)
 	_visible_icons.append(icon)

@@ -1,13 +1,12 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://frpnrg2bgvbn"]
 
-[ext_resource type="Script" path="res://game/cards/card_data.gd" id="1_card"]
+[ext_resource type="Script" uid="uid://caqxycoyf65ra" path="res://game/cards/card_data.gd" id="1_card"]
 
 [resource]
 script = ExtResource("1_card")
 id = &"recruit_tesla_coil"
 display_name = "Reclutar · Tesla Coil"
-description = "Añade Tesla Coil al arsenal de esta run."
-rarity = 0
+description = "Recluta Tesla Coil para esta run. Descarga contra todos los enemigos en su alcance."
+rarity = 3
 unlock_requirement = &"tower:tesla_coil_demo"
 grant_tower_id = &"tesla_coil_demo"
-modifier_operations = Array[Resource]([])

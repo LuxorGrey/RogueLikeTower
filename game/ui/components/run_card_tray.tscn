@@ -20,8 +20,8 @@ content_margin_right = 7.0
 content_margin_bottom = 4.0
 
 [node name="RunCardTray" type="PanelContainer"]
-custom_minimum_size = Vector2(340, 44)
-mouse_filter = 2
+custom_minimum_size = Vector2(320, 44)
+mouse_filter = 1
 theme = ExtResource("2_theme")
 theme_override_styles/panel = SubResource("RunCardTrayPanel")
 script = ExtResource("1_script")
@@ -29,7 +29,7 @@ script = ExtResource("1_script")
 [node name="Content" type="HBoxContainer" parent="."]
 layout_mode = 2
 theme_override_constants/separation = 6
-mouse_filter = 2
+mouse_filter = 1
 
 [node name="CountLabel" type="Label" parent="Content"]
 unique_name_in_owner = true
@@ -46,4 +46,4 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 2
-mouse_filter = 2
+mouse_filter = 1

@@ -36,6 +36,9 @@
 [ext_resource type="Shader" uid="uid://bclha7c336oki" path="res://game/main/map_fog.gdshader" id="42_map_fog"]
 [ext_resource type="Script" uid="uid://c7j4wwj0vyymg" path="res://game/ui/island_compass_indicator.gd" id="43_island_compass"]
 [ext_resource type="PackedScene" path="res://game/ui/components/run_card_tray.tscn" id="44_run_card_tray"]
+[ext_resource type="Texture2D" uid="uid://tv7ece0tx06n" path="res://assets/sprites/ui/background_panel_info.png" id="45_tower_info_background"]
+[ext_resource type="Texture2D" uid="uid://ktam6g21ehgl" path="res://assets/sprites/ui/delete_button.png" id="46_delete_button"]
+[ext_resource type="Texture2D" uid="uid://brdopbii4aj6g" path="res://assets/sprites/ui/panel_health.png" id="47_panel_health"]
 
 [sub_resource type="ShaderMaterial" id="BaseHealthVignetteMaterial"]
 shader = ExtResource("38_base_health_vignette")
@@ -43,6 +46,13 @@ shader_parameter/vignette_color = Color(0.48, 0.055, 0.09, 1)
 shader_parameter/intensity = 0.0
 shader_parameter/thickness = 0.36
 shader_parameter/softness = 0.28
+
+[sub_resource type="StyleBoxTexture" id="BaseHealthPanelBackground"]
+content_margin_left = 18.0
+content_margin_top = 20.0
+content_margin_right = 18.0
+content_margin_bottom = 20.0
+texture = ExtResource("47_panel_health")
 
 [sub_resource type="ShaderMaterial" id="MapFogMaterial"]
 shader = ExtResource("42_map_fog")
@@ -82,21 +92,55 @@ content_margin_bottom = 8.0
 texture = ExtResource("30_start_round_texture")
 modulate_color = Color(0.54, 0.54, 0.5, 0.85)
 
-[sub_resource type="StyleBoxFlat" id="TowerInfoPanelSimple"]
-content_margin_left = 9.0
-content_margin_top = 9.0
-content_margin_right = 9.0
-content_margin_bottom = 9.0
-bg_color = Color(0.055, 0.075, 0.084, 0.97)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.22, 0.29, 0.31, 1)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
+[sub_resource type="StyleBoxTexture" id="TowerInfoPanelBackground"]
+content_margin_left = 22.0
+content_margin_top = 22.0
+content_margin_right = 22.0
+content_margin_bottom = 22.0
+texture = ExtResource("45_tower_info_background")
+texture_margin_left = 54.0
+texture_margin_top = 60.0
+texture_margin_right = 54.0
+texture_margin_bottom = 60.0
+
+[sub_resource type="StyleBoxTexture" id="DemolishTowerNormal"]
+texture = ExtResource("46_delete_button")
+texture_margin_left = 30.0
+texture_margin_top = 26.0
+texture_margin_right = 30.0
+texture_margin_bottom = 26.0
+
+[sub_resource type="StyleBoxTexture" id="DemolishTowerPressed"]
+texture = ExtResource("46_delete_button")
+texture_margin_left = 30.0
+texture_margin_top = 26.0
+texture_margin_right = 30.0
+texture_margin_bottom = 26.0
+modulate_color = Color(0.8, 0.88, 1, 1)
+
+[sub_resource type="StyleBoxTexture" id="DemolishTowerHover"]
+texture = ExtResource("46_delete_button")
+texture_margin_left = 30.0
+texture_margin_top = 26.0
+texture_margin_right = 30.0
+texture_margin_bottom = 26.0
+modulate_color = Color(1.12, 1.1, 0.98, 1)
+
+[sub_resource type="StyleBoxTexture" id="DemolishTowerHoverPressed"]
+texture = ExtResource("46_delete_button")
+texture_margin_left = 30.0
+texture_margin_top = 26.0
+texture_margin_right = 30.0
+texture_margin_bottom = 26.0
+modulate_color = Color(0.9, 0.98, 1.08, 1)
+
+[sub_resource type="StyleBoxTexture" id="DemolishTowerDisabled"]
+texture = ExtResource("46_delete_button")
+texture_margin_left = 30.0
+texture_margin_top = 26.0
+texture_margin_right = 30.0
+texture_margin_bottom = 26.0
+modulate_color = Color(0.62, 0.66, 0.72, 0.8)
 
 [sub_resource type="StyleBoxFlat" id="DemolishNormal"]
 content_margin_left = 7.0
@@ -366,7 +410,13 @@ theme_override_constants/separation = 6
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="BaseHealthBar" type="Control" parent="HUD/Panel/Margin/Content/BaseHealthRow" unique_id=542036788]
+[node name="BaseHealthPanel" type="PanelContainer" parent="HUD/Panel/Margin/Content/BaseHealthRow"]
+custom_minimum_size = Vector2(258, 82)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("BaseHealthPanelBackground")
+
+[node name="BaseHealthBar" type="Control" parent="HUD/Panel/Margin/Content/BaseHealthRow/BaseHealthPanel" unique_id=542036788]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
@@ -376,7 +426,7 @@ script = ExtResource("11_segmented_health")
 health_per_segment = 1
 segment_gap = 3.0
 
-[node name="BaseStatus" type="Label" parent="HUD/Panel/Margin/Content/BaseHealthRow/BaseHealthBar" unique_id=1585581998]
+[node name="BaseStatus" type="Label" parent="HUD/Panel/Margin/Content/BaseHealthRow/BaseHealthPanel/BaseHealthBar" unique_id=1585581998]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -398,6 +448,7 @@ vertical_alignment = 1
 unique_name_in_owner = true
 custom_minimum_size = Vector2(54, 32)
 layout_mode = 2
+size_flags_vertical = 4
 toggle_mode = true
 script = ExtResource("31_pause_toggle_button")
 
@@ -405,7 +456,12 @@ script = ExtResource("31_pause_toggle_button")
 unique_name_in_owner = true
 custom_minimum_size = Vector2(54, 32)
 layout_mode = 2
+size_flags_vertical = 4
 script = ExtResource("39_game_speed_button")
+
+[node name="RunCardTray" parent="HUD/Panel/Margin/Content" unique_id=919789217 instance=ExtResource("44_run_card_tray")]
+unique_name_in_owner = true
+layout_mode = 2
 
 [node name="IslandCompass" type="Control" parent="HUD/Panel/Margin/Content" unique_id=1620483515]
 unique_name_in_owner = true
@@ -416,6 +472,7 @@ script = ExtResource("43_island_compass")
 
 [node name="ShortcutHint" type="Label" parent="HUD/Panel/Margin/Content" unique_id=468928720]
 unique_name_in_owner = true
+visible = false
 custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.68, 0.75, 0.8, 1)
@@ -495,17 +552,6 @@ theme_override_font_sizes/font_size = 23
 text = "— / —"
 vertical_alignment = 1
 
-[node name="RunCardTray" parent="HUD" instance=ExtResource("44_run_card_tray")]
-unique_name_in_owner = true
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -364.0
-offset_top = 78.0
-offset_right = -24.0
-offset_bottom = 122.0
-grow_horizontal = 0
-
 [node name="RoundPanel" type="PanelContainer" parent="HUD" unique_id=1857476803]
 unique_name_in_owner = true
 anchors_preset = 5
@@ -572,31 +618,31 @@ unique_name_in_owner = true
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -511.0
+offset_left = -531.0
 offset_top = 80.0
 offset_right = -11.0
 offset_bottom = 588.0
 grow_horizontal = 0
 theme = ExtResource("16_ui_theme")
-theme_override_styles/panel = SubResource("TowerInfoPanelSimple")
+theme_override_styles/panel = SubResource("TowerInfoPanelBackground")
 
 [node name="Margin" type="MarginContainer" parent="HUD/TowerInfoPanel" unique_id=1246087405]
 layout_mode = 2
-theme_override_constants/margin_left = 9
-theme_override_constants/margin_top = 9
-theme_override_constants/margin_right = 9
-theme_override_constants/margin_bottom = 9
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 30
 
 [node name="TowerInfoContent" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin" unique_id=893595713]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 6
+theme_override_constants/separation = 12
 
 [node name="TowerHeader" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent" unique_id=202645671]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 6
+theme_override_constants/separation = 12
 
 [node name="TowerPortrait" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerHeader" unique_id=2133633336]
 unique_name_in_owner = true
@@ -609,7 +655,7 @@ stretch_mode = 5
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.913725, 0.898039, 0.847059, 1)
+theme_override_colors/font_color = Color(0.28, 0.15, 0.08, 1)
 theme_override_font_sizes/font_size = 32
 text = "Ballista"
 
@@ -617,8 +663,9 @@ text = "Ballista"
 unique_name_in_owner = true
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
-theme_override_colors/default_color = Color(0.78, 0.82, 0.76, 1)
-theme_override_font_sizes/normal_font_size = 14
+theme_override_colors/default_color = Color(0.32, 0.19, 0.1, 1)
+theme_override_font_sizes/normal_font_size = 18
+theme_override_font_sizes/bold_font_size = 18
 bbcode_enabled = true
 text = "[b]NIVEL 0 DE 45[/b]"
 fit_content = true
@@ -628,7 +675,9 @@ horizontal_alignment = 2
 [node name="TowerStatus" type="RichTextLabel" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent" unique_id=2013706153]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/normal_font_size = 18
+theme_override_colors/default_color = Color(0.24, 0.16, 0.1, 1)
+theme_override_font_sizes/normal_font_size = 19
+theme_override_font_sizes/bold_font_size = 20
 bbcode_enabled = true
 text = "Selecciona una torre para ver sus datos."
 fit_content = true
@@ -642,7 +691,7 @@ theme_override_constants/separation = 25
 
 [node name="PriorityRow" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions" unique_id=1390596250]
 layout_mode = 2
-theme_override_constants/separation = 3
+theme_override_constants/separation = 8
 
 [node name="PrioritySlot1" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/PriorityRow" unique_id=679328068]
 unique_name_in_owner = true
@@ -652,7 +701,7 @@ size_flags_horizontal = 3
 [node name="PriorityCaption1" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/PriorityRow/PrioritySlot1" unique_id=410503891]
 custom_minimum_size = Vector2(78, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.79, 0.84, 0.86, 1)
+theme_override_colors/font_color = Color(0.3, 0.19, 0.11, 1)
 theme_override_font_sizes/font_size = 15
 text = "PRIORIDAD 1"
 
@@ -677,8 +726,8 @@ size_flags_horizontal = 3
 [node name="PriorityCaption2" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/PriorityRow/PrioritySlot2" unique_id=1653124593]
 custom_minimum_size = Vector2(78, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.79, 0.84, 0.86, 1)
-theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.3, 0.19, 0.11, 1)
+theme_override_font_sizes/font_size = 15
 text = "PRIORIDAD 2"
 
 [node name="TowerPriority2" type="OptionButton" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/PriorityRow/PrioritySlot2" unique_id=1213220807]
@@ -695,8 +744,8 @@ size_flags_horizontal = 3
 [node name="PriorityCaption3" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/PriorityRow/PrioritySlot3" unique_id=289583793]
 custom_minimum_size = Vector2(78, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.79, 0.84, 0.86, 1)
-theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.3, 0.19, 0.11, 1)
+theme_override_font_sizes/font_size = 15
 text = "PRIORIDAD 3"
 
 [node name="TowerPriority3" type="OptionButton" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/PriorityRow/PrioritySlot3" unique_id=156270965]
@@ -726,6 +775,7 @@ layout_mode = 2
 layer_icon_texture = ExtResource("29_shield_icon")
 
 [node name="DemolishTowerRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions" unique_id=691854996]
+custom_minimum_size = Vector2(0, 128)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 4
@@ -733,82 +783,103 @@ alignment = 1
 
 [node name="DemolishTower" type="Button" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow" unique_id=170256383]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(202, 44)
+custom_minimum_size = Vector2(300, 72)
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("DemolishNormal")
-theme_override_styles/pressed = SubResource("DemolishPressed")
-theme_override_styles/hover = SubResource("DemolishHover")
-theme_override_styles/focus = SubResource("DemolishHover")
+size_flags_vertical = 4
+theme_override_styles/normal = SubResource("DemolishTowerNormal")
+theme_override_styles/pressed = SubResource("DemolishTowerPressed")
+theme_override_styles/hover = SubResource("DemolishTowerHover")
+theme_override_styles/hover_pressed = SubResource("DemolishTowerHoverPressed")
+theme_override_styles/disabled = SubResource("DemolishTowerDisabled")
+theme_override_styles/focus = SubResource("DemolishTowerHover")
 
 [node name="DemolishButtonContent" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow/DemolishTower" unique_id=116819525]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 7.0
-offset_top = 3.0
-offset_right = -10.0
-offset_bottom = -3.0
+offset_left = 20.0
+offset_top = 7.0
+offset_right = -20.0
+offset_bottom = -7.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 8
 alignment = 1
-
-[node name="DemolishIcon" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow/DemolishTower/DemolishButtonContent" unique_id=1140035480]
-custom_minimum_size = Vector2(26, 26)
-layout_mode = 2
-mouse_filter = 2
-texture = ExtResource("34_demolish_icon")
-expand_mode = 1
-stretch_mode = 5
 
 [node name="DemolishTowerLabel" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow/DemolishTower/DemolishButtonContent" unique_id=715941489]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 26
+theme_override_colors/font_color = Color(0.98, 0.95, 0.85, 1)
+theme_override_font_sizes/font_size = 28
 text = "DEMOLER"
 
-[node name="TowerDemolitionRefundPanel" type="PanelContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow" unique_id=1868318808]
+[node name="DemolishTowerAmountLabel" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow/DemolishTower/DemolishButtonContent" unique_id=1282282027]
 unique_name_in_owner = true
-visible = false
 layout_mode = 2
-mouse_filter = 2
-theme_override_styles/panel = ExtResource("33_gold_panel_style")
+theme_override_colors/font_color = Color(0.38, 0.96, 0.42, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.13, 0.07, 1)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 28
+text = "+0"
 
-[node name="TowerDemolitionRefundRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow/TowerDemolitionRefundPanel" unique_id=38712341]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 1
-alignment = 1
-
-[node name="TowerDemolitionGoldIcon" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow/TowerDemolitionRefundPanel/TowerDemolitionRefundRow" unique_id=191758288]
-custom_minimum_size = Vector2(16, 16)
+[node name="TowerDemolitionGoldIcon" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow/DemolishTower/DemolishButtonContent" unique_id=191758288]
+custom_minimum_size = Vector2(38, 38)
 layout_mode = 2
 mouse_filter = 2
 texture = ExtResource("18_gold_icon")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="DemolishTowerAmountLabel" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/TowerActions/DemolishTowerRow/TowerDemolitionRefundPanel/TowerDemolitionRefundRow" unique_id=1282282027]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.12900406, 0.0955844, 0.011209826, 1)
-theme_override_font_sizes/font_size = 13
-text = "+0"
-
 [node name="WorldObjectActions" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent" unique_id=1821140285]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ObstacleRemovalInfo" type="VBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions" unique_id=1335317258]
+unique_name_in_owner = true
+layout_mode = 2
 theme_override_constants/separation = 5
+
+[node name="ObstacleRemovalNumber" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/ObstacleRemovalInfo" unique_id=104534453]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.28, 0.15, 0.08, 1)
+theme_override_font_sizes/font_size = 34
+text = "RETIRADA Nº 1"
+
+[node name="NextObstacleRemovalPriceRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/ObstacleRemovalInfo" unique_id=1087219115]
+layout_mode = 2
+theme_override_constants/separation = 7
+
+[node name="NextObstacleRemovalCaption" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/ObstacleRemovalInfo/NextObstacleRemovalPriceRow" unique_id=608605335]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.19, 0.11, 1)
+theme_override_font_sizes/font_size = 17
+text = "PRÓXIMA RETIRADA"
+
+[node name="NextObstacleRemovalPrice" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/ObstacleRemovalInfo/NextObstacleRemovalPriceRow" unique_id=1156150277]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.44, 0.22, 0.11, 1)
+theme_override_font_sizes/font_size = 25
+text = "100"
+
+[node name="NextObstacleRemovalGoldIcon" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/ObstacleRemovalInfo/NextObstacleRemovalPriceRow" unique_id=1969325485]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("18_gold_icon")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="WorldObjectDescription" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions" unique_id=1224533700]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.78, 0.82, 0.76, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.24, 0.16, 0.1, 1)
+theme_override_font_sizes/font_size = 16
 autowrap_mode = 2
 
 [node name="WorldObjectEnemyScroll" type="ScrollContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions" unique_id=1045426829]
@@ -825,6 +896,7 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 3
 
 [node name="RemoveWorldObjectRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions" unique_id=1512176865]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
@@ -894,9 +966,67 @@ theme_override_colors/font_color = Color(0.12900406, 0.0955844, 0.011209826, 1)
 theme_override_font_sizes/font_size = 11
 text = "25"
 
+[node name="ObstacleDemolishRow" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions" unique_id=1281429993]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 128)
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="ObstacleDemolish" type="Button" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/ObstacleDemolishRow" unique_id=165379502]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 72)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/normal = SubResource("DemolishTowerNormal")
+theme_override_styles/pressed = SubResource("DemolishTowerPressed")
+theme_override_styles/hover = SubResource("DemolishTowerHover")
+theme_override_styles/hover_pressed = SubResource("DemolishTowerHoverPressed")
+theme_override_styles/disabled = SubResource("DemolishTowerDisabled")
+theme_override_styles/focus = SubResource("DemolishTowerHover")
+
+[node name="ObstacleDemolishContent" type="HBoxContainer" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/ObstacleDemolishRow/ObstacleDemolish" unique_id=2098497467]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 7.0
+offset_right = -20.0
+offset_bottom = -7.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="ObstacleDemolishLabel" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/ObstacleDemolishRow/ObstacleDemolish/ObstacleDemolishContent" unique_id=1285062401]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.95, 0.85, 1)
+theme_override_font_sizes/font_size = 28
+text = "DEMOLER"
+
+[node name="ObstacleDemolishCost" type="Label" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/ObstacleDemolishRow/ObstacleDemolish/ObstacleDemolishContent" unique_id=1705131827]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.97, 0.3, 0.25, 1)
+theme_override_colors/font_outline_color = Color(0.22, 0.04, 0.03, 1)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 28
+text = "-25"
+
+[node name="ObstacleDemolishGoldIcon" type="TextureRect" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent/WorldObjectActions/ObstacleDemolishRow/ObstacleDemolish/ObstacleDemolishContent" unique_id=110442202]
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("18_gold_icon")
+expand_mode = 1
+stretch_mode = 5
+
 [node name="BuildStatus" type="RichTextLabel" parent="HUD/TowerInfoPanel/Margin/TowerInfoContent" unique_id=833087746]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/default_color = Color(0.24, 0.16, 0.1, 1)
 bbcode_enabled = true
 fit_content = true
 scroll_active = false
@@ -1285,18 +1415,16 @@ layer = 131
 [node name="CursorFeedbackVfx" type="Node2D" parent="CursorFeedbackVfxLayer" unique_id=98389603]
 process_mode = 3
 
-[node name="SceneTransitionLayer" type="CanvasLayer" parent="."]
+[node name="SceneTransitionLayer" type="CanvasLayer" parent="." unique_id=2064110233]
 layer = 240
 
-[node name="SceneTransitionOverlay" type="ColorRect" parent="SceneTransitionLayer"]
+[node name="SceneTransitionOverlay" type="ColorRect" parent="SceneTransitionLayer" unique_id=319904034]
 unique_name_in_owner = true
 visible = false
-layout_mode = 3
+modulate = Color(1, 1, 1, 0)
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 color = Color(0.002, 0.004, 0.006, 1)
-modulate = Color(1, 1, 1, 0)

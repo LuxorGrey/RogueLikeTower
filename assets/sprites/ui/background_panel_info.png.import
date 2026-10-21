@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://p51xpl8fjdap"
-path="res://.godot/imported/main_menu_island.png-8c70b4fee0574d1b9f77a5a0f728088d.ctex"
+uid="uid://tv7ece0tx06n"
+path="res://.godot/imported/background_panel_info.png-a4acf37b9d8b03e31b9d23959390732c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/ui/main_menu_island.png"
-dest_files=["res://.godot/imported/main_menu_island.png-8c70b4fee0574d1b9f77a5a0f728088d.ctex"]
+source_file="res://assets/sprites/ui/background_panel_info.png"
+dest_files=["res://.godot/imported/background_panel_info.png-a4acf37b9d8b03e31b9d23959390732c.ctex"]
 
 [params]
 

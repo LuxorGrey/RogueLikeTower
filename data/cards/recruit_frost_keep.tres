@@ -1,13 +1,12 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://btspqggqutabv"]
 
-[ext_resource type="Script" path="res://game/cards/card_data.gd" id="1_card"]
+[ext_resource type="Script" uid="uid://caqxycoyf65ra" path="res://game/cards/card_data.gd" id="1_card"]
 
 [resource]
 script = ExtResource("1_card")
 id = &"recruit_frost_keep"
 display_name = "Reclutar · Frost Keep"
-description = "Añade Frost Keep al arsenal de esta run."
-rarity = 0
+description = "Recluta Frost Keep para esta run. Sus copos dañan y ralentizan sobre el PATH."
+rarity = 3
 unlock_requirement = &"tower:frost_keep_demo"
 grant_tower_id = &"frost_keep_demo"
-modifier_operations = Array[Resource]([])

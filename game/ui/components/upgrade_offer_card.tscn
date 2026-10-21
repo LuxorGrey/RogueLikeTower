@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://game/ui/components/upgrade_offer_card.gd" id="1_script"]
 [ext_resource type="Theme" path="res://game/ui/themes/rogue_hud_theme.tres" id="2_theme"]
@@ -56,6 +56,22 @@ corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="RecruitmentBannerStyle"]
+bg_color = Color(0.44, 0.25, 0.09, 1)
+border_color = Color(1, 0.82, 0.42, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+content_margin_left = 5.0
+content_margin_top = 4.0
+content_margin_right = 5.0
+content_margin_bottom = 4.0
 
 [sub_resource type="ShaderMaterial" id="CardAura"]
 shader = ExtResource("4_aura_shader")
@@ -163,6 +179,21 @@ size_flags_horizontal = 4
 expand_mode = 1
 stretch_mode = 5
 mouse_filter = 2
+
+[node name="RecruitmentBanner" type="PanelContainer" parent="ContentMargin/CardContent"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("RecruitmentBannerStyle")
+
+[node name="RecruitmentBannerLabel" type="Label" parent="ContentMargin/CardContent/RecruitmentBanner"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.96, 0.83, 1)
+theme_override_font_sizes/font_size = 15
+text = "NUEVA TORRE PARA ESTA RUN"
+horizontal_alignment = 1
 
 [node name="DescriptionLabel" type="RichTextLabel" parent="ContentMargin/CardContent"]
 unique_name_in_owner = true

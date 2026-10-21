@@ -29,7 +29,6 @@ extends Button
 
 func _ready() -> void:
 	layer_icon.texture = layer_icon_texture
-	xp_label.hide()
 	configure_layer_visuals(Enemy.HitPointLayer.HEALTH)
 
 func configure_layer_visuals(layer: int) -> void:

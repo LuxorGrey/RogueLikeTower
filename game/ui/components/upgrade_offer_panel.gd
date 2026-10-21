@@ -68,11 +68,11 @@ func reveal_offer() -> void:
 		var card: UpgradeOfferCard = cards[index]
 		if not card.visible:
 			continue
-		var is_rare_last: bool = (
-			index == cards.size() - 1
-			and card._current_rarity == CardData.Rarity.RARE
+		var is_featured_reveal: bool = (
+			card._current_rarity == CardData.Rarity.RECRUITMENT
+			or (index == cards.size() - 1 and card._current_rarity == CardData.Rarity.RARE)
 		)
-		await card.reveal_card(is_rare_last)
+		await card.reveal_card(is_featured_reveal)
 		if index < cards.size() - 1:
 			await get_tree().create_timer(reveal_stagger).timeout
 

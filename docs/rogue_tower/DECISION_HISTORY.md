@@ -138,6 +138,16 @@ Este archivo contiene el registro histórico completo. La regla aprobada vigente
 - [ADR-0132 — Ajustes de menús y controles desde Inspector](#adr-0132)
 - [ADR-0133 — Hover Balatro, fondo procedural y transición al juego](#adr-0133)
 - [ADR-0134 — Recuperar las mejoras permanentes y compartir el agua del fondo](#adr-0134)
+- [ADR-0135 — Reutilizar la niebla de gameplay solo en el fondo de MainMenu](#adr-0135)
+- [ADR-0136 — Igualar el panel de pausa al panel de MainMenu](#adr-0136)
+- [ADR-0137 — Fondos ilustrados de Tower Info y mejoras H/A/S](#adr-0137)
+- [ADR-0138 — XP visible dentro de la barra de mejora H/A/S](#adr-0138)
+- [ADR-0139 — Reembolso dentro del botón de demoler torre](#adr-0139)
+- [ADR-0140 — Tamaño inicial y lectura de Tower Info](#adr-0140)
+- [ADR-0141 — Retirada de obstáculos con botón de demolición compartido](#adr-0141)
+- [ADR-0142 — Tooltips de mejoras elegidas y TIER IV de reclutamiento](#adr-0142)
+- [ADR-0143 — Fondo de vida y lectura del compás](#adr-0143)
+- [ADR-0144 — Marco de vida compacto y controles externos](#adr-0144)
 
 ## Cómo mantener el historial
 
@@ -4520,3 +4530,99 @@ El usuario pidió que el panel de pausa de gameplay se viera idéntico a `MainMe
 - `docs/rogue_tower/PROJECT_SPEC.md`
 - `docs/rogue_tower/CONTENT_AND_ASSETS.md`
 - `docs/rogue_tower/IMPLEMENTATION_AND_QA.md`
+
+<a id='adr-0137'></a>
+## ADR-0137 — Fondos ilustrados de Tower Info y mejoras H/A/S
+
+- Fecha: 2026-10-20.
+- Estado: escenas integradas; aceptación visual pendiente.
+- Decisor: usuario.
+- Complementa: ADR-0110 (fila de mejoras) y ADR-0132 (estilo editable en escenas).
+
+El usuario asignó `assets/sprites/ui/background_panel_info.png` al fondo de `TowerInfoPanel` y `assets/sprites/ui/tower_card_button.png` al fondo de cada botón `UpgradeHealth`, `UpgradeArmor` y `UpgradeShield` de `UpgradeRow`. El panel cambia del `StyleBoxFlat` oscuro a un `StyleBoxTexture` NinePatch; los botones comparten la misma textura en sus estados visuales. El pergamino claro requiere texto oscuro para los datos de torre, prioridades, estados y lista de enemigos. El panel se ensancha hasta 500 px para conservar la fila de tres botones de 128 px con márgenes internos. No cambia la lógica de las mejoras ni las reglas de combate.
+
+Implementación: `game/main/main.tscn`, `game/main/main.gd` y `game/ui/components/tower_layer_upgrade_button.tscn`. La especificación activa y el inventario de assets están en `PROJECT_SPEC.md` y `CONTENT_AND_ASSETS.md`; la aceptación visual figura en `IMPLEMENTATION_AND_QA.md`.
+
+<a id='adr-0138'></a>
+## ADR-0138 — XP visible dentro de la barra de mejora H/A/S
+
+- Fecha: 2026-10-21.
+- Estado: escena y actualización runtime integradas; aceptación visual pendiente.
+- Decisor: usuario.
+- Sustituye: dimensiones y presentación de XPBar de ADR-0111.
+
+El usuario pidió una barra de XP más gruesa, más corta y centrada en cada `TowerLayerUpgradeButton`, con `XPLabel` dentro y por encima del relleno. `XPBar` pasa de 88 × 8 a 76 × 18 px; `XPLabel` es hija de la barra, ocupa su rectángulo, usa texto blanco de 9 px con contorno negro de 2 px y muestra el XP actual y requerido. La barra y el texto aparecen juntos cuando hay una torre seleccionada que aún admite mejora de esa capa. El estado de XP sigue viniendo de `Tower`; no cambian sus valores ni las reglas de progresión.
+
+Implementación: `game/ui/components/tower_layer_upgrade_button.tscn`, `game/ui/components/tower_layer_upgrade_button.gd` y `game/main/main.gd`. La regla activa está en `PROJECT_SPEC.md` y la aceptación en `IMPLEMENTATION_AND_QA.md`.
+
+<a id='adr-0139'></a>
+## ADR-0139 — Reembolso dentro del botón de demoler torre
+
+- Fecha: 2026-10-21.
+- Estado: escena y feedback integrados; aceptación visual pendiente.
+- Decisor: usuario.
+- Sustituye: presentación externa del reembolso de torre de ADR-0111/ADR-0113; conserva el cálculo de ADR-0064.
+
+El usuario pidió que el botón `DemolishTower` use `assets/sprites/ui/delete_button.png`, con `DEMOLER`, el reembolso `+N` en verde y un icono Gold grande dentro de la misma superficie y en ese orden. El badge externo de reembolso y el icono de demolición dentro de ese botón se retiran; los badges de coste de obstáculo y portal permanecen fuera de sus botones. El sprite se aplica con `StyleBoxTexture` a los estados normal, hover, pulsado, foco y deshabilitado. El botón sigue recibiendo el hover Balatro común de `UIButtonHoverInstaller` y el éxito emite `ui_click` y confirma el Gold recibido en el estado de ronda, visible después de deseleccionar la torre. El valor mostrado y el cobrado provienen de `BuildController.get_demolition_refund()` y de la misma operación de demolición; no cambian las reglas de reembolso.
+
+Implementación: `game/main/main.tscn` y `game/main/main.gd`. La presentación activa está en `PROJECT_SPEC.md`, el asset en `CONTENT_AND_ASSETS.md` y la aceptación en `IMPLEMENTATION_AND_QA.md`.
+
+<a id='adr-0140'></a>
+## ADR-0140 — Tamaño inicial y lectura de Tower Info
+
+- Fecha: 2026-10-21.
+- Estado: código y escena integrados; aceptación visual pendiente.
+- Decisor: usuario.
+- Refina: ADR-0137 y ADR-0139.
+
+La primera torre construida mostraba momentáneamente un fondo demasiado alto que luego se corregía. El mensaje de construcción ocupaba además una línea innecesaria al pie. Se limpia ese mensaje al confirmar la construcción y se agrupan los reajustes del panel tras el frame de distribución de contenedores; durante esa transición, el fondo espera a tener su tamaño definitivo antes de hacerse visible. El ancho máximo pasa a 520 px para dejar margen a las tres mejoras y el espacio entre cabecera, resumen y prioridades aumenta. Demoler se centra verticalmente en una fila alta, con margen superior e inferior que separa su sprite del precio que sobresale bajo las cards H/A/S. En cada precio de mejora, el icono Gold pasa después de la cifra.
+
+Implementación: `game/main/main.gd`, `game/main/main.tscn` y `game/ui/components/tower_layer_upgrade_button.tscn`. La regla vigente está en `PROJECT_SPEC.md`; la aceptación figura en `IMPLEMENTATION_AND_QA.md`.
+
+<a id='adr-0141'></a>
+## ADR-0141 — Retirada de obstáculos con botón de demolición compartido
+
+- Fecha: 2026-10-21.
+- Estado: código y escena integrados; aceptación visual pendiente.
+- Decisor: usuario.
+- Sustituye: presentación de obstáculo de ADR-0111/0113 y el criterio de altura/terreno de M26; conserva su fórmula de coste.
+
+El usuario pidió reutilizar para los obstáculos el botón ilustrado de Demoler torre. `ObstacleDemolish` comparte sus StyleBox, dimensiones, distribución interior y hover; muestra `DEMOLER`, `−<coste actual>` rojo y Gold grande dentro. El botón del portal conserva su presentación separada. La ficha de obstáculo deja de repetir terreno y altura, muestra en grande el ordinal de retirada y el precio de la retirada siguiente, y añade una descripción breve por tipo. Por ejemplo, la primera retirada cuesta 25 Gold en el botón y anticipa 100 Gold para la segunda. El éxito conserva el efecto de retirada del mundo y añade feedback de clic y confirmación del gasto en el estado de ronda.
+
+Implementación: `game/main/main.gd`, `game/main/main.tscn` y `game/board/terrain_visual_catalog.gd`. La presentación vigente está en `PROJECT_SPEC.md` y la aceptación en `IMPLEMENTATION_AND_QA.md`.
+
+<a id='adr-0142'></a>
+## ADR-0142 — Tooltips de mejoras elegidas y TIER IV de reclutamiento
+
+- Fecha: 2026-10-21.
+- Estado: código, Resources y escena integrados; aceptación visual/interactiva pendiente.
+- Decisor: usuario.
+- Refina: ADR-0129 (presentación de Upgrade Cards) y ADR-0076 (reclutamiento durante la run).
+
+La bandeja de mejoras elegidas ya almacenaba nombre y descripción en el tooltip de cada icono, pero quedaba bajo Tower Info en la esquina derecha. Pasa bajo el panel de vida, sin solaparse con Tower Info o el panel de rondas, y sus iconos mantienen tooltip con el efecto al hover. Las seis cartas `recruit_*` dejan de verse como comunes y reciben la categoría máxima `TIER IV · RECLUTAMIENTO`, por encima de Rara. La categoría utiliza superficie violeta oscura, marco de oro ancho, aura cálida, retrato ampliado y la franja `NUEVA TORRE PARA ESTA RUN`; cada descripción explica el patrón de combate que incorpora. Su revelado obtiene el impulso y destello destacado. `RunCardService` sigue garantizando reclutamientos elegibles y aplicando los mismos pesos, límites y efectos; la nueva rareza ordena su posición visual al final de la oferta.
+
+Implementación: `game/cards/card_data.gd`, los seis `data/cards/recruit_*.tres`, `game/ui/components/upgrade_offer_card.gd/.tscn`, `game/ui/components/upgrade_offer_panel.gd`, `game/ui/components/run_card_tray.gd/.tscn` y `game/main/main.tscn`. La regla activa está en `PROJECT_SPEC.md`, el catálogo en `CONTENT_AND_ASSETS.md` y la aceptación en `IMPLEMENTATION_AND_QA.md`.
+
+<a id='adr-0143'></a>
+## ADR-0143 — Fondo de vida y lectura del compás
+
+- Fecha: 2026-10-21.
+- Estado: escena y dibujo integrados; aceptación visual pendiente.
+- Decisor: usuario.
+- Refina: presentación de vida de ADR-0119 y radar de ADR-0126.
+
+El usuario pidió usar `panel_health.png` detrás de la vida en `BaseHealthRow` y conservar al máximo el tamaño y la resolución del sprite. La fila adopta el tamaño PNG de 590 × 188 px; la barra y los controles de pausa y velocidad ocupan su centro sin estirar el marco. Los dos textos del compás pasan a blanco con un contorno negro fino para sostener su lectura sobre el mapa.
+
+Implementación: `game/main/main.tscn` y `game/ui/island_compass_indicator.gd`. La presentación vigente está en `PROJECT_SPEC.md`, el sprite en `CONTENT_AND_ASSETS.md` y la aceptación en `IMPLEMENTATION_AND_QA.md`.
+
+<a id='adr-0144'></a>
+## ADR-0144 — Marco de vida compacto y controles externos
+
+- Fecha: 2026-10-21.
+- Estado: escena integrada; aceptación visual pendiente.
+- Decisor: usuario.
+- Sustituye: tamaño nativo y controles dentro del marco de ADR-0143; conserva el texto blanco del compás.
+
+El usuario precisó que `panel_health.png` debe verse bastante más pequeño y cubrir solo la vida. El marco se muestra con proporción cercana a la fuente, a unos 258 × 82 px. Pausa y velocidad regresan como hermanos del marco en `BaseHealthRow`, centrados verticalmente a su derecha. El panel superior izquierdo vuelve a su ancho anterior.
+
+Implementación: `game/main/main.tscn`. La regla vigente está en `PROJECT_SPEC.md`, el tamaño de uso del sprite en `CONTENT_AND_ASSETS.md` y la aceptación en `IMPLEMENTATION_AND_QA.md`.

@@ -75,6 +75,16 @@ const OBSTACLE_DISPLAY_NAMES: Array[String] = [
 	"Matorral", "Tronco caído", "Montón de ramas", "Tocón",
 	"Rocas y madera", "Caja de suministros", "Raíces expuestas", "Roca musgosa",
 ]
+const OBSTACLE_DESCRIPTIONS: Array[String] = [
+	"Vegetación densa que bloquea la construcción.",
+	"Un tronco atraviesa la casilla y estorba el paso de obra.",
+	"Ramas amontonadas ocupan el espacio de construcción.",
+	"El resto de un árbol impide levantar una torre aquí.",
+	"Piedras y madera cubren esta casilla.",
+	"Una caja abandonada ocupa el lugar de una torre.",
+	"Las raíces sobresalen y bloquean la construcción.",
+	"Una roca cubierta de musgo ocupa la casilla.",
+]
 const OBSTACLE_DISPLAY_SIZE: Vector2 = Vector2(94.6, 94.6)
 const PROP_DISPLAY_SIZE: Vector2 = Vector2(39.6, 39.6)
 const PROP_CHANCE_PER_ASSET: float = 0.10
@@ -159,6 +169,11 @@ static func get_obstacle_display_name(obstacle_type: int) -> String:
 	if obstacle_type < 0 or obstacle_type >= OBSTACLE_DISPLAY_NAMES.size():
 		return "Obstáculo"
 	return OBSTACLE_DISPLAY_NAMES[obstacle_type]
+
+static func get_obstacle_description(obstacle_type: int) -> String:
+	if obstacle_type < 0 or obstacle_type >= OBSTACLE_DESCRIPTIONS.size():
+		return "Ocupa una casilla y bloquea la construcción."
+	return OBSTACLE_DESCRIPTIONS[obstacle_type]
 
 static func get_elevation_tint(elevation: int) -> Color:
 	var height_level: int = clampi(elevation, 0, 3)

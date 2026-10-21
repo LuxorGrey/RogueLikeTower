@@ -602,7 +602,7 @@ La wiki describe el daño de estados como un porcentaje del daño de torre habil
 
 ### Efecto de cards y permanente
 
-Las 190 cards de mejora pueden sumar daño, multiplicar daño, ampliar alcance/radio, modificar coste y regeneración de Mana, crítico, capas H/A/S, estados, Gold, vida de base y daño que recibe la base. Seis cards de reclutamiento elevan el pool total a 196 IDs. Los nombres y operaciones ejecutables están en el [roster activo](#content-roster). Los valores aditivos se suman; los multiplicadores se multiplican. Una card no muta el Resource compartido. Las cards específicas de torre exigen unlock permanente y reclutamiento en la run; las cards de reclutamiento incorporan perfiles desbloqueados al roster temporal. El conjunto de unlocks inicial incluye Ballista/Mortar/Tesla Coil, pero solo Ballista está reclutada al entrar en run; ver ADR-0069/0076. Frost Keep/Flame Thrower/Poison Sprayer cuestan 50 XP y Shredder 100. La fórmula de recompensa XP sigue siendo propia/configurable. Las mejoras permanentes compradas después de una run se aplican desde la siguiente.
+Las 190 cards de mejora pueden sumar daño, multiplicar daño, ampliar alcance/radio, modificar coste y regeneración de Mana, crítico, capas H/A/S, estados, Gold, vida de base y daño que recibe la base. Seis cards de reclutamiento elevan el pool total a 196 IDs. Estos seis Resources usan la categoría `RECRUITMENT` (TIER IV) y describen en una frase el patrón de combate de la torre incorporada. Los nombres y operaciones ejecutables están en el [roster activo](#content-roster). Los valores aditivos se suman; los multiplicadores se multiplican. Una card no muta el Resource compartido. Las cards específicas de torre exigen unlock permanente y reclutamiento en la run; las cards de reclutamiento incorporan perfiles desbloqueados al roster temporal. El conjunto de unlocks inicial incluye Ballista/Mortar/Tesla Coil, pero solo Ballista está reclutada al entrar en run; ver ADR-0069/0076 y [ADR-0142](DECISION_HISTORY.md#adr-0142). Frost Keep/Flame Thrower/Poison Sprayer cuestan 50 XP y Shredder 100. La fórmula de recompensa XP sigue siendo propia/configurable. Las mejoras permanentes compradas después de una run se aplican desde la siguiente.
 
 ### Diferencias de diseño abiertas
 
@@ -797,7 +797,9 @@ La [wiki de Rogue Tower](https://rogue-tower.fandom.com/wiki/Towers) documenta l
 | assets/sprites/towers/tesla_coil.png | Usado | `game/towers/tower_art_catalog.gd` carga el PNG completo; icon catalog y retratos/cards lo comparten. |
 | assets/sprites/towers/tesla_coil_animations.png | Usado | `TowerArtCatalog` recorta en runtime los dos cuadros idle y los dos de ataque. |
 | assets/sprites/ui/start_round_button.png | Usado | game/main/main.tscn |
-| assets/sprites/ui/tower_card_button.png | Usado | game/ui/components/tower_shortcut_card.tscn |
+| assets/sprites/ui/background_panel_info.png | Usado | game/main/main.tscn: fondo NinePatch de TowerInfoPanel. |
+| assets/sprites/ui/delete_button.png | Usado | game/main/main.tscn: fondo NinePatch del botón DemolishTower. |
+| assets/sprites/ui/tower_card_button.png | Usado | game/ui/components/tower_shortcut_card.tscn y game/ui/components/tower_layer_upgrade_button.tscn |
 | assets/sprites/ui/menu_button.png | Usado | `game/menu/main_menu.tscn` y `game/menu/pause_menu.tscn`: botones NinePatch con estilos compartidos; el texto sigue siendo dinámico. |
 | assets/sprites/ui/menu_panel.png | Usado | `game/menu/main_menu.tscn` y `game/menu/pause_menu.tscn`: panel NinePatch con StyleBox compartido. |
 | assets/sprites/ui/main_menu_island.png | Sustituido (ADR-0133) | Ilustración creada para M78; el menú usa el agua compartida de `game/main/wind_waker_water_background_material.tres` y reutiliza `game/main/map_fog.gdshader` solo en el fondo del MainMenu (ADR-0135). |
@@ -940,6 +942,9 @@ Dimensiones fuente y tamaño de representación en runtime:
 | `treasure_chest.png` | 168 × 168 | 84 × 84 |
 | `island_card_chest.png` | 101 × 115 | 47,4 × 54; borde inferior anclado al centro del hex |
 | `assets/sprites/ui/tower_card_button.png` | 288 × 296 | 144 × 148 |
+| `assets/sprites/ui/background_panel_info.png` | 464 × 754 | Fondo NinePatch ajustado al contenido de TowerInfoPanel |
+| `assets/sprites/ui/panel_health.png` | 590 × 188 | Fondo de la barra de vida, mostrado proporcionalmente a unos 258 × 82 px |
+| `assets/sprites/ui/delete_button.png` | 352 × 84 | Fondo NinePatch del botón DemolishTower |
 | `assets/sprites/ui/menu_button.png` | 2172 × 724 | Estilo NinePatch con margen escalado; texto dibujado por Godot |
 | `assets/sprites/ui/menu_panel.png` | 1448 × 1086 | Estilo NinePatch alrededor del contenido del menú |
 | `assets/sprites/ui/main_menu_island.png` | 1672 × 941 | Arte histórico de M78; ya no se carga como fondo |

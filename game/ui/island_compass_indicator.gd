@@ -73,15 +73,20 @@ func _draw() -> void:
 	var island_label: String = "ISLA %d" % island_number
 	if spawn_round > campaign_round:
 		island_label = "ISLA R%d" % spawn_round
-	draw_string(font, Vector2(61.0, 25.0), island_label, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 15, Color("#33463c"))
+	var title_position := Vector2(61.0, 25.0)
+	var distance_position := Vector2(61.0, 45.0)
+	var distance_label: String = "a %d hex" % distance_hexes
+	draw_string_outline(font, title_position, island_label, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 15, 2, Color.BLACK)
+	draw_string(font, title_position, island_label, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 15, Color.WHITE)
+	draw_string_outline(font, distance_position, distance_label, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 13, 2, Color.BLACK)
 	draw_string(
 		font,
-		Vector2(61.0, 45.0),
-		"a %d hex" % distance_hexes,
+		distance_position,
+		distance_label,
 		HORIZONTAL_ALIGNMENT_LEFT,
 		-1.0,
 		13,
-		Color("#5b7868")
+		Color.WHITE
 	)
 
 func _draw_treasure_marker(position: Vector2, direction: Vector2) -> void:

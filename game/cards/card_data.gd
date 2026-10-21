@@ -1,12 +1,12 @@
 class_name CardData
 extends Resource
 
-enum Rarity { COMMON, UNCOMMON, RARE }
+enum Rarity { COMMON, UNCOMMON, RARE, RECRUITMENT }
 
 @export var id: StringName = &""
 @export var display_name: String = ""
 @export_multiline var description: String = ""
-@export_enum("Común", "Poco común", "Rara") var rarity: int = Rarity.COMMON
+@export_enum("Común", "Poco común", "Rara", "Reclutamiento") var rarity: int = Rarity.COMMON
 @export var unlock_requirement: StringName = &""
 @export var grant_tower_id: StringName = &""
 @export var required_card_ids: Array[StringName] = []
@@ -24,8 +24,12 @@ func validate() -> PackedStringArray:
 		errors.append("CardData requiere un título.")
 	if description.strip_edges().is_empty():
 		errors.append("CardData requiere una descripción breve del efecto.")
-	if rarity < Rarity.COMMON or rarity > Rarity.RARE:
+	if rarity < Rarity.COMMON or rarity > Rarity.RECRUITMENT:
 		errors.append("CardData tiene una rareza no válida.")
+	if grant_tower_id != &"" and rarity != Rarity.RECRUITMENT:
+		errors.append("Las cartas de reclutamiento deben usar su tier propio.")
+	if grant_tower_id == &"" and rarity == Rarity.RECRUITMENT:
+		errors.append("El tier de reclutamiento requiere una torre que incorporar a la run.")
 	if offer_weight < 0.0 or offer_weight > 100.0:
 		errors.append("El peso de oferta debe estar entre 0 y 100.")
 	if max_per_run < 1 or max_per_run > 20:
